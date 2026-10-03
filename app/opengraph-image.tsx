@@ -4,7 +4,7 @@ import { join } from "node:path"
 
 export const runtime = "nodejs"
 
-export const alt = "GazPoint — Vérifie où il y en a avant de te déplacer. Les points de vente de gaz près de chez toi, avec la disponibilité, la distance et le numéro du vendeur."
+export const alt = "GazPoint, Vérifie où il y en a avant de te déplacer. Les points de vente de gaz près de chez toi, avec la disponibilité, la distance et le numéro du vendeur."
 
 export const size = { width: 1200, height: 630 }
 

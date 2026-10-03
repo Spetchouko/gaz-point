@@ -27,7 +27,7 @@ const steps = [
 
 export function Solution() {
   return (
-    <section id="comment-ca-marche" className="w-full scroll-mt-16 py-16 md:py-24">
+    <section id="comment-ca-marche" className="w-full scroll-mt-16 py-16 md:py-24 bg-gradient-section">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">

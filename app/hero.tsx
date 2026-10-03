@@ -3,14 +3,14 @@ import { ArrowRight, Check, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const benefits = [
-  "Vérifie la disponibilité avant de partir",
-  "Trouve un point de vente près de toi",
-  "Évite de dépenser ton transport pour rien",
+  "Vérifie la dispo avant de partir",
+  "Trouve un point de vente proche",
+  "Évite les déplacements inutiles",
 ]
 
 export function Hero() {
   return (
-    <section id="accueil" className="w-full overflow-hidden py-16 md:py-24">
+    <section id="accueil" className="w-full overflow-hidden py-16 md:py-24 bg-gradient-section">
       <div className="container mx-auto px-4">
         <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">

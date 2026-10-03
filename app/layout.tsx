@@ -19,9 +19,19 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
   ),
-  title: "GazPoint",
+  title: "GazPoint - Trouve ton gaz avant de te déplacer",
   description:
-    "GazPoint te montre les points de vente de gaz près de chez toi, avec la disponibilité, la distance et le numéro du vendeur.",
+    "Vérifie la disponibilité des bouteilles de gaz près de chez toi. Évite les déplacements inutiles, économise temps et argent. Trouve le bon point de vente en 2 min.",
+  keywords: [
+    "gaz bouteilles",
+    "points de vente gaz",
+    "disponibilité gaz",
+    "trouver gaz près de moi",
+    "livraison gaz",
+    "gaz domestique",
+    "bouteille gaz prix",
+    "gaz butane propane",
+  ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -30,6 +40,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="fr"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <meta name="apple-mobile-web-app-title" content="GazPoint" />
+      </head>
       <body className="min-h-full flex flex-col">
         <Header />
         <main className="flex-1">{children}</main>

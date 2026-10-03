@@ -36,7 +36,7 @@ const funding = [
 
 export function Acces() {
   return (
-    <section className="w-full py-16 md:py-24">
+    <section className="w-full py-16 md:py-24 bg-gradient-section">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
