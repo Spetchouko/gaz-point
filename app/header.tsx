@@ -24,6 +24,11 @@ const navLinks = [
   { href: "/contact", label: "Contact" },
 ]
 
+const authLinks = [
+  { href: "/inscription", label: "S'inscrire" },
+  { href: "/connexion", label: "Se connecter" },
+]
+
 const cta = { href: "/#trouver-du-gaz", label: "Trouver du gaz" }
 
 export function Header() {
@@ -57,6 +62,17 @@ export function Header() {
           {navLinks.map((link) => (
             <NavLink key={link.href} {...link} active={pathname === link.href} />
           ))}
+          <div className="flex items-center gap-2 border-l pl-5 ml-2">
+            {authLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
         </nav>
 
         <div className="ml-auto flex items-center gap-2 lg:justify-self-end">
@@ -102,6 +118,18 @@ export function Header() {
                     {link.label}
                   </Link>
                 ))}
+                <div className="border-t my-2 pt-2 flex flex-col gap-2">
+                  {authLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={closeMenu}
+                      className="rounded-lg px-3 py-3 text-base text-foreground transition-colors hover:bg-muted"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
               </nav>
 
               <SheetFooter className="border-t p-4">

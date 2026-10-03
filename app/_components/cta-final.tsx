@@ -35,7 +35,7 @@ export function CtaFinal() {
             </Button>
 
             <Button
-              render={<Link href="/#creer-compte" />}
+              render={<Link href="/inscription" />}
               nativeButton={false}
               variant="ghost"
               size="lg"

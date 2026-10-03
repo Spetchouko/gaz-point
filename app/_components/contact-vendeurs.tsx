@@ -31,7 +31,7 @@ export function ContactVendeurs() {
 
               <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
                 <Button
-                  render={<Link href="/#creer-compte" />}
+                  render={<Link href="/inscription" />}
                   nativeButton={false}
                   size="lg"
                   className="h-12 w-full gap-2 px-6 text-base sm:w-auto"

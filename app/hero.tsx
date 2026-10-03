@@ -64,6 +64,24 @@ export function Hero() {
             >
               Comment ça marche
             </Button>
+            <Button
+              render={<Link href="/inscription" />}
+              nativeButton={false}
+              variant="ghost"
+              size="lg"
+              className="h-12 w-full px-6 text-base sm:w-auto"
+            >
+              S'inscrire
+            </Button>
+            <Button
+              render={<Link href="/connexion" />}
+              nativeButton={false}
+              variant="ghost"
+              size="lg"
+              className="h-12 w-full px-6 text-base sm:w-auto"
+            >
+              Se connecter
+            </Button>
           </div>
         </div>
       </div>

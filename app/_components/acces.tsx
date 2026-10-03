@@ -75,7 +75,7 @@ export function Acces() {
             </ul>
 
             <Button
-              render={<Link href="/#creer-compte" />}
+              render={<Link href="/inscription" />}
               nativeButton={false}
               size="lg"
               className="mt-8 h-12 w-full gap-2 px-6 text-base sm:w-auto"
@@ -90,7 +90,6 @@ export function Acces() {
           </div>
 
           <div
-            id="creer-compte"
             className="scroll-mt-16 rounded-2xl border bg-muted/50 p-6 lg:col-span-2 md:p-8"
           >
             <div className="flex items-center gap-2.5">
