@@ -1,4 +1,6 @@
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
+import { mergeProps } from "@base-ui/react/merge-props"
+import { useRender } from "@base-ui/react/use-render"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
@@ -43,15 +45,32 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  render,
+  nativeButton = true,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
-  return (
-    <ButtonPrimitive
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  )
+}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants> & {
+  render?: React.ReactElement
+  nativeButton?: boolean
+}) {
+  return useRender({
+    defaultTagName: "button",
+    props: mergeProps<"button">(
+      {
+        className: cn(buttonVariants({ variant, size, className })),
+      },
+      {
+        ...props,
+        "data-slot": "button",
+      } as Record<string, unknown>
+    ),
+    render,
+    state: {
+      slot: "button",
+      variant,
+      size,
+      nativeButton,
+    },
+  })
 }
 
 export { Button, buttonVariants }
