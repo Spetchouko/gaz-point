@@ -26,8 +26,15 @@ export const auth = betterAuth({
     },
     socialProviders: {
         google: {
-            clientId: "204942456162-vhnau15uv4nev781t2ptukjr2a9hjktp.apps.googleusercontent.com",
-            clientSecret: "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",
+            clientId: process.env.GOOGLE_CLIENT_ID as string,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+        },
+    },
+    account: {
+        accountLinking: {
+            enabled: true,
+            trustedProviders: ["google"],
+            requireLocalEmailVerified: false,
         },
     },
     emailAndPassword: {

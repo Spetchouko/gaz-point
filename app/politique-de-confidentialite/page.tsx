@@ -5,7 +5,7 @@ import { siteUrl } from "@/lib/site"
 export const metadata: Metadata = {
   title: { absolute: "Politique de confidentialité | GazPoint" },
   description:
-    "Comment GazPoint collecte, utilise, conserve et protège tes données personnelles : compte, recherches, localisation, transferts hors UE, droits RGPD et contacts.",
+    "Comment GazPoint collecte, utilise, conserve et protège tes données personnelles : compte, recherches, localisation, transferts hors Cameroun, droits et contacts.",
 }
 
 const document: LegalDocument = {
@@ -13,14 +13,14 @@ const document: LegalDocument = {
   title: "Politique de confidentialité",
   intro:
     `GazPoint est un service gratuit d’information sur les points de vente de gaz de cuisson. Cette politique explique quelles données personnelles sont collectées, pourquoi, sur quelle base légale, combien de temps elles sont conservées et comment exercer tes droits. Elle s’applique au site ${siteUrl}, à l’application mobile GazPoint et à l’espace professionnel des points de vente.`,
-  updated: "3 octobre 2026",
+  updated: "5 octobre 2026",
   sections: [
     {
       id: "responsable",
       title: "Qui traite tes données",
       paragraphs: [
-        "Le responsable du traitement est [NOM DE LA SOCIÉTÉ], [FORME JURIDIQUE] au capital de [CAPITAL SOCIAL EN €], dont le siège social est situé [ADRESSE COMPLÈTE DU SIÈGE, AU CAMEROUN], immatriculée sous le numéro [NUMÉRO SIREN] au RCS de [VILLE D’IMMATRICULATION] et dont le numéro de TVA intracommunautaire est [FR + NUMÉRO DE TVA INTRACOMMUNAUTAIRE].",
-        "Contact pour toute question relative à tes données personnelles : [ADRESSE EMAIL DE CONTACT] en précisant « Données personnelles » dans l’objet du message, ou par courrier à [ADRESSE COMPLÈTE DU SIÈGE]. Tu peux aussi passer par la page de contact accessible depuis " +
+        "Le responsable du traitement est GazPoint, éditeur du service, dont l’adresse postale est Douala, Bonamoussadi — ISTAMA Sable, Cameroun.",
+        "Contact pour toute question relative à tes données personnelles : petchouko@gmail.com en précisant « Données personnelles » dans l’objet du message, ou par courrier à Douala, Bonamoussadi — ISTAMA Sable, Cameroun. Tu peux aussi passer par la page de contact accessible depuis " +
         siteUrl +
         "/contact.",
       ],
@@ -28,7 +28,7 @@ const document: LegalDocument = {
         {
           term: "Délégué à la protection des données",
           value:
-            "[NOM ET COORDONNÉES DU DPO, SI DÉSIGNÉ] — À CE JOUR, AUCUN DPO N’EST DÉSIGNÉ : LES DEMANDES SONT À ADRESSER AU RESPONSABLE DE TRAITEMENT.",
+            "AUCUN DÉLÉGUÉ À LA PROTECTION DES DONNÉES N’EST DÉSIGNÉ À CE JOUR : LES DEMANDES SONT À ADRESSER AU RESPONSABLE DU TRAITEMENT (VOIR COORDONNÉES CI-DESSUS).",
         },
       ],
     },
@@ -42,8 +42,8 @@ const document: LegalDocument = {
         "Transparence : chaque information affichée dans le service est datée et attribuée à sa source.",
       ],
       paragraphs: [
-        "GazPoint applique le Règlement (UE) 2016/679 (RGPD) et la loi française du 21 juin 2018 dite « Informatique et Libertés », sous le contrôle de la Commission nationale de l’informatique et des libertés (CNIL).",
-        "Le service s’adresse principalement à des utilisateurs situés au Cameroun. Lorsque la législation camerounaise en matière de protection des données à caractère personnel s’applique aussi à ta situation, nous la prenons en compte.",
+        "GazPoint applique la loi n° 2024/017 du 23 décembre 2024 relative à la protection des données à caractère personnel au Cameroun, complétée par la loi n° 2010/012 du 21 décembre 2010 relative à la cybersécurité et à la cybercriminalité.",
+        "Le service s’adresse principalement aux utilisateurs situés au Cameroun : tes données sont traitées conformément à la législation camerounaise en vigueur.",
       ],
     },
     {
@@ -78,7 +78,16 @@ const document: LegalDocument = {
         "Lorsque tu crées un compte, GazPoint traite en plus :",
       ],
       items: [
-        { term: "Identité", value: "Prénom et numéro de téléphone." },
+        {
+          term: "Identité",
+          value:
+            "Nom complet, adresse email, numéro de téléphone et mot de passe (conservé sous forme de condensat, jamais en clair).",
+        },
+        {
+          term: "Connexion Google",
+          value:
+            "Si tu utilises « Continuer avec Google », ton nom et ton adresse email provenant de ton compte Google sont utilisés pour créer ou connecter ton compte GazPoint.",
+        },
         {
           term: "Vérification",
           value:
@@ -111,24 +120,24 @@ const document: LegalDocument = {
       title: "Pourquoi tes données sont utilisées",
       items: [
         {
-          term: "Exécution du contrat (art. 6.1.b RGPD)",
+          term: "Exécution du contrat",
           value:
             "Créer et gérer ton compte, afficher les points de vente correspondant à ta recherche, calculer les distances et te permettre de les appeler.",
         },
         {
-          term: "Intérêt légitime (art. 6.1.f RGPD)",
+          term: "Intérêt légitime",
           value:
             "Sécuriser le service, prévenir la fraude et les abus, diagnostiquer les incidents, mesurer l’usage de l’application de façon agrégée et non nominative, améliorer la couverture de Douala.",
         },
         {
-          term: "Consentement (art. 6.1.a RGPD)",
+          term: "Consentement",
           value:
             "Utiliser ta position le temps de la recherche. Tu peux retirer ce consentement à tout moment en n’activant plus l’option ou en supprimant le compte.",
         },
         {
-          term: "Obligation légale (art. 6.1.c RGPD)",
+          term: "Obligation légale",
           value:
-            "Conserver les factures et les pièces comptables pendant la durée requise par la réglementation fiscale française.",
+            "Conserver les factures et les pièces comptables pendant la durée requise par la réglementation fiscale camerounaise.",
         },
       ],
       paragraphs: [
@@ -141,6 +150,7 @@ const document: LegalDocument = {
       title: "Cookies et traceurs",
       paragraphs: [
         "Le service fonctionne sans cookie publicitaire, sans cookie de mesure d’audience et sans traceur de réseau social. Seules des données techniques nécessaires au fonctionnement et à la sécurité du service sont enregistrées dans les journaux du serveur.",
+        "Lorsque tu crées un compte ou que tu te connectes, des cookies de session strictement nécessaires sont déposés pour maintenir ta connexion et sécuriser l’accès à ton espace. Ils expirent avec la session ou à la déconnexion et ne servent à aucune finalité publicitaire.",
         "Aucune bannière de consentement n’est donc nécessaire aujourd’hui. Si un outil de mesure d’audience, une carte interactive ou un traceur tiers étaient ajoutés ultérieurement, cette politique serait mise à jour avant leur activation et, lorsque la loi l’exige, un module de consentement te permettrait de les refuser.",
       ],
     },
@@ -148,14 +158,19 @@ const document: LegalDocument = {
       id: "destinataires",
       title: "Qui a accès à tes données",
       paragraphs: [
-        "Tes données sont accessibles au seul personnel autorisé de [NOM DE LA SOCIÉTÉ], dans la limite de ce dont il a besoin pour faire fonctionner le service, et aux sous-traitants suivants, liés à nous par un contrat conforme à l’article 28 du RGPD lorsqu’ils traitent tes données pour notre compte :",
+        "Tes données sont accessibles au seul personnel autorisé de GazPoint, dans la limite de ce dont il a besoin pour faire fonctionner le service, et aux sous-traitants suivants, liés à nous par des obligations contractuelles de confidentialité et de sécurité lorsqu’ils traitent tes données pour notre compte :",
         "Les points de vente visibles dans les résultats ne reçoivent pas ton identité, ta position exacte ni ton historique de recherches. Le numéro du vendeur affiché est une information publique de l’établissement.",
       ],
       items: [
         {
           term: "Hébergement",
           value:
-            "Vercel Inc. (340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis), qui héberge le site, l’application, l’API et les bases de données. Contact pour la protection des données chez Vercel : privacy@vercel.com.",
+            "Vercel Inc. (https://vercel.com), qui héberge le site, l’application, l’API et les bases de données — adresse précise de l’hébergement non communiquée. Contact : privacy@vercel.com.",
+        },
+        {
+          term: "Connexion Google",
+          value:
+            "Google LLC (1600 Amphitheatre Parkway, Mountain View, CA 94043, États-Unis), lorsque tu utilises « Continuer avec Google » : Google transmet uniquement ton nom et ton adresse email à GazPoint.",
         },
         {
           term: "Envoi de SMS",
@@ -181,11 +196,11 @@ const document: LegalDocument = {
     },
     {
       id: "transferts",
-      title: "Transferts en dehors de l’Union européenne",
+      title: "Transferts hors du Cameroun",
       paragraphs: [
-        "Tes données sont hébergées chez Vercel Inc., dont les installations principales sont situées aux États-Unis. Vercel permet de choisir une région d’hébergement européenne (Francfort) : la région utilisée est [À CONFIRMER].",
-        "Lorsque le traitement est réalisé aux États-Unis, pays pour lequel la Commission européenne n’a pas estimé le niveau de protection adéquat, le transfert est encadré par des garanties appropriées : Vercel est certifié au cadre UE–États-Unis de protection des données (EU-U.S. Data Privacy Framework) et applique les clauses contractuelles types de la Commission européenne. Vercel s’engage également à ne pas traiter tes données pour ses propres finalités et à les supprimer à la fin du service.",
-        "Pour le compte commercial souscrit chez Vercel, un contrat de traitement de données (Data Processing Addendum) peut être signé afin de bénéficier de ces garanties : [À CONFIRMER SELON LE FORFAIT]. Tu peux en demander une copie, ainsi que le descriptif des garanties mises en œuvre, auprès de [ADRESSE EMAIL DE CONTACT].",
+        "Tes données sont hébergées par Vercel Inc., dont l’infrastructure cloud peut être située en dehors du Cameroun.",
+        "Lorsqu’un traitement a lieu hors du Cameroun, GazPoint veille à ce qu’il soit encadré contractuellement par des obligations de confidentialité et de sécurité équivalentes à celles de la présente politique.",
+        "Tu peux demander le détail des garanties mises en œuvre auprès de petchouko@gmail.com.",
       ],
       note: "Aucun transfert de tes données vers un pays tiers n’est effectué à des fins publicitaires.",
     },
@@ -213,7 +228,7 @@ const document: LegalDocument = {
         {
           term: "Données professionnelles et factures",
           value:
-            "Durée de la relation commerciale, puis 10 ans à compter de la dernière facture, conformément aux obligations fiscales françaises.",
+            "Durée de la relation commerciale, puis 10 ans à compter de la dernière facture, conformément aux obligations fiscales camerounaises.",
         },
         {
           term: "Demandes et réclamations",
@@ -235,14 +250,14 @@ const document: LegalDocument = {
         "Prise en compte de la protection de la vie privée dès la conception des fonctionnalités.",
       ],
       paragraphs: [
-        "En cas de violation de données à caractère personnel susceptible d’engendrer un risque élevé pour tes droits et libertés, GazPoint en informe la CNIL dans les 72 heures et t’en informe dans les meilleurs délais, comme le prévoit le RGPD.",
+        "En cas de violation de données à caractère personnel susceptible d’engendrer un risque élevé pour tes droits et libertés, GazPoint en informe l’autorité de contrôle camerounaise dans les meilleurs délais et t’en informe également sans délai.",
       ],
     },
     {
       id: "droits",
       title: "Tes droits",
       paragraphs: [
-        "Conformément au RGPD et à la loi Informatique et Libertés, tu peux à tout moment :",
+        "Conformément à la loi n° 2024/017 sur la protection des données à caractère personnel, tu peux à tout moment :",
       ],
       list: [
         "obtenir la confirmation que tes données sont traitées et en recevoir une copie (droit d’accès) ;",
@@ -255,15 +270,15 @@ const document: LegalDocument = {
         "retirer ton consentement à tout moment, sans que cela remette en cause la licéité du traitement déjà effectué.",
       ],
       closing: [
-        "Exerce ces droits par email à [ADRESSE EMAIL DE CONTACT], en précisant l’adresse électronique ou le numéro de téléphone associé à ton compte. Nous répondons dans un délai maximal d’un mois.",
-        "Si tu estimes qu’un traitement de tes données n’est pas conforme, tu peux saisir la Commission nationale de l’informatique et des libertés (CNIL), 3 place de Fontenoy – TSA 80715 – 75334 Paris Cedex 07, ou déposer une plainte sur www.cnil.fr. Tu peux également saisir l’autorité de contrôle du pays où tu résides.",
+        "Exerce ces droits par email à petchouko@gmail.com, en précisant l’adresse électronique ou le numéro de téléphone associé à ton compte. Nous répondons dans un délai maximal d’un mois.",
+        "Si tu estimes qu’un traitement de tes données n’est pas conforme, tu peux saisir l’Autorité de protection des données à caractère personnel (APDP) prévue par la loi camerounaise, ou les tribunaux camerounais compétents.",
       ],
     },
     {
       id: "suppression",
       title: "Suppression du compte",
       paragraphs: [
-        "Tu peux supprimer ton compte à tout moment depuis l’application, ou en écrivant à [ADRESSE EMAIL DE CONTACT].",
+        "Tu peux supprimer ton compte à tout moment depuis l’application, ou en écrivant à petchouko@gmail.com.",
         "La suppression entraîne la désactivation définitive de ton compte et l’effacement de tes données personnelles, à l’exception de celles que la loi nous oblige à conserver, notamment les pièces comptables.",
         "Lorsque l’application est distribuée via Google Play ou l’App Store, la désinstallation de l’application ne supprime pas ton compte : tes données restent enregistrées chez nous jusqu’à ce que tu demandes la suppression du compte ou que nous devions les effacer.",
       ],

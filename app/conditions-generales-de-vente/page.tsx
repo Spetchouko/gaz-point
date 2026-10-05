@@ -5,7 +5,7 @@ import { siteUrl } from "@/lib/site"
 export const metadata: Metadata = {
   title: { absolute: "Conditions générales de vente | GazPoint" },
   description:
-    "Conditions générales de vente de GazPoint : service gratuit d’information sur les points de vente de gaz, engagements, services payants aux vendeurs, rétractation, médiation et droit français.",
+    "Conditions générales de vente de GazPoint : service gratuit d’information sur les points de vente de gaz, engagements, services payants aux vendeurs, annulation, réclamation et droit camerounais.",
 }
 
 const document: LegalDocument = {
@@ -13,7 +13,7 @@ const document: LegalDocument = {
   title: "Conditions générales de vente",
   intro:
     "Les présentes conditions régissent l’utilisation du service GazPoint, application qui indique où trouver du gaz de cuisson disponible autour de soi. Elles s’appliquent aux utilisateurs du service ainsi qu’aux points de vente qui utilisent l’espace professionnel. Ta création de compte ou ta simple consultation du site vaut acceptation de ces conditions.",
-  updated: "3 octobre 2026",
+  updated: "5 octobre 2026",
   sections: [
     {
       id: "objet",
@@ -22,7 +22,7 @@ const document: LegalDocument = {
         "GazPoint est un service d’information gratuit qui permet de rechercher les points de vente de gaz de cuisson déclarés autour d’un lieu, et de consulter pour chacun d’eux la distance, le statut de disponibilité, la date de la dernière mise à jour et, lorsqu’il est communiqué, le numéro du vendeur.",
         "Ces conditions s’appliquent à l’ensemble des usages du service : site internet " +
           siteUrl +
-          ", application mobile et espace professionnel. Toute utilisation vaut acceptation pleine et entière. Si tu n’accepte pas ces conditions, tu ne dois pas utiliser le service.",
+          ", application mobile et espace professionnel. Toute utilisation vaut acceptation pleine et entière. Si tu n’acceptes pas ces conditions, tu ne dois pas utiliser le service.",
         "La version en vigueur est celle publiée sur le site. La date de dernière mise à jour figure en haut de cette page.",
       ],
       note: "Les conditions particulières qui encadrent un service payant souscrit par un point de vente complètent ces conditions et prévalent sur elles en cas de contradiction.",
@@ -43,7 +43,7 @@ const document: LegalDocument = {
       list: [
         "L’accès au service est gratuit, sans abonnement, sans commission sur une vente et sans demande de carte bancaire.",
         "La consultation des points de vente est possible sans compte. La création de compte est facultative et n’engage à rien.",
-        "Un compte est créé avec un prénom et un numéro de téléphone vérifié une seule fois par SMS.",
+        "Un compte est créé avec un nom, une adresse email et un mot de passe ; un numéro de téléphone est demandé à l’inscription. Il est également possible de s’inscrire ou de se connecter avec un compte Google.",
         "Le service nécessite un téléphone compatible, une connexion internet ou réseau mobile et, si tu actives l’option, la localisation activée.",
         "GazPoint est conçu pour Douala. La couverture dépend des points de vente présents sur la plateforme.",
       ],
@@ -92,11 +92,11 @@ const document: LegalDocument = {
       paragraphs: [
         "Les services payants (mise en avant dans les résultats, espace dédié, emplacement publicitaire) sont réservés aux points de vente et font l’objet d’un devis écrit ou de conditions particulières acceptées avant toute commande.",
         "Ces conditions précisent la durée, la nature exacte du service, le prix en francs CFA (FCFA) ou en euros, les modalités et délais de paiement, les obligations de chaque partie et les conditions de résiliation. Les prix sont indiqués hors taxes, sauf mention contraire : la taxe applicable est [TAUX OU RÉGIME APPLICABLE, À PRÉCISER, Y COMPRIS L’AUTOLIQUIDATION DE LA TVA PAR LE PRESTATAIRE SI LA FACTURATION EST ADDRESSÉE À UN CLIENT ÉTRANGER].",
-        "Le vendeur s’acquitte de ses obligations fiscales propres, notamment l’enregistrement, les licences et taxes applicables à son activité. Les factures sont établies et conservées selon la réglementation fiscale française et mentionnent les informations requises à ce titre.",
+        "Le vendeur s’acquitte de ses obligations fiscales propres, notamment l’enregistrement, les licences et taxes applicables à son activité. Les factures sont établies et conservées selon la réglementation fiscale camerounaise et mentionnent les informations requises à ce titre.",
       ],
       list: [
         "Le paiement est exigé selon l’échéancier indiqué dans les conditions particulières ; aucun prélèvement n’a lieu sans accord écrit préalable.",
-        "Les demandes de paiement sont adressées par email à [ADRESSE EMAIL DE FACTURATION] avec la référence de la commande.",
+        "Les demandes de paiement sont adressées par email à petchouko@gmail.com avec la référence de la commande.",
         "Tout retard de paiement entraîne de plein droit des pénalités de retard au taux légal, ainsi qu’une indemnité forfaitaire pour frais de recouvrement de 40 €.",
         "Les services sont publiés au plus tard [DÉLAI DE PUBLICATION À PRÉCISER, PAR EXEMPLE 5 JOURS OUVRÉS] après réception du paiement.",
         "Le vendeur garantit l’exactitude des informations qu’il transmet et dispose des autorisations nécessaires à leur publication, notamment pour l’usage de sa raison sociale, de ses coordonnées et de tout contenu transmis.",
@@ -115,15 +115,15 @@ const document: LegalDocument = {
       id: "propriete-intellectuelle",
       title: "Propriété intellectuelle",
       paragraphs: [
-        "La marque GazPoint, son logo, le design de l’application, les textes, les bases de données et le code du service appartiennent à [NOM DE LA SOCIÉTÉ]. L’utilisation du service ne t’accorde qu’une licence personnelle, limitée et non cessible, d’accès à ces éléments.",
-        "Il t’est interdit de copier, revendre, dépouiller ou exploiter le service, ou d’utiliser une marque dérivée, sans autorisation écrite préalable. Une demande peut être adressée à [ADRESSE EMAIL DE CONTACT].",
+        "La marque GazPoint, son logo, le design de l’application, les textes, les bases de données et le code du service appartiennent à GazPoint. L’utilisation du service ne t’accorde qu’une licence personnelle, limitée et non cessible, d’accès à ces éléments.",
+        "Il t’est interdit de copier, revendre, dépouiller ou exploiter le service, ou d’utiliser une marque dérivée, sans autorisation écrite préalable. Une demande peut être adressée à petchouko@gmail.com.",
       ],
     },
     {
       id: "garanties",
       title: "Garanties légales",
       paragraphs: [
-        "Lorsque GazPoint fournit un service payant, il est tenu de la garantie légale de conformité dans les conditions prévues par les articles L217-3 et suivants du Code de la consommation, pour une durée de deux ans à compter de la fourniture. La garantie légale contre les vices cachés ne s’applique pas aux contrats de fourniture de contenu numérique.",
+        "Lorsque GazPoint fournit un service payant, il s’engage à fournir le service tel qu’il est décrit au moment de la commande. En cas de manquement avéré à cet engagement, GazPoint remédie à ses frais ou rembourse le service concerné, sans préjudice des droits impératifs reconnus aux consommateurs par la loi camerounaise.",
         "Lorsque tu souscris un service payant, tu peux mettre GazPoint en demeure, par lettre recommandée avec accusé de réception ou email, de remédier au défaut dans un délai de trente jours. À défaut de réponse ou de remise en état conforme dans ce délai, tu peux demander la résolution du contrat et le remboursement de ce qui a été payé, sans préjudice de ton droit d’obtenir des dommages-et-intérêts.",
       ],
       note: "L’accès au service gratuit est fourni de la meilleure façon possible, sans garantie de disponibilité continue : une interruption liée à la maintenance ou à une panne des réseaux ne peut donner lieu à aucune indemnité, le service étant gratuit.",
@@ -134,23 +134,22 @@ const document: LegalDocument = {
       paragraphs: [
         "GazPoint s’efforce d’assurer la disponibilité du service et l’exactitude des informations, mais sa responsabilité est limitée aux manquements directs et prouvés qu’elle aurait commis dans la fourniture du service.",
         "GazPoint ne répond pas des dommages liés à une information de disponibilité inexacte, à une absence de gaz au moment de l’achat, au déplacement effectué sur la base de l’information affichée, à une panne de réseau, à une interruption de maintenance, à un cas de force majeure, ni du comportement d’un vendeur ou d’un tiers.",
-        "Aucune clause des présentes conditions ne limite ou n’exclut la responsabilité de GazPoint pour une faute lourde ou intentionnelle, pour un dommage corporel, ni les droits que la loi française reconnaît impérativement au consommateur. Conformément à l’article L212-1-1 du Code de la consommation, aucune clause ne peut déroger aux dispositions d’ordre public relatives à la responsabilité du professionnel.",
+        "Aucune clause des présentes conditions ne limite ou n’exclut la responsabilité de GazPoint pour une faute lourde ou intentionnelle, pour un dommage corporel, ni les droits impératifs reconnus aux consommateurs par la loi camerounaise.",
       ],
     },
     {
       id: "retractation",
-      title: "Droit de rétractation",
+      title: "Annulation",
       paragraphs: [
-        "L’accès au service est gratuit : il n’existe donc aucune vente à distance de contenu numérique payante à ton endroit, et le droit de rétractation de quatorze jours ne trouve pas à s’appliquer à ton bénéfice.",
-        "Si GazPoint te propose ultérieurement une offre payante à titre de consommateur, tu disposerais d’un délai de quatorze jours pour exercer ton droit de rétractation à compter de la conclusion du contrat, sans avoir à motiver ta décision.",
-        "Lorsque tu commandes un service dont l’exécution commence immédiatement après la commande (mise en avant immédiate dans les résultats, par exemple), tu perds ce droit si tu as expressément demandé cette exécution immédiate et si tu as confirmé avoir connaissance de la perte de ce droit : GazPoint te demandera alors une confirmation expresse avant la commande.",
+        "L’accès au service étant gratuit pour les utilisateurs, il n’existe aucun droit de rétractation à exercer à leur endroit.",
+        "Pour un service payant à destination des points de vente, toute demande d’annulation est étudiée avant l’exécution du service. Une fois le service exécuté, l’annulation n’est plus possible, sauf disposition contraire indiquée avant la commande.",
       ],
     },
     {
       id: "suspension",
       title: "Suspension et fermeture",
       paragraphs: [
-        "Tu peux supprimer ton compte à tout moment, depuis l’application ou en écrivant à [ADRESSE EMAIL DE CONTACT].",
+        "Tu peux supprimer ton compte à tout moment, depuis l’application ou en écrivant à petchouko@gmail.com.",
         "GazPoint peut suspendre un compte en cas de violation des présentes conditions, de fraude, d’atteinte à la sécurité du service ou sur demande d’une autorité compétente. Une fermeture pour motif de sécurité est immédiate et sans préavis ; les autres mesures sont notifiées à l’adresse électronique du compte.",
         "La fermeture d’un espace professionnel met fin à la publication de ses informations, sans effet sur les factures déjà émises ni sur les engagements en cours, ni sur le remboursement dû au titre des services non encore fournis.",
       ],
@@ -173,20 +172,18 @@ const document: LegalDocument = {
       id: "droit-applicable",
       title: "Droit applicable, réclamation et médiation",
       paragraphs: [
-        "Les présentes conditions sont régies par le droit français.",
-        "Avant toute action judiciaire, adresse ta réclamation à [ADRESSE EMAIL DE CONTACT] ou par courrier à [ADRESSE COMPLÈTE DU SIÈGE]. Une réponse écrite te sera adressée dans un délai de trente (30) jours.",
-        "En cas de différend avec un point de vente, la médiation de la consommation peut être saisie : le médiateur désigné par GazPoint est [NOM DU MÉDIATEUR DE LA CONSOMMATION, ADRESSE POSTALE ET SITE WEB]. Tu peux aussi recourir gratuitement au médiateur de la consommation du pays du vendeur concerné.",
-        "À défaut d’accord, les tribunaux français compétents seront seuls compétents. Conformément aux dispositions impératives du Code de procédure civile et du Code de la consommation, un consommateur agissant à titre non professionnel peut néanmoins saisir le tribunal de son lieu de résidence, en plus du tribunal du siège de GazPoint.",
+        "Les présentes conditions sont régies par le droit camerounais.",
+        "Toute réclamation doit être adressée à petchouko@gmail.com ou par courrier à Douala, Bonamoussadi — ISTAMA Sable, Cameroun. Une réponse te sera adressée dans les meilleurs délais.",
+        "En cas de différend, les parties cherchent d’abord une solution amiable, notamment par la médiation. À défaut, le litige est porté devant les tribunaux camerounais compétents.",
       ],
-      note: "Ces conditions ne privent pas le consommateur des droits que la loi lui reconnaît impérativement, notamment le droit d’agir en justice pour la défense de ses droits.",
     },
     {
       id: "contact",
       title: "Contact",
       paragraphs: [
-        "Pour toute question relative à ces conditions, écris à [ADRESSE EMAIL DE CONTACT] ou passe par la page de contact accessible depuis " +
+        "Pour toute question relative à ces conditions, écris à petchouko@gmail.com ou passe par la page de contact accessible depuis " +
           siteUrl +
-          "/contact. L’éditeur du service est [NOM DE LA SOCIÉTÉ], [ADRESSE COMPLÈTE DU SIÈGE], RCS [VILLE D’IMMATRICULATION] [NUMÉRO SIREN].",
+          "/contact. L’éditeur du service est GazPoint, Douala, Bonamoussadi — ISTAMA Sable, Cameroun.",
       ],
     },
   ],
