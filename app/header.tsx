@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
-import { Menu, Search, User, LogOut, LayoutDashboard, ChevronDown } from "lucide-react"
+import { Menu, User, LogOut, LayoutDashboard, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuthModal } from "@/lib/auth-context"
 import { authClient } from "@/lib/auth-client"
@@ -21,7 +21,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 const navLinks = [
   { href: "/", label: "Accueil" },
   { href: "/#comment-ca-marche", label: "Comment ça marche" },
-  { href: "/#trouver-du-gaz", label: "Trouver du gaz", isAction: true },
   { href: "/#faq", label: "FAQ" },
   { href: "/a-propos", label: "À propos" },
   { href: "/contact", label: "Contact" },
@@ -107,17 +106,6 @@ export function Header() {
   const { data: session } = authClient.useSession()
   const closeMenu = () => setMobileMenuOpen(false)
 
-  const handleActionClick = (e: React.MouseEvent, href: string) => {
-    if (!isAuthenticated) {
-      e.preventDefault()
-      closeMenu()
-      openAuthModal("register")
-    } else {
-      closeMenu()
-      router.push(href)
-    }
-  }
-
   const handleSignOut = async () => {
     await authClient.signOut()
     router.push("/")
@@ -126,13 +114,13 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/85 backdrop-blur-md supports-backdrop-filter:bg-background/65">
-      <div className="container mx-auto flex h-16 items-center gap-3 px-4 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-6">
+      <div className="container mx-auto flex h-16 items-center justify-between gap-4 px-4 lg:grid lg:grid-cols-[auto_1fr_auto] lg:gap-8">
         <Link
           href="/"
           onClick={closeMenu}
-          className="flex items-center gap-2 transition-opacity hover:opacity-80 lg:justify-self-start"
+          className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
         >
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#F5F5F2] ring-1 ring-black/5">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#F5F5F2] ring-1 ring-black/5 shadow-xs">
             <Image
               src="/brand/logo.png"
               alt=""
@@ -146,51 +134,31 @@ export function Header() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-5 lg:flex">
+        <nav className="hidden items-center justify-center gap-6 lg:flex">
           {navLinks.map((link) => (
             <NavLink
               key={link.href}
               {...link}
               active={pathname === link.href}
-              onClick={link.isAction ? (e) => handleActionClick(e, link.href) : undefined}
             />
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2 lg:justify-self-end">
+        <div className="flex items-center gap-2">
           {isAuthenticated && session?.user ? (
             <UserMenu
               user={session.user}
               onSignOut={handleSignOut}
             />
           ) : (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="hidden sm:inline-flex h-9 px-3 cursor-pointer"
-                onClick={() => openAuthModal("login")}
-              >
-                Se connecter
-              </Button>
-              <Button
-                size="sm"
-                className="h-9 px-4 cursor-pointer"
-                onClick={() => openAuthModal("register")}
-              >
-                S'inscrire
-              </Button>
-            </>
+            <Button
+              size="sm"
+              className="h-9 px-4 font-medium cursor-pointer"
+              onClick={() => openAuthModal("login")}
+            >
+              Connexion / Inscription
+            </Button>
           )}
-
-          <Button
-            size="lg"
-            className="h-9 gap-1.5 px-4 cursor-pointer"
-            onClick={(e) => handleActionClick(e, "/#trouver-du-gaz")}
-          >
-            <Search className="size-4" />
-            Trouver du gaz
-          </Button>
 
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger
@@ -204,65 +172,72 @@ export function Header() {
                 </button>
               }
             />
-            <SheetContent side="right" className="w-[85vw] max-w-sm gap-0 p-0">
-              <SheetHeader className="border-b p-4">
-                <SheetTitle>Menu</SheetTitle>
-                <p className="text-sm text-muted-foreground">
-                  Trouve du gaz près de chez toi.
-                </p>
-              </SheetHeader>
+            <SheetContent side="right" className="w-[85vw] max-w-sm flex flex-col justify-between p-0">
+              <div>
+                <SheetHeader className="border-b p-4">
+                  <SheetTitle>Menu</SheetTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Navigation GazPoint
+                  </p>
+                </SheetHeader>
 
-              <nav className="flex flex-col gap-1 p-4">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={link.isAction ? (e) => handleActionClick(e, link.href) : closeMenu}
-                    aria-current={pathname === link.href ? "page" : undefined}
-                    className="rounded-lg px-3 py-3 text-base text-foreground transition-colors hover:bg-muted"
+                <nav className="flex flex-col gap-1 p-4">
+                  {navLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={closeMenu}
+                      aria-current={pathname === link.href ? "page" : undefined}
+                      className="rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                  {isAuthenticated && (
+                    <>
+                      <div className="my-2 border-t" />
+                      <Link
+                        href="/dashboard"
+                        onClick={closeMenu}
+                        className="rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted flex items-center gap-2.5"
+                      >
+                        <LayoutDashboard className="size-4 text-muted-foreground" />
+                        Tableau de bord
+                      </Link>
+                      <Link
+                        href="/profil"
+                        onClick={closeMenu}
+                        className="rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted flex items-center gap-2.5"
+                      >
+                        <User className="size-4 text-muted-foreground" />
+                        Mon profil
+                      </Link>
+                      <button
+                        onClick={() => { handleSignOut(); closeMenu(); }}
+                        className="rounded-lg px-3 py-2.5 text-base font-medium text-destructive transition-colors hover:bg-destructive/10 flex items-center gap-2.5 w-full text-left"
+                      >
+                        <LogOut className="size-4" />
+                        Déconnexion
+                      </button>
+                    </>
+                  )}
+                </nav>
+              </div>
+
+              {!isAuthenticated && (
+                <SheetFooter className="border-t p-4">
+                  <Button
+                    size="lg"
+                    className="h-10 w-full font-medium cursor-pointer"
+                    onClick={() => {
+                      closeMenu()
+                      openAuthModal("login")
+                    }}
                   >
-                    {link.label}
-                  </Link>
-                ))}
-                {isAuthenticated && (
-                  <>
-                    <Link
-                      href="/dashboard"
-                      onClick={closeMenu}
-                      className="rounded-lg px-3 py-3 text-base text-foreground transition-colors hover:bg-muted flex items-center gap-2"
-                    >
-                      <LayoutDashboard className="size-4" />
-                      Tableau de bord
-                    </Link>
-                    <Link
-                      href="/profil"
-                      onClick={closeMenu}
-                      className="rounded-lg px-3 py-3 text-base text-foreground transition-colors hover:bg-muted flex items-center gap-2"
-                    >
-                      <User className="size-4" />
-                      Mon profil
-                    </Link>
-                    <button
-                      onClick={() => { handleSignOut(); closeMenu(); }}
-                      className="rounded-lg px-3 py-3 text-base text-destructive transition-colors hover:bg-muted flex items-center gap-2 w-full text-left"
-                    >
-                      <LogOut className="size-4" />
-                      Déconnexion
-                    </button>
-                  </>
-                )}
-              </nav>
-
-              <SheetFooter className="border-t p-4">
-                <Button
-                  size="lg"
-                  className="h-11 w-full gap-1.5 cursor-pointer"
-                  onClick={(e) => handleActionClick(e, "/#trouver-du-gaz")}
-                >
-                  <Search className="size-4" />
-                  Trouver du gaz
-                </Button>
-              </SheetFooter>
+                    Connexion / Inscription
+                  </Button>
+                </SheetFooter>
+              )}
             </SheetContent>
           </Sheet>
         </div>
@@ -275,19 +250,16 @@ function NavLink({
   href,
   label,
   active,
-  onClick,
 }: {
   href: string
   label: string
   active?: boolean
-  onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void
 }) {
   return (
     <Link
       href={href}
-      onClick={onClick}
       data-active={active || undefined}
-      className="relative py-1 text-sm text-muted-foreground transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-px after:origin-left after:scale-x-0 after:bg-current after:transition-transform hover:text-foreground hover:after:scale-x-100 data-active:text-foreground data-active:font-medium data-active:after:scale-x-100"
+      className="relative py-1 text-sm font-medium text-muted-foreground transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:origin-left after:scale-x-0 after:bg-primary after:transition-transform hover:text-foreground hover:after:scale-x-100 data-active:text-foreground data-active:after:scale-x-100"
     >
       {label}
     </Link>
