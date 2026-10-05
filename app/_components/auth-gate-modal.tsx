@@ -5,6 +5,7 @@ import Image from "next/image"
 import { authClient } from "@/lib/auth-client"
 import { useAuthModal } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
 import { CheckCircle2, Phone, Store, User, X } from "lucide-react"
 
 export function AuthGateModal() {
@@ -339,6 +340,23 @@ export function AuthGateModal() {
               Retour à la connexion
             </button>
           </div>
+        )}
+
+        {mode !== "forgot-password" && (
+          <>
+            <Separator className="my-4">
+              <span className="text-xs text-muted-foreground">Ou continuer avec</span>
+            </Separator>
+
+            <Button
+              variant="outline"
+              className="w-full gap-2"
+              onClick={() => authClient.signIn.social({ provider: "google", callbackURL: "/" })}
+            >
+              <Image src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width={16} height={16} className="size-4" />
+              Continuer avec Google
+            </Button>
+          </>
         )}
       </div>
     </div>

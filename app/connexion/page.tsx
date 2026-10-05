@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { Suspense, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
@@ -8,12 +8,12 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { Link } from "next/link"
+import Link from "next/link"
 import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react"
 import { useState } from "react"
 import Image from "next/image"
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get("redirect") ?? "/dashboard"
@@ -140,7 +140,7 @@ export default function LoginPage() {
           </Separator>
 
           <Button variant="outline" className="w-full gap-2" onClick={() => authClient.signIn.social({ provider: "google", callbackURL: redirectTo })}>
-            <Image src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="size-4" />
+            <Image src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width={16} height={16} className="size-4" />
             Continuer avec Google
           </Button>
         </CardContent>
@@ -155,5 +155,13 @@ export default function LoginPage() {
         </CardFooter>
       </Card>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginPageContent />
+    </Suspense>
   )
 }
