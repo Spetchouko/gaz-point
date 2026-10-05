@@ -1,68 +1,110 @@
 import Link from "next/link"
-import { ArrowRight, Check, Store } from "lucide-react"
+import { ArrowRight, BadgeCheck, Check, Crown, Store } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
 
 const avantages = [
-  "Un espace professionnel pour signaler ton stock",
-  "Tes horaires et tes formats visibles par les habitants du quartier",
-  "Rien à payer : l’inscription est gratuite",
-  "Tu arrêtes de répondre au téléphone pour demander si tu as du gaz",
+  "Un espace professionnel pour publier tes stocks en temps réel",
+  "Une fiche vérifiée avec badge certifié et contact direct",
+  "Une place prioritaire dans les résultats de recherche",
+  "Des statistiques de vues et d’appels générés",
 ]
 
 export function ContactVendeurs() {
   return (
     <section className="w-full py-16 md:py-24">
       <div className="container mx-auto px-4">
-        <div className="mx-auto max-w-5xl rounded-2xl border bg-card p-6 md:p-10">
+        <Card className="mx-auto max-w-5xl overflow-visible border-2 border-primary bg-primary/5 p-6 md:p-10">
           <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr] lg:gap-12">
             <div>
-              <span className="flex size-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Store className="size-6" aria-hidden />
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="flex size-12 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-xs">
+                  <Store className="size-6" aria-hidden />
+                </span>
+                <Badge className="gap-1 bg-primary text-primary-foreground">
+                  <Crown className="size-3" aria-hidden />
+                  Professionnel
+                </Badge>
+              </div>
 
               <h2 className="mt-6 text-balance text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                 Tu vends du gaz et tu n&apos;apparais pas encore sur GazPoint ?
               </h2>
 
               <p className="mt-4 text-pretty text-base text-muted-foreground">
-                Écris-nous avec le nom de ton commerce et ton quartier. On active ta
-                fiche et on te montre comment signaler ton stock depuis ton espace.
+                Crée ton compte Vendeur, renseigne ton dépôt et ton numéro de
+                téléphone : tu publies tes stocks en direct et tu reçois les
+                appels des clients.
               </p>
 
-              <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-                <Button
-                  render={<Link href="/inscription" />}
-                  nativeButton={false}
-                  size="lg"
-                  className="h-12 w-full gap-2 px-6 text-base sm:w-auto"
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                <Badge
+                  variant="secondary"
+                  className="h-7 gap-1.5 px-3 text-sm font-semibold"
                 >
-                  Créer mon espace vendeur
-                  <ArrowRight className="size-4" />
-                </Button>
+                  <BadgeCheck className="size-4" aria-hidden />
+                  5 000 FCFA/mois
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  sans engagement · usagers : 0 FCFA à vie
+                </span>
               </div>
+
+              <Button
+                render={<Link href="/inscription" />}
+                nativeButton={false}
+                size="lg"
+                className="mt-8 h-12 w-full gap-2 px-6 text-base sm:w-auto"
+              >
+                Créer mon espace vendeur
+                <ArrowRight className="size-4" />
+              </Button>
             </div>
 
-            <div className="rounded-xl bg-muted/50 p-6">
-              <h3 className="font-semibold text-foreground">
-                Ce que ça change pour toi
-              </h3>
+            <Card className="h-full bg-background/80 shadow-none">
+              <CardHeader>
+                <CardTitle className="text-base">
+                  Ce que ça change pour toi
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3">
+                  {avantages.map((avantage) => (
+                    <li key={avantage} className="flex gap-3">
+                      <Check
+                        aria-hidden
+                        className="mt-1 size-4 shrink-0 text-primary"
+                      />
+                      <span className="text-pretty text-sm leading-relaxed text-muted-foreground">
+                        {avantage}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
 
-              <ul className="mt-5 space-y-3">
-                {avantages.map((avantage) => (
-                  <li key={avantage} className="flex gap-3">
-                    <Check
-                      aria-hidden
-                      className="mt-1 size-4 shrink-0 text-primary"
-                    />
-                    <span className="text-pretty text-sm leading-relaxed text-muted-foreground">
-                      {avantage}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+                <Separator className="my-4" />
+
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  Déjà inscrit ?{" "}
+                  <Link
+                    href="/connexion"
+                    className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
+                  >
+                    Connecte-toi
+                  </Link>{" "}
+                  pour gérer ton espace.
+                </p>
+              </CardContent>
+            </Card>
           </div>
-        </div>
+        </Card>
       </div>
     </section>
   )

@@ -9,7 +9,7 @@ import { NotrePromesse } from "@/app/_components/notre-promesse"
 export const metadata: Metadata = {
   title: { absolute: "À propos | GazPoint" },
   description:
-    "GazPoint est un service d’information sur les points de vente de gaz de cuisson à Douala. Notre point de départ, nos engagements et la manière dont l’information est vérifiée.",
+    "GazPoint est un service d’information sur les points de vente de gaz de cuisson à Douala. Profil usager gratuit à vie, espace vendeur à 5 000 FCFA/mois : notre point de départ, nos engagements et la vérification de l’information.",
 }
 
 export default function APropos() {

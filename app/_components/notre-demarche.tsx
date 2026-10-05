@@ -1,4 +1,6 @@
 import { Megaphone, Navigation, Wallet } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 const constats = [
   {
@@ -26,9 +28,12 @@ export function NotreDemarche() {
     <section className="w-full py-16 md:py-24">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+          <Badge
+            variant="secondary"
+            className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]"
+          >
             Notre point de départ
-          </p>
+          </Badge>
 
           <h2 className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
             Une question très simple, une réponse très coûteuse.
@@ -51,31 +56,33 @@ export function NotreDemarche() {
 
           <ul className="mt-10 grid gap-4 sm:grid-cols-3">
             {constats.map((constat) => (
-              <li
-                key={constat.title}
-                className="flex flex-col rounded-xl border bg-card p-6"
-              >
-                <span className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <constat.icon className="size-5" aria-hidden />
-                </span>
-
-                <h3 className="mt-5 text-pretty font-semibold text-foreground">
-                  {constat.title}
-                </h3>
-                <p className="mt-1.5 text-sm text-muted-foreground">
-                  {constat.description}
-                </p>
+              <li key={constat.title}>
+                <Card className="h-full transition-all hover:border-primary/40 hover:shadow-md">
+                  <CardHeader>
+                    <span className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <constat.icon className="size-5" aria-hidden />
+                    </span>
+                    <CardTitle className="mt-4 text-base">
+                      {constat.title}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {constat.description}
+                    </p>
+                  </CardContent>
+                </Card>
               </li>
             ))}
           </ul>
 
-          <div className="mt-10 rounded-xl border bg-muted/50 p-6">
+          <Card className="mt-10 border-0 bg-muted/60 p-6 shadow-none sm:p-8">
             <p className="text-pretty text-base leading-relaxed text-foreground sm:text-lg">
               GazPoint est né de ce constat : ce n&apos;est pas le gaz qui manque,
               c&apos;est l&apos;information. Le gaz, lui, est déjà là, à quelques
               kilomètres.
             </p>
-          </div>
+          </Card>
         </div>
       </div>
     </section>

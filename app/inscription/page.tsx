@@ -1,172 +1,237 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
+import { useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
-import { Phone, Store, User } from "lucide-react"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
+import { Link } from "next/link"
+import { Mail, Lock, User, Phone, Eye, EyeOff, Loader2, Store } from "lucide-react"
+import { useState } from "react"
+import Image from "next/image"
 
-export default function Inscription() {
+export default function RegisterPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get("redirect") ?? "/dashboard"
+  const { data: session } = authClient.useSession()
+
+  useEffect(() => {
+    if (session?.user) {
+      router.push(redirectTo)
+    }
+  }, [session, router, redirectTo])
+
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phoneNumber, setPhoneNumber] = useState("")
+  const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [role, setRole] = useState<"client" | "vendor">("client")
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
+    setError("")
     setLoading(true)
 
-    const formData = new FormData(e.currentTarget)
-    const name = formData.get("name") as string
-    const email = formData.get("email") as string
-    const phoneNumber = formData.get("phoneNumber") as string
-    const password = formData.get("password") as string
+    try {
+      const { error: signUpError } = await authClient.signUp.email({
+        name,
+        email,
+        password,
+        phoneNumber,
+        role,
+      } as Parameters<typeof authClient.signUp.email>[0])
 
-    const { data, error: signUpError } = await authClient.signUp.email({
-      name,
-      email,
-      password,
-      phoneNumber,
-      role,
-    } as Parameters<typeof authClient.signUp.email>[0])
+      if (signUpError) {
+        setError(signUpError.message ?? "Impossible de créer le compte.")
+        setLoading(false)
+        return
+      }
 
-    setLoading(false)
-
-    if (signUpError || !data) {
-      setError(signUpError?.message || "Une erreur est survenue lors de l'inscription.")
-      return
+      router.push(redirectTo)
+      router.refresh()
+    } catch {
+      setError("Une erreur inattendue est survenue.")
+      setLoading(false)
     }
-
-    router.push("/")
-    router.refresh()
   }
 
   return (
-    <main className="flex min-h-[60vh] items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm rounded-2xl border bg-card p-6 shadow-sm">
-        <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
-          Créer un compte
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Inscris-toi pour accéder à GazPoint.
-        </p>
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-4 flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
+            <Image
+              src="/brand/logo.png"
+              alt="GazPoint"
+              width={26}
+              height={26}
+              className="h-6.5 w-6.5 object-contain"
+            />
+          </div>
+          <CardTitle className="text-2xl">Créer un compte</CardTitle>
+          <p className="text-muted-foreground">Choisissez votre profil et commencez</p>
+        </CardHeader>
 
-        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3.5">
-          {/* Sélection du rôle */}
+        <CardContent className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               Type de profil
-            </label>
+            </Label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setRole("client")}
-                className={`flex flex-col items-center justify-center rounded-lg border p-2 text-center transition-all cursor-pointer ${
+                className={`flex flex-col items-center justify-center rounded-lg border p-3 text-center transition-all cursor-pointer ${
                   role === "client"
                     ? "border-primary bg-primary/10 text-primary font-bold ring-1 ring-primary"
                     : "border-border text-muted-foreground hover:bg-muted"
                 }`}
               >
-                <User className="size-4 mb-1" />
-                <span className="text-xs">Usager / Client</span>
-                <span className="text-[10px] text-muted-foreground">0 FCFA</span>
+                <User className="size-5 mb-1" />
+                <span className="text-sm">Usager</span>
+                <span className="text-[10px] font-normal text-muted-foreground">Gratuit</span>
               </button>
               <button
                 type="button"
                 onClick={() => setRole("vendor")}
-                className={`flex flex-col items-center justify-center rounded-lg border p-2 text-center transition-all cursor-pointer ${
+                className={`flex flex-col items-center justify-center rounded-lg border p-3 text-center transition-all cursor-pointer ${
                   role === "vendor"
                     ? "border-primary bg-primary/10 text-primary font-bold ring-1 ring-primary"
                     : "border-border text-muted-foreground hover:bg-muted"
                 }`}
               >
-                <Store className="size-4 mb-1" />
-                <span className="text-xs">Vendeur / Dépôt</span>
-                <span className="text-[10px] text-muted-foreground">5 000 FCFA/m</span>
+                <Store className="size-5 mb-1" />
+                <span className="text-sm">Vendeur</span>
+                <span className="text-[10px] font-normal text-muted-foreground">5 000 FCFA/mois</span>
               </button>
             </div>
           </div>
 
-          <div>
-            <label htmlFor="name" className="text-sm font-medium text-foreground">
-              {role === "vendor" ? "Nom du dépôt ou gérant" : "Nom complet"}
-            </label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              required
-              className="mt-1 block w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary"
-              placeholder={role === "vendor" ? "Ex: Dépôt Gaz Bonamoussadi" : "Ton nom complet"}
-            />
-          </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">{role === "vendor" ? "Nom du dépôt ou gérant" : "Nom complet"}</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder={role === "vendor" ? "Ex: Dépôt Gaz Bonamoussadi" : "Ex: Jean Dupont"}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="pl-10"
+                  disabled={loading}
+                />
+              </div>
+            </div>
 
-          <div>
-            <label htmlFor="email" className="text-sm font-medium text-foreground">
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              className="mt-1 block w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary"
-              placeholder="ton@email.com"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="votre@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="pl-10"
+                  disabled={loading}
+                />
+              </div>
+            </div>
 
-          <div>
-            <label htmlFor="phoneNumber" className="text-sm font-medium text-foreground flex items-center justify-between">
-              <span>Numéro de téléphone</span>
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Phone className="size-3" /> Vérification mobile
-              </span>
-            </label>
-            <input
-              id="phoneNumber"
-              name="phoneNumber"
-              type="tel"
-              required
-              className="mt-1 block w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary"
-              placeholder="Ex: +237 6XX XX XX XX"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber" className="flex items-center justify-between">
+                <span>Numéro de téléphone</span>
+                <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                  <Phone className="size-2.5" /> Vérification mobile
+                </span>
+              </Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="phoneNumber"
+                  type="tel"
+                  placeholder="Ex: +237 6XX XX XX XX"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  required
+                  className="pl-10"
+                  disabled={loading}
+                />
+              </div>
+            </div>
 
-          <div>
-            <label htmlFor="password" className="text-sm font-medium text-foreground">
-              Mot de passe
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              minLength={8}
-              className="mt-1 block w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary"
-              placeholder="Au moins 8 caractères"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Mot de passe</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="8 caractères minimum"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  className="pl-10 pr-10"
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
+            </div>
 
-          {error && (
-            <p className="text-xs text-destructive rounded-md bg-destructive/10 p-2" role="alert">
-              {error}
-            </p>
-          )}
+            {error && (
+              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive" role="alert">
+                {error}
+              </div>
+            )}
 
-          <Button type="submit" disabled={loading} className="mt-2 h-11 w-full font-semibold cursor-pointer">
-            {loading ? "Inscription..." : role === "vendor" ? "Créer mon compte Vendeur" : "Créer mon compte Usager"}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? (
+                <Loader2 className="size-4 mr-2 animate-spin" />
+              ) : role === "vendor" ? (
+                "Créer mon compte Vendeur"
+              ) : (
+                "Créer mon compte Usager"
+              )}
+            </Button>
+          </form>
+
+          <Separator className="my-4">
+            <span className="text-xs text-muted-foreground">Ou continuer avec</span>
+          </Separator>
+
+          <Button variant="outline" className="w-full gap-2" onClick={() => authClient.signIn.social({ provider: "google", callbackURL: redirectTo })}>
+            <Image src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="size-4" />
+            Continuer avec Google
           </Button>
-        </form>
+        </CardContent>
 
-        <p className="mt-4 text-center text-sm text-muted-foreground">
-          Déjà un compte ?{" "}
-          <Link href="/connexion" className="text-primary underline-offset-4 hover:underline">
-            Se connecter
-          </Link>
-        </p>
-      </div>
-    </main>
+        <CardFooter className="flex justify-center">
+          <p className="text-sm text-muted-foreground">
+            Déjà un compte ?{" "}
+            <Link href={`/connexion?redirect=${encodeURIComponent(redirectTo)}`} className="text-primary hover:underline font-medium">
+              Se connecter
+            </Link>
+          </p>
+        </CardFooter>
+      </Card>
+    </div>
   )
 }

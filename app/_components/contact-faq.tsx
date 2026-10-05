@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { MessageCircleQuestion } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 
 export function ContactFaq() {
@@ -11,13 +12,21 @@ export function ContactFaq() {
             <MessageCircleQuestion className="size-6" aria-hidden />
           </span>
 
-          <h2 className="mt-6 text-balance text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl">
+          <Badge
+            variant="secondary"
+            className="mt-5 h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]"
+          >
+            Questions fréquentes
+          </Badge>
+
+          <h2 className="mt-4 text-balance text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl">
             Peut-être que la réponse est déjà là
           </h2>
 
           <p className="mx-auto mt-4 max-w-xl text-pretty text-base text-muted-foreground">
-            La gratuité, la fiabilité des informations, la localisation, la vie
-            privée : les questions les plus fréquentes sont déjà traitées.
+            La gratuité pour les usagers, l’abonnement Vendeur, la fiabilité des
+            informations, la localisation, la vie privée : les questions les plus
+            fréquentes sont déjà traitées.
           </p>
 
           <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:w-auto sm:flex-row">

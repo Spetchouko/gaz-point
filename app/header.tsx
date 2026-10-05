@@ -4,9 +4,10 @@ import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
-import { Menu, Search } from "lucide-react"
+import { Menu, Search, User, LogOut, LayoutDashboard, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuthModal } from "@/lib/auth-context"
+import { authClient } from "@/lib/auth-client"
 import {
   Sheet,
   SheetTrigger,
@@ -15,6 +16,7 @@ import {
   SheetTitle,
   SheetFooter,
 } from "@/components/ui/sheet"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 const navLinks = [
   { href: "/", label: "Accueil" },
@@ -25,11 +27,84 @@ const navLinks = [
   { href: "/contact", label: "Contact" },
 ]
 
+function UserMenu({
+  user,
+  onSignOut,
+}: {
+  user: { name?: string | null; email?: string | null; image?: string | null }
+  onSignOut: () => void
+}) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div className="relative">
+      <Button
+        variant="ghost"
+        className="gap-2 h-9 px-3 pr-2"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-haspopup="true"
+      >
+        <Avatar className="size-8">
+          <AvatarImage src={user.image ?? undefined} alt={user.name ?? "User"} />
+          <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
+            {user.name?.charAt(0).toUpperCase() ?? "U"}
+          </AvatarFallback>
+        </Avatar>
+        <span className="hidden sm:block font-medium">{user.name?.split(" ")[0]}</span>
+        <ChevronDown className="size-4" />
+      </Button>
+
+      {open && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md border bg-popover p-1 shadow-md animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2">
+            <div className="px-2 py-1.5 flex flex-col space-y-1">
+              <p className="text-sm font-medium leading-none">{user.name}</p>
+              <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+            </div>
+            <hr className="my-1 border-muted" />
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-2 px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-sm"
+              onClick={() => setOpen(false)}
+            >
+              <LayoutDashboard className="size-4" />
+              Tableau de bord
+            </Link>
+            <Link
+              href="/profil"
+              className="flex items-center gap-2 px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-sm"
+              onClick={() => setOpen(false)}
+            >
+              <User className="size-4" />
+              Mon profil
+            </Link>
+            <hr className="my-1 border-muted" />
+            <button
+              onClick={() => { onSignOut(); setOpen(false); }}
+              className="flex w-full items-center gap-2 px-2 py-1.5 text-sm text-destructive hover:bg-accent rounded-sm"
+            >
+              <LogOut className="size-4" />
+              Déconnexion
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
   const { isAuthenticated, openAuthModal } = useAuthModal()
+  const { data: session } = authClient.useSession()
   const closeMenu = () => setMobileMenuOpen(false)
 
   const handleActionClick = (e: React.MouseEvent, href: string) => {
@@ -41,6 +116,12 @@ export function Header() {
       closeMenu()
       router.push(href)
     }
+  }
+
+  const handleSignOut = async () => {
+    await authClient.signOut()
+    router.push("/")
+    router.refresh()
   }
 
   return (
@@ -77,6 +158,31 @@ export function Header() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2 lg:justify-self-end">
+          {isAuthenticated && session?.user ? (
+            <UserMenu
+              user={session.user}
+              onSignOut={handleSignOut}
+            />
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hidden sm:inline-flex h-9 px-3 cursor-pointer"
+                onClick={() => openAuthModal("login")}
+              >
+                Se connecter
+              </Button>
+              <Button
+                size="sm"
+                className="h-9 px-4 cursor-pointer"
+                onClick={() => openAuthModal("register")}
+              >
+                S'inscrire
+              </Button>
+            </>
+          )}
+
           <Button
             size="lg"
             className="h-9 gap-1.5 px-4 cursor-pointer"
@@ -118,6 +224,33 @@ export function Header() {
                     {link.label}
                   </Link>
                 ))}
+                {isAuthenticated && (
+                  <>
+                    <Link
+                      href="/dashboard"
+                      onClick={closeMenu}
+                      className="rounded-lg px-3 py-3 text-base text-foreground transition-colors hover:bg-muted flex items-center gap-2"
+                    >
+                      <LayoutDashboard className="size-4" />
+                      Tableau de bord
+                    </Link>
+                    <Link
+                      href="/profil"
+                      onClick={closeMenu}
+                      className="rounded-lg px-3 py-3 text-base text-foreground transition-colors hover:bg-muted flex items-center gap-2"
+                    >
+                      <User className="size-4" />
+                      Mon profil
+                    </Link>
+                    <button
+                      onClick={() => { handleSignOut(); closeMenu(); }}
+                      className="rounded-lg px-3 py-3 text-base text-destructive transition-colors hover:bg-muted flex items-center gap-2 w-full text-left"
+                    >
+                      <LogOut className="size-4" />
+                      Déconnexion
+                    </button>
+                  </>
+                )}
               </nav>
 
               <SheetFooter className="border-t p-4">

@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ArrowRight, Search } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useAuthModal } from "@/lib/auth-context"
 
@@ -25,6 +26,13 @@ export function AproposCta() {
           <p className="text-balance text-sm font-medium text-primary-foreground/70 sm:text-base">
             Tu connais maintenant le projet.
           </p>
+
+          <Badge
+            variant="secondary"
+            className="mt-3 h-6 bg-primary-foreground/15 px-3 text-xs font-semibold uppercase tracking-[0.15em] text-primary-foreground"
+          >
+            Ne pars pas chercher au hasard
+          </Badge>
 
           <h2 className="mt-6 text-balance text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
             Vérifie d&apos;abord où il y en a.

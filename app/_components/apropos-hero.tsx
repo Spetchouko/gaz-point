@@ -1,7 +1,13 @@
 import Image from "next/image"
 import { Check } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Card } from "@/components/ui/card"
 
-const points = ["Gratuit, sans abonnement", "Sans carte bancaire", "Fait à Douala"]
+const points = [
+  "Usager : 0 FCFA à vie",
+  "Vendeur : 5 000 FCFA/mois, sans engagement",
+  "Fait à Douala",
+]
 
 export function AproposHero() {
   return (
@@ -9,9 +15,12 @@ export function AproposHero() {
       <div className="container mx-auto px-4">
         <div className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[1fr_auto] lg:items-center lg:gap-16">
           <div>
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+            <Badge
+              variant="secondary"
+              className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]"
+            >
               À propos
-            </p>
+            </Badge>
 
             <h1 className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
               GazPoint veut supprimer{" "}
@@ -22,7 +31,9 @@ export function AproposHero() {
             <p className="mt-6 max-w-xl text-pretty text-base text-muted-foreground sm:text-lg">
               Nous construisons un service d&apos;information sur les points de vente
               de gaz de cuisson. Pas une boutique, pas un revendeur : un moyen de
-              savoir, avant de partir, où il reste du gaz.
+              savoir, avant de partir, où il reste du gaz. Deux profils : les
+              usagers y entrent gratuitement, les vendeurs y publient leurs
+              stocks.
             </p>
 
             <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-3">
@@ -38,7 +49,7 @@ export function AproposHero() {
             </ul>
           </div>
 
-          <div className="mx-auto flex size-36 shrink-0 items-center justify-center rounded-3xl border bg-card p-8 lg:size-48">
+          <Card className="mx-auto flex size-36 shrink-0 items-center justify-center border-none bg-background p-8 shadow-md lg:size-48">
             <Image
               src="/brand/logo.png"
               alt=""
@@ -46,7 +57,7 @@ export function AproposHero() {
               height={192}
               className="h-full w-full object-contain"
             />
-          </div>
+          </Card>
         </div>
       </div>
     </section>

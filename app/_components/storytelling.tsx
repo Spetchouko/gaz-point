@@ -49,7 +49,7 @@ export function Storytelling() {
   }
 
   return (
-    <section className="w-full border-y bg-gradient-to-b from-muted/30 via-muted/60 to-muted/30 py-16 md:py-24">
+    <section className="w-full border-y bg-linear-to-b from-muted/30 via-muted/60 to-muted/30 py-16 md:py-24">
       <div className="container mx-auto px-4">
         {/* Titre & En-tête */}
         <div className="mx-auto max-w-3xl text-center">
@@ -104,7 +104,7 @@ export function Storytelling() {
         </div>
 
         {/* Bilan & Résolution */}
-        <Card className="mx-auto mt-8 max-w-4xl border-0 bg-gradient-to-r from-destructive/5 via-amber-500/5 to-primary/5 p-6 sm:p-8 shadow-none">
+        <Card className="mx-auto mt-8 max-w-4xl border-0 bg-linear-to-r from-destructive/5 via-amber-500/5 to-primary/5 p-6 sm:p-8 shadow-none">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1.5">
               <Badge variant="destructive" className="h-5 w-fit font-semibold">

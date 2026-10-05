@@ -32,7 +32,7 @@ export function AuthGateModal() {
       if (mode === "forgot-password") {
         const { error: resetError } = await authClient.requestPasswordReset({
           email,
-          redirectTo: "/connexion",
+          redirectTo: "/mot-de-passe-oublie",
         })
         if (resetError) {
           setError(resetError.message || "Impossible d'envoyer l'email de réinitialisation.")
@@ -71,10 +71,7 @@ export function AuthGateModal() {
       }
 
       closeAuthModal()
-      const searchSection = document.getElementById("trouver-du-gaz")
-      if (searchSection) {
-        searchSection.scrollIntoView({ behavior: "smooth" })
-      }
+      window.location.href = "/dashboard"
     } catch {
       setError("Une erreur inattendue est survenue.")
     } finally {
