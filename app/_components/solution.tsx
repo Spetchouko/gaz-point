@@ -1,6 +1,10 @@
-import Link from "next/link"
+"use client"
+
 import { ArrowRight, Cylinder, ListChecks, MapPinned, Navigation } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useAuthModal } from "@/lib/auth-context"
 
 const steps = [
   {
@@ -26,15 +30,26 @@ const steps = [
 ]
 
 export function Solution() {
+  const { isAuthenticated, openAuthModal } = useAuthModal()
+
+  const handleAction = () => {
+    if (!isAuthenticated) {
+      openAuthModal("register")
+    } else {
+      const el = document.getElementById("trouver-du-gaz")
+      if (el) el.scrollIntoView({ behavior: "smooth" })
+    }
+  }
+
   return (
     <section id="comment-ca-marche" className="w-full scroll-mt-16 py-16 md:py-24 bg-gradient-section">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+          <Badge variant="secondary" className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]">
             La solution
-          </p>
+          </Badge>
 
-          <h2 className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+          <h2 className="mt-6 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
             Vérifie où trouver ton gaz{" "}
             <span className="text-primary">avant de te déplacer</span>
           </h2>
@@ -42,35 +57,34 @@ export function Solution() {
 
         <ol className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((step, index) => (
-            <li
-              key={step.title}
-              className="flex flex-col rounded-xl border bg-card p-6 transition-colors hover:border-foreground/20"
-            >
-              <div className="flex items-center justify-between">
-                <span className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <step.icon className="size-5" />
-                </span>
-                <span className="text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground">
-                  Étape {index + 1}
-                </span>
-              </div>
-
-              <h3 className="mt-5 text-pretty font-semibold text-foreground">
-                {step.title}
-              </h3>
-              <p className="mt-1.5 text-sm text-muted-foreground">
-                {step.description}
-              </p>
+            <li key={step.title}>
+              <Card className="h-full transition-all hover:border-primary/40 hover:shadow-md">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <span className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <step.icon className="size-5" />
+                    </span>
+                    <Badge variant="outline" className="font-medium uppercase tracking-wider text-muted-foreground">
+                      Étape {index + 1}
+                    </Badge>
+                  </div>
+                  <CardTitle className="mt-3 text-base font-semibold">
+                    {step.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>{step.description}</CardDescription>
+                </CardContent>
+              </Card>
             </li>
           ))}
         </ol>
 
         <div className="mt-12 flex justify-center">
           <Button
-            render={<Link href="/#trouver-du-gaz" />}
-            nativeButton={false}
             size="lg"
-            className="h-12 w-full gap-2 px-6 text-base sm:w-auto"
+            className="h-12 w-full gap-2 px-6 text-base sm:w-auto cursor-pointer"
+            onClick={handleAction}
           >
             Trouver du gaz
             <ArrowRight className="size-4" />

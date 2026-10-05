@@ -1,5 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
+import { Separator } from "@/components/ui/separator"
 
 const navigation = [
   { label: "Comment ça marche", href: "/#comment-ca-marche" },
@@ -87,11 +88,14 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col gap-2 border-t border-primary-foreground/15 pt-6 text-xs text-primary-foreground/60 sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            © {new Date().getFullYear()} GazPoint. Tous droits réservés.
-          </p>
-          <p>Fait à Douala, Cameroun.</p>
+        <div className="mt-10">
+          <Separator className="bg-primary-foreground/15" />
+          <div className="flex flex-col gap-2 pt-6 text-xs text-primary-foreground/60 sm:flex-row sm:items-center sm:justify-between">
+            <p>
+              © {new Date().getFullYear()} GazPoint. Tous droits réservés.
+            </p>
+            <p>Fait à Douala, Cameroun.</p>
+          </div>
         </div>
       </div>
     </footer>

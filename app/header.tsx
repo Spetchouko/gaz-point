@@ -3,9 +3,10 @@
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Menu, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useAuthModal } from "@/lib/auth-context"
 import {
   Sheet,
   SheetTrigger,
@@ -18,23 +19,29 @@ import {
 const navLinks = [
   { href: "/", label: "Accueil" },
   { href: "/#comment-ca-marche", label: "Comment ça marche" },
-  { href: "/#trouver-du-gaz", label: "Trouver du gaz" },
+  { href: "/#trouver-du-gaz", label: "Trouver du gaz", isAction: true },
   { href: "/#faq", label: "FAQ" },
   { href: "/a-propos", label: "À propos" },
   { href: "/contact", label: "Contact" },
 ]
 
-const authLinks = [
-  { href: "/inscription", label: "S'inscrire" },
-  { href: "/connexion", label: "Se connecter" },
-]
-
-const cta = { href: "/#trouver-du-gaz", label: "Trouver du gaz" }
-
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
+  const { isAuthenticated, openAuthModal } = useAuthModal()
   const closeMenu = () => setMobileMenuOpen(false)
+
+  const handleActionClick = (e: React.MouseEvent, href: string) => {
+    if (!isAuthenticated) {
+      e.preventDefault()
+      closeMenu()
+      openAuthModal("register")
+    } else {
+      closeMenu()
+      router.push(href)
+    }
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/85 backdrop-blur-md supports-backdrop-filter:bg-background/65">
@@ -60,30 +67,23 @@ export function Header() {
 
         <nav className="hidden items-center gap-5 lg:flex">
           {navLinks.map((link) => (
-            <NavLink key={link.href} {...link} active={pathname === link.href} />
+            <NavLink
+              key={link.href}
+              {...link}
+              active={pathname === link.href}
+              onClick={link.isAction ? (e) => handleActionClick(e, link.href) : undefined}
+            />
           ))}
-          <div className="flex items-center gap-2 border-l pl-5 ml-2">
-            {authLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
         </nav>
 
         <div className="ml-auto flex items-center gap-2 lg:justify-self-end">
           <Button
-            render={<Link href={cta.href} />}
-            nativeButton={false}
             size="lg"
-            className="h-9 gap-1.5 px-4"
+            className="h-9 gap-1.5 px-4 cursor-pointer"
+            onClick={(e) => handleActionClick(e, "/#trouver-du-gaz")}
           >
             <Search className="size-4" />
-            {cta.label}
+            Trouver du gaz
           </Button>
 
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -111,37 +111,23 @@ export function Header() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    onClick={closeMenu}
+                    onClick={link.isAction ? (e) => handleActionClick(e, link.href) : closeMenu}
                     aria-current={pathname === link.href ? "page" : undefined}
                     className="rounded-lg px-3 py-3 text-base text-foreground transition-colors hover:bg-muted"
                   >
                     {link.label}
                   </Link>
                 ))}
-                <div className="border-t my-2 pt-2 flex flex-col gap-2">
-                  {authLinks.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={closeMenu}
-                      className="rounded-lg px-3 py-3 text-base text-foreground transition-colors hover:bg-muted"
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
-                </div>
               </nav>
 
               <SheetFooter className="border-t p-4">
                 <Button
-                  render={<Link href={cta.href} />}
-                  nativeButton={false}
                   size="lg"
-                  className="h-11 w-full gap-1.5"
-                  onClick={closeMenu}
+                  className="h-11 w-full gap-1.5 cursor-pointer"
+                  onClick={(e) => handleActionClick(e, "/#trouver-du-gaz")}
                 >
                   <Search className="size-4" />
-                  {cta.label}
+                  Trouver du gaz
                 </Button>
               </SheetFooter>
             </SheetContent>
@@ -156,14 +142,17 @@ function NavLink({
   href,
   label,
   active,
+  onClick,
 }: {
   href: string
   label: string
   active?: boolean
+  onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void
 }) {
   return (
     <Link
       href={href}
+      onClick={onClick}
       data-active={active || undefined}
       className="relative py-1 text-sm text-muted-foreground transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-px after:origin-left after:scale-x-0 after:bg-current after:transition-transform hover:text-foreground hover:after:scale-x-100 data-active:text-foreground data-active:font-medium data-active:after:scale-x-100"
     >

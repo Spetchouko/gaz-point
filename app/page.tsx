@@ -5,7 +5,6 @@ import { CtaFinal } from "@/app/_components/cta-final"
 import { Demonstration } from "@/app/_components/demonstration"
 import { Faq } from "@/app/_components/faq"
 import { Fiabilite } from "@/app/_components/fiabilite"
-import { Probleme } from "@/app/_components/probleme"
 import { Solution } from "@/app/_components/solution"
 import { Storytelling } from "@/app/_components/storytelling"
 import { Temoignages } from "@/app/_components/temoignages"
@@ -15,9 +14,8 @@ export default function Home() {
   return (
     <>
       <Hero />
-      <Probleme />
-      <Benefices />
       <Storytelling />
+      <Benefices />
       <Solution />
       <TrouverMonGaz />
       <Demonstration />

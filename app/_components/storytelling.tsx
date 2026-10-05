@@ -1,76 +1,154 @@
-import Link from "next/link"
-import { ArrowRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
+"use client"
 
-const steps = [
-  "Ton gaz finit le matin.",
-  "Tu prends ta bouteille et tu verrouilles la porte.",
-  "Tu descends chercher, en espérant que le premier point aura.",
-  "Premier point : pas de gaz.",
-  "Tu refais le trajet, et tu payes encore le transport.",
-  "Deuxième point : toujours rien.",
+import {
+  AlertTriangle,
+  ArrowRight,
+  Banknote,
+  CheckCircle2,
+  Clock,
+  Compass,
+  Footprints,
+  Sparkles,
+} from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useAuthModal } from "@/lib/auth-context"
+
+const painPoints = [
+  {
+    icon: Footprints,
+    time: "07:30",
+    title: "Le départ à l'aveugle",
+    description: "Ton gaz se coupe en pleine préparation. Tu sors la bouteille vide et tu pars faire le tour du quartier sans certitude.",
+  },
+  {
+    icon: AlertTriangle,
+    time: "08:15",
+    title: "Dépôts fermés ou en rupture",
+    description: "Premier point fermé, deuxième en rupture de ta marque habituelle. La frustration monte et le temps défile.",
+  },
+  {
+    icon: Banknote,
+    time: "09:00",
+    title: "Frais de transport cumulés",
+    description: "Plusieurs allers-retours en moto-taxi ou taxi dépensés inutilement pour finalement rentrer les mains vides.",
+  },
 ]
 
 export function Storytelling() {
-  return (
-    <section className="w-full border-y bg-muted/50 py-16 md:py-24">
-      <div className="container mx-auto px-4">
-        <div className="mx-auto max-w-2xl">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            La situation
-          </p>
+  const { isAuthenticated, openAuthModal } = useAuthModal()
 
-          <h2 className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            Le matin où ton gaz finit.
+  const handleAction = () => {
+    if (!isAuthenticated) {
+      openAuthModal("register")
+    } else {
+      const el = document.getElementById("trouver-du-gaz")
+      if (el) el.scrollIntoView({ behavior: "smooth" })
+    }
+  }
+
+  return (
+    <section className="w-full border-y bg-gradient-to-b from-muted/30 via-muted/60 to-muted/30 py-16 md:py-24">
+      <div className="container mx-auto px-4">
+        {/* Titre & En-tête */}
+        <div className="mx-auto max-w-3xl text-center">
+          <Badge variant="secondary" className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]">
+            <Compass className="size-3.5" />
+            Situation courante
+          </Badge>
+
+          <h2 className="mt-6 text-balance text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+            La galère du matin où <br className="hidden sm:inline" />
+            <span className="text-primary">ton gaz est fini</span>.
           </h2>
 
-          <div className="relative mt-10">
-            <span
-              className="absolute left-[5px] top-3 bottom-3 w-px bg-border"
-              aria-hidden
-            />
-            <ol className="space-y-4">
-              {steps.map((step) => (
-                <li key={step} className="flex gap-4">
-                  <span className="mt-2.5 size-2.5 shrink-0 rounded-full border-2 border-foreground/25 bg-background" />
-                  <p className="text-pretty text-lg leading-snug text-foreground sm:text-xl">
-                    {step}
-                  </p>
-                </li>
-              ))}
-            </ol>
-          </div>
-
-          <div className="mt-10 rounded-xl border bg-muted/50 p-6">
-            <p className="text-pretty text-lg leading-snug text-foreground sm:text-xl">
-              Et au final, le transport est dépensé, la matinée est perdue, et tu
-              n&apos;as toujours pas trouvé ce que tu cherchais.
-            </p>
-            <p className="mt-4 text-pretty text-lg font-semibold leading-snug text-foreground sm:text-xl">
-              Le pire, c&apos;est que personne ne t&apos;avait prévenu.
-            </p>
-          </div>
+          <p className="mt-4 text-pretty text-base text-muted-foreground sm:text-lg">
+            Une routine épuisante que tout le monde connaît, mais qui peut désormais être évitée en un clic.
+          </p>
         </div>
 
-        <div className="mx-auto mt-14 max-w-2xl text-center md:mt-20">
-          <h3 className="text-balance text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl">
-            Et si tu pouvais vérifier{" "}
-            <span className="text-primary">avant de partir</span> ?
-          </h3>
+        {/* Timeline / Cartes de situation */}
+        <div className="mx-auto mt-12 grid max-w-4xl gap-6 sm:grid-cols-3">
+          {painPoints.map((item, idx) => (
+            <Card
+              key={item.title}
+              className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-md"
+            >
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <span className="flex size-11 items-center justify-center rounded-xl bg-destructive/10 text-destructive ring-1 ring-destructive/20">
+                    <item.icon className="size-5" />
+                  </span>
+                  <Badge variant="outline" className="gap-1 font-semibold text-muted-foreground">
+                    <Clock className="size-3" />
+                    {item.time}
+                  </Badge>
+                </div>
+                <CardTitle className="mt-4 text-base">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Étape 0{idx + 1}
+                  </span>
+                  <span className="mt-1 block font-bold text-foreground">
+                    {item.title}
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {item.description}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
-          <p className="mt-5 text-pretty text-base text-muted-foreground sm:text-lg">
-            GazPoint te montre où il reste du gaz, à quelle distance, et si le point
-            de vente a vraiment du stock. Tu pars une seule fois, vers le bon
-            endroit.
-          </p>
+        {/* Bilan & Résolution */}
+        <Card className="mx-auto mt-8 max-w-4xl border-0 bg-gradient-to-r from-destructive/5 via-amber-500/5 to-primary/5 p-6 sm:p-8 shadow-none">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1.5">
+              <Badge variant="destructive" className="h-5 w-fit font-semibold">
+                Le constat amer
+              </Badge>
+              <h4 className="text-lg font-bold text-foreground sm:text-xl">
+                Argent dépensé en transport, matinée gâchée et repas retardé.
+              </h4>
+              <p className="text-sm text-muted-foreground">
+                Personne ne t&apos;avait prévenu des ruptures de stock avant ton déplacement.
+              </p>
+            </div>
 
+            <div className="shrink-0 rounded-xl border bg-background/90 p-4 shadow-xs backdrop-blur-sm">
+              <div className="flex items-center gap-2 text-sm font-bold text-primary">
+                <Sparkles className="size-4" />
+                Avec GazPoint
+              </div>
+              <ul className="mt-2 space-y-1.5 text-xs text-muted-foreground">
+                <li className="flex items-center gap-1.5">
+                  <CheckCircle2 className="size-3.5 text-emerald-600" />
+                  Disponibilité vérifiée en 10 sec
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <CheckCircle2 className="size-3.5 text-emerald-600" />
+                  Trajet unique et direct
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <CheckCircle2 className="size-3.5 text-emerald-600" />
+                  0 FCFA gaspillé en transport
+                </li>
+              </ul>
+            </div>
+          </div>
+        </Card>
+
+        {/* CTA Section */}
+        <div className="mx-auto mt-12 max-w-xl text-center">
           <Button
-            render={<Link href="/#trouver-du-gaz" />}
-            nativeButton={false}
             size="lg"
-            className="mt-8 h-12 w-full gap-2 px-6 text-base sm:w-auto"
+            className="h-12 w-full gap-2 px-8 text-base font-semibold shadow-md sm:w-auto cursor-pointer"
+            onClick={handleAction}
           >
-            Trouver mon gaz
+            Trouver mon gaz maintenant
             <ArrowRight className="size-4" />
           </Button>
         </div>

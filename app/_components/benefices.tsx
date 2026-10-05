@@ -6,6 +6,8 @@ import {
   Store,
   Timer,
 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 const benefits = [
   {
@@ -45,11 +47,11 @@ export function Benefices() {
     <section className="w-full py-16 md:py-24 bg-gradient-section-reverse">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+          <Badge variant="secondary" className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]">
             Ce que ça t&apos;apporte
-          </p>
+          </Badge>
 
-          <h2 className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+          <h2 className="mt-6 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
             Avant de partir,{" "}
             <span className="text-primary">tu décides</span>
           </h2>
@@ -62,20 +64,22 @@ export function Benefices() {
 
         <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {benefits.map((benefit) => (
-            <li
-              key={benefit.title}
-              className="flex flex-col rounded-xl border bg-card p-6 transition-colors hover:border-foreground/20"
-            >
-              <span className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <benefit.icon className="size-5" />
-              </span>
-
-              <h3 className="mt-5 text-pretty font-semibold text-foreground">
-                {benefit.title}
-              </h3>
-              <p className="mt-1.5 text-sm text-muted-foreground">
-                {benefit.description}
-              </p>
+            <li key={benefit.title}>
+              <Card className="h-full transition-all hover:border-primary/40 hover:shadow-md">
+                <CardHeader>
+                  <span className="mb-2 flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <benefit.icon className="size-5" />
+                  </span>
+                  <CardTitle className="text-lg font-semibold">
+                    {benefit.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-sm leading-relaxed">
+                    {benefit.description}
+                  </CardDescription>
+                </CardContent>
+              </Card>
             </li>
           ))}
         </ul>

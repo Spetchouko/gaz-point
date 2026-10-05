@@ -1,5 +1,7 @@
 import { Building2, Clock, ShieldCheck, Store } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
 import { StatusDot } from "@/app/_components/statuts"
 import {
   availabilityLabel,
@@ -33,11 +35,11 @@ export function Fiabilite() {
     <section className="w-full border-y bg-muted/50 py-16 md:py-24">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+          <Badge variant="secondary" className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]">
             Fiabilité des informations
-          </p>
+          </Badge>
 
-          <h2 className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+          <h2 className="mt-6 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
             Une information avec une date,{" "}
             <span className="text-primary">pas une promesse</span>
           </h2>
@@ -57,44 +59,48 @@ export function Fiabilite() {
             const Source = sourceIcon[point.updatedBy]
 
             return (
-              <li key={point.id} className="flex flex-col rounded-xl border bg-card p-5">
-                <div className="flex items-center gap-2">
-                  <StatusDot status={point.status} />
-                  <span className="text-sm font-semibold text-foreground">
-                    {availabilityLabel[point.status]}
-                  </span>
-                </div>
+              <li key={point.id}>
+                <Card className="h-full">
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <StatusDot status={point.status} />
+                      <span className="text-sm font-semibold text-foreground">
+                        {availabilityLabel[point.status]}
+                      </span>
+                    </div>
 
-                <p className="mt-4 text-base font-medium text-foreground">
-                  {point.brands.join(" · ")} — {point.formats.join(" · ")}
-                </p>
-                <p className="mt-0.5 text-sm text-muted-foreground">
-                  {point.district} · {point.distanceKm.toFixed(1).replace(".", ",")} km
-                </p>
+                    <CardTitle className="mt-3 text-base font-medium">
+                      {point.brands.join(" · ")} — {point.formats.join(" · ")}
+                    </CardTitle>
+                    <CardDescription>
+                      {point.district} · {point.distanceKm.toFixed(1).replace(".", ",")} km
+                    </CardDescription>
+                  </CardHeader>
 
-                <div className="mt-4 space-y-1.5 border-t pt-3 text-sm text-muted-foreground">
-                  <p className="inline-flex items-center gap-1.5">
-                    <Clock className="size-3.5" />
-                    Mis à jour {formatAge(point.updatedMinutesAgo)}
-                  </p>
-                  <p className="inline-flex items-center gap-1.5">
-                    <Source className="size-3.5" />
-                    {sourceLabel[point.updatedBy]}
-                  </p>
-                </div>
+                  <CardContent>
+                    <div className="space-y-1.5 border-t pt-3 text-sm text-muted-foreground">
+                      <p className="inline-flex items-center gap-1.5">
+                        <Clock className="size-3.5" />
+                        Mis à jour {formatAge(point.updatedMinutesAgo)}
+                      </p>
+                      <p className="inline-flex items-center gap-1.5">
+                        <Source className="size-3.5" />
+                        {sourceLabel[point.updatedBy]}
+                      </p>
+                    </div>
 
-                <div className="mt-4 flex-1">
-                  <p className="text-pretty text-sm text-foreground">
-                    {statusNote[point.status]}
-                  </p>
-                </div>
+                    <p className="mt-4 text-pretty text-sm text-foreground">
+                      {statusNote[point.status]}
+                    </p>
 
-                {point.verified && (
-                  <Badge variant="secondary" className="mt-4 w-fit gap-1">
-                    <ShieldCheck className="size-3" />
-                    Vendeur vérifié
-                  </Badge>
-                )}
+                    {point.verified && (
+                      <Badge variant="secondary" className="mt-4 w-fit gap-1">
+                        <ShieldCheck className="size-3" />
+                        Vendeur vérifié
+                      </Badge>
+                    )}
+                  </CardContent>
+                </Card>
               </li>
             )
           })}
@@ -135,28 +141,28 @@ export function Fiabilite() {
             </ul>
           </div>
 
-          <div className="rounded-xl border bg-card p-6">
-            <h3 className="text-xl font-semibold tracking-tight text-foreground">
-              Ce que GazPoint ne te promet pas
-            </h3>
+          <Card className="p-6">
+            <CardHeader className="px-0">
+              <CardTitle className="text-xl font-semibold">
+                Ce que GazPoint ne te promet pas
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-0">
+              <p className="text-pretty text-muted-foreground">
+                Il ne peut pas garantir qu&apos;une bouteille restera disponible
+                jusqu&apos;à ce que tu arrives. Ce que tu vois est ce qui a été
+                signalé, à l&apos;heure indiquée.
+              </p>
 
-            <p className="mt-4 text-pretty text-muted-foreground">
-              Il ne peut pas garantir qu&apos;une bouteille restera disponible
-              jusqu&apos;à ce que tu arrives. Ce que tu vois est ce qui a été
-              signalé, à l&apos;heure indiquée.
-            </p>
+              <Separator className="my-4" />
 
-            <p className="mt-4 text-pretty font-medium text-foreground">
-              Quand une information est ancienne, elle est marquée comme telle.
-              C&apos;est ça, la transparence.
-            </p>
-          </div>
+              <p className="text-pretty font-medium text-foreground">
+                Quand une information est ancienne, elle est marquée comme telle.
+                C&apos;est ça, la transparence.
+              </p>
+            </CardContent>
+          </Card>
         </div>
-
-        <p className="mx-auto mt-10 max-w-xl text-center text-xs text-muted-foreground">
-          Les exemples ci-dessus sont fictifs et servent uniquement à montrer le
-          format de l&apos;information affichée.
-        </p>
       </div>
     </section>
   )

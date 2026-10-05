@@ -1,12 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Link from "next/link"
 import { Search } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useAuthModal } from "@/lib/auth-context"
 
 export function RecherchePermanente() {
   const [visible, setVisible] = useState(false)
+  const { isAuthenticated, openAuthModal } = useAuthModal()
 
   useEffect(() => {
     const hero = document.getElementById("accueil")
@@ -22,6 +23,15 @@ export function RecherchePermanente() {
     return () => observer.disconnect()
   }, [])
 
+  const handleClick = () => {
+    if (!isAuthenticated) {
+      openAuthModal("register")
+    } else {
+      const el = document.getElementById("trouver-du-gaz")
+      if (el) el.scrollIntoView({ behavior: "smooth" })
+    }
+  }
+
   return (
     <div
       className={cn(
@@ -32,16 +42,17 @@ export function RecherchePermanente() {
           : "pointer-events-none translate-y-4 opacity-0"
       )}
     >
-      <Link
-        href="/#trouver-du-gaz"
+      <button
+        type="button"
+        onClick={handleClick}
         className={cn(
-          "pointer-events-auto flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-lg shadow-foreground/10 transition-colors hover:bg-primary/90",
+          "pointer-events-auto flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-lg shadow-foreground/10 transition-colors hover:bg-primary/90 cursor-pointer",
           "sm:h-11"
         )}
       >
         <Search className="size-4" />
         Trouver du gaz
-      </Link>
+      </button>
     </div>
   )
 }

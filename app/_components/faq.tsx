@@ -1,4 +1,5 @@
-import Link from "next/link"
+"use client"
+
 import { ArrowRight, MessageCircleQuestion } from "lucide-react"
 import {
   Accordion,
@@ -6,52 +7,61 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useAuthModal } from "@/lib/auth-context"
 
 const questions = [
   {
-    question: "GazPoint est-il vraiment gratuit ?",
+    question: "Quels sont les deux types de profils sur GazPoint ?",
     answer:
-      "Oui. 0 FCFA, sans abonnement et sans carte bancaire. Créer un compte ne t'engage à rien.",
+      "GazPoint propose deux profils : 1) Le profil « Usager / Client » (100% gratuit à vie) pour rechercher et localiser du gaz autour de soi ; 2) Le profil « Vendeur / Responsable dépôt » (5 000 FCFA/mois) pour référencer son point de vente, publier ses stocks en temps réel et recevoir les appels des clients.",
   },
   {
-    question: "Est-ce que GazPoint fonctionne à Douala ?",
+    question: "Comment fonctionne l'abonnement Vendeur à 5 000 FCFA ?",
     answer:
-      "GazPoint est conçu pour Douala, où le problème est quotidien. La couverture grandit au fur et à mesure que les points de vente rejoignent la plateforme.",
+      "L'abonnement Vendeur est mensuel et sans engagement. Il permet à un gérant de dépôt ou revendeur d'obtenir un badge certifié, de mettre à jour ses stocks de bouteilles à tout moment et d'apparaître en priorité dans les résultats de recherche des usagers.",
   },
   {
-    question: "Comment savoir si le gaz est vraiment disponible ?",
+    question: "Pourquoi dois-je renseigner et vérifier mon numéro de téléphone ?",
     answer:
-      "Chaque point affiche un statut et la date de sa dernière mise à jour. « Disponible » veut dire que le vendeur l'a signalé récemment. Quand l'information est ancienne, elle est marquée « à confirmer », et tu peux appeler avant de partir.",
+      "Le numéro de téléphone mobile sert à sécuriser votre compte, vérifier votre identité et faciliter la mise en relation directe (par appel ou WhatsApp) entre usagers et vendeurs.",
   },
   {
-    question: "Comment trouver un point de vente près de moi ?",
+    question: "GazPoint est-il vraiment gratuit pour les usagers ?",
     answer:
-      "Tu choisis ta marque, ton format et ta zone. Les points les plus proches s'affichent en premier, avec leur distance.",
+      "Oui. Pour tous les particuliers et ménages, l'accès est à 0 FCFA, sans abonnement, sans carte bancaire et sans frais cachés.",
   },
   {
-    question: "Est-ce que je dois partager ma localisation ?",
+    question: "Comment savoir si le gaz est réellement disponible chez un vendeur ?",
     answer:
-      "Non. Tu peux écrire ton quartier ou un point de repère. « Utiliser ma position » est une option, pas une obligation.",
+      "Chaque point affiche un statut (En stock / À confirmer) et l'heure précise de sa dernière mise à jour par le vendeur. Vous pouvez également l'appeler directement en un clic avant de vous déplacer.",
   },
   {
-    question: "Qui met à jour les disponibilités ?",
+    question: "Comment inscrire mon point de vente de gaz ?",
     answer:
-      "Les vendeurs, en direct, quand leur stock change. L'administration met aussi à jour les fiches officielles des points de vente.",
+      "Cliquez sur « Créer mon compte », sélectionnez le profil « Vendeur / Dépôt de gaz », renseignez vos informations et votre numéro de téléphone pour activer votre espace professionnel.",
   },
   {
-    question: "Est-ce que je peux appeler le vendeur ?",
+    question: "GazPoint vend-il ou livre-t-il directement le gaz ?",
     answer:
-      "Oui, s'il a laissé son numéro. Sinon, tu ouvres l'itinéraire et tu vas directement chez lui.",
-  },
-  {
-    question: "GazPoint vend-il directement le gaz ?",
-    answer:
-      "Non. GazPoint ne vend rien. On te montre où acheter, et c'est toi qui vas chez le vendeur.",
+      "Non. GazPoint est une plateforme de mise en relation et de géolocalisation. Nous vous indiquons où trouver du gaz et vous mettons en contact avec les vendeurs de votre quartier.",
   },
 ]
 
 export function Faq() {
+  const { isAuthenticated, openAuthModal } = useAuthModal()
+
+  const handleAction = () => {
+    if (!isAuthenticated) {
+      openAuthModal("register")
+    } else {
+      const el = document.getElementById("trouver-du-gaz")
+      if (el) el.scrollIntoView({ behavior: "smooth" })
+    }
+  }
+
   return (
     <section
       id="faq"
@@ -59,58 +69,55 @@ export function Faq() {
     >
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+          <Badge variant="secondary" className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]">
             Questions fréquentes
-          </p>
+          </Badge>
 
-          <h2 className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+          <h2 className="mt-6 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
             Tu as une question&nbsp;?
           </h2>
+          <p className="mt-4 text-pretty text-base text-muted-foreground">
+            Tout comprendre sur les profils Usagers, Vendeurs et le fonctionnement de la plateforme.
+          </p>
         </div>
 
         <div className="mx-auto mt-12 grid max-w-4xl gap-4 lg:grid-cols-3">
           <Accordion className="rounded-2xl border bg-card px-5 lg:col-span-2 md:px-6">
             {questions.map((item) => (
               <AccordionItem key={item.question} value={item.question}>
-                <AccordionTrigger className="py-4 text-base font-medium hover:no-underline">
+                <AccordionTrigger className="py-4 text-base font-medium hover:no-underline text-left">
                   {item.question}
                 </AccordionTrigger>
-                <AccordionContent className="pb-5 text-muted-foreground">
+                <AccordionContent className="pb-5 text-muted-foreground text-sm leading-relaxed">
                   {item.answer}
                 </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
 
-          <div className="flex flex-col rounded-2xl border bg-card p-6">
-            <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <MessageCircleQuestion className="size-4" />
-            </span>
-
-            <h3 className="mt-5 text-lg font-semibold tracking-tight text-foreground">
-              Tu veux vérifier par toi-même
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Les points de vente autour de toi sont consultables directement, sans
-              créer de compte.
-            </p>
-
-            <Button
-              render={<Link href="/#trouver-du-gaz" />}
-              nativeButton={false}
-              className="mt-6 h-11 w-full gap-2"
-            >
-              Trouver du gaz
-              <ArrowRight className="size-4" />
-            </Button>
-          </div>
+          <Card className="h-full">
+            <CardHeader>
+              <span className="mb-3 flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <MessageCircleQuestion className="size-5" />
+              </span>
+              <CardTitle className="text-lg">
+                Prêt à commencer&nbsp;?
+              </CardTitle>
+              <CardDescription>
+                Créez votre compte en quelques secondes et vérifiez votre numéro de téléphone pour accéder à GazPoint.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                className="h-11 w-full gap-2 cursor-pointer font-semibold"
+                onClick={handleAction}
+              >
+                Trouver du gaz
+                <ArrowRight className="size-4" />
+              </Button>
+            </CardContent>
+          </Card>
         </div>
-
-        <p className="mx-auto mt-8 max-w-2xl text-center text-xs text-muted-foreground">
-          Cette page présente des exemples d&apos;informations. Les points de vente
-          affichés sont fictifs, et la couverture réelle dépend des points de vente
-          présents sur la plateforme.
-        </p>
       </div>
     </section>
   )

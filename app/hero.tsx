@@ -1,6 +1,10 @@
+"use client"
+
 import Link from "next/link"
 import { ArrowRight, Check, Search } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { useAuthModal } from "@/lib/auth-context"
 
 const benefits = [
   "Vérifie la dispo avant de partir",
@@ -9,15 +13,26 @@ const benefits = [
 ]
 
 export function Hero() {
+  const { isAuthenticated, openAuthModal } = useAuthModal()
+
+  const handleTrouverGaz = () => {
+    if (!isAuthenticated) {
+      openAuthModal("register")
+    } else {
+      const el = document.getElementById("trouver-du-gaz")
+      if (el) el.scrollIntoView({ behavior: "smooth" })
+    }
+  }
+
   return (
     <section id="accueil" className="w-full overflow-hidden py-16 md:py-24 bg-gradient-section">
       <div className="container mx-auto px-4">
         <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+          <Badge variant="secondary" className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]">
             Avant de te déplacer, vérifie d&apos;abord
-          </p>
+          </Badge>
 
-          <h1 className="mt-5 text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl">
+          <h1 className="mt-6 text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl">
             Ton gaz est fini ?{" "}
             <span className="text-primary">
               Vérifie où il y en a avant de te déplacer.
@@ -44,12 +59,11 @@ export function Hero() {
             ))}
           </ul>
 
-          <div className="mt-9 flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row">
+          <div className="mt-9 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
             <Button
-              render={<Link href="/#trouver-du-gaz" />}
-              nativeButton={false}
               size="lg"
-              className="h-12 w-full gap-2 px-6 text-base sm:w-auto"
+              className="h-12 w-full gap-2 px-6 text-base sm:w-auto cursor-pointer"
+              onClick={handleTrouverGaz}
             >
               <Search className="size-4" />
               Trouver du gaz
@@ -63,24 +77,6 @@ export function Hero() {
               className="h-12 w-full px-6 text-base sm:w-auto"
             >
               Comment ça marche
-            </Button>
-            <Button
-              render={<Link href="/inscription" />}
-              nativeButton={false}
-              variant="ghost"
-              size="lg"
-              className="h-12 w-full px-6 text-base sm:w-auto"
-            >
-              S'inscrire
-            </Button>
-            <Button
-              render={<Link href="/connexion" />}
-              nativeButton={false}
-              variant="ghost"
-              size="lg"
-              className="h-12 w-full px-6 text-base sm:w-auto"
-            >
-              Se connecter
             </Button>
           </div>
         </div>
