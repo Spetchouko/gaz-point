@@ -34,7 +34,7 @@ tables) va dans le dossier db/.
 - Utiliser l'objet "db" exporté depuis db/index.ts pour parler à la
 base. Ne jamais recréer une connexion.
 - L'auth est gérée par Better Auth :fichier central lib/auth.ts, client lib/auth-client.ts.
-- Ne jamais modifier à la main db/schema.ts.
+- Peut modifier à la main db/schema.ts.
 - Pour inscrire ou connecter un utilisateur, toujours passer par notre client d'authentification.
 - Tous les secrets vont dans .env.
 

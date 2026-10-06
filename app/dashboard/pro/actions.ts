@@ -29,12 +29,24 @@ export async function reportDisponibilite(
   const pointId = String(formData.get("pointId") ?? "")
   const status = String(formData.get("status") ?? "") as AvailabilityStatus
   const note = String(formData.get("note") ?? "").trim() || null
+  const quantityRaw = String(formData.get("quantity") ?? "").trim()
+  const priceRaw = String(formData.get("price") ?? "").trim()
+  const format = String(formData.get("format") ?? "").trim() || null
+
+  const quantity = quantityRaw ? Number.parseInt(quantityRaw, 10) : null
+  const price = priceRaw ? Number.parseInt(priceRaw, 10) : null
 
   if (!pointId) {
     return { ok: false, message: "Point de vente introuvable." }
   }
   if (!STATUSES.includes(status)) {
     return { ok: false, message: "Choisis un statut de disponibilité." }
+  }
+  if (quantity !== null && (!Number.isFinite(quantity) || quantity < 0)) {
+    return { ok: false, message: "Quantité invalide." }
+  }
+  if (price !== null && (!Number.isFinite(price) || price < 0)) {
+    return { ok: false, message: "Prix invalide." }
   }
 
   const [point] = await db
@@ -57,6 +69,9 @@ export async function reportDisponibilite(
     pointId,
     status,
     note,
+    quantity,
+    price,
+    format,
     reportedBy: user.id,
     reportedByName: user.name,
     source: role === "admin" ? "administration" : "vendeur",

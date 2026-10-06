@@ -262,6 +262,9 @@ function FormulaireSignalement({
     (point.report?.status as AvailabilityStatus) ?? "disponible"
   )
   const [note, setNote] = useState("")
+  const [quantity, setQuantity] = useState("")
+  const [price, setPrice] = useState("")
+  const [format, setFormat] = useState("")
   const [step, setStep] = useState<"form" | "confirm">("form")
 
   const handleConfirm = async (formData: FormData) => {
@@ -271,6 +274,9 @@ function FormulaireSignalement({
     if (result.ok) {
       setStep("form")
       setNote("")
+      setQuantity("")
+      setPrice("")
+      setFormat("")
     }
     setPending(false)
   }
@@ -320,6 +326,9 @@ function FormulaireSignalement({
             <input type="hidden" name="pointId" value={point.id} />
             <input type="hidden" name="status" value={status} />
             <input type="hidden" name="note" value={note} />
+            <input type="hidden" name="quantity" value={quantity} />
+            <input type="hidden" name="price" value={price} />
+            <input type="hidden" name="format" value={format} />
             <Button type="submit" size="sm" disabled={pending} className="gap-2">
               <CheckCircle2 className="size-4" aria-hidden />
               {pending ? "Publication…" : "Confirmer le signalement"}
@@ -387,6 +396,55 @@ function FormulaireSignalement({
             onChange={(event) => setNote(event.target.value)}
             placeholder="Ex : 12,5 kg uniquement"
           />
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="space-y-1.5">
+          <Label htmlFor={`quantity-${point.id}`}>Quantité (facultatif)</Label>
+          <Input
+            id={`quantity-${point.id}`}
+            name="quantity"
+            type="number"
+            min="0"
+            value={quantity}
+            onChange={(event) => setQuantity(event.target.value)}
+            placeholder="Ex : 50"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor={`price-${point.id}`}>Prix FCFA (facultatif)</Label>
+          <Input
+            id={`price-${point.id}`}
+            name="price"
+            type="number"
+            min="0"
+            value={price}
+            onChange={(event) => setPrice(event.target.value)}
+            placeholder="Ex : 3500"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor={`format-${point.id}`}>Format (facultatif)</Label>
+          <Select value={format} onValueChange={(value) => setFormat(value ?? "")}>
+            <SelectTrigger
+              id={`format-${point.id}`}
+              className="w-full"
+              aria-label="Format de bouteille"
+            >
+              <SelectValue placeholder="Ex : 12,5 kg" />
+            </SelectTrigger>
+            <SelectContent>
+              {["6 kg", "12,5 kg", "15 kg"].map((item) => (
+                <SelectItem key={item} value={item}>
+                  {item}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <input type="hidden" name="format" value={format} />
         </div>
       </div>
 

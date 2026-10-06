@@ -40,5 +40,19 @@ export const auth = betterAuth({
     emailAndPassword: {
         enabled: true,
     },
+    databaseHooks: {
+        user: {
+            create: {
+                // Sécurité : seuls les rôles "client" et "vendor" peuvent être
+                // créés par une inscription (email OU Google). Toute tentative
+                // d'élévation (ex: role: "admin") retombe en "client".
+                // Un compte admin se crée uniquement par promotion manuelle en base.
+                before: async (user) => {
+                    const role = user.role === "vendor" ? "vendor" : "client";
+                    return { data: { ...user, role } };
+                },
+            },
+        },
+    },
     plugins: [nextCookies()]
 });

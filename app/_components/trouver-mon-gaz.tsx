@@ -4,6 +4,8 @@ import { useState } from "react"
 import {
   ChevronDown,
   LocateFixed,
+  MapPin,
+  Phone,
   Search,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -11,9 +13,30 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { brands, formats } from "@/app/_components/donnees-demo"
 import { useAuthModal } from "@/lib/auth-context"
+import { availabilityLabel } from "@/lib/gaz"
+import type { AvailabilityStatus } from "@/db/schema"
 
 const selectClass =
   "mt-1.5 h-11 w-full appearance-none rounded-lg border bg-background px-3 pr-9 text-sm text-foreground outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50"
+
+type SearchResult = {
+  id: string
+  name: string
+  district: string
+  address: string
+  phone: string | null
+  brands: string[]
+  formats: string[]
+  status: AvailabilityStatus | null
+  note: string | null
+  quantity: number | null
+  price: number | null
+  format: string | null
+  updatedAt: string | null
+  updatedBy: string | null
+  source: string | null
+  stale: boolean
+}
 
 export function TrouverMonGaz() {
   const { isAuthenticated, openAuthModal } = useAuthModal()
@@ -21,12 +44,35 @@ export function TrouverMonGaz() {
   const [format, setFormat] = useState("")
   const [zone, setZone] = useState("")
   const [locationLabel, setLocationLabel] = useState<string | null>(null)
+  const [results, setResults] = useState<SearchResult[] | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!isAuthenticated) {
       openAuthModal("register")
       return
+    }
+
+    setLoading(true)
+    setError(null)
+    setResults(null)
+
+    try {
+      const params = new URLSearchParams()
+      if (brand) params.set("brand", brand)
+      if (format) params.set("format", format)
+      if (zone) params.set("zone", zone)
+
+      const res = await fetch(`/api/recherche?${params.toString()}`)
+      if (!res.ok) throw new Error("Recherche impossible")
+      const data = await res.json()
+      setResults(data.results ?? [])
+    } catch {
+      setError("Une erreur est survenue lors de la recherche.")
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -143,12 +189,80 @@ export function TrouverMonGaz() {
               )}
             </div>
 
-            <Button type="submit" className="h-12 w-full gap-2 text-base cursor-pointer">
+            <Button type="submit" className="h-12 w-full gap-2 text-base cursor-pointer" disabled={loading}>
               <Search className="size-4" />
-              Voir où il y en a
+              {loading ? "Recherche..." : "Voir où il y en a"}
             </Button>
           </form>
         </Card>
+
+        {error && (
+          <p className="mt-4 text-center text-sm text-destructive">{error}</p>
+        )}
+
+        {results !== null && (
+          <div className="mt-8">
+            <h3 className="text-center text-lg font-semibold text-foreground">
+              {results.length > 0
+                ? `${results.length} point${results.length > 1 ? "s" : ""} trouvé${results.length > 1 ? "s" : ""}`
+                : "Aucun point trouvé"}
+            </h3>
+
+            {results.length > 0 && (
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                {results.map((point) => (
+                  <Card key={point.id} className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-medium text-foreground">{point.name}</p>
+                        <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                          <MapPin className="size-3" />
+                          {point.district} — {point.address}
+                        </p>
+                      </div>
+                      {point.status && (
+                        <Badge
+                          variant="outline"
+                          className={
+                            point.status === "disponible"
+                              ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
+                              : point.status === "a_confirmer"
+                              ? "bg-amber-500/10 text-amber-600 border-amber-500/30"
+                              : "bg-red-500/10 text-red-600 border-red-500/30"
+                          }
+                        >
+                          {availabilityLabel[point.status]}
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+                      {point.quantity !== null && (
+                        <p>Quantité : {point.quantity} bouteille{point.quantity > 1 ? "s" : ""}</p>
+                      )}
+                      {point.price !== null && (
+                        <p>Prix : {new Intl.NumberFormat("fr-FR").format(point.price)} FCFA</p>
+                      )}
+                      {point.format && <p>Format : {point.format}</p>}
+                      {point.phone && (
+                        <p className="flex items-center gap-1">
+                          <Phone className="size-3" />
+                          {point.phone}
+                        </p>
+                      )}
+                      {point.updatedAt && (
+                        <p>
+                          Mis à jour : {new Date(point.updatedAt).toLocaleDateString("fr-FR")}
+                          {point.updatedBy ? ` par ${point.updatedBy}` : ""}
+                        </p>
+                      )}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </section>
   )

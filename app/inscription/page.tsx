@@ -16,8 +16,11 @@ import Image from "next/image"
 function RegisterPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get("redirect") ?? "/dashboard"
   const { data: session } = authClient.useSession()
+  const [role, setRole] = useState<"client" | "vendor">("client")
+
+  const searchRedirect = searchParams.get("redirect")
+  const redirectTo = searchRedirect ?? (role === "vendor" ? "/dashboard/pro" : "/dashboard")
 
   useEffect(() => {
     if (session?.user) {
@@ -30,7 +33,6 @@ function RegisterPageContent() {
   const [phoneNumber, setPhoneNumber] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  const [role, setRole] = useState<"client" | "vendor">("client")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 

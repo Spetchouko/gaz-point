@@ -5,8 +5,14 @@ import Image from "next/image"
 import { authClient } from "@/lib/auth-client"
 import { useAuthModal } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
-import { CheckCircle2, Phone, Store, User, X } from "lucide-react"
+import { CheckCircle2, Phone, Store, User } from "lucide-react"
 
 export function AuthGateModal() {
   const { isOpen, closeAuthModal, mode, setMode } = useAuthModal()
@@ -45,6 +51,7 @@ export function AuthGateModal() {
         return
       }
 
+      let home = "/dashboard"
       if (mode === "register") {
         const { error: signUpError } = await authClient.signUp.email({
           name,
@@ -59,8 +66,9 @@ export function AuthGateModal() {
           setLoading(false)
           return
         }
+        home = role === "vendor" ? "/dashboard/pro" : "/dashboard"
       } else {
-        const { error: signInError } = await authClient.signIn.email({
+        const { error: signInError, data: signInData } = await authClient.signIn.email({
           email,
           password,
         })
@@ -69,10 +77,12 @@ export function AuthGateModal() {
           setLoading(false)
           return
         }
+        const signedRole = (signInData?.user as { role?: string } | undefined)?.role
+        home = signedRole === "vendor" || signedRole === "admin" ? "/dashboard/pro" : "/dashboard"
       }
 
       closeAuthModal()
-      window.location.href = "/dashboard"
+      window.location.href = home
     } catch {
       setError("Une erreur inattendue est survenue.")
     } finally {
@@ -81,22 +91,15 @@ export function AuthGateModal() {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-background/60 backdrop-blur-md overflow-y-auto"
-      role="dialog"
-      aria-modal="true"
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          closeAuthModal()
+        }
+      }}
     >
-      <div className="relative w-full max-w-sm rounded-2xl border bg-card p-5 sm:p-6 shadow-xl transition-all">
-        {/* Bouton de fermeture */}
-        <button
-          type="button"
-          onClick={closeAuthModal}
-          className="absolute right-3.5 top-3.5 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
-          aria-label="Fermer"
-        >
-          <X className="size-4" />
-        </button>
-
+      <DialogContent className="gap-0 sm:p-6">
         <div className="flex flex-col items-center text-center">
           <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20 mb-2">
             <Image
@@ -108,20 +111,20 @@ export function AuthGateModal() {
             />
           </div>
 
-          <h2 className="font-heading text-lg sm:text-xl font-bold tracking-tight text-foreground">
+          <DialogTitle className="font-heading text-lg sm:text-xl font-bold tracking-tight text-foreground">
             {mode === "register"
               ? "Créer un compte"
               : mode === "login"
               ? "Connexion"
               : "Mot de passe oublié"}
-          </h2>
-          <p className="mt-1 text-xs text-muted-foreground">
+          </DialogTitle>
+          <DialogDescription className="mt-1 text-xs text-muted-foreground">
             {mode === "register"
               ? "Choisissez votre profil et commencez."
               : mode === "login"
               ? "Accédez à votre espace GazPoint."
               : "Entrez votre email pour réinitialiser."}
-          </p>
+          </DialogDescription>
         </div>
 
         {/* Tab switch Navigation */}
@@ -351,14 +354,14 @@ export function AuthGateModal() {
             <Button
               variant="outline"
               className="w-full gap-2"
-              onClick={() => authClient.signIn.social({ provider: "google", callbackURL: "/" })}
+              onClick={() => authClient.signIn.social({ provider: "google", callbackURL: "/dashboard" })}
             >
               <Image src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width={16} height={16} className="size-4" />
               Continuer avec Google
             </Button>
           </>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
