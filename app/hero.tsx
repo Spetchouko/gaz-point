@@ -4,7 +4,6 @@ import Link from "next/link"
 import { ArrowRight, Check, Search } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { useAuthModal } from "@/lib/auth-context"
 
 const benefits = [
   "Vérifie la dispo avant de partir",
@@ -13,15 +12,9 @@ const benefits = [
 ]
 
 export function Hero() {
-  const { isAuthenticated, openAuthModal } = useAuthModal()
-
   const handleTrouverGaz = () => {
-    if (!isAuthenticated) {
-      openAuthModal("register")
-    } else {
-      const el = document.getElementById("trouver-du-gaz")
-      if (el) el.scrollIntoView({ behavior: "smooth" })
-    }
+    const el = document.getElementById("trouver-du-gaz")
+    if (el) el.scrollIntoView({ behavior: "smooth" })
   }
 
   return (

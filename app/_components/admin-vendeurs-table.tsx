@@ -1,0 +1,210 @@
+"use client"
+
+import Link from "next/link"
+import { User, Store, Phone, Mail, MapPin, Package, Trash2, MoreHorizontal } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { formatDate } from "@/lib/gaz"
+import { cn } from "@/lib/utils"
+
+type VendorRow = {
+  id: string
+  name: string
+  email: string
+  phoneNumber: string | null
+  role: string
+  createdAt: Date | string
+  points: {
+    id: string
+    name: string
+    district: string
+    address: string
+    phone: string | null
+  }[]
+  dispos: {
+    id: string
+    status: string
+    quantity: number | null
+    format: string | null
+    createdAt: Date | string
+  }[]
+  activeDisposCount: number
+  totalQty: number
+  latestDispoDate: Date | string | null
+  hasActiveDispo: boolean
+}
+
+const availabilityLabel: Record<string, string> = {
+  disponible: "Disponible",
+  a_confirmer: "À confirmer",
+  indisponible: "Indisponible",
+}
+
+const availabilityBadgeClass: Record<string, string> = {
+  disponible: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
+  a_confirmer: "bg-amber-500/10 text-amber-600 border-amber-500/30",
+  indisponible: "bg-red-500/10 text-red-600 border-red-500/30",
+}
+
+export function AdminVendeursTable({ vendors }: { vendors: VendorRow[] }) {
+  if (vendors.length === 0) {
+    return (
+      <div className="rounded-lg border bg-card p-8 text-center">
+        <p className="text-muted-foreground">Aucun vendeur trouvé.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-lg border bg-card overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full" role="table">
+          <thead>
+            <tr className="border-b bg-muted/50">
+              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Nom / Responsable
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">
+                Point de vente
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
+                Téléphone
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
+                Email
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden xl:table-cell">
+                Localisation
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Statut
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">
+                Disponibilité
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">
+                Inscrit le
+              </th>
+              <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {vendors.map((v) => {
+              const mainPoint = v.points[0]
+              const latestDispo = v.dispos.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
+              return (
+                <tr key={v.id} className="hover:bg-muted/50 transition-colors">
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/admin/vendeurs/${v.id}`}
+                      className="font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      {v.name}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3 hidden md:table-cell">
+                    {mainPoint ? (
+                      <Link href={`/admin/points-de-vente/${mainPoint.id}`} className="font-medium text-foreground hover:text-primary underline-offset-2 hover:underline">
+                        {mainPoint.name}
+                      </Link>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 hidden lg:table-cell">
+                    {mainPoint?.phone ? (
+                      <a href={`tel:${mainPoint.phone}`} className="text-sm text-muted-foreground hover:text-foreground">
+                        {mainPoint.phone}
+                      </a>
+                    ) : v.phoneNumber ? (
+                      <a href={`tel:${v.phoneNumber}`} className="text-sm text-muted-foreground hover:text-foreground">
+                        {v.phoneNumber}
+                      </a>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 hidden lg:table-cell">
+                    <a href={`mailto:${v.email}`} className="text-sm text-muted-foreground hover:text-foreground underline-offset-2 hover:underline">
+                      {v.email}
+                    </a>
+                  </td>
+                  <td className="px-4 py-3 hidden xl:table-cell">
+                    {mainPoint ? (
+                      <span className="text-sm text-muted-foreground">
+                        {mainPoint.address} — {mainPoint.district}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge variant={v.hasActiveDispo ? "default" : "secondary"} className={v.hasActiveDispo ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground"}>
+                      {v.hasActiveDispo ? "Actif" : "Inactif"}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3 hidden md:table-cell">
+                    {latestDispo ? (
+                      <>
+                        <Badge variant="outline" className={availabilityBadgeClass[latestDispo.status] ?? "bg-muted"}>
+                          {availabilityLabel[latestDispo.status] ?? latestDispo.status}
+                        </Badge>
+                        {latestDispo.quantity !== null && latestDispo.quantity > 0 && (
+                          <span className="ml-2 text-sm text-muted-foreground">
+                            {latestDispo.quantity} {latestDispo.format ?? "bouteilles"}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 hidden md:table-cell">
+                    <time className="text-sm text-muted-foreground">
+                      {formatDate(v.createdAt)}
+                    </time>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="size-4" />
+                          <span className="sr-only">Actions pour {v.name}</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/admin/vendeurs/${v.id}`} className="flex items-center gap-2">
+                            <User className="size-4" />
+                            Voir la fiche
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/admin/vendeurs/${v.id}/edit`} className="flex items-center gap-2">
+                            <Settings className="size-4" />
+                            Modifier
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive focus:text-destructive">
+                          Désactiver (→ Usager)
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}

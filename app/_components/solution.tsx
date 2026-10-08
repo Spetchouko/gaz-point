@@ -4,7 +4,6 @@ import { ArrowRight, Cylinder, ListChecks, MapPinned, Navigation } from "lucide-
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useAuthModal } from "@/lib/auth-context"
 
 const steps = [
   {
@@ -30,15 +29,9 @@ const steps = [
 ]
 
 export function Solution() {
-  const { isAuthenticated, openAuthModal } = useAuthModal()
-
   const handleAction = () => {
-    if (!isAuthenticated) {
-      openAuthModal("register")
-    } else {
-      const el = document.getElementById("trouver-du-gaz")
-      if (el) el.scrollIntoView({ behavior: "smooth" })
-    }
+    const el = document.getElementById("trouver-du-gaz")
+    if (el) el.scrollIntoView({ behavior: "smooth" })
   }
 
   return (

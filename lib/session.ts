@@ -21,3 +21,10 @@ export async function requirePro() {
   if (role !== "vendor" && role !== "admin") redirect("/dashboard")
   return { user, role: role as ProRole }
 }
+
+export async function requireAdmin() {
+  const user = await requireUser()
+  const role = (user as unknown as { role?: string | null }).role ?? "client"
+  if (role !== "admin") redirect("/dashboard")
+  return user
+}

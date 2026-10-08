@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Heart, LayoutDashboard, Package, Store, User } from "lucide-react"
+import { LayoutDashboard, Store, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type DashboardNavProps = {
@@ -12,13 +12,18 @@ type DashboardNavProps = {
 export function DashboardNav({ pro = false }: DashboardNavProps) {
   const pathname = usePathname()
 
-  const links = [
+  const clientLinks = [
     { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
-    { href: "/mes-commandes", label: "Mes commandes", icon: Package },
-    { href: "/mes-favoris", label: "Mes favoris", icon: Heart },
     { href: "/profil", label: "Mon profil", icon: User },
-    ...(pro ? [{ href: "/dashboard/pro", label: "Espace pro", icon: Store }] : []),
   ]
+
+  const vendorLinks = [
+    { href: "/dashboard/vendeur", label: "Tableau de bord", icon: LayoutDashboard },
+    { href: "/dashboard/vendeur/espace-pro", label: "Espace pro", icon: Store },
+    { href: "/profil", label: "Mon profil", icon: User },
+  ]
+
+  const links = pro ? vendorLinks : clientLinks
 
   const isActive = (href: string) =>
     href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href)

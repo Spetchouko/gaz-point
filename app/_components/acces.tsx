@@ -18,7 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { useAuthModal } from "@/lib/auth-context"
+import Link from "next/link"
 
 const userBenefits = [
   "Recherche illimitée de bouteilles de gaz",
@@ -37,15 +37,13 @@ const vendorBenefits = [
 ]
 
 export function Acces() {
-  const { openAuthModal } = useAuthModal()
-
   return (
     <section className="w-full py-16 md:py-24 bg-gradient-section">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
           <Badge variant="secondary" className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]">
             <Sparkles className="size-3.5" />
-            Nos profils d&apos;abonnement
+            Nos profils d'abonnement
           </Badge>
 
           <h2 className="mt-6 text-balance text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl md:text-5xl">
@@ -103,14 +101,15 @@ export function Acces() {
             </CardContent>
 
             <CardFooter className="border-t">
-              <Button
-                size="lg"
-                className="h-11 w-full gap-2 text-sm font-semibold cursor-pointer"
-                onClick={() => openAuthModal("register")}
-              >
-                Créer un compte Usager
-                <ArrowRight className="size-4" />
-              </Button>
+              <Link href="/inscription">
+                <Button
+                  size="lg"
+                  className="h-11 w-full gap-2 text-sm font-semibold cursor-pointer"
+                >
+                  Créer un compte Usager
+                  <ArrowRight className="size-4" />
+                </Button>
+              </Link>
             </CardFooter>
           </Card>
 
@@ -128,7 +127,7 @@ export function Acces() {
                   <Store className="size-5" />
                 </span>
                 <Badge className="font-semibold bg-primary text-primary-foreground">
-                  Dépôt &amp; Revendeur
+                  Dépôt & Revendeur
                 </Badge>
               </div>
 
@@ -162,14 +161,15 @@ export function Acces() {
               ))}
             </ul>
 
-            <Button
-              size="lg"
-              className="mt-6 h-11 w-full gap-2 text-sm font-semibold bg-primary text-primary-foreground shadow-md hover:bg-primary/90 cursor-pointer"
-              onClick={() => openAuthModal("register")}
-            >
-              Créer un compte Vendeur
-              <ArrowRight className="size-4" />
-            </Button>
+            <Link href="/inscription">
+              <Button
+                size="lg"
+                className="mt-6 h-11 w-full gap-2 text-sm font-semibold bg-primary text-primary-foreground shadow-md hover:bg-primary/90 cursor-pointer"
+              >
+                Créer un compte Vendeur
+                <ArrowRight className="size-4" />
+              </Button>
+            </Link>
             </Card>
           </div>
         </div>

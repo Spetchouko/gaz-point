@@ -12,6 +12,12 @@ import { Mail, Lock, Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from "luc
 import { useState } from "react"
 import Image from "next/image"
 
+function validatePassword(password: string): string | null {
+  if (!password) return "Le mot de passe est requis."
+  if (password.length < 8) return "Le mot de passe doit contenir au moins 8 caractères."
+  return null
+}
+
 function ResetPasswordPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -29,28 +35,38 @@ function ResetPasswordPageContent() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
+  const [fieldErrors, setFieldErrors] = useState<{ password?: string; confirmPassword?: string }>({})
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+
+  const validateForm = () => {
+    const passwordError = validatePassword(password)
+    let confirmError: string | null = null
+    if (password !== confirmPassword) {
+      confirmError = "Les mots de passe ne correspondent pas."
+    }
+    const errors: { password?: string; confirmPassword?: string } = {}
+    if (passwordError) errors.password = passwordError
+    if (confirmError) errors.confirmPassword = confirmError
+    setFieldErrors(errors)
+    return Object.keys(errors).length === 0
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError("")
+    setSubmitted(true)
 
     if (!token) {
       setError("Lien de réinitialisation invalide ou expiré.")
       return
     }
 
-    if (password !== confirmPassword) {
-      setError("Les mots de passe ne correspondent pas.")
+    if (!validateForm()) {
       return
     }
 
-    if (password.length < 8) {
-      setError("Le mot de passe doit contenir au moins 8 caractères.")
-      return
-    }
-
+    setError("")
     setLoading(true)
 
     try {
@@ -72,9 +88,18 @@ function ResetPasswordPageContent() {
         router.push(redirectTo)
       }, 2000)
     } catch {
-      setError("Une erreur inattendue est survenue.")
+      setError("Une erreur inattendue est survenue. Veuillez réessayer.")
       setLoading(false)
     }
+  }
+
+  const handleInputChange = (field: "password" | "confirmPassword", value: string) => {
+    if (field === "password") setPassword(value)
+    if (field === "confirmPassword") setConfirmPassword(value)
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => ({ ...prev, [field]: undefined }))
+    }
+    if (error) setError("")
   }
 
   if (success) {
@@ -135,23 +160,33 @@ function ResetPasswordPageContent() {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
                   placeholder="8 caractères minimum"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => handleInputChange("password", e.target.value)}
+                  onBlur={() => setSubmitted(true)}
                   required
                   minLength={8}
                   className="pl-10 pr-10"
                   disabled={loading || !token}
+                  aria-invalid={submitted && !!fieldErrors.password}
+                  aria-describedby={submitted && fieldErrors.password ? "password-error" : undefined}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   disabled={loading || !token}
+                  aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                 >
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
+              {submitted && fieldErrors.password && (
+                <p id="password-error" className="text-sm text-destructive" role="alert">
+                  {fieldErrors.password}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -161,27 +196,38 @@ function ResetPasswordPageContent() {
                 <Input
                   id="confirmPassword"
                   type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
                   placeholder="Confirmez votre mot de passe"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                  onBlur={() => setSubmitted(true)}
                   required
                   minLength={8}
                   className="pl-10 pr-10"
                   disabled={loading || !token}
+                  aria-invalid={submitted && !!fieldErrors.confirmPassword}
+                  aria-describedby={submitted && fieldErrors.confirmPassword ? "confirm-error" : undefined}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   disabled={loading || !token}
+                  aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                 >
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
+              {submitted && fieldErrors.confirmPassword && (
+                <p id="confirm-error" className="text-sm text-destructive" role="alert">
+                  {fieldErrors.confirmPassword}
+                </p>
+              )}
             </div>
 
             {error && (
-              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive" role="alert">
+              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive flex items-center gap-2" role="alert">
+                <AlertCircle className="size-4 shrink-0" />
                 {error}
               </div>
             )}

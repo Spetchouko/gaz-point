@@ -4,8 +4,6 @@ import "./globals.css";
 import { Header } from "@/app/header";
 import { Footer } from "@/app/_components/footer";
 import { RecherchePermanente } from "@/app/_components/recherche-permanente";
-import { AuthProvider } from "@/lib/auth-context";
-import { AuthGateModal } from "@/app/_components/auth-gate-modal";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -46,13 +44,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <meta name="apple-mobile-web-app-title" content="GazPoint" />
       </head>
       <body className="min-h-full flex flex-col">
-        <AuthProvider>
-          <AuthGateModal />
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <RecherchePermanente />
-        </AuthProvider>
+        <Header />
+        <main className="flex-1">{children}</main>
+        <Footer />
+        <RecherchePermanente />
       </body>
     </html>
   );

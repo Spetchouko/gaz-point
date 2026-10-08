@@ -1,5 +1,7 @@
+import { bottleFormats } from "@/lib/gaz"
+
 export const brands = ["Tradex", "Total", "SCTM", "Bocom"] as const
-export const formats = ["6 kg", "12,5 kg", "15 kg"] as const
+export const formats = bottleFormats
 
 export type Availability = "disponible" | "à_confirmer" | "indisponible"
 

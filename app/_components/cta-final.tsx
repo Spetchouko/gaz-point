@@ -3,20 +3,9 @@
 import { ArrowDown, ArrowRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { useAuthModal } from "@/lib/auth-context"
+import Link from "next/link"
 
 export function CtaFinal() {
-  const { isAuthenticated, openAuthModal } = useAuthModal()
-
-  const handleAction = () => {
-    if (!isAuthenticated) {
-      openAuthModal("register")
-    } else {
-      const el = document.getElementById("trouver-du-gaz")
-      if (el) el.scrollIntoView({ behavior: "smooth" })
-    }
-  }
-
   return (
     <section className="w-full py-16 md:py-24">
       <div className="container mx-auto px-4">
@@ -34,29 +23,19 @@ export function CtaFinal() {
           />
 
           <h2 className="mt-6 text-balance text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-            Vérifie d&apos;abord où il y en a.
+            Vérifie d'abord où il y en a.
           </h2>
 
           <div className="mt-10 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center">
-            <Button
-              size="lg"
-              className="h-12 w-full gap-2 bg-primary-foreground px-6 text-base text-primary hover:bg-primary-foreground/90 sm:w-auto cursor-pointer"
-              onClick={handleAction}
-            >
-              Trouver mon gaz
-              <ArrowRight className="size-4" />
-            </Button>
-
-            {!isAuthenticated && (
+            <Link href="/#trouver-du-gaz">
               <Button
-                variant="ghost"
                 size="lg"
-                className="h-12 w-full gap-2 border border-primary-foreground/25 px-6 text-base text-primary-foreground hover:border-primary-foreground/50 hover:bg-primary-foreground/10 hover:text-primary-foreground sm:w-auto cursor-pointer"
-                onClick={() => openAuthModal("register")}
+                className="h-12 w-full gap-2 bg-primary-foreground px-6 text-base text-primary hover:bg-primary-foreground/90 sm:w-auto cursor-pointer"
               >
-                Créer mon compte
+                Trouver mon gaz
+                <ArrowRight className="size-4" />
               </Button>
-            )}
+            </Link>
           </div>
 
           <p className="mt-6 text-xs text-primary-foreground/60">

@@ -3,11 +3,9 @@
 import { useEffect, useState } from "react"
 import { Search } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useAuthModal } from "@/lib/auth-context"
 
 export function RecherchePermanente() {
   const [visible, setVisible] = useState(false)
-  const { isAuthenticated, openAuthModal } = useAuthModal()
 
   useEffect(() => {
     const hero = document.getElementById("accueil")
@@ -24,12 +22,8 @@ export function RecherchePermanente() {
   }, [])
 
   const handleClick = () => {
-    if (!isAuthenticated) {
-      openAuthModal("register")
-    } else {
-      const el = document.getElementById("trouver-du-gaz")
-      if (el) el.scrollIntoView({ behavior: "smooth" })
-    }
+    const el = document.getElementById("trouver-du-gaz")
+    if (el) el.scrollIntoView({ behavior: "smooth" })
   }
 
   return (

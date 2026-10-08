@@ -12,7 +12,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { brands, formats } from "@/app/_components/donnees-demo"
-import { useAuthModal } from "@/lib/auth-context"
 import { availabilityLabel } from "@/lib/gaz"
 import type { AvailabilityStatus } from "@/db/schema"
 
@@ -39,7 +38,6 @@ type SearchResult = {
 }
 
 export function TrouverMonGaz() {
-  const { isAuthenticated, openAuthModal } = useAuthModal()
   const [brand, setBrand] = useState("")
   const [format, setFormat] = useState("")
   const [zone, setZone] = useState("")
@@ -50,10 +48,6 @@ export function TrouverMonGaz() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!isAuthenticated) {
-      openAuthModal("register")
-      return
-    }
 
     setLoading(true)
     setError(null)

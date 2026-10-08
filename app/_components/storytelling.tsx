@@ -13,7 +13,6 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useAuthModal } from "@/lib/auth-context"
 
 const painPoints = [
   {
@@ -37,15 +36,9 @@ const painPoints = [
 ]
 
 export function Storytelling() {
-  const { isAuthenticated, openAuthModal } = useAuthModal()
-
   const handleAction = () => {
-    if (!isAuthenticated) {
-      openAuthModal("register")
-    } else {
-      const el = document.getElementById("trouver-du-gaz")
-      if (el) el.scrollIntoView({ behavior: "smooth" })
-    }
+    const el = document.getElementById("trouver-du-gaz")
+    if (el) el.scrollIntoView({ behavior: "smooth" })
   }
 
   return (
@@ -114,7 +107,7 @@ export function Storytelling() {
                 Argent dépensé en transport, matinée gâchée et repas retardé.
               </h4>
               <p className="text-sm text-muted-foreground">
-                Personne ne t&apos;avait prévenu des ruptures de stock avant ton déplacement.
+                Personne ne t'avait prévenu des ruptures de stock avant ton déplacement.
               </p>
             </div>
 

@@ -263,8 +263,8 @@ function FormulaireSignalement({
   )
   const [note, setNote] = useState("")
   const [quantity, setQuantity] = useState("")
-  const [price, setPrice] = useState("")
   const [format, setFormat] = useState("")
+  const [phone, setPhone] = useState("")
   const [step, setStep] = useState<"form" | "confirm">("form")
 
   const handleConfirm = async (formData: FormData) => {
@@ -275,8 +275,8 @@ function FormulaireSignalement({
       setStep("form")
       setNote("")
       setQuantity("")
-      setPrice("")
       setFormat("")
+      setPhone("")
     }
     setPending(false)
   }
@@ -327,8 +327,8 @@ function FormulaireSignalement({
             <input type="hidden" name="status" value={status} />
             <input type="hidden" name="note" value={note} />
             <input type="hidden" name="quantity" value={quantity} />
-            <input type="hidden" name="price" value={price} />
             <input type="hidden" name="format" value={format} />
+            <input type="hidden" name="phone" value={phone} />
             <Button type="submit" size="sm" disabled={pending} className="gap-2">
               <CheckCircle2 className="size-4" aria-hidden />
               {pending ? "Publication…" : "Confirmer le signalement"}
@@ -414,15 +414,14 @@ function FormulaireSignalement({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor={`price-${point.id}`}>Prix FCFA (facultatif)</Label>
+          <Label htmlFor={`phone-${point.id}`}>Téléphone (facultatif)</Label>
           <Input
-            id={`price-${point.id}`}
-            name="price"
-            type="number"
-            min="0"
-            value={price}
-            onChange={(event) => setPrice(event.target.value)}
-            placeholder="Ex : 3500"
+            id={`phone-${point.id}`}
+            name="phone"
+            type="tel"
+            value={phone}
+            onChange={(event) => setPhone(event.target.value)}
+            placeholder="Ex : +237 6 99 00 00 00"
           />
         </div>
 

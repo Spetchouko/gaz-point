@@ -118,8 +118,9 @@ export const disponibilite = pgTable(
     status: text("status").notNull(), // AvailabilityStatus
     note: text("note"),
     quantity: integer("quantity"), // nombre de bouteilles disponibles
-    price: integer("price"), // prix en FCFA
+    price: integer("price"), // prix en FCFA (legacy, non utilisé par le dashboard vendeur)
     format: text("format"), // format de bouteille ex: '6 kg', '12,5 kg', '15 kg'
+    phone: text("phone"), // téléphone du dépositaire pour cette disponibilité
     reportedBy: text("reported_by").references(() => user.id, { onDelete: "set null" }),
     reportedByName: text("reported_by_name").notNull(),
     source: text("source").notNull(), // AvailabilitySource
