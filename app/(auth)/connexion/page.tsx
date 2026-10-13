@@ -12,6 +12,7 @@ import Link from "next/link"
 import { Mail, Lock, Eye, EyeOff, Loader2, AlertCircle, ArrowLeft } from "lucide-react"
 import { useState } from "react"
 import Image from "next/image"
+import { Turnstile } from "@/components/ui/turnstile"
 
 function validateEmail(email: string): string | null {
   if (!email.trim()) return "L'email est requis."
@@ -48,6 +49,7 @@ function LoginPageContent() {
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState("")
 
   const validateForm = () => {
     const emailError = validateEmail(email)
@@ -71,9 +73,16 @@ function LoginPageContent() {
     setLoading(true)
 
     try {
+      if (!captchaToken) {
+        setError("Veuillez valider le CAPTCHA.")
+        setLoading(false)
+        return
+      }
+
       const { data: signInData, error: signInError } = await authClient.signIn.email({
         email: email.trim(),
         password,
+        captchaToken,
       })
 
       if (signInError) {
@@ -217,6 +226,16 @@ function LoginPageContent() {
                   {error}
                 </div>
               )}
+
+              {/* CAPTCHA Turnstile */}
+              <div className="pt-2">
+                <Turnstile
+                  action="connexion"
+                  onVerify={setCaptchaToken}
+                  onExpire={() => setCaptchaToken("")}
+                  onError={() => setCaptchaToken("")}
+                />
+              </div>
 
               <Button type="submit" className="w-full h-11" disabled={loading}>
                 {loading ? <Loader2 className="size-4 mr-2 animate-spin" /> : "Se connecter"}
