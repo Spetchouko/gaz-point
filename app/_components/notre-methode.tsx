@@ -8,55 +8,55 @@ const sources = [
     icon: Store,
     title: "Les points de vente",
     description:
-      "Ils signalent leur stock au fil de la journée, depuis leur espace professionnel. Les vendeurs vérifiés affichent un badge certifié.",
+      "Ils signalent leur stock au fil de la journee, depuis leur espace professionnel. Les vendeurs verifies affichent un badge certifie.",
   },
   {
     icon: Building2,
-    title: "L’administration",
+    title: "L'administration",
     description:
-      "Elle tient à jour les fiches officielles : adresse, formats vendus, horaires.",
+      "Elle tient a jour les fiches officielles : adresse, formats vendus, horaires.",
   },
   {
     icon: Clock,
-    title: "La date de mise à jour",
+    title: "La date de mise a jour",
     description:
-      "Chaque information est datée. Quand elle est ancienne, elle est marquée « à confirmer » au lieu d’être présentée comme fiable.",
+      "Chaque information est datee. Quand elle est ancienne, elle est marquee \"a confirmer\" au lieu d'etre presentee comme fiable.",
   },
   {
     icon: MessageCircleQuestion,
     title: "Les signalements des habitants",
     description:
-      "Tu peux signaler un point qui n’existe plus ou une information fausse. Ça nous aide à corriger la carte.",
+      "Tu peux signaler un point qui n'existe plus ou une information fausse. Ca nous aide a corriger la carte.",
   },
 ]
 
 export function NotreMethode() {
   return (
-    <section className="w-full py-16 md:py-24">
+    <section className="w-full py-16 md:py-24 bg-linear-to-b from-muted/30 via-muted/60 to-muted/30 border-y">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
           <Badge
             variant="secondary"
             className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]"
           >
-            Notre méthode
+            Notre methode
           </Badge>
 
           <h2 className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            D’où vient l’information que tu vois
+            D'ou vient l'information que tu vois
           </h2>
 
           <p className="mt-5 text-pretty text-base text-muted-foreground sm:text-lg">
-            Une disponibilité affichée sans origine ni date ne vaut rien. Voici les
+            Une disponibilite affichee sans origine ni date ne vaut rien. Voici les
             seules sources que nous utilisons.
           </p>
         </div>
 
-        <div className="mt-12 grid gap-8 lg:grid-cols-[1.35fr_1fr] lg:gap-12">
+        <div className="mx-auto mt-12 grid max-w-4xl gap-8 lg:grid-cols-[1.35fr_1fr] lg:gap-12">
           <ul className="space-y-5">
             {sources.map((source) => (
               <li key={source.title} className="flex gap-4">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/20">
                   <source.icon className="size-4" aria-hidden />
                 </span>
                 <div>
@@ -82,9 +82,9 @@ export function NotreMethode() {
             <CardContent className="px-0">
               <ul className="space-y-3">
                 {[
-                  "Il ne vend ni gaz, ni bouteille, ni matériel.",
-                  "Il n’achète pas le silence sur un point de vente.",
-                  "Il ne remplace pas l’appel au vendeur quand l’information est ancienne.",
+                  "Il ne vend ni gaz, ni bouteille, ni materiel.",
+                  "Il n'achète pas le silence sur un point de vente.",
+                  "Il ne remplace pas l'appel au vendeur quand l'information est ancienne.",
                 ].map((item) => (
                   <li key={item} className="flex gap-3">
                     <Ban
@@ -101,7 +101,7 @@ export function NotreMethode() {
               <Separator className="my-4" />
 
               <p className="text-pretty text-sm font-medium text-foreground">
-                Une information honnête vaut mieux qu&apos;une information
+                Une information honnete vaut mieux qu'une information
                 rassurante.
               </p>
             </CardContent>
