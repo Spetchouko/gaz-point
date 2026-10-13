@@ -1,18 +1,6 @@
 import Link from "next/link"
 import { ArrowRight, Check } from "lucide-react"
 
-const VOIR_AUSSI = [
-  { label: "Mentions légales", href: "/mentions-legales" },
-  {
-    label: "Politique de confidentialité",
-    href: "/politique-de-confidentialite",
-  },
-  {
-    label: "Conditions générales de vente",
-    href: "/conditions-generales-de-vente",
-  },
-]
-
 type LegalItem = {
   term: string
   value: string
@@ -88,14 +76,23 @@ export function PageLegale({ document }: { document: LegalDocument }) {
                   {section.title}
                 </h2>
 
-                {section.paragraphs?.map((paragraph) => (
+                {section.paragraphs && Array.isArray(section.paragraphs) ? (
+                section.paragraphs.map((paragraph) => (
                   <p
                     key={paragraph}
                     className="mt-4 text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base"
                   >
                     {paragraph}
                   </p>
-                ))}
+                ))
+              ) : section.paragraphs ? (
+                <p
+                  key="paragraph"
+                  className="mt-4 text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base"
+                >
+                  {section.paragraphs}
+                </p>
+              ) : null}
 
                 {section.items && (
                   <dl className="mt-6 overflow-hidden rounded-xl border bg-card">
@@ -158,24 +155,12 @@ export function PageLegale({ document }: { document: LegalDocument }) {
             </h2>
 
             <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-              {VOIR_AUSSI.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted"
-                  >
-                    {item.label}
-                    <ArrowRight className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-                  </Link>
-                </li>
-              ))}
-
               <li>
                 <Link
                   href="/a-propos"
                   className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted"
                 >
-                  À propos de GazPoint
+                  À propos de GazPoints
                   <ArrowRight className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
                 </Link>
               </li>

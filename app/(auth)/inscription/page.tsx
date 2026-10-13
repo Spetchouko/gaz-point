@@ -130,12 +130,18 @@ export default function InscriptionPage() {
         </div>
 
         {/* Bas de page */}
-        <div className="mt-8 text-center">
+        <div className="mt-8 flex flex-col items-center gap-2 text-center">
           <Link
             href="/connexion?redirect=/dashboard"
             className="text-sm text-primary hover:underline font-medium"
           >
             Vous avez déjà un compte ? Se connecter
+          </Link>
+          <Link
+            href="/"
+            className="text-sm text-muted-foreground hover:text-foreground hover:underline"
+          >
+            Retour à l&apos;accueil
           </Link>
         </div>
 

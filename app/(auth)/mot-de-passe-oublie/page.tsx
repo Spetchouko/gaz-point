@@ -8,7 +8,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import { Mail, Lock, Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Lock, Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
 import { useState } from "react"
 import Image from "next/image"
 
@@ -132,7 +132,7 @@ function ResetPasswordPageContent() {
           <div className="mx-auto mb-4 flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
             <Image
               src="/brand/logo.png"
-              alt="GazPoint"
+              alt="GazPoints"
               width={26}
               height={26}
               className="h-6.5 w-6.5 object-contain"

@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useTrouverGaz } from "@/lib/use-trouver-gaz"
 
 const painPoints = [
   {
@@ -36,10 +37,7 @@ const painPoints = [
 ]
 
 export function Storytelling() {
-  const handleAction = () => {
-    const el = document.getElementById("trouver-du-gaz")
-    if (el) el.scrollIntoView({ behavior: "smooth" })
-  }
+  const handleAction = useTrouverGaz()
 
   return (
     <section className="w-full border-y bg-linear-to-b from-muted/30 via-muted/60 to-muted/30 py-16 md:py-24">
@@ -107,14 +105,14 @@ export function Storytelling() {
                 Argent dépensé en transport, matinée gâchée et repas retardé.
               </h4>
               <p className="text-sm text-muted-foreground">
-                Personne ne t'avait prévenu des ruptures de stock avant ton déplacement.
+                Personne ne t&apos;avait prévenu des ruptures de stock avant ton déplacement.
               </p>
             </div>
 
             <div className="shrink-0 rounded-xl border bg-background/90 p-4 shadow-xs backdrop-blur-sm">
               <div className="flex items-center gap-2 text-sm font-bold text-primary">
                 <Sparkles className="size-4" />
-                Avec GazPoint
+                Avec GazPoints
               </div>
               <ul className="mt-2 space-y-1.5 text-xs text-muted-foreground">
                 <li className="flex items-center gap-1.5">

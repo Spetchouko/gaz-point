@@ -30,10 +30,12 @@ export async function reportDisponibilite(
   const status = String(formData.get("status") ?? "") as AvailabilityStatus
   const note = String(formData.get("note") ?? "").trim() || null
   const quantityRaw = String(formData.get("quantity") ?? "").trim()
+  const priceRaw = String(formData.get("price") ?? "").trim()
   const format = String(formData.get("format") ?? "").trim() || null
   const phone = String(formData.get("phone") ?? "").trim() || null
 
   const quantity = quantityRaw ? Number.parseInt(quantityRaw, 10) : null
+  const price = priceRaw ? Number.parseInt(priceRaw, 10) : null
 
   if (!pointId) {
     return { ok: false, message: "Point de vente introuvable." }
@@ -43,6 +45,9 @@ export async function reportDisponibilite(
   }
   if (quantity !== null && (!Number.isFinite(quantity) || quantity < 0)) {
     return { ok: false, message: "Quantité invalide." }
+  }
+  if (price !== null && (!Number.isFinite(price) || price < 0)) {
+    return { ok: false, message: "Prix invalide." }
   }
   if (phone && !/^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{1,9}$/.test(phone)) {
     return { ok: false, message: "Format de téléphone invalide." }
@@ -69,6 +74,7 @@ export async function reportDisponibilite(
     status,
     note,
     quantity,
+    price,
     format,
     phone,
     reportedBy: user.id,
@@ -304,7 +310,6 @@ export async function upsertDisponibilite(
         quantity,
         phone,
         note: directions,
-        updatedAt: new Date(),
       })
       .where(eq(disponibilite.id, disponibiliteId))
 
@@ -329,7 +334,6 @@ export async function upsertDisponibilite(
           quantity,
           phone,
           note: directions,
-          updatedAt: new Date(),
         })
         .where(eq(disponibilite.id, existing.id))
 

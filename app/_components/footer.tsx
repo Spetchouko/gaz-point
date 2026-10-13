@@ -14,18 +14,6 @@ const gazpoint = [
   { label: "Accueil", href: "/" },
 ]
 
-const legal = [
-  { label: "Mentions légales", href: "/mentions-legales" },
-  {
-    label: "Politique de confidentialité",
-    href: "/politique-de-confidentialite",
-  },
-  {
-    label: "Conditions générales de vente",
-    href: "/conditions-generales-de-vente",
-  },
-]
-
 function FooterNav({
   title,
   items,
@@ -57,7 +45,7 @@ function FooterNav({
 export function Footer() {
   return (
     <footer className="w-full bg-primary text-primary-foreground">
-      <div className="container mx-auto px-4 py-12 pb-20 md:py-14 md:pb-20">
+      <div className="container mx-auto px-4 lg:px-32 py-12 pb-20 md:py-14 md:pb-20">
         <div className="grid gap-8 md:grid-cols-[1.3fr_1fr_1fr_1fr] md:gap-8">
           <div>
             <Link
@@ -73,7 +61,7 @@ export function Footer() {
                   className="h-7 w-7 object-contain"
                 />
               </span>
-              GazPoint
+              GazPoints
             </Link>
 
             <p className="mt-4 max-w-xs text-pretty text-sm text-primary-foreground/70">
@@ -83,8 +71,8 @@ export function Footer() {
 
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:contents">
             <FooterNav title="Navigation" items={navigation} />
-            <FooterNav title="GazPoint" items={gazpoint} />
-            <FooterNav title="Informations légales" items={legal} />
+            <FooterNav title="GazPoints" items={gazpoint} />
+            {/* Section Informations légales supprimée - pages supprimées */}
           </div>
         </div>
 
@@ -92,7 +80,7 @@ export function Footer() {
           <Separator className="bg-primary-foreground/15" />
           <div className="flex flex-col gap-2 pt-6 text-xs text-primary-foreground/60 sm:flex-row sm:items-center sm:justify-between">
             <p>
-              © {new Date().getFullYear()} GazPoint. Tous droits réservés.
+              © {new Date().getFullYear()} GazPoints. Tous droits réservés.
             </p>
             <p>Fait à Douala, Cameroun.</p>
           </div>

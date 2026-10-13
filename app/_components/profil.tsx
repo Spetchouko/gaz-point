@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Eye, EyeOff, KeyRound, ShieldCheck, UserRound } from "lucide-react"
+import { Eye, EyeOff, ImageUp, KeyRound, ShieldCheck, Trash2, UserRound } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label"
 import { authClient } from "@/lib/auth-client"
 import { DashboardNav } from "@/app/_components/dashboard-nav"
 import { formatDate } from "@/lib/gaz"
+import { cn } from "@/lib/utils"
 
 type ProfilData = {
   name: string
@@ -43,6 +44,7 @@ export function Profil({
   pro?: boolean
 }) {
   const { refetch } = authClient.useSession()
+  const [avatar, setAvatar] = useState<string | null>(profile.image)
 
   return (
     <div className="min-h-screen bg-background py-12">
@@ -61,7 +63,7 @@ export function Profil({
             <CardContent className="flex flex-wrap items-center gap-4 pt-6">
               <Avatar className="size-16">
                 <AvatarImage
-                  src={profile.image ?? undefined}
+                  src={avatar ?? undefined}
                   alt={profile.name}
                 />
                 <AvatarFallback className="bg-primary/10 text-lg font-semibold text-primary">
@@ -85,6 +87,14 @@ export function Profil({
             </CardContent>
           </Card>
 
+          {pro && (
+            <FormulaireAvatar
+              profile={profile}
+              onChanged={setAvatar}
+              onUpdated={() => refetch()}
+            />
+          )}
+
           <FormulaireInformations
             profile={profile}
             onUpdated={() => refetch()}
@@ -94,6 +104,118 @@ export function Profil({
         </div>
       </div>
     </div>
+  )
+}
+
+function FormulaireAvatar({
+  profile,
+  onChanged,
+  onUpdated,
+}: {
+  profile: ProfilData
+  onChanged: (image: string | null) => void
+  onUpdated: () => void
+}) {
+  const [preview, setPreview] = useState<string | null>(profile.image)
+  const [feedback, setFeedback] = useState<Feedback>(null)
+  const [loading, setLoading] = useState(false)
+
+  const pickFile = (file: File | undefined) => {
+    setFeedback(null)
+    if (!file) return
+    if (!file.type.startsWith("image/")) {
+      setFeedback({ ok: false, message: "Le fichier choisi n'est pas une image." })
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setFeedback({ ok: false, message: "Image trop lourde (2 Mo maximum)." })
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => setPreview(String(reader.result ?? ""))
+    reader.readAsDataURL(file)
+  }
+
+  const save = async (image: string | null) => {
+    setFeedback(null)
+    setLoading(true)
+    const { error } = await authClient.updateUser({
+      image,
+    } as Parameters<typeof authClient.updateUser>[0])
+    setLoading(false)
+    if (error) {
+      setFeedback({ ok: false, message: error.message || "La mise à jour a échoué." })
+      return
+    }
+    onChanged(image)
+    onUpdated()
+    setFeedback({ ok: true, message: "Photo de profil mise à jour." })
+  }
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (preview === profile.image && preview === null) return
+    const imageToSave = preview && preview.startsWith("data:") ? preview : null
+    save(imageToSave)
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <ImageUp className="size-5 text-primary" aria-hidden />
+          Photo de profil
+        </CardTitle>
+        <CardDescription>
+          Une image carrée (PNG ou JPG, 2 Mo maximum). Elle est stockée directement dans ton
+          profil, aucun service externe n&apos;est utilisé.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="flex flex-wrap items-center gap-4">
+          <Avatar className="size-16">
+            <AvatarImage src={preview ?? undefined} alt="Aperçu" />
+            <AvatarFallback className="bg-primary/10 text-lg font-semibold text-primary">
+              {profile.name?.charAt(0).toUpperCase() ?? "U"}
+            </AvatarFallback>
+          </Avatar>
+          <div className="space-y-1.5">
+            <Label htmlFor="avatar">Choisir une photo</Label>
+            <Input
+              id="avatar"
+              type="file"
+              accept="image/*"
+              onChange={(event) => pickFile(event.target.files?.[0])}
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="submit" disabled={loading}>
+              {loading ? "Enregistrement…" : "Enregistrer la photo"}
+            </Button>
+            {profile.image && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => save(null)}
+                disabled={loading}
+                className="gap-2 text-destructive"
+              >
+                <Trash2 className="size-4" aria-hidden />
+                Supprimer
+              </Button>
+            )}
+          </div>
+          {feedback && (
+            <p
+              role={feedback.ok ? "status" : "alert"}
+              className={cn("w-full text-sm", feedback.ok ? "text-emerald-600" : "text-destructive")}
+            >
+              {feedback.message}
+            </p>
+          )}
+        </form>
+      </CardContent>
+    </Card>
   )
 }
 

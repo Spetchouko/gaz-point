@@ -35,7 +35,7 @@ export function ContactVendeurs() {
               </div>
 
               <h2 className="mt-6 text-balance text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                Tu vends du gaz et tu n&apos;apparais pas encore sur GazPoint ?
+                Tu vends du gaz et tu n&apos;apparais pas encore sur GazPoints ?
               </h2>
 
               <p className="mt-4 text-pretty text-base text-muted-foreground">

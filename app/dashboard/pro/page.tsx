@@ -6,7 +6,7 @@ import { EspacePro } from "@/app/_components/espace-pro"
 import { requirePro } from "@/lib/session"
 
 export const metadata: Metadata = {
-  title: { absolute: "Espace professionnel | GazPoint" },
+  title: { absolute: "Espace professionnel | GazPoints" },
 }
 
 type ReportRow = typeof disponibilite.$inferSelect

@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useActionState } from "react"
-import { CheckCircle2, Loader2, X, Store, UserPlus, MapPin, Phone } from "lucide-react"
+import { CheckCircle2, Store } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -12,7 +11,6 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { createVendor, updateVendor, toggleVendorStatus, type ActionResult } from "@/app/admin/actions"
 
 type VendorData = {
@@ -53,25 +51,22 @@ export function AdminVendeurForm({
   const [step, setStep] = useState<"form" | "confirm">("form")
   const [feedback, setFeedback] = useState<ActionResult | null>(null)
 
-  const createAction = async (_prev: ActionResult | null, formData: FormData) => {
+  const createAction = async (formData: FormData) => {
     const result = await createVendor(null, formData)
     setFeedback(result)
     if (result.ok) onClose()
-    return result
   }
 
-  const updateAction = async (_prev: ActionResult | null, formData: FormData) => {
+  const updateAction = async (formData: FormData) => {
     const result = await updateVendor(null, formData)
     setFeedback(result)
     if (result.ok) onClose()
-    return result
   }
 
-  const toggleAction = async (_prev: ActionResult | null, formData: FormData) => {
+  const toggleAction = async (formData: FormData) => {
     const result = await toggleVendorStatus(null, formData)
     setFeedback(result)
     if (result.ok) onClose()
-    return result
   }
 
   if (!open) return null

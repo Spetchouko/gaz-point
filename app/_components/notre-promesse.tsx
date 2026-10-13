@@ -47,7 +47,7 @@ export function NotrePromesse() {
           </h2>
 
           <p className="mt-5 text-pretty text-base text-muted-foreground sm:text-lg">
-            Elles sont la raison d’être du service. Si GazPoint cesse de les
+            Elles sont la raison d’être du service. Si GazPoints cessent de les
             respecter, il ne sert plus à rien.
           </p>
         </div>

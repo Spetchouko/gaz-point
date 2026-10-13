@@ -76,7 +76,7 @@ export function NotreMethode() {
                 Hors limites
               </Badge>
               <CardTitle className="mt-3 text-xl font-semibold tracking-tight text-foreground">
-                Ce que GazPoint ne fait pas
+                Ce que GazPoints ne font pas
               </CardTitle>
             </CardHeader>
             <CardContent className="px-0">

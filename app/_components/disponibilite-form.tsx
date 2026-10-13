@@ -1,14 +1,13 @@
 "use client"
 
-import { useActionState, useEffect, useState } from "react"
-import { CheckCircle2, Loader2, X } from "lucide-react"
+import { useState } from "react"
+import { CheckCircle2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -74,28 +73,12 @@ export function DisponibiliteForm({
   const [step, setStep] = useState<"form" | "confirm" | "deleteConfirm">("form")
   const [feedback, setFeedback] = useState<ActionResult | null>(null)
 
-  useEffect(() => {
-    if (open && editingDispo) {
-      setFormState({
-        pointId: editingDispo.pointId,
-        format: editingDispo.dispo.format ?? "",
-        status: (editingDispo.dispo.status as AvailabilityStatus) ?? "disponible",
-        phone: editingDispo.dispo.phone ?? "",
-        quantity: editingDispo.dispo.quantity ?? "",
-        directions: editingDispo.dispo.note ?? "",
-      })
-      setStep("form")
-      setFeedback(null)
-    }
-  }, [open, editingDispo])
-
   const handleSubmit = async (formData: FormData) => {
     const result = await upsertDisponibilite(null, formData)
     setFeedback(result)
     if (result.ok) {
       onClose()
     }
-    return result
   }
 
   const handleDelete = async (formData: FormData) => {
@@ -104,7 +87,6 @@ export function DisponibiliteForm({
     if (result.ok) {
       onClose()
     }
-    return result
   }
 
   if (!open) return null
@@ -151,7 +133,7 @@ export function DisponibiliteForm({
           </div>
         )}
         <dd className="text-xs">
-          La date et l'heure de publication seront enregistrées automatiquement.
+          La date et l&apos;heure de publication seront enregistrées automatiquement.
         </dd>
       </dl>
     </div>
@@ -202,7 +184,7 @@ export function DisponibiliteForm({
               <Label htmlFor="point-select">Point de vente</Label>
               <Select
                 value={formState.pointId}
-                onValueChange={(v) => setFormState((s) => ({ ...s, pointId: v }))}
+                onValueChange={(v) => setFormState((s) => ({ ...s, pointId: v ?? "" }))}
                 disabled={isEditing}
               >
                 <SelectTrigger id="point-select" className="w-full" disabled={isEditing}>
@@ -223,7 +205,7 @@ export function DisponibiliteForm({
                 <Label htmlFor="format-select">Format</Label>
                 <Select
                   value={formState.format}
-                  onValueChange={(v) => setFormState((s) => ({ ...s, format: v }))}
+                  onValueChange={(v) => setFormState((s) => ({ ...s, format: v ?? "" }))}
                 >
                   <SelectTrigger id="format-select" className="w-full">
                     <SelectValue placeholder="Choisis un format" />

@@ -45,6 +45,8 @@ export async function GET(request: NextRequest) {
           quantity: disponibilite.quantity,
           price: disponibilite.price,
           format: disponibilite.format,
+          brand: disponibilite.brand,
+          expiresAt: disponibilite.expiresAt,
           createdAt: disponibilite.createdAt,
           reportedByName: disponibilite.reportedByName,
           source: disponibilite.source,
@@ -54,8 +56,14 @@ export async function GET(request: NextRequest) {
         .orderBy(desc(disponibilite.createdAt))
         .limit(1)
 
+      const now = new Date()
+      const expired =
+        report?.expiresAt != null && new Date(report.expiresAt).getTime() < now.getTime()
+
       const status = report
-        ? effectiveStatus(report.status, report.createdAt)
+        ? expired
+          ? "indisponible"
+          : effectiveStatus(report.status, report.createdAt)
         : null
 
       const matchesBrand =
@@ -80,10 +88,13 @@ export async function GET(request: NextRequest) {
         quantity: report?.quantity ?? null,
         price: report?.price ?? null,
         format: report?.format ?? null,
+        brand: report?.brand ?? null,
+        expiresAt: report?.expiresAt ?? null,
         updatedAt: report?.createdAt ?? null,
         updatedBy: report?.reportedByName ?? null,
         source: report?.source ?? null,
         stale: report ? isStale(report.createdAt) : false,
+        expired,
       }
     })
   )

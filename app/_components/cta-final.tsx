@@ -23,7 +23,7 @@ export function CtaFinal() {
           />
 
           <h2 className="mt-6 text-balance text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-            Vérifie d'abord où il y en a.
+            Vérifie d&apos;abord où il y en a.
           </h2>
 
           <div className="mt-10 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center">

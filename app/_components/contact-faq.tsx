@@ -46,7 +46,7 @@ export function ContactFaq() {
               size="lg"
               className="h-12 w-full px-6 text-base sm:w-auto"
             >
-              Découvrir GazPoint
+              Découvrir GazPoints
             </Button>
           </div>
         </div>

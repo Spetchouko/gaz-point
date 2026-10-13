@@ -1,0 +1,26 @@
+import { db } from "@/db"
+import { publicite } from "@/db/schema"
+import { eq, desc, lte, gte, and, or, isNull } from "drizzle-orm"
+
+/**
+ * Récupère les publicités actives pour un slot donné.
+ * Affiche uniquement les publicités dont la période de diffusion inclut la date actuelle.
+ * - status doit être "active"
+ * - startAt doit être <= maintenant (ou null = toujours actif depuis le début)
+ * - endAt doit être >= maintenant (ou null = illimitée)
+ */
+export async function getPublicitesForSlot(slot: string) {
+  const now = new Date()
+  return db
+    .select()
+    .from(publicite)
+    .where(
+      and(
+        eq(publicite.slot, slot),
+        eq(publicite.status, "active"),
+        or(isNull(publicite.startAt), lte(publicite.startAt, now)),
+        or(isNull(publicite.endAt), gte(publicite.endAt, now))
+      )
+    )
+    .orderBy(desc(publicite.createdAt))
+}

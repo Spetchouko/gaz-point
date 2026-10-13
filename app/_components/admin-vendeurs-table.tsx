@@ -1,17 +1,26 @@
 "use client"
 
+import { useState, useTransition } from "react"
 import Link from "next/link"
-import { User, Store, Phone, Mail, MapPin, Package, Trash2, MoreHorizontal } from "lucide-react"
+import { User, Trash2, MoreHorizontal, Settings } from "lucide-react"
+import { toggleVendorStatus, deleteVendor } from "@/app/admin/actions"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { formatDate } from "@/lib/gaz"
-import { cn } from "@/lib/utils"
 
 type VendorRow = {
   id: string
@@ -53,6 +62,28 @@ const availabilityBadgeClass: Record<string, string> = {
 }
 
 export function AdminVendeursTable({ vendors }: { vendors: VendorRow[] }) {
+  const [, startTransition] = useTransition()
+  const [deleteTarget, setDeleteTarget] = useState<VendorRow | null>(null)
+
+  const handleToggle = (userId: string, currentRole: string) => {
+    const formData = new FormData()
+    formData.set("userId", userId)
+    formData.set("currentRole", currentRole)
+    startTransition(async () => {
+      await toggleVendorStatus(null, formData)
+    })
+  }
+
+  const handleDelete = () => {
+    if (!deleteTarget) return
+    const formData = new FormData()
+    formData.set("userId", deleteTarget.id)
+    startTransition(async () => {
+      await deleteVendor(null, formData)
+    })
+    setDeleteTarget(null)
+  }
+
   if (vendors.length === 0) {
     return (
       <div className="rounded-lg border bg-card p-8 text-center">
@@ -112,7 +143,7 @@ export function AdminVendeursTable({ vendors }: { vendors: VendorRow[] }) {
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
                     {mainPoint ? (
-                      <Link href={`/admin/points-de-vente/${mainPoint.id}`} className="font-medium text-foreground hover:text-primary underline-offset-2 hover:underline">
+                      <Link href="/admin/points-de-vente" className="font-medium text-foreground hover:text-primary underline-offset-2 hover:underline">
                         {mainPoint.name}
                       </Link>
                     ) : (
@@ -188,13 +219,24 @@ export function AdminVendeursTable({ vendors }: { vendors: VendorRow[] }) {
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/vendeurs/${v.id}/edit`} className="flex items-center gap-2">
+                          <Link href={`/admin/vendeurs/${v.id}`} className="flex items-center gap-2">
                             <Settings className="size-4" />
                             Modifier
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive focus:text-destructive">
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => handleToggle(v.id, v.role)}
+                        >
                           Désactiver (→ Usager)
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="flex items-center gap-2 text-destructive focus:text-destructive"
+                          onClick={() => setDeleteTarget(v)}
+                        >
+                          <Trash2 className="size-4" />
+                          Supprimer le vendeur
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -205,6 +247,29 @@ export function AdminVendeursTable({ vendors }: { vendors: VendorRow[] }) {
           </tbody>
         </table>
       </div>
+
+      <Dialog open={deleteTarget !== null} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Supprimer le vendeur</DialogTitle>
+            <DialogDescription>
+              Voulez-vous vraiment supprimer définitivement le compte de{" "}
+              <span className="font-medium text-foreground">{deleteTarget?.name}</span>{" "}
+              ({deleteTarget?.email}) ainsi que ses points de vente ? Cette action est
+              irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              <Trash2 className="size-4 mr-2" />
+              Supprimer définitivement
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

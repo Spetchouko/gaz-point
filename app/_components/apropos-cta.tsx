@@ -1,24 +1,9 @@
-"use client"
-
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { ArrowRight, Search } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { useAuthModal } from "@/lib/auth-context"
 
 export function AproposCta() {
-  const router = useRouter()
-  const { isAuthenticated, openAuthModal } = useAuthModal()
-
-  const handleAction = () => {
-    if (!isAuthenticated) {
-      openAuthModal("register")
-    } else {
-      router.push("/#trouver-du-gaz")
-    }
-  }
-
   return (
     <section className="w-full py-16 md:py-24">
       <div className="container mx-auto px-4">
@@ -45,9 +30,10 @@ export function AproposCta() {
 
           <div className="mt-10 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center">
             <Button
+              render={<Link href="/#trouver-du-gaz" />}
+              nativeButton={false}
               size="lg"
               className="h-12 w-full gap-2 bg-primary-foreground px-6 text-base text-primary hover:bg-primary-foreground/90 sm:w-auto cursor-pointer"
-              onClick={handleAction}
             >
               <Search className="size-4" />
               Trouver mon gaz

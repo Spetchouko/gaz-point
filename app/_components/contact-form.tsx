@@ -27,7 +27,7 @@ const sujets = [
   {
     objet: "Question générale",
     description:
-      "Comprendre le service, savoir si GazPoint couvre ton quartier, ou demander une précision.",
+      "Comprendre le service, savoir si GazPoints couvre ton quartier, ou demander une précision.",
   },
   {
     objet: "Signalement",
@@ -52,7 +52,7 @@ const sujets = [
   {
     objet: "Partenariat ou presse",
     description:
-      "Un article sur GazPoint, une interview, ou une collaboration institutionnelle.",
+      "Un article sur GazPoints, une interview, ou une collaboration institutionnelle.",
   },
 ]
 

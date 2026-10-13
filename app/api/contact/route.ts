@@ -73,10 +73,10 @@ export async function POST(request: Request) {
     })
 
     await transporter.sendMail({
-      from: `"GazPoint — Contact" <${GMAIL_USER}>`,
+      from: `"GazPoints — Contact" <${GMAIL_USER}>`,
       to: CONTACT_EMAIL,
       replyTo: { name: singleLine(nom), address: email },
-      subject: `[GazPoint] ${objetFinal} — ${singleLine(nom)}`,
+      subject: `[GazPoints] ${objetFinal} — ${singleLine(nom)}`,
       text: message,
       html: `
         <div style="font-family:sans-serif;font-size:14px;line-height:1.6">

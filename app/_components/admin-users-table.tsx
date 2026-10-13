@@ -1,13 +1,23 @@
 "use client"
 
+import { useState, useTransition } from "react"
 import Link from "next/link"
-import { User, Mail, Phone, MapPin, BadgeCheck, UserCog, MoreHorizontal } from "lucide-react"
+import { User, BadgeCheck, UserCog, MoreHorizontal, Trash2, Power } from "lucide-react"
+import { toggleVendorStatus, toggleUserStatus, deleteUser } from "@/app/admin/actions"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { formatDate } from "@/lib/gaz"
@@ -19,6 +29,8 @@ type UserRow = {
   email: string
   phoneNumber: string | null
   role: string
+  isActive: boolean
+  emailVerified: boolean
   createdAt: Date | string
   updatedAt: Date | string
 }
@@ -27,9 +39,47 @@ const roleConfig: Record<string, { label: string; color: string }> = {
   client: { label: "Usager", color: "bg-sky-100 text-sky-700" },
   vendor: { label: "Vendeur", color: "bg-emerald-100 text-emerald-700" },
   admin: { label: "Administrateur", color: "bg-purple-100 text-purple-700" },
+  collaborateur: { label: "Collaborateur", color: "bg-orange-100 text-orange-700" },
 }
 
-export function AdminUsersTable({ users }: { users: UserRow[] }) {
+export function AdminUsersTable({
+  users,
+  currentUserId,
+}: {
+  users: UserRow[]
+  currentUserId?: string
+}) {
+  const [, startTransition] = useTransition()
+  const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null)
+
+  const handleToggleRole = (userId: string, currentRole: string) => {
+    const formData = new FormData()
+    formData.set("userId", userId)
+    formData.set("currentRole", currentRole)
+    startTransition(async () => {
+      await toggleVendorStatus(null, formData)
+    })
+  }
+
+  const handleToggleActive = (userId: string, currentActive: boolean) => {
+    const formData = new FormData()
+    formData.set("userId", userId)
+    formData.set("currentActive", String(currentActive))
+    startTransition(async () => {
+      await toggleUserStatus(null, formData)
+    })
+  }
+
+  const handleDelete = () => {
+    if (!deleteTarget) return
+    const formData = new FormData()
+    formData.set("userId", deleteTarget.id)
+    startTransition(async () => {
+      await deleteUser(null, formData)
+    })
+    setDeleteTarget(null)
+  }
+
   if (users.length === 0) {
     return (
       <div className="rounded-lg border bg-card p-8 text-center">
@@ -53,11 +103,11 @@ export function AdminUsersTable({ users }: { users: UserRow[] }) {
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
                 Téléphone
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
-                Localisation
-              </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Statut
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">
+                État
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">
                 Inscrit le
@@ -70,15 +120,22 @@ export function AdminUsersTable({ users }: { users: UserRow[] }) {
           <tbody className="divide-y">
             {users.map((u) => {
               const role = roleConfig[u.role] ?? { label: u.role, color: "bg-muted text-foreground" }
+              const isSelf = u.id === currentUserId
+              const isProtected = u.role === "admin" || u.role === "collaborateur"
               return (
                 <tr key={u.id} className="hover:bg-muted/50 transition-colors">
                   <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/users/${u.id}`}
-                      className="font-medium text-foreground hover:text-primary transition-colors"
-                    >
-                      {u.name}
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/admin/users/${u.id}`}
+                        className="font-medium text-foreground hover:text-primary transition-colors"
+                      >
+                        {u.name}
+                      </Link>
+                      {u.emailVerified && (
+                        <BadgeCheck className="size-4 text-emerald-600 shrink-0" aria-label="Email vérifié" />
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
                     <a href={`mailto:${u.email}`} className="text-sm text-muted-foreground hover:text-foreground underline-offset-2 hover:underline">
@@ -94,12 +151,14 @@ export function AdminUsersTable({ users }: { users: UserRow[] }) {
                       <span className="text-sm text-muted-foreground">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 hidden lg:table-cell">
-                    <span className="text-sm text-muted-foreground">—</span>
-                  </td>
                   <td className="px-4 py-3">
                     <Badge variant="secondary" className={role.color}>
                       {role.label}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3 hidden md:table-cell">
+                    <Badge variant="outline" className={u.isActive ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-700 border-red-200"}>
+                      {u.isActive ? "Actif" : "Inactif"}
                     </Badge>
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
@@ -115,7 +174,7 @@ export function AdminUsersTable({ users }: { users: UserRow[] }) {
                           <span className="sr-only">Actions pour {u.name}</span>
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuContent align="end" className="w-52">
                         <DropdownMenuItem asChild>
                           <Link href={`/admin/users/${u.id}`} className="flex items-center gap-2">
                             <User className="size-4" />
@@ -123,20 +182,41 @@ export function AdminUsersTable({ users }: { users: UserRow[] }) {
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/users/${u.id}/edit`} className="flex items-center gap-2">
+                          <Link href={`/admin/users/${u.id}`} className="flex items-center gap-2">
                             <UserCog className="size-4" />
                             Modifier
                           </Link>
                         </DropdownMenuItem>
-                        {u.role !== "admin" && (
-                          <DropdownMenuItem
-                            className={cn(
-                              "text-destructive focus:text-destructive",
-                              u.role === "vendor" ? "" : "text-destructive"
-                            )}
-                          >
-                            {u.role === "vendor" ? "Désactiver (→ Usager)" : "Activer (→ Vendeur)"}
-                          </DropdownMenuItem>
+                        {u.role === "vendor" && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleToggleRole(u.id, u.role)}
+                              className="flex items-center gap-2"
+                            >
+                              <Power className="size-4" />
+                              Rétrograder (→ Usager)
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                        {!isSelf && !isProtected && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleToggleActive(u.id, u.isActive)}
+                              className="flex items-center gap-2"
+                            >
+                              <Power className="size-4" />
+                              {u.isActive ? "Désactiver le compte" : "Réactiver le compte"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className={cn("flex items-center gap-2 text-destructive focus:text-destructive")}
+                              onClick={() => setDeleteTarget(u)}
+                            >
+                              <Trash2 className="size-4" />
+                              Supprimer
+                            </DropdownMenuItem>
+                          </>
                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -147,6 +227,28 @@ export function AdminUsersTable({ users }: { users: UserRow[] }) {
           </tbody>
         </table>
       </div>
+
+      <Dialog open={deleteTarget !== null} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Supprimer le compte</DialogTitle>
+            <DialogDescription>
+              Voulez-vous vraiment supprimer définitivement le compte de{" "}
+              <span className="font-medium text-foreground">{deleteTarget?.name}</span>{" "}
+              ({deleteTarget?.email}) ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              <Trash2 className="size-4 mr-2" />
+              Supprimer définitivement
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

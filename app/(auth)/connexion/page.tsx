@@ -3,6 +3,7 @@
 import { Suspense, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
+import { safeRedirect } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -27,14 +28,18 @@ function validatePassword(password: string): string | null {
 function LoginPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get("redirect") ?? "/dashboard"
+  const explicitRedirect = searchParams.get("redirect")
+  const redirectTo = safeRedirect(explicitRedirect, "/dashboard")
   const { data: session } = authClient.useSession()
 
+  const isStaff = (role?: string | null) =>
+    role === "admin" || role === "collaborateur"
+
   useEffect(() => {
-    if (session?.user) {
-      router.push(redirectTo)
-    }
-  }, [session, router, redirectTo])
+    if (!session?.user) return
+    const role = (session.user as { role?: string }).role
+    router.push(!explicitRedirect && isStaff(role) ? "/admin" : redirectTo)
+  }, [session, router, redirectTo, explicitRedirect])
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -66,7 +71,7 @@ function LoginPageContent() {
     setLoading(true)
 
     try {
-      const { error: signInError } = await authClient.signIn.email({
+      const { data: signInData, error: signInError } = await authClient.signIn.email({
         email: email.trim(),
         password,
       })
@@ -84,7 +89,8 @@ function LoginPageContent() {
         return
       }
 
-      router.push(redirectTo)
+      const role = (signInData?.user as { role?: string } | undefined)?.role
+      router.push(!explicitRedirect && isStaff(role) ? "/admin" : redirectTo)
       router.refresh()
     } catch {
       setError("Une erreur inattendue est survenue. Veuillez réessayer.")
@@ -106,13 +112,14 @@ function LoginPageContent() {
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
           <Button
+            render={<Link href="/" />}
+            nativeButton={false}
             variant="ghost"
             size="sm"
             className="justify-start gap-1 text-muted-foreground hover:text-foreground"
-            onClick={() => router.back()}
           >
             <ArrowLeft className="size-4" />
-            Retour
+            Retour à l&apos;accueil
           </Button>
         </div>
 
@@ -121,7 +128,7 @@ function LoginPageContent() {
             <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
               <Image
                 src="/brand/logo.png"
-                alt="GazPoint"
+                alt="GazPoints"
                 width={28}
                 height={28}
                 className="h-7 w-7 object-contain"
@@ -129,7 +136,7 @@ function LoginPageContent() {
             </div>
             <CardTitle className="text-xl font-bold">Connexion</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Accédez à votre espace GazPoint
+              Accédez à votre espace GazPoints
             </p>
           </CardHeader>
 

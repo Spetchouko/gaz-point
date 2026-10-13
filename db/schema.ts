@@ -9,7 +9,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
-export type UserRole = "client" | "vendor" | "admin";
+export type UserRole = "client" | "vendor" | "admin" | "collaborateur";
 export type AvailabilityStatus = "disponible" | "a_confirmer" | "indisponible";
 export type AvailabilitySource = "vendeur" | "administration";
 
@@ -20,8 +20,10 @@ export const user = pgTable("user", {
   emailVerified: boolean("email_verified").default(false).notNull(),
   phoneNumber: text("phone_number"),
   phoneVerified: boolean("phone_verified").default(false),
-  role: text("role").default("client").notNull(), // 'client' | 'vendor' | 'admin'
+  phoneNumberVerified: boolean("phone_number_verified").default(false),
+  role: text("role").default("client").notNull(), // 'client' | 'vendor' | 'admin' | 'collaborateur'
   image: text("image"),
+  isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -99,6 +101,7 @@ export const pointDeVente = pgTable(
     brands: text("brands").array(),
     formats: text("formats").array(),
     vendorId: text("vendor_id").references(() => user.id, { onDelete: "set null" }),
+    isActive: boolean("is_active").default(true).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -120,13 +123,31 @@ export const disponibilite = pgTable(
     quantity: integer("quantity"), // nombre de bouteilles disponibles
     price: integer("price"), // prix en FCFA (legacy, non utilisé par le dashboard vendeur)
     format: text("format"), // format de bouteille ex: '6 kg', '12,5 kg', '15 kg'
+    brand: text("brand"), // marque de la bouteille
+    weightKg: text("weight_kg"), // poids en kg ex: '12.5'
+    expiresAt: timestamp("expires_at"), // expiration de la disponibilité (jamais affichée active après)
     phone: text("phone"), // téléphone du dépositaire pour cette disponibilité
     reportedBy: text("reported_by").references(() => user.id, { onDelete: "set null" }),
     reportedByName: text("reported_by_name").notNull(),
     source: text("source").notNull(), // AvailabilitySource
     createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
   },
   (table) => [index("disponibilite_point_id_idx").on(table.pointId)],
+);
+
+export const brand = pgTable(
+  "brand",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(), // libellé affiché (première saisie conservée)
+    nameKey: text("name_key").notNull(), // clé normalisée (minuscules + espaces) pour l'unicité
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("brand_name_key_idx").on(table.nameKey)]
 );
 
 export const favori = pgTable(
@@ -166,15 +187,123 @@ export const recharge = pgTable(
   (table) => [index("recharge_user_id_idx").on(table.userId)],
 );
 
+export const adminAction = pgTable(
+  "admin_action",
+  {
+    id: text("id").primaryKey(),
+    adminId: text("admin_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    targetType: text("target_type"), // 'user' | 'vendor' | 'disponibilite' | 'point'
+    targetId: text("target_id"),
+    action: text("action"), // 'create' | 'update' | 'delete' | 'toggle' | 'export'
+    details: text("details"),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("admin_action_admin_id_idx").on(table.adminId),
+    index("admin_action_created_at_idx").on(table.createdAt),
+  ]
+)
+
+export const collaborateurPermission = pgTable(
+  "collaborateur_permission",
+  {
+    id: text("id").primaryKey(),
+    collaboratorId: text("collaborator_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    module: text("module").notNull(), // 'utilisateurs' | 'vendeurs' | 'disponibilites' | 'marketing' | 'statistiques'
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("collaborateur_permission_collab_idx").on(table.collaboratorId),
+    uniqueIndex("collaborateur_permission_module_idx").on(
+      table.collaboratorId,
+      table.module
+    ),
+  ]
+)
+
+export const publicite = pgTable(
+  "publicite",
+  {
+    id: text("id").primaryKey(),
+    title: text("title").notNull(),
+    description: text("description"),
+    image: text("image"), // image stockée en data-URL (base64) dans la base
+    price: integer("price"), // prix en FCFA
+    priceLabel: text("price_label"), // libellé libre du prix
+    location: text("location"),
+    phone: text("phone"),
+    linkUrl: text("link_url"), // destination au clic
+    slot: text("slot").notNull().default("home_hero"), // 'home_hero' | 'apropos'
+    status: text("status").notNull().default("active"), // 'active' | 'inactive'
+    startAt: timestamp("start_at"),
+    endAt: timestamp("end_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [index("publicite_slot_status_idx").on(table.slot, table.status)]
+)
+
+export const trafficEvent = pgTable(
+  "traffic_event",
+  {
+    id: text("id").primaryKey(),
+    eventType: text("event_type").notNull(), // 'pageview' | 'signup' | 'signin'
+    path: text("path"),
+    referrer: text("referrer"),
+    utmSource: text("utm_source"),
+    utmMedium: text("utm_medium"),
+    utmCampaign: text("utm_campaign"),
+    userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+    consented: boolean("consented").default(false).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("traffic_event_created_at_idx").on(table.createdAt)]
+)
+
+export const avis = pgTable(
+  "avis",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    authorName: text("author_name").notNull(), // snapshot du nom au dépôt
+    authorRole: text("author_role").notNull(), // 'client' | 'vendor' (rôle réel)
+    authorImage: text("author_image"),
+    city: text("city"), // ville / quartier (facultatif)
+    quote: text("quote").notNull(),
+    status: text("status").notNull().default("pending"), // 'pending' | 'approved' | 'rejected' | 'hidden'
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("avis_status_created_idx").on(table.status, table.createdAt),
+    index("avis_user_id_idx").on(table.userId),
+  ]
+)
+
 export const relations = defineRelations(
-  { user, session, account, verification, pointDeVente, disponibilite, favori, recharge },
+  { user, session, account, verification, pointDeVente, disponibilite, favori, recharge, adminAction, collaborateurPermission, publicite, trafficEvent, brand, avis },
   (r) => ({
     user: {
       sessions: r.many.session(),
       accounts: r.many.account(),
       favoris: r.many.favori(),
       recharges: r.many.recharge(),
-      pointsDeVente: r.many.pointDeVente(),
+      adminActions: r.many.adminAction(),
+      avis: r.many.avis(),
     },
     session: {
       user: r.one.user({
@@ -227,5 +356,29 @@ export const relations = defineRelations(
         to: r.pointDeVente.id,
       }),
     },
-  }),
-);
+    adminAction: {
+      admin: r.one.user({
+        from: r.adminAction.adminId,
+        to: r.user.id,
+      }),
+    },
+    collaborateurPermission: {
+      collaborator: r.one.user({
+        from: r.collaborateurPermission.collaboratorId,
+        to: r.user.id,
+      }),
+    },
+    trafficEvent: {
+      user: r.one.user({
+        from: r.trafficEvent.userId,
+        to: r.user.id,
+      }),
+    },
+    avis: {
+      author: r.one.user({
+        from: r.avis.userId,
+        to: r.user.id,
+      }),
+    },
+  })
+)

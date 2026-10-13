@@ -163,17 +163,24 @@ export async function getSession(cookie) {
   return { status: res.status, body };
 }
 
-export async function getPage(pathname, cookie, { redirect = "manual" } = {}) {
-  const res = await fetch(`${BASE}${pathname}`, {
-    redirect,
-    headers: cookie ? { Cookie: cookie } : {},
-  });
-  const text = await res.text();
-  return {
-    status: res.status,
-    location: res.headers.get("location"),
-    text,
-  };
+export async function getPage(pathname, cookie, { redirect = "manual", retries = 3 } = {}) {
+  let last;
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(`${BASE}${pathname}`, {
+        redirect,
+        headers: cookie ? { Cookie: cookie } : {},
+      });
+      const text = await res.text();
+      last = { status: res.status, location: res.headers.get("location"), text };
+      // Neon serverless peut échouer transitoirement (fetch failed) → 500.
+      if (res.status < 500) return last;
+    } catch (err) {
+      last = { status: 0, location: null, text: "", error: String(err?.message || err) };
+    }
+    if (attempt < retries) await new Promise((r) => setTimeout(r, 500 * attempt));
+  }
+  return last;
 }
 
 export async function callAction(cookie, actionId, args, pathname = "/dashboard/pro") {

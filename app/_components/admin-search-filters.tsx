@@ -1,7 +1,6 @@
 "use client"
 
-import { Search, Filter, ChevronDown } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -10,7 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { cn } from "@/lib/utils"
 
 type AdminSearchFiltersProps = {
   searchValue: string
@@ -19,8 +17,8 @@ type AdminSearchFiltersProps = {
   statusOptions: { value: string; label: string }[]
   sortOptions: { value: string; label: string }[]
   onSearchChange?: (value: string) => void
-  onStatusChange?: (value: string) => void
-  onSortChange?: (value: string) => void
+  onStatusChange?: (value: string | null) => void
+  onSortChange?: (value: string | null) => void
   extraFilters?: React.ReactNode
 }
 
@@ -30,6 +28,10 @@ export function AdminSearchFilters({
   sortValue,
   statusOptions,
   sortOptions,
+  onSearchChange,
+  onStatusChange,
+  onSortChange,
+  extraFilters,
 }: AdminSearchFiltersProps) {
   return (
     <div className="flex flex-wrap items-center gap-4">
@@ -39,6 +41,7 @@ export function AdminSearchFilters({
           type="search"
           placeholder="Rechercher (nom, email, téléphone)..."
           value={searchValue}
+          onChange={(e) => onSearchChange?.(e.target.value)}
           className="pl-10 h-10"
           aria-label="Rechercher un utilisateur"
         />

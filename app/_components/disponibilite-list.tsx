@@ -1,9 +1,8 @@
 "use client"
 
-import { MapPin, PencilLine, Phone, RotateCcw, Trash2, Plus, Package } from "lucide-react"
+import { MapPin, PencilLine, Phone, RotateCcw, Trash2, Plus } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { availabilityLabel, availabilityBadgeClass } from "@/lib/gaz"
 import { formatDate } from "@/lib/gaz"
 import type { AvailabilityStatus } from "@/db/schema"

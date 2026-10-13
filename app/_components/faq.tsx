@@ -10,12 +10,13 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useTrouverGaz } from "@/lib/use-trouver-gaz"
 
 const questions = [
   {
-    question: "Quels sont les deux types de profils sur GazPoint ?",
+    question: "Quels sont les deux types de profils sur GazPoints ?",
     answer:
-      "GazPoint propose deux profils : 1) Le profil « Usager / Client » (100% gratuit à vie) pour rechercher et localiser du gaz autour de soi ; 2) Le profil « Vendeur / Responsable dépôt » (5 000 FCFA/mois) pour référencer son point de vente, publier ses stocks en temps réel et recevoir les appels des clients.",
+      "GazPoints propose deux profils : 1) Le profil « Usager / Client » (100% gratuit à vie) pour rechercher et localiser du gaz autour de soi ; 2) Le profil « Vendeur / Responsable dépôt » (5 000 FCFA/mois) pour référencer son point de vente, publier ses stocks en temps réel et recevoir les appels des clients.",
   },
   {
     question: "Comment fonctionne l'abonnement Vendeur à 5 000 FCFA ?",
@@ -28,7 +29,7 @@ const questions = [
       "Le numéro de téléphone mobile sert à sécuriser votre compte, vérifier votre identité et faciliter la mise en relation directe (par appel ou WhatsApp) entre usagers et vendeurs.",
   },
   {
-    question: "GazPoint est-il vraiment gratuit pour les usagers ?",
+    question: "GazPoints est-il vraiment gratuit pour les usagers ?",
     answer:
       "Oui. Pour tous les particuliers et ménages, l'accès est à 0 FCFA, sans abonnement, sans carte bancaire et sans frais cachés.",
   },
@@ -43,17 +44,14 @@ const questions = [
       "Cliquez sur « Créer mon compte », sélectionnez le profil « Vendeur / Dépôt de gaz », renseignez vos informations et votre numéro de téléphone pour activer votre espace professionnel.",
   },
   {
-    question: "GazPoint vend-il ou livre-t-il directement le gaz ?",
+    question: "GazPoints vend-il ou livre-t-il directement le gaz ?",
     answer:
-      "Non. GazPoint est une plateforme de mise en relation et de géolocalisation. Nous vous indiquons où trouver du gaz et vous mettons en contact avec les vendeurs de votre quartier.",
+      "Non. GazPoints est une plateforme de mise en relation et de géolocalisation. Nous vous indiquons où trouver du gaz et vous mettons en contact avec les vendeurs de votre quartier.",
   },
 ]
 
 export function Faq() {
-  const handleAction = () => {
-    const el = document.getElementById("trouver-du-gaz")
-    if (el) el.scrollIntoView({ behavior: "smooth" })
-  }
+  const handleAction = useTrouverGaz()
 
   return (
     <section
@@ -97,7 +95,7 @@ export function Faq() {
                 Prêt à commencer&nbsp;?
               </CardTitle>
               <CardDescription>
-                Créez votre compte en quelques secondes et vérifiez votre numéro de téléphone pour accéder à GazPoint.
+                Créez votre compte en quelques secondes et vérifiez votre numéro de téléphone pour accéder à GazPoints.
               </CardDescription>
             </CardHeader>
             <CardContent>

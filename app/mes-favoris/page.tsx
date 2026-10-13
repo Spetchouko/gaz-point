@@ -6,7 +6,7 @@ import { MesFavoris } from "@/app/_components/mes-favoris"
 import { requireUser } from "@/lib/session"
 
 export const metadata: Metadata = {
-  title: { absolute: "Points de vente favoris | GazPoint" },
+  title: { absolute: "Points de vente favoris | GazPoints" },
 }
 
 type ReportRow = typeof disponibilite.$inferSelect

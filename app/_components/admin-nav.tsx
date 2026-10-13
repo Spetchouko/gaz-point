@@ -1,38 +1,40 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import {
-  Activity,
-  LayoutDashboard,
-  Package,
-  Settings,
-  Shield,
-  Store,
-  Truck,
-  User,
-  UserCheck,
-  Users,
-} from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
+import { Cylinder, LogOut } from "lucide-react"
+import { authClient } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
+import {
+  getAdminNavItems,
+  type StaffNavRole,
+} from "@/app/_components/admin-nav-items"
 
-export function AdminNav() {
+export function AdminNav({
+  role,
+  permissions,
+}: {
+  role: StaffNavRole
+  permissions: string[]
+}) {
   const pathname = usePathname()
-
-  const navItems = [
-    { href: "/admin", label: "Tableau de bord", icon: LayoutDashboard },
-    { href: "/admin/users", label: "Utilisateurs", icon: Users },
-    { href: "/admin/vendeurs", label: "Vendeurs", icon: UserCheck },
-    { href: "/admin/collaborateurs", label: "Collaborateurs", icon: Shield },
-    { href: "/admin/disponibilites", label: "Disponibilités", icon: Package },
-    { href: "/admin/points-de-vente", label: "Points de vente", icon: Store },
-    { href: "/admin/statistiques", label: "Statistiques", icon: Activity },
-    { href: "/admin/profil", label: "Mon profil", icon: User },
-    { href: "/admin/parametres", label: "Paramètres", icon: Settings },
-  ]
+  const router = useRouter()
+  const { data: session } = authClient.useSession()
+  const user = session?.user as
+    | { name?: string | null; email?: string | null; role?: string | null }
+    | undefined
+  const roleLabel = role === "collaborateur" ? "Collaborateur" : "Administrateur"
+  const initial = user?.name?.charAt(0).toUpperCase() ?? "A"
+  const navItems = getAdminNavItems(role, permissions)
 
   const isActive = (href: string) =>
     href === "/admin" ? pathname === "/admin" : pathname.startsWith(href)
+
+  const handleSignOut = async () => {
+    await authClient.signOut()
+    router.push("/admin/login")
+    router.refresh()
+  }
 
   return (
     <nav
@@ -45,9 +47,9 @@ export function AdminNav() {
           className="flex items-center gap-2 font-bold text-lg"
         >
           <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Truck className="size-5" />
+            <Cylinder className="size-5" />
           </span>
-          <span>GasPoint Admin</span>
+          <span>GAZ POINT Admin</span>
         </Link>
       </div>
 
@@ -75,14 +77,26 @@ export function AdminNav() {
         })}
       </ul>
 
-      <div className="border-t p-4">
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+      <div className="border-t p-4 space-y-2">
+        <div className="flex items-center gap-3 rounded-lg px-3 py-2">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+            {initial}
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-foreground">
+              {user?.name ?? "Administrateur"}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">{roleLabel}</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={handleSignOut}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
-          <Package className="size-4" aria-hidden />
-          Espace vendeur
-        </Link>
+          <LogOut className="size-4" aria-hidden />
+          Déconnexion
+        </button>
       </div>
     </nav>
   )

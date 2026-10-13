@@ -4,7 +4,7 @@ import { join } from "node:path"
 
 export const runtime = "nodejs"
 
-export const alt = "GazPoint - Trouve ton gaz avant de te déplacer"
+export const alt = "GazPoints - Trouve ton gaz avant de te déplacer"
 
 export const size = { width: 1200, height: 1200 }
 
@@ -97,7 +97,7 @@ export default async function OpengraphImageMobile() {
             <img src={logo} alt="" width={64} height={64} />
           </div>
           <span style={{ fontSize: 44, fontWeight: 700, color: INK, letterSpacing: -1 }}>
-            GazPoint
+            GazPoints
           </span>
         </div>
 

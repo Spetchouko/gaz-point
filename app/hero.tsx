@@ -4,6 +4,7 @@ import Link from "next/link"
 import { ArrowRight, Check, Search } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { useTrouverGaz } from "@/lib/use-trouver-gaz"
 
 const benefits = [
   "Vérifie la dispo avant de partir",
@@ -12,10 +13,7 @@ const benefits = [
 ]
 
 export function Hero() {
-  const handleTrouverGaz = () => {
-    const el = document.getElementById("trouver-du-gaz")
-    if (el) el.scrollIntoView({ behavior: "smooth" })
-  }
+  const handleTrouverGaz = useTrouverGaz()
 
   return (
     <section id="accueil" className="w-full overflow-hidden py-16 md:py-24 bg-gradient-section">
@@ -33,7 +31,7 @@ export function Hero() {
           </h1>
 
           <p className="mt-6 max-w-xl text-pretty text-base text-muted-foreground sm:text-lg">
-            GazPoint te montre les points de vente de gaz près de chez toi, avec la
+            GazPoints te montre les points de vente de gaz près de chez toi, avec la
             disponibilité, la distance et le numéro du vendeur. Tu pars seulement
             quand c&apos;est sûr.
           </p>

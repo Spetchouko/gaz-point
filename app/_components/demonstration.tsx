@@ -1,326 +1,642 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react"
 import Image from "next/image"
 import {
   Check,
-  Clock,
+  ChevronDown,
   LocateFixed,
   MapPin,
-  Menu,
   Navigation,
   Pause,
   Phone,
   Play,
+  RotateCcw,
+  Search,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { StatusDot } from "@/app/_components/statuts"
-import { demoPoints, formatAge } from "@/app/_components/donnees-demo"
 import { cn } from "@/lib/utils"
+import {
+  availabilityLabel,
+  brands,
+  demoPoints,
+  formatAge,
+  formats,
+  type Availability,
+} from "@/app/_components/donnees-demo"
 
-const frames = [
-  { key: "search", label: "Tu cherches une bouteille" },
-  { key: "brand", label: "Tu sélectionnes la marque" },
-  { key: "format", label: "Tu sélectionnes le format" },
-  { key: "results", label: "Tu vois les disponibilités" },
-  { key: "point", label: "Tu ouvres un point de vente" },
-  { key: "map", label: "Tu consultes la localisation" },
-  { key: "actions", label: "Tu appelles ou ouvres l'itinéraire" },
+const STEP_MS = 2600
+const SCREEN_H = 500
+
+function subscribeReducedMotion(onChange: () => void) {
+  const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
+  mq.addEventListener("change", onChange)
+  return () => mq.removeEventListener("change", onChange)
+}
+
+function useReducedMotion() {
+  return useSyncExternalStore(
+    subscribeReducedMotion,
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    () => false
+  )
+}
+
+const steps = [
+  {
+    title: "Tu cherches une bouteille",
+    description: "Ouvre la recherche GazPoints depuis ta zone.",
+  },
+  {
+    title: "Tu sélectionnes la marque",
+    description: "Tradex, Total, SCTM ou Bocom : choisis ta bouteille.",
+  },
+  {
+    title: "Tu sélectionnes le format",
+    description: "6 kg, 12,5 kg ou 15 kg selon ton foyer.",
+  },
+  {
+    title: "Tu vois les disponibilités",
+    description: "Points à proximité, statut et dernière mise à jour.",
+  },
+  {
+    title: "Tu ouvres un point de vente",
+    description: "Adresse, téléphone et détails du dépôt.",
+  },
+  {
+    title: "Tu consultes la localisation",
+    description: "Repère le point directement sur le plan.",
+  },
+  {
+    title: "Tu appelles ou ouvres l’itinéraire",
+    description: "Appelle le vendeur ou lance l’itinéraire.",
+  },
 ]
 
-const visiblePoints = demoPoints.slice(0, 3)
-const selectedPoint = demoPoints[0]
+const badgeClass: Record<Availability, string> = {
+  disponible: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
+  à_confirmer: "bg-amber-500/10 text-amber-600 border-amber-500/30",
+  indisponible: "bg-red-500/10 text-red-600 border-red-500/30",
+}
+
+/* ------------------------------------------------------------------ */
+/* Blocs d’interface du téléphone (décoratifs : wrapper aria-hidden)   */
+/* ------------------------------------------------------------------ */
+
+function Screen({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex h-[500px] w-full shrink-0 flex-col overflow-hidden bg-[#f4f8ff] pt-12">
+      {children}
+    </div>
+  )
+}
+
+function AppHeader() {
+  return (
+    <div className="flex items-center justify-between border-b border-primary/10 bg-primary px-3 py-2">
+      <div className="flex items-center gap-1.5">
+        <span className="flex size-5 items-center justify-center rounded-md bg-white shadow-sm">
+          <Image
+            src="/brand/logo.png"
+            alt=""
+            width={40}
+            height={40}
+            className="size-3.5 object-contain"
+          />
+        </span>
+        <span className="text-[10px] font-bold tracking-tight text-primary-foreground">
+          GazPoints
+        </span>
+      </div>
+      <span className="flex items-center gap-1 text-[9px] font-medium text-primary-foreground/85">
+        <MapPin className="size-2.5" />
+        Douala
+      </span>
+    </div>
+  )
+}
+
+function SelectField({
+  label,
+  value,
+  active,
+}: {
+  label: string
+  value: string
+  active: boolean
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-lg border bg-background px-2 py-1.5 transition-shadow",
+        active
+          ? "border-primary/60 ring-2 ring-primary/40"
+          : "border-zinc-200"
+      )}
+    >
+      <p className="text-[7px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <div className="mt-0.5 flex items-center justify-between gap-1">
+        <span className="truncate text-[9px] font-semibold text-zinc-900">{value}</span>
+        {active ? (
+          <Check className="size-3 shrink-0 text-primary" />
+        ) : (
+          <ChevronDown className="size-3 shrink-0 text-muted-foreground" />
+        )}
+      </div>
+    </div>
+  )
+}
+
+function SuccessPill({ children }: { children: ReactNode }) {
+  return (
+    <p className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-1 text-[8px] font-semibold text-emerald-600">
+      <Check className="size-2.5 shrink-0" />
+      {children}
+    </p>
+  )
+}
+
+function SearchScreen({
+  marque,
+  format,
+  highlight,
+}: {
+  marque: string | null
+  format: string | null
+  highlight: "none" | "marque" | "format"
+}) {
+  return (
+    <Screen>
+      <AppHeader />
+      <div className="flex-1 space-y-2 overflow-hidden px-2.5 py-2.5">
+        <p className="text-[11px] font-bold text-zinc-900">Où trouver du gaz</p>
+        <div className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-background px-2 py-1.5">
+          <Search className="size-3 shrink-0 text-muted-foreground" />
+          <span className="truncate text-[9px] text-muted-foreground">
+            Quartier, rue ou point de repère
+          </span>
+        </div>
+        <div className="space-y-1.5 pt-1">
+          <p className="text-[8px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Quelle bouteille tu cherches ?
+          </p>
+          <SelectField
+            label="Marque"
+            value={marque ?? "Toutes les marques"}
+            active={highlight === "marque"}
+          />
+          <SelectField
+            label="Format"
+            value={format ?? "Tous les formats"}
+            active={highlight === "format"}
+          />
+        </div>
+        <div className="flex items-center gap-1.5 pt-1">
+          <div className="h-9 flex-1 rounded-lg border border-zinc-200 bg-background px-2 py-1.5 text-[9px] text-muted-foreground">
+            Akwa, Bonanjo…
+          </div>
+          <div className="flex h-9 items-center gap-1 rounded-lg border border-zinc-200 bg-background px-2 text-[8px] font-semibold text-primary">
+            <LocateFixed className="size-3" />
+            Position
+          </div>
+        </div>
+        <div className="flex items-center justify-center gap-1.5 rounded-lg bg-primary py-2.5 text-[10px] font-bold text-primary-foreground shadow-sm">
+          <Search className="size-3" />
+          Voir où il y en a
+        </div>
+        {(highlight === "marque" || highlight === "format") && (
+          <div className="space-y-1.5">
+            {highlight === "marque" && <SuccessPill>Marque : {brands[0]}</SuccessPill>}
+            {highlight === "format" && <SuccessPill>Format : {formats[1]}</SuccessPill>}
+          </div>
+        )}
+      </div>
+    </Screen>
+  )
+}
+
+function ListScreen() {
+  const points = [demoPoints[0], demoPoints[1], demoPoints[2]]
+  return (
+    <Screen>
+      <AppHeader />
+      <div className="flex-1 space-y-1.5 overflow-hidden px-2.5 py-2.5">
+        <div className="flex items-center justify-between">
+          <p className="text-[11px] font-bold text-zinc-900">3 points trouvés</p>
+          <span className="text-[8px] text-muted-foreground">À proximité de Douala</span>
+        </div>
+        {points.map((point) => (
+          <div
+            key={point.id}
+            className="rounded-xl border border-zinc-200 bg-background p-2 shadow-sm"
+          >
+            <div className="flex items-start justify-between gap-1.5">
+              <div className="min-w-0">
+                <p className="truncate text-[10px] font-bold text-zinc-900">{point.vendor}</p>
+                <p className="mt-0.5 flex items-center gap-1 text-[8px] text-muted-foreground">
+                  <MapPin className="size-2.5 shrink-0" />
+                  <span className="truncate">
+                    {point.district} — {point.address}
+                  </span>
+                </p>
+              </div>
+              <span
+                className={cn(
+                  "shrink-0 rounded-full border px-1.5 py-0.5 text-[7px] font-semibold",
+                  badgeClass[point.status]
+                )}
+              >
+                {availabilityLabel[point.status]}
+              </span>
+            </div>
+            <div className="mt-1.5 flex items-center gap-1.5 text-[8px] text-muted-foreground">
+              <span className="flex items-center gap-0.5">
+                <MapPin className="size-2" />
+                {point.distanceKm.toLocaleString("fr-FR")} km
+              </span>
+              <span aria-hidden>•</span>
+              <span>Mis à jour : {formatAge(point.updatedMinutesAgo)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Screen>
+  )
+}
+
+function DetailScreen() {
+  const point = demoPoints[0]
+  return (
+    <Screen>
+      <AppHeader />
+      <div className="flex-1 space-y-1.5 overflow-hidden px-2.5 py-2.5">
+        <p className="text-[11px] font-bold text-zinc-900">Point de vente</p>
+        <div className="rounded-xl border border-zinc-200 bg-background p-2.5 shadow-sm">
+          <div className="flex items-start justify-between gap-1.5">
+            <p className="truncate text-[11px] font-bold text-zinc-900">{point.vendor}</p>
+            <span
+              className={cn(
+                "shrink-0 rounded-full border px-1.5 py-0.5 text-[7px] font-semibold",
+                badgeClass[point.status]
+              )}
+            >
+              {availabilityLabel[point.status]}
+            </span>
+          </div>
+          <div className="mt-2 space-y-1.5 text-[8px] text-muted-foreground">
+            <p className="flex items-center gap-1">
+              <MapPin className="size-2.5 shrink-0" />
+              {point.district} — {point.address}
+            </p>
+            <p className="flex items-center gap-1">
+              <Phone className="size-2.5 shrink-0" />
+              {point.phone}
+            </p>
+            <p className="flex items-center gap-1">
+              <MapPin className="size-2.5 shrink-0" />
+              À {point.distanceKm.toLocaleString("fr-FR")} km de ta position
+            </p>
+            <p className="flex items-center gap-1 text-zinc-500">
+              Mis à jour : {formatAge(point.updatedMinutesAgo)} · {point.brands.join(", ")}
+            </p>
+          </div>
+        </div>
+      </div>
+    </Screen>
+  )
+}
+
+function MapScreen() {
+  const point = demoPoints[0]
+  return (
+    <Screen>
+      <AppHeader />
+      <div className="relative flex-1 overflow-hidden">
+        <div
+          className="absolute inset-0 bg-[#e6f0fb]"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, rgba(37,99,235,0.12) 1px, transparent 1px), linear-gradient(to bottom, rgba(37,99,235,0.12) 1px, transparent 1px), linear-gradient(135deg, rgba(37,99,235,0.05) 45%, transparent 45%)",
+            backgroundSize: "20px 20px, 20px 20px, 56px 56px",
+          }}
+        />
+        <div className="absolute left-1/2 top-[38%] -translate-x-1/2">
+          <span className="absolute left-1/2 top-1/2 size-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 motion-safe:animate-ping" />
+          <span className="relative flex size-6 -translate-y-full items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md">
+            <MapPin className="size-3.5" />
+          </span>
+        </div>
+        <div className="absolute inset-x-2 bottom-2 rounded-xl border border-zinc-200 bg-background p-2 shadow-md">
+          <div className="flex items-start justify-between gap-1">
+            <div className="min-w-0">
+              <p className="truncate text-[10px] font-bold text-zinc-900">{point.vendor}</p>
+              <p className="mt-0.5 truncate text-[8px] text-muted-foreground">{point.address}</p>
+            </div>
+            <span
+              className={cn(
+                "shrink-0 rounded-full border px-1.5 py-0.5 text-[7px] font-semibold",
+                badgeClass[point.status]
+              )}
+            >
+              {availabilityLabel[point.status]}
+            </span>
+          </div>
+          <div className="mt-1.5 flex items-center justify-center gap-1 rounded-lg bg-primary py-1.5 text-[9px] font-bold text-primary-foreground">
+            <Navigation className="size-2.5" />
+            Ouvrir l’itinéraire
+          </div>
+        </div>
+      </div>
+    </Screen>
+  )
+}
+
+function ActionsScreen() {
+  const point = demoPoints[0]
+  return (
+    <Screen>
+      <AppHeader />
+      <div className="flex-1 space-y-2 px-2.5 py-2.5">
+        <p className="text-[11px] font-bold text-zinc-900">Prêt pour le dernier kilomètre</p>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-background p-2">
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
+              <Check className="size-3.5" />
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-[9px] font-bold text-zinc-900">{point.vendor}</p>
+              <p className="truncate text-[8px] text-muted-foreground">
+                {point.district} — {point.address}
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            <div className="flex items-center justify-center gap-1 rounded-lg bg-primary py-2 text-[9px] font-bold text-primary-foreground">
+              <Phone className="size-2.5" />
+              Appeler
+            </div>
+            <div className="flex items-center justify-center gap-1 rounded-lg border border-primary/30 bg-primary/5 py-2 text-[9px] font-bold text-primary">
+              <Navigation className="size-2.5" />
+              Itinéraire
+            </div>
+          </div>
+        </div>
+      </div>
+    </Screen>
+  )
+}
+
+function renderScreen(index: number) {
+  switch (index) {
+    case 0:
+      return <SearchScreen marque={null} format={null} highlight="none" key={index} />
+    case 1:
+      return <SearchScreen marque={brands[0]} format={null} highlight="marque" key={index} />
+    case 2:
+      return <SearchScreen marque={brands[0]} format={formats[1]} highlight="format" key={index} />
+    case 3:
+      return <ListScreen key={index} />
+    case 4:
+      return <DetailScreen key={index} />
+    case 5:
+      return <MapScreen key={index} />
+    default:
+      return <ActionsScreen key={index} />
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Téléphone                                                            */
+/* ------------------------------------------------------------------ */
+
+function PhoneMockup({
+  step,
+  playing,
+  reducedMotion,
+}: {
+  step: number
+  playing: boolean
+  reducedMotion: boolean
+}) {
+  return (
+    <div
+      className="relative isolate w-fit animate-demo-float motion-reduce:animate-none"
+      aria-hidden="true"
+    >
+      {/* halos décoratifs */}
+      <div
+        className="absolute -inset-14 -z-10"
+        style={{
+          background: "radial-gradient(closest-side, oklch(0.4467 0.1272 265.6182 / 0.16), transparent)",
+        }}
+      />
+      <div
+        className="absolute -inset-8 -z-10 opacity-70"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle, oklch(0.3776 0.1447 264.5076 / 0.18) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+          maskImage: "radial-gradient(62% 62% at 50% 50%, black, transparent)",
+        }}
+      />
+
+      {/* cadran */}
+      <div className="relative rounded-[2.6rem] border-[7px] border-zinc-900 bg-zinc-900 shadow-2xl shadow-primary/15">
+        <div className="relative h-[500px] w-[248px] overflow-hidden rounded-[2.15rem] bg-[#f4f8ff] sm:w-[270px]">
+          {/* Dynamic Island */}
+          <div className="absolute left-1/2 top-2.5 z-30 h-4 w-16 -translate-x-1/2 rounded-full bg-zinc-900" />
+
+          {/* barre de statut */}
+          <div className="absolute inset-x-0 top-0 z-20 flex h-8 items-center justify-between px-4">
+            <span className="text-[9px] font-bold text-zinc-900">9:41</span>
+            <span className="flex items-center gap-1">
+              <span className="flex items-end gap-[1.5px]">
+                <span className="h-1 w-[2px] rounded-sm bg-zinc-700" />
+                <span className="h-1.5 w-[2px] rounded-sm bg-zinc-700" />
+                <span className="h-2 w-[2px] rounded-sm bg-zinc-700" />
+                <span className="h-2.5 w-[2px] rounded-sm bg-zinc-900" />
+              </span>
+              <span className="ml-1 flex h-[9px] w-4 items-center rounded-[2px] border border-zinc-500 p-[1px]">
+                <span className="h-full w-2/3 rounded-[1px] bg-zinc-900" />
+              </span>
+            </span>
+          </div>
+
+          {/* pastille Aperçu */}
+          <span className="absolute left-1/2 top-[34px] z-30 -translate-x-1/2 whitespace-nowrap rounded-full bg-zinc-900/85 px-1.5 py-[3px] text-[7px] font-semibold tracking-wide text-white">
+            Aperçu · Démo
+          </span>
+
+          {/* écrans empilés */}
+          <div className="absolute inset-0">
+            <div
+              className="flex flex-col will-change-transform motion-reduce:transition-none"
+              style={{
+                transform: `translateY(-${step * SCREEN_H}px)`,
+                transition: "transform 750ms cubic-bezier(0.4, 0, 0.2, 1)",
+              }}
+            >
+              {Array.from({ length: 7 }, (_, index) => renderScreen(index))}
+            </div>
+          </div>
+
+          {/* curseur tactile discret qui fait défiler */}
+          {!reducedMotion && (
+            <span
+              aria-hidden="true"
+              className={cn(
+                "pointer-events-none absolute bottom-16 right-5 z-30 flex size-7 items-center justify-center",
+                playing ? "animate-demo-swipe" : "opacity-70"
+              )}
+            >
+              <span className="absolute size-7 rounded-full bg-primary/15" />
+              <span className="size-3.5 rounded-full bg-primary/70 shadow-md ring-2 ring-white/70" />
+            </span>
+          )}
+
+          {/* indicateur home */}
+          <div className="absolute bottom-2 left-1/2 z-30 h-1 w-16 -translate-x-1/2 rounded-full bg-zinc-900/80" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* Section                                                              */
+/* ------------------------------------------------------------------ */
 
 export function Demonstration() {
-  const [index, setIndex] = useState(0)
+  const [step, setStep] = useState(0)
   const [playing, setPlaying] = useState(true)
-  const [reducedMotion, setReducedMotion] = useState(false)
-
-  const autoPlay = playing && !reducedMotion
+  const reducedMotion = useReducedMotion()
 
   useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)")
-    const update = () => setReducedMotion(query.matches)
-    update()
-    query.addEventListener("change", update)
-    return () => query.removeEventListener("change", update)
-  }, [])
+    if (!playing || reducedMotion) return
+    const id = setInterval(() => {
+      setStep((current) => (current + 1) % steps.length)
+    }, STEP_MS)
+    return () => clearInterval(id)
+  }, [playing, reducedMotion])
 
-  useEffect(() => {
-    if (!autoPlay) return
-    const id = window.setTimeout(
-      () => setIndex((current) => (current + 1) % frames.length),
-      2600
-    )
-    return () => window.clearTimeout(id)
-  }, [index, autoPlay])
-
-  const showBrand = index >= 1
-  const showFormat = index >= 2
-  const showResults = index >= 3
-  const showPoint = index >= 4
-  const showMap = index >= 5
-  const showActions = index >= 6
+  const replay = () => {
+    setStep(0)
+    setPlaying(true)
+  }
 
   return (
-    <section className="w-full py-16 md:py-24">
+    <section className="relative w-full overflow-hidden bg-background py-16 md:py-24">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-2xl text-center">
-          <Badge variant="secondary" className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]">
+          <Badge
+            variant="secondary"
+            className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]"
+          >
             Démonstration
           </Badge>
 
           <h2 className="mt-6 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            Regarde comment ça marche.
+            Découvrez <span className="text-primary">GazPoints</span>
           </h2>
-          <p className="mt-4 text-balance text-base text-muted-foreground">
-            Une interface simple, pensée pour mobile, qui va droit au but.
+
+          <p className="mt-5 text-pretty text-base text-muted-foreground sm:text-lg">
+            Une interface simple pour trouver du gaz proche de chez vous.
           </p>
         </div>
 
-        {/* Centered layout for demo */}
-        <div className="mt-12 flex flex-col items-center justify-center gap-10">
-          {/* Smartphone Mockup */}
-          <div className="relative mx-auto w-full max-w-[340px]">
-            {/* Phone Outer Chassis */}
-            <div className="relative rounded-[3rem] border-[10px] border-neutral-900 bg-neutral-950 p-2 shadow-2xl ring-1 ring-black/20">
-              {/* Speaker / Dynamic Island Top Bar */}
-              <div className="absolute left-1/2 top-4 z-20 h-4 w-24 -translate-x-1/2 rounded-full bg-neutral-900 flex items-center justify-center">
-                <span className="size-2 rounded-full bg-neutral-800" />
-              </div>
-
-              {/* Phone Screen Screen */}
-              <div className="relative flex h-[580px] flex-col overflow-hidden rounded-[2.2rem] bg-background text-foreground">
-                {/* Status Bar */}
-                <div className="flex items-center justify-between px-6 pt-3 text-[11px] font-semibold text-muted-foreground">
-                  <span>09:41</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="size-2 rounded-full bg-emerald-500" />
-                    <span className="text-[10px]">4G</span>
-                    <span>100%</span>
-                  </div>
-                </div>
-
-                {/* GazPoint Header inside Phone */}
-                <div className="flex items-center justify-between border-b bg-background/95 px-4 py-2.5 backdrop-blur">
-                  <div className="flex items-center gap-2">
-                    <span className="flex size-7 items-center justify-center rounded-lg bg-[#F5F5F2] ring-1 ring-black/5">
-                      <Image
-                        src="/brand/logo.png"
-                        alt="GazPoint"
-                        width={20}
-                        height={20}
-                        className="h-5 w-5 object-contain"
-                      />
-                    </span>
-                    <span className="font-heading text-sm font-bold tracking-tight text-foreground">
-                      GazPoint
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Badge variant="outline" className="h-5 px-1.5 text-[10px] text-primary border-primary/30 bg-primary/5">
-                      Direct
-                    </Badge>
-                    <span className="flex size-7 items-center justify-center rounded-md border text-muted-foreground">
-                      <Menu className="size-3.5" />
-                    </span>
-                  </div>
-                </div>
-
-                {/* Main Content inside Phone */}
-                <div className="flex flex-1 flex-col gap-2.5 overflow-hidden p-3.5">
-                  <div className="rounded-lg bg-muted/60 p-2.5 text-center">
-                    <p className="text-[11px] font-semibold text-foreground">
-                      Trouver du gaz à proximité
-                    </p>
-                    <p className="text-[9px] text-muted-foreground">
-                      Disponibilités en temps réel
-                    </p>
-                  </div>
-
-                  {/* Simulated Form inputs */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="rounded-lg border bg-background px-2 py-1.5">
-                      <p className="text-[9px] text-muted-foreground">Marque</p>
-                      <p className="text-[11px] font-medium text-foreground">
-                        {showBrand ? "Total" : "Toutes"}
-                      </p>
-                    </div>
-                    <div className="rounded-lg border bg-background px-2 py-1.5">
-                      <p className="text-[9px] text-muted-foreground">Format</p>
-                      <p className="text-[11px] font-medium text-foreground">
-                        {showFormat ? "12,5 kg" : "Tous"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 rounded-lg border bg-background px-2.5 py-1.5">
-                    <LocateFixed className="size-3 text-primary shrink-0" />
-                    <span className="text-[10px] text-foreground truncate">
-                      Akwa, Douala (2,5 km)
-                    </span>
-                  </div>
-
-                  {/* Results Screen inside Phone */}
-                  {!showPoint ? (
-                    <div className="flex flex-1 flex-col gap-2 overflow-hidden pt-1">
-                      <div className="flex items-center justify-between text-[10px] font-medium text-muted-foreground">
-                        <span>Points disponibles</span>
-                        {showResults && <span className="text-primary font-semibold">3 trouvés</span>}
-                      </div>
-
-                      {showResults ? (
-                        <div className="flex flex-1 flex-col gap-1.5 overflow-hidden">
-                          {visiblePoints.map((point, i) => (
-                            <div
-                              key={point.id}
-                              className={cn(
-                                "rounded-lg border p-2 text-left transition-all",
-                                i === 0 ? "border-primary bg-primary/5 shadow-xs" : "bg-card"
-                              )}
-                            >
-                              <div className="flex items-center justify-between gap-1">
-                                <span className="truncate text-[10px] font-bold text-foreground">
-                                  {point.vendor}
-                                </span>
-                                <span className="shrink-0 text-[9px] font-medium text-muted-foreground">
-                                  {point.distanceKm.toFixed(1)} km
-                                </span>
-                              </div>
-                              <div className="mt-1 flex items-center justify-between text-[9px] text-muted-foreground">
-                                <span>{point.district}</span>
-                                <span className="inline-flex items-center gap-1">
-                                  <StatusDot status={point.status} />
-                                  {point.status === "disponible" ? "En stock" : "À vérifier"}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed text-center text-[10px] text-muted-foreground p-4">
-                          Recherche en cours...
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    /* Detailed Point View */
-                    <div className="flex flex-1 flex-col justify-between rounded-xl border bg-card p-3 shadow-xs">
-                      <div>
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="text-[11px] font-bold text-foreground">
-                              {selectedPoint.vendor}
-                            </p>
-                            <p className="text-[9px] text-muted-foreground">
-                              {selectedPoint.district} — {selectedPoint.address}
-                            </p>
-                          </div>
-                          <Badge variant="outline" className="text-[9px] text-emerald-600 bg-emerald-50 border-emerald-200">
-                            Disponible
-                          </Badge>
-                        </div>
-
-                        <div className="mt-2.5 flex items-center gap-1.5 text-[9px] text-muted-foreground">
-                          <Clock className="size-3" />
-                          Mis à jour {formatAge(selectedPoint.updatedMinutesAgo)}
-                        </div>
-
-                        {showMap && (
-                          <div className="mt-2.5 flex h-20 items-center justify-center rounded-lg border bg-muted/60">
-                            <div className="flex flex-col items-center gap-1 text-[9px] text-muted-foreground font-medium">
-                              <MapPin className="size-4 text-primary animate-bounce" />
-                              <span>Itinéraire calculé (4 min)</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {showActions && (
-                        <div className="mt-2 flex gap-1.5">
-                          <a
-                            href={`tel:${selectedPoint.phone}`}
-                            className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border bg-background text-[10px] font-semibold text-foreground shadow-xs"
-                          >
-                            <Phone className="size-3 text-primary" />
-                            Appeler
-                          </a>
-                          <span className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg bg-primary text-[10px] font-semibold text-primary-foreground shadow-xs">
-                            <Navigation className="size-3" />
-                            Itinéraire
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Home Indicator Bar */}
-                <div className="pb-2 pt-1 flex justify-center">
-                  <span className="h-1 w-24 rounded-full bg-foreground/20" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Stepper Controls Centered */}
-          <div className="flex flex-col items-center max-w-xl text-center">
-            <ol className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-              {frames.map((frame, position) => {
-                const done = position < index
-                const active = position === index
+        <div className="mx-auto mt-12 grid max-w-4xl items-center gap-10 lg:grid-cols-2 lg:gap-8">
+          {/* Rail d’étapes (à droite sur desktop) */}
+          <div className="order-2 lg:order-2">
+            <ol className="space-y-2">
+              {steps.map((stepItem, index) => {
+                const active = index === step
+                const done = index < step
 
                 return (
-                  <li key={frame.key}>
+                  <li key={stepItem.title}>
                     <button
                       type="button"
-                      onClick={() => setIndex(position)}
+                      onClick={() => setStep(index)}
                       aria-current={active ? "step" : undefined}
                       className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all cursor-pointer",
+                        "flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-all",
                         active
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : done
-                          ? "bg-primary/10 text-primary hover:bg-primary/20"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                          ? "border-primary/30 bg-primary/5 shadow-sm"
+                          : "border-transparent hover:bg-muted/60"
                       )}
                     >
-                      <span className="flex size-4 items-center justify-center rounded-full text-[10px] font-bold">
-                        {done ? <Check className="size-3" /> : position + 1}
+                      <span
+                        className={cn(
+                          "flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors",
+                          active
+                            ? "bg-primary text-primary-foreground"
+                            : done
+                              ? "bg-primary/10 text-primary"
+                              : "bg-muted text-muted-foreground"
+                        )}
+                      >
+                        {done ? <Check className="size-4" /> : index + 1}
                       </span>
-                      <span className="hidden sm:inline">{frame.label}</span>
+                      <span className="min-w-0">
+                        <span
+                          className={cn(
+                            "block text-sm font-semibold",
+                            active ? "text-primary" : "text-foreground"
+                          )}
+                        >
+                          {stepItem.title}
+                        </span>
+                        <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+                          {stepItem.description}
+                        </span>
+                      </span>
                     </button>
                   </li>
                 )
               })}
             </ol>
 
-            <div className="mt-6 flex items-center justify-center gap-3">
+            <div className="mt-6 flex flex-wrap items-center gap-2">
+              {reducedMotion ? (
+                <p className="text-xs text-muted-foreground">
+                  Lecture automatique désactivée (mouvements réduits).
+                </p>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 cursor-pointer"
+                  onClick={() => setPlaying((current) => !current)}
+                >
+                  {playing ? <Pause className="size-4" /> : <Play className="size-4" />}
+                  {playing ? "Pause" : "Reprendre"}
+                </Button>
+              )}
               <Button
-                type="button"
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="h-9 gap-1.5 cursor-pointer"
-                onClick={() => setPlaying((current) => !current)}
+                className="gap-2 cursor-pointer"
+                onClick={replay}
               >
-                {autoPlay ? (
-                  <>
-                    <Pause className="size-3.5" />
-                    Pause
-                  </>
-                ) : (
-                  <>
-                    <Play className="size-3.5" />
-                    {index === frames.length - 1 ? "Revoir" : "Reprendre"}
-                  </>
-                )}
+                <RotateCcw className="size-4" />
+                Rejouer
               </Button>
-
-              <p className="text-xs text-muted-foreground">
-                Clique sur une étape pour voir l&apos;écran correspondant.
-              </p>
             </div>
+
+            <p className="sr-only" aria-live="polite">
+              Étape {step + 1} sur {steps.length} : {steps[step].title}
+            </p>
+          </div>
+
+          {/* Téléphone (à gauche sur desktop) */}
+          <div className="order-1 mx-auto w-fit lg:order-1">
+            <PhoneMockup step={step} playing={playing} reducedMotion={reducedMotion} />
+            <p className="mt-4 text-center text-xs text-muted-foreground">
+              Aperçu illustratif du parcours GazPoints
+            </p>
           </div>
         </div>
       </div>

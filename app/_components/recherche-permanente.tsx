@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react"
 import { Search } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useTrouverGaz } from "@/lib/use-trouver-gaz"
 
 export function RecherchePermanente() {
   const [visible, setVisible] = useState(false)
+  const handleClick = useTrouverGaz()
 
   useEffect(() => {
     const hero = document.getElementById("accueil")
@@ -20,11 +22,6 @@ export function RecherchePermanente() {
     observer.observe(hero)
     return () => observer.disconnect()
   }, [])
-
-  const handleClick = () => {
-    const el = document.getElementById("trouver-du-gaz")
-    if (el) el.scrollIntoView({ behavior: "smooth" })
-  }
 
   return (
     <div

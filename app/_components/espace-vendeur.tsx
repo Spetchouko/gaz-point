@@ -1,7 +1,7 @@
 "use client"
 
 import { useActionState, useState } from "react"
-import { MapPin, Package, Phone, ShieldCheck, Store, X } from "lucide-react"
+import { MapPin, Cylinder, Phone, Plus, ShieldCheck, Store, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -85,6 +85,15 @@ export function EspaceVendeur({
     setEditingDispo(null)
   }
 
+  const handleEditDispo = (
+    dispo: PointWithDispos["disponibilites"][0],
+    pointId: string,
+    pointName: string
+  ) => {
+    setEditingDispo({ dispo, pointId, pointName })
+    setIsFormOpen(true)
+  }
+
   if (points.length === 0) {
     return (
       <div className="min-h-screen bg-background py-12">
@@ -103,7 +112,7 @@ export function EspaceVendeur({
               </span>
               <p className="font-medium">Aucun dépôt rattaché à ton compte</p>
               <p className="max-w-md text-sm text-muted-foreground">
-                Contacte l'administration (petchouko@gmail.com) pour faire
+                Contacte l&apos;administration (petchouko@gmail.com) pour faire
                 rattacher ton dépôt, puis tu pourras y signaler la disponibilité
                 du gaz.
               </p>
@@ -137,11 +146,10 @@ export function EspaceVendeur({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <DisponibiliteVendeurForm
-              points={points}
-              vendorPhone={vendorPhone}
-              onClose={handleCloseForm}
-            />
+            <Button className="w-full gap-2 sm:w-auto" onClick={() => handleAddDispo()}>
+              <Plus className="size-4" />
+              Publier une disponibilité
+            </Button>
           </CardContent>
         </Card>
 
@@ -218,7 +226,6 @@ function DisponibiliteVendeurForm({
     if (result.ok) {
       onClose()
     }
-    return result
   }
 
   if (!open) return null
@@ -265,7 +272,7 @@ function DisponibiliteVendeurForm({
           </div>
         )}
         <dd className="text-xs">
-          La date et l'heure de publication seront enregistrées automatiquement.
+          La date et l&apos;heure de publication seront enregistrées automatiquement.
         </dd>
       </dl>
     </div>
@@ -304,7 +311,7 @@ function DisponibiliteVendeurForm({
               <Label htmlFor="point-select">Point de vente</Label>
               <Select
                 value={formState.pointId}
-                onValueChange={(v) => setFormState((s) => ({ ...s, pointId: v }))}
+                onValueChange={(v) => setFormState((s) => ({ ...s, pointId: v ?? "" }))}
                 disabled={isEditing}
               >
                 <SelectTrigger id="point-select" className="w-full" disabled={isEditing}>
@@ -325,7 +332,7 @@ function DisponibiliteVendeurForm({
                 <Label htmlFor="format-select">Type de bouteille</Label>
                 <Select
                   value={formState.format}
-                  onValueChange={(v) => setFormState((s) => ({ ...s, format: v }))}
+                  onValueChange={(v) => setFormState((s) => ({ ...s, format: v ?? "" }))}
                   required
                 >
                   <SelectTrigger id="format-select" className="w-full">
@@ -442,7 +449,7 @@ function DisponibiliteVendeurForm({
 
         {feedback?.ok && (
           <div className="flex items-center gap-2 text-sm text-emerald-600">
-            <Package className="size-4" />
+            <Cylinder className="size-4" />
             {feedback.message}
           </div>
         )}
@@ -471,7 +478,7 @@ function DisponibiliteList({
           Aucune disponibilité enregistrée pour ce dépôt.
         </p>
         <Button variant="outline" className="w-full gap-2" onClick={onAdd}>
-          <Package className="size-4" />
+          <Cylinder className="size-4" />
           Ajouter la première disponibilité
         </Button>
       </div>
@@ -524,7 +531,7 @@ function DisponibiliteList({
               className="gap-1.5"
               onClick={() => onEdit(dispo, point.id, point.name)}
             >
-              <Package className="size-3.5" />
+              <Cylinder className="size-3.5" />
               Modifier
             </Button>
 

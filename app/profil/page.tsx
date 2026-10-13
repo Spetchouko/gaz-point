@@ -7,7 +7,7 @@ import { Profil } from "@/app/_components/profil"
 import { requireUser } from "@/lib/session"
 
 export const metadata: Metadata = {
-  title: { absolute: "Mon profil | GazPoint" },
+  title: { absolute: "Mon profil | GazPoints" },
 }
 
 export default async function ProfilPage() {

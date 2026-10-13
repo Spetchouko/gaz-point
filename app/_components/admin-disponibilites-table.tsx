@@ -1,24 +1,28 @@
 "use client"
 
 import Link from "next/link"
-import { User, Store, MapPin, Package, Phone, Trash2, MoreHorizontal } from "lucide-react"
+import { User, Store, Trash2, MoreHorizontal, PencilLine } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { formatDateTime } from "@/lib/gaz"
 import { availabilityLabel, availabilityBadgeClass } from "@/lib/gaz"
 
-type DispoRow = {
+export type DispoRow = {
   id: string
   pointId: string
   status: string
   quantity: number | null
   format: string | null
+  brand: string | null
+  weightKg: string | null
+  expiresAt: Date | string | null
   phone: string | null
   note: string | null
   source: string
@@ -30,7 +34,15 @@ type DispoRow = {
   vendorEmail: string
 }
 
-export function AdminDisponibilitesTable({ dispos }: { dispos: DispoRow[] }) {
+export function AdminDisponibilitesTable({
+  dispos,
+  onEdit,
+  onDelete,
+}: {
+  dispos: DispoRow[]
+  onEdit: (d: DispoRow) => void
+  onDelete: (d: DispoRow) => void
+}) {
   if (dispos.length === 0) {
     return (
       <div className="rounded-lg border bg-card p-8 text-center">
@@ -52,7 +64,7 @@ export function AdminDisponibilitesTable({ dispos }: { dispos: DispoRow[] }) {
                 Point de vente
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Type
+                Bouteille
               </th>
               <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
                 Quantité
@@ -86,16 +98,19 @@ export function AdminDisponibilitesTable({ dispos }: { dispos: DispoRow[] }) {
                   </Link>
                 </td>
                 <td className="px-4 py-3">
-                  <Badge variant="secondary" className="bg-primary/10 text-primary">
-                    {d.format ?? "—"}
-                  </Badge>
+                  <div className="flex flex-col gap-1">
+                    <Badge variant="secondary" className="bg-primary/10 text-primary w-fit">
+                      {d.format ?? "—"}
+                    </Badge>
+                    {d.brand && <span className="text-xs text-muted-foreground">{d.brand}{d.weightKg ? ` · ${d.weightKg} kg` : ""}</span>}
+                  </div>
                 </td>
                 <td className="px-4 py-3 text-right hidden sm:table-cell font-mono text-sm">
                   {d.quantity !== null ? d.quantity.toLocaleString("fr-FR") : "—"}
                 </td>
                 <td className="px-4 py-3">
-                  <Badge variant="outline" className={availabilityBadgeClass[d.status] ?? "bg-muted"}>
-                    {availabilityLabel[d.status] ?? d.status}
+                  <Badge variant="outline" className={availabilityBadgeClass[d.status as keyof typeof availabilityBadgeClass] ?? "bg-muted"}>
+                    {availabilityLabel[d.status as keyof typeof availabilityLabel] ?? d.status}
                   </Badge>
                 </td>
                 <td className="px-4 py-3 hidden lg:table-cell text-sm text-muted-foreground">
@@ -103,6 +118,11 @@ export function AdminDisponibilitesTable({ dispos }: { dispos: DispoRow[] }) {
                 </td>
                 <td className="px-4 py-3 hidden md:table-cell text-sm text-muted-foreground">
                   {formatDateTime(d.createdAt)}
+                  {d.expiresAt && (
+                    <p className="text-xs">
+                      Expire le {formatDateTime(d.expiresAt)}
+                    </p>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-right">
                   <DropdownMenu>
@@ -113,11 +133,9 @@ export function AdminDisponibilitesTable({ dispos }: { dispos: DispoRow[] }) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/disponibilites/${d.id}/edit`} className="flex items-center gap-2">
-                          <Package className="size-4" />
-                          Modifier
-                        </Link>
+                      <DropdownMenuItem onClick={() => onEdit(d)} className="flex items-center gap-2">
+                        <PencilLine className="size-4" />
+                        Modifier
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link href={`/admin/points-de-vente/${d.pointId}`} className="flex items-center gap-2">
@@ -126,12 +144,17 @@ export function AdminDisponibilitesTable({ dispos }: { dispos: DispoRow[] }) {
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href={`/admin/vendeurs/...`} className="flex items-center gap-2">
+                        <Link href={`/admin/vendeurs`} className="flex items-center gap-2">
                           <User className="size-4" />
                           Voir le vendeur
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive focus:text-destructive">
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="flex items-center gap-2 text-destructive focus:text-destructive"
+                        onClick={() => onDelete(d)}
+                      >
+                        <Trash2 className="size-4" />
                         Supprimer
                       </DropdownMenuItem>
                     </DropdownMenuContent>

@@ -141,10 +141,10 @@ await test("A", "T2", "Inscription vendeur (API : téléphone + rôle)", "standa
   expect(u?.role === "vendor", `rôle en base: ${u?.role}`);
   expect(u?.phone_number === "+237690000002", `téléphone en base: ${u?.phone_number}`);
   vbUserId = u.id;
-  const insc = await lib.getPage("/inscription", null);
-  expect(insc.status === 200, `/inscription ${insc.status}`);
-  expect(insc.text.includes("Numéro de téléphone"), "champ téléphone absent de /inscription");
-  expect(insc.text.includes("Vendeur"), "choix de profil Vendeur absent de /inscription");
+  const insc = await lib.getPage("/inscription/vendeur", null);
+  expect(insc.status === 200, `/inscription/vendeur ${insc.status}`);
+  expect(insc.text.includes("Numéro de téléphone"), "champ téléphone absent de /inscription/vendeur");
+  expect(/compte vendeur/i.test(insc.text), "choix de profil vendeur absent de /inscription/vendeur");
   const si = await lib.signIn(VB_EMAIL, bPw);
   expect(si.status === 200 && si.cookie, `sign-in status ${si.status}`);
   bCookie = si.cookie;
@@ -595,7 +595,7 @@ const sectionTitles = {
   H: "Nettoyage",
 };
 
-let md = `# Audit E2E GazPoint — comptes USER / VENDEUR / ADMIN\n\n`;
+let md = `# Audit E2E GazPoints — comptes USER / VENDEUR / ADMIN\n\n`;
 md += `Date : ${nowISO()} — exécutant : \`scripts/audit/run-audit.mjs\` (tests HTTP automatisés contre le serveur dev Next 16)\n\n`;
 md += `Résumé : **${passes.length} PASS**, **${standardFails.length} FAIL**, **${baselineFails.length} FAIL baseline** (attendus, corrigés par T1/T2), ${nas.length} N/A\n\n`;
 

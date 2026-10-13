@@ -77,7 +77,7 @@ export function EspacePro({
   points,
   vendors,
 }: {
-  role: "vendor" | "admin"
+  role: "vendor" | "admin" | "collaborateur"
   reporterName: string
   points: PointRow[]
   vendors: VendorOption[]
@@ -148,7 +148,7 @@ function CartePoint({
   vendors,
 }: {
   point: PointRow
-  role: "vendor" | "admin"
+  role: "vendor" | "admin" | "collaborateur"
   reporterName: string
   vendors: VendorOption[]
 }) {
@@ -253,7 +253,7 @@ function FormulaireSignalement({
   reporterName,
 }: {
   point: PointRow
-  role: "vendor" | "admin"
+  role: "vendor" | "admin" | "collaborateur"
   reporterName: string
 }) {
   const [pending, setPending] = useState(false)
@@ -263,6 +263,7 @@ function FormulaireSignalement({
   )
   const [note, setNote] = useState("")
   const [quantity, setQuantity] = useState("")
+  const [price, setPrice] = useState("")
   const [format, setFormat] = useState("")
   const [phone, setPhone] = useState("")
   const [step, setStep] = useState<"form" | "confirm">("form")
@@ -275,6 +276,7 @@ function FormulaireSignalement({
       setStep("form")
       setNote("")
       setQuantity("")
+      setPrice("")
       setFormat("")
       setPhone("")
     }
@@ -327,6 +329,7 @@ function FormulaireSignalement({
             <input type="hidden" name="status" value={status} />
             <input type="hidden" name="note" value={note} />
             <input type="hidden" name="quantity" value={quantity} />
+            <input type="hidden" name="price" value={price} />
             <input type="hidden" name="format" value={format} />
             <input type="hidden" name="phone" value={phone} />
             <Button type="submit" size="sm" disabled={pending} className="gap-2">
@@ -399,7 +402,7 @@ function FormulaireSignalement({
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor={`quantity-${point.id}`}>Quantité (facultatif)</Label>
           <Input
@@ -410,6 +413,19 @@ function FormulaireSignalement({
             value={quantity}
             onChange={(event) => setQuantity(event.target.value)}
             placeholder="Ex : 50"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor={`price-${point.id}`}>Prix unitaire en FCFA (facultatif)</Label>
+          <Input
+            id={`price-${point.id}`}
+            name="price"
+            type="number"
+            min="0"
+            value={price}
+            onChange={(event) => setPrice(event.target.value)}
+            placeholder="Ex : 3500"
           />
         </div>
 

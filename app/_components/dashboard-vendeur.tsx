@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Store, RefreshCw, Package, MapPin, Phone, TrendingUp } from "lucide-react"
+import { Plus, Store, RefreshCw, Cylinder, MapPin, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -99,6 +99,15 @@ export function DashboardVendeur({
     setEditingDispo(null)
   }
 
+  // Collecter toutes les disponibilités de tous les points
+  const allDispos = points.flatMap((point) =>
+    point.disponibilites.map((dispo) => ({
+      ...dispo,
+      pointId: point.id,
+      pointName: point.name,
+    }))
+  )
+
   if (points.length === 0) {
     return (
       <div className="min-h-screen bg-background py-12">
@@ -120,7 +129,7 @@ export function DashboardVendeur({
               </span>
               <p className="font-medium">Aucun dépôt rattaché à ton compte</p>
               <p className="max-w-md text-sm text-muted-foreground">
-                Contacte l'administration (petchouko@gmail.com) pour faire
+                Contacte l&apos;administration (petchouko@gmail.com) pour faire
                 rattacher ton dépôt, puis tu pourras y signaler la disponibilité
                 du gaz.
               </p>
@@ -168,7 +177,7 @@ export function DashboardVendeur({
                   <p className="text-3xl font-bold">{globalStats.totalQuantity}</p>
                 </div>
                 <span className="flex size-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
-                  <Package className="size-6" />
+                  <Cylinder className="size-6" />
                 </span>
               </div>
             </CardContent>
@@ -203,6 +212,89 @@ export function DashboardVendeur({
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Grille visuelle des disponibilités */}
+        <div className="mt-8 space-y-6">
+          {allDispos.length === 0 ? (
+            <Card className="max-w-2xl mx-auto p-6 text-center">
+              <CardContent className="flex flex-col items-center gap-4">
+                <span className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Store className="size-6" />
+                </span>
+                <p className="font-medium">Aucune disponibilité pour l&apos;instant</p>
+                <p className="text-sm text-muted-foreground">
+                  Publiez votre première disponibilité depuis l&apos;espace Pro pour
+                  montrer aux clients où trouver votre gaz.
+                </p>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => handleAddDispo()}
+                >
+                  <Plus className="size-4" /> Première disponibilité
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {allDispos.map((dispo) => {
+                const point = points.find((p) => p.id === dispo.pointId)
+                return (
+                  <Card
+                    key={dispo.id}
+                    className="p-4 hover:bg-card transition-colors"
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                          <span className="text-sm font-medium">{dispo.format ?? "—"}</span>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={`${availabilityBadgeClass[dispo.status as AvailabilityStatus]} shrink-0`}
+                        >
+                          {availabilityLabel[dispo.status as AvailabilityStatus]}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-2">
+                      <div className="grid gap-2 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Quantité</p>
+                          <p className="font-medium">
+                            {dispo.quantity !== null
+                              ? `${dispo.quantity} bouteille{dispo.quantity > 1 ? "s" : ""}`
+                              : "—"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Dépôt</p>
+                          <p className="font-medium">{point?.name ?? "—"}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Mis à jour</p>
+                          <p className="font-medium">
+                            {formatDate(new Date(dispo.createdAt))}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                    <div className="pt-3 border-t border-muted/20">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full gap-1 text-xs font-semibold"
+                        onClick={() => handleEditDispo(dispo, dispo.pointId, point?.name ?? "—")}
+                      >
+                        Voir les détails
+                      </Button>
+                    </div>
+                  </Card>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* Points de vente avec disponibilités */}
@@ -301,6 +393,7 @@ export function DashboardVendeur({
         </div>
 
         <DisponibiliteForm
+          key={`${isFormOpen ? "open" : "closed"}-${editingDispo?.dispo.id ?? "new"}`}
           open={isFormOpen}
           onClose={handleCloseForm}
           editingDispo={editingDispo}

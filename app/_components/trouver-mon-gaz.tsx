@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import {
   ChevronDown,
   LocateFixed,
@@ -13,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { brands, formats } from "@/app/_components/donnees-demo"
 import { availabilityLabel } from "@/lib/gaz"
+import { authClient } from "@/lib/auth-client"
 import type { AvailabilityStatus } from "@/db/schema"
 
 const selectClass =
@@ -31,13 +33,18 @@ type SearchResult = {
   quantity: number | null
   price: number | null
   format: string | null
+  brand: string | null
+  expiresAt: string | null
   updatedAt: string | null
   updatedBy: string | null
   source: string | null
   stale: boolean
+  expired: boolean
 }
 
 export function TrouverMonGaz() {
+  const router = useRouter()
+  const { data: session } = authClient.useSession()
   const [brand, setBrand] = useState("")
   const [format, setFormat] = useState("")
   const [zone, setZone] = useState("")
@@ -48,6 +55,13 @@ export function TrouverMonGaz() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    // La recherche est réservée aux comptes : un visiteur non connecté
+    // est redirigé vers le parcours d'inscription existant.
+    if (!session?.user) {
+      router.push("/inscription")
+      return
+    }
 
     setLoading(true)
     setError(null)
@@ -231,9 +245,15 @@ export function TrouverMonGaz() {
                     </div>
 
                     <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-                      {point.quantity !== null && (
-                        <p>Quantité : {point.quantity} bouteille{point.quantity > 1 ? "s" : ""}</p>
+                      {point.expired && point.expiresAt && (
+                        <p className="flex items-center gap-1 text-red-600">
+                          <MapPin className="size-3" />
+                          Signalement expiré depuis le{" "}
+                          {new Date(point.expiresAt).toLocaleDateString("fr-FR")}
+                        </p>
                       )}
+                      {point.brand && <p>Marque : {point.brand}</p>}
+                      <p>Quantité : {point.quantity !== null ? `${point.quantity} bouteille${point.quantity > 1 ? "s" : ""}` : "—"}</p>
                       {point.price !== null && (
                         <p>Prix : {new Intl.NumberFormat("fr-FR").format(point.price)} FCFA</p>
                       )}

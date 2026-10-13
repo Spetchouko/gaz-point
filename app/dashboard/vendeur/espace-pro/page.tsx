@@ -7,7 +7,7 @@ import { requirePro } from "@/lib/session"
 import { effectiveStatus, formatDateTime } from "@/lib/gaz"
 
 export const metadata: Metadata = {
-  title: { absolute: "Espace professionnel | GazPoint" },
+  title: { absolute: "Espace professionnel | GazPoints" },
 }
 
 type DispoRow = typeof disponibilite.$inferSelect

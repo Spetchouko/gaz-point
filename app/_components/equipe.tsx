@@ -11,7 +11,7 @@ const equipe = [
     name: "PETCHOUKO Solomon",
     image: petchImage,
     description:
-      "A lancé GazPoint après avoir constaté le problème sur le terrain, quartier par quartier.",
+      "A lancé GazPoints après avoir constaté le problème sur le terrain, quartier par quartier.",
   },
   {
     role: "Produit et développement",
@@ -45,7 +45,7 @@ export function Equipe() {
           </h2>
 
           <p className="mt-5 text-pretty text-base text-muted-foreground sm:text-lg">
-            GazPoint est porté par une équipe locale, à Douala. Nous couvrons
+            GazPoints est porté par une équipe locale, à Douala. Nous couvrons
             progressivement les quartiers où le service est le plus utile.
           </p>
         </div>
@@ -90,7 +90,7 @@ export function Equipe() {
 
         <p className="mx-auto mt-10 flex max-w-3xl flex-wrap items-center gap-2 text-sm text-muted-foreground">
           <Mail className="size-4 shrink-0" aria-hidden />
-          Tu es point de vente et tu veux apparaître sur GazPoint ?{" "}
+          Tu es point de vente et tu veux apparaître sur GazPoints ?{" "}
           <Link
             href="/inscription"
             className="font-medium text-foreground underline underline-offset-4 transition-colors hover:text-primary"

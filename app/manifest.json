@@ -1,6 +1,7 @@
 {
-  "name": "MyWebSite",
-  "short_name": "MySite",
+  "name": "GazPoints",
+  "short_name": "GazPoints",
+  "description": "GazPoints - Trouve ton gaz avant de te déplacer",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
@@ -15,7 +16,7 @@
       "purpose": "maskable"
     }
   ],
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
+  "theme_color": "#0f3c8a",
+  "background_color": "#0f3c8a",
   "display": "standalone"
 }

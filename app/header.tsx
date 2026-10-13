@@ -3,8 +3,8 @@
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { usePathname } from "next/navigation"
-import { Menu, UserPlus, LogIn } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
+import { LogIn, Menu, Shield, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -17,8 +17,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { authClient } from "@/lib/auth-client"
+import { UserMenu } from "@/app/_components/user-menu"
 
 const navLinks = [
   { href: "/", label: "Accueil" },
@@ -31,27 +34,30 @@ const navLinks = [
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
   const closeMenu = () => setMobileMenuOpen(false)
+  const { data: session } = authClient.useSession()
+  const isAuthenticated = !!session?.user
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/85 backdrop-blur-md supports-backdrop-filter:bg-background/65">
-      <div className="container mx-auto flex h-16 items-center justify-between gap-4 px-4 lg:grid lg:grid-cols-[auto_1fr_auto] lg:gap-8">
+      <div className="container mx-auto flex h-16 items-center justify-between gap-6 px-4 lg:px-32 lg:grid lg:grid-cols-[auto_1fr_auto] lg:gap-8">
         <Link
           href="/"
           onClick={closeMenu}
           className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
         >
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#F5F5F2] ring-1 ring-black/5 shadow-xs">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#ffffff] ring-2 ring-black/5 shadow-xs">
             <Image
               src="/brand/logo.png"
               alt=""
               width={28}
               height={28}
-              className="h-7 w-7 object-contain"
+              className="h-8 w-8 object-contain"
             />
           </span>
           <span className="font-heading text-lg font-bold tracking-tight text-foreground">
-            GazPoint
+            GazPoints
           </span>
         </Link>
 
@@ -66,34 +72,48 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="gap-2 hidden sm:flex">
-                <UserPlus className="size-4" />
-                <span>Compte</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem asChild>
-                <Link
-                  href="/inscription"
-                  className="flex items-center gap-2"
-                >
+          {isAuthenticated ? (
+            <UserMenu />
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="gap-2 hidden sm:flex">
                   <UserPlus className="size-4" />
-                  S'inscrire
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link
-                  href="/connexion"
-                  className="flex items-center gap-2"
-                >
-                  <LogIn className="size-4" />
-                  Se connecter
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  <span>Compte</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/inscription"
+                    className="flex items-center gap-2"
+                  >
+                    <UserPlus className="size-4" />
+                    S&apos;inscrire
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/connexion"
+                    className="flex items-center gap-2"
+                  >
+                    <LogIn className="size-4" />
+                    Se connecter
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/admin/login"
+                    className="flex items-center gap-2"
+                  >
+                    <Shield className="size-4" />
+                    Connexion administrateur
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger
@@ -112,7 +132,7 @@ export function Header() {
                 <SheetHeader className="border-b p-4">
                   <SheetTitle>Menu</SheetTitle>
                   <p className="text-sm text-muted-foreground">
-                    Navigation GazPoint
+                    Navigation GazPoints
                   </p>
                 </SheetHeader>
 
@@ -131,22 +151,36 @@ export function Header() {
                   <div className="border-t my-2" />
                   <div className="space-y-2">
                     <p className="px-3 py-2 text-sm font-medium text-muted-foreground">Compte</p>
-                    <Link
-                      href="/inscription"
-                      onClick={closeMenu}
-                      className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
-                    >
-                      <UserPlus className="size-4" />
-                      S'inscrire
-                    </Link>
-                    <Link
-                      href="/connexion"
-                      onClick={closeMenu}
-                      className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
-                    >
-                      <LogIn className="size-4" />
-                      Se connecter
-                    </Link>
+                    {isAuthenticated ? (
+                      <UserMenu isMobile />
+                    ) : (
+                      <>
+                        <Link
+                          href="/inscription"
+                          onClick={closeMenu}
+                          className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
+                        >
+                          <UserPlus className="size-4" />
+                          S&apos;inscrire
+                        </Link>
+                        <Link
+                          href="/connexion"
+                          onClick={closeMenu}
+                          className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
+                        >
+                          <LogIn className="size-4" />
+                          Se connecter
+                        </Link>
+                        <Link
+                          href="/admin/login"
+                          onClick={closeMenu}
+                          className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
+                        >
+                          <Shield className="size-4" />
+                          Connexion administrateur
+                        </Link>
+                      </>
+                    )}
                   </div>
                 </nav>
               </div>

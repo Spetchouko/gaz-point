@@ -1,9 +1,10 @@
 "use client"
 
-import { ArrowRight, Cylinder, ListChecks, MapPinned, Navigation } from "lucide-react"
+import { ArrowRight, Cylinder, Clock, ListChecks, MapPinned, Navigation } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useTrouverGaz } from "@/lib/use-trouver-gaz"
 
 const steps = [
   {
@@ -29,13 +30,13 @@ const steps = [
 ]
 
 export function Solution() {
-  const handleAction = () => {
-    const el = document.getElementById("trouver-du-gaz")
-    if (el) el.scrollIntoView({ behavior: "smooth" })
-  }
+  const handleAction = useTrouverGaz()
 
   return (
-    <section id="comment-ca-marche" className="w-full scroll-mt-16 py-16 md:py-24 bg-gradient-section">
+    <section
+      id="comment-ca-marche"
+      className="w-full scroll-mt-16 border-y bg-linear-to-b from-muted/30 via-muted/60 to-muted/30 py-16 md:py-24"
+    >
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
           <Badge variant="secondary" className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]">
@@ -48,35 +49,36 @@ export function Solution() {
           </h2>
         </div>
 
-        <ol className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mx-auto mt-12 grid max-w-4xl gap-6 sm:grid-cols-3">
           {steps.map((step, index) => (
-            <li key={step.title}>
-              <Card className="h-full transition-all hover:border-primary/40 hover:shadow-md">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <span className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <step.icon className="size-5" />
-                    </span>
-                    <Badge variant="outline" className="font-medium uppercase tracking-wider text-muted-foreground">
-                      Étape {index + 1}
-                    </Badge>
-                  </div>
-                  <CardTitle className="mt-3 text-base font-semibold">
-                    {step.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription>{step.description}</CardDescription>
-                </CardContent>
-              </Card>
-            </li>
+            <Card
+              key={step.title}
+              className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-md"
+            >
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <span className="flex size-11 items-center justify-center rounded-xl bg-destructive/10 text-destructive ring-1 ring-destructive/20">
+                    <step.icon className="size-5" />
+                  </span>
+                  <Badge variant="outline" className="gap-1 font-semibold text-muted-foreground">
+                    <Clock className="size-3" />
+                  </Badge>
+                </div>
+                <CardTitle className="mt-3 text-base font-semibold">
+                  {step.title}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription>{step.description}</CardDescription>
+              </CardContent>
+            </Card>
           ))}
-        </ol>
+        </div>
 
-        <div className="mt-12 flex justify-center">
+        <div className="mx-auto mt-12 max-w-xl text-center">
           <Button
             size="lg"
-            className="h-12 w-full gap-2 px-6 text-base sm:w-auto cursor-pointer"
+            className="h-12 w-full gap-2 px-8 text-base font-semibold shadow-md sm:w-auto cursor-pointer"
             onClick={handleAction}
           >
             Trouver du gaz

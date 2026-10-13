@@ -9,11 +9,33 @@ import { Solution } from "@/app/_components/solution"
 import { Storytelling } from "@/app/_components/storytelling"
 import { Temoignages } from "@/app/_components/temoignages"
 import { TrouverMonGaz } from "@/app/_components/trouver-mon-gaz"
+import { PubliciteCarousel, type PubliciteBannerData } from "@/app/_components/publicite-banner"
+import { getPublicitesForSlot } from "@/lib/publicite"
+import { getApprovedAvis, type AvisPublic } from "@/lib/avis"
 
-export default function Home() {
+export default async function Home() {
+  // La bannière est décorative : une panne du marketing ne doit jamais
+  // bloquer la landing. En cas d'erreur, elle est simplement masquée.
+  let homePublicites: PubliciteBannerData[] = []
+  try {
+    homePublicites = await getPublicitesForSlot("home_hero")
+  } catch (error) {
+    console.error("Impossible de charger les publicités home_hero :", error)
+  }
+
+  // Même principe pour les avis : seuls les avis approuvés sont publics,
+  // et une erreur de chargement masque simplement la section.
+  let avis: AvisPublic[] = []
+  try {
+    avis = await getApprovedAvis()
+  } catch (error) {
+    console.error("Impossible de charger les avis :", error)
+  }
+
   return (
     <>
       <Hero />
+      <PubliciteCarousel publicites={homePublicites} />
       <Storytelling />
       <Benefices />
       <Solution />
@@ -21,7 +43,7 @@ export default function Home() {
       <Demonstration />
       <Fiabilite />
       <Faq />
-      <Temoignages />
+      <Temoignages avis={avis} />
       <Acces />
       <CtaFinal />
     </>

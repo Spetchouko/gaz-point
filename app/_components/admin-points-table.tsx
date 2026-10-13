@@ -1,19 +1,20 @@
 "use client"
 
 import Link from "next/link"
-import { User, Store, Phone, Mail, MapPin, Package, Trash2, MoreHorizontal, UserPlus } from "lucide-react"
+import { UserPlus, Store, Trash2, MoreHorizontal, PencilLine, Power, User } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { formatDate, formatDateTime } from "@/lib/gaz"
+import { formatDate } from "@/lib/gaz"
 import { availabilityLabel, availabilityBadgeClass } from "@/lib/gaz"
 
-type PointRow = {
+export type PointRow = {
   id: string
   name: string
   district: string
@@ -25,6 +26,7 @@ type PointRow = {
   vendorName: string | null
   vendorEmail: string | null
   vendorPhone: string | null
+  isActive: boolean
   activeDisposCount: number
   totalQty: number
   latestDispoDate: Date | string | null
@@ -35,7 +37,19 @@ type PointRow = {
   createdAt: Date | string
 }
 
-export function AdminPointsTable({ points }: { points: PointRow[] }) {
+export function AdminPointsTable({
+  points,
+  onEdit,
+  onToggle,
+  onAssign,
+  onDelete,
+}: {
+  points: PointRow[]
+  onEdit: (p: PointRow) => void
+  onToggle: (p: PointRow) => void
+  onAssign: (p: PointRow) => void
+  onDelete: (p: PointRow) => void
+}) {
   if (points.length === 0) {
     return (
       <div className="rounded-lg border bg-card p-8 text-center">
@@ -114,15 +128,21 @@ export function AdminPointsTable({ points }: { points: PointRow[] }) {
                   <span className="text-sm text-muted-foreground">{p.address} — {p.district}</span>
                 </td>
                 <td className="px-4 py-3">
-                  <Badge variant={p.hasActiveDispo ? "default" : "secondary"} className={p.hasActiveDispo ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground"}>
-                    {p.hasActiveDispo ? "Actif" : "Inactif"}
+                  <Badge
+                    variant="outline"
+                    className={p.isActive ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-700 border-red-200"}
+                  >
+                    {p.isActive ? "Actif" : "Inactif"}
                   </Badge>
+                  {!p.isActive && (
+                    <p className="text-xs text-muted-foreground mt-1">Masqué du public</p>
+                  )}
                 </td>
                 <td className="px-4 py-3 hidden md:table-cell">
                   {p.latestDispoStatus ? (
                     <>
-                      <Badge variant="outline" className={availabilityBadgeClass[p.latestDispoStatus] ?? "bg-muted"}>
-                        {availabilityLabel[p.latestDispoStatus] ?? p.latestDispoStatus}
+                      <Badge variant="outline" className={availabilityBadgeClass[p.latestDispoStatus as keyof typeof availabilityBadgeClass] ?? "bg-muted"}>
+                        {availabilityLabel[p.latestDispoStatus as keyof typeof availabilityLabel] ?? p.latestDispoStatus}
                       </Badge>
                       {p.latestDispoQty !== null && p.latestDispoQty > 0 && (
                         <span className="ml-2 text-sm text-muted-foreground">
@@ -152,7 +172,11 @@ export function AdminPointsTable({ points }: { points: PointRow[] }) {
                           Voir détails
                         </Link>
                       </DropdownMenuItem>
-                      {p.vendorId ? (
+                      <DropdownMenuItem onClick={() => onEdit(p)} className="flex items-center gap-2">
+                        <PencilLine className="size-4" />
+                        Modifier
+                      </DropdownMenuItem>
+                      {p.vendorName ? (
                         <DropdownMenuItem asChild>
                           <Link href={`/admin/vendeurs/${p.vendorId}`} className="flex items-center gap-2">
                             <User className="size-4" />
@@ -160,16 +184,22 @@ export function AdminPointsTable({ points }: { points: PointRow[] }) {
                           </Link>
                         </DropdownMenuItem>
                       ) : (
-                        <DropdownMenuItem className="flex items-center gap-2">
+                        <DropdownMenuItem onClick={() => onAssign(p)} className="flex items-center gap-2">
                           <UserPlus className="size-4" />
                           Assigner un vendeur
                         </DropdownMenuItem>
                       )}
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/disponibilites?point=${p.id}`} className="flex items-center gap-2">
-                          <Package className="size-4" />
-                          Gérer disponibilités
-                        </Link>
+                      <DropdownMenuItem onClick={() => onToggle(p)} className="flex items-center gap-2">
+                        <Power className="size-4" />
+                        {p.isActive ? "Désactiver (masquer)" : "Réactiver"}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => onDelete(p)}
+                        className="flex items-center gap-2 text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="size-4" />
+                        Supprimer
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

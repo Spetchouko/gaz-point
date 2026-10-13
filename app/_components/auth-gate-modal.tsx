@@ -104,7 +104,7 @@ export function AuthGateModal() {
           <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20 mb-2">
             <Image
               src="/brand/logo.png"
-              alt="GazPoint"
+              alt="GazPoints"
               width={26}
               height={26}
               className="h-6.5 w-6.5 object-contain"
@@ -122,7 +122,7 @@ export function AuthGateModal() {
             {mode === "register"
               ? "Choisissez votre profil et commencez."
               : mode === "login"
-              ? "Accédez à votre espace GazPoint."
+              ? "Accédez à votre espace GazPoints."
               : "Entrez votre email pour réinitialiser."}
           </DialogDescription>
         </div>

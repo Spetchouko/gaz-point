@@ -1,9 +1,20 @@
 "use client"
 
-import { User, Store, Phone, Mail, MapPin, Package, Calendar, Settings, Shield, KeyRound, Plus, TrendingUp } from "lucide-react"
+import { useState, useTransition } from "react"
+import Link from "next/link"
+import { User, Store, Phone, MapPin, Cylinder, Settings, Shield, KeyRound, Plus, TrendingUp, CheckCircle2, X } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   Card,
   CardContent,
@@ -12,6 +23,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { toggleVendorStatus, updateVendor, resetUserPassword, type ActionResult } from "@/app/admin/actions"
 import { formatDate, formatDateTime } from "@/lib/gaz"
 import { cn } from "@/lib/utils"
 import { availabilityLabel, availabilityBadgeClass } from "@/lib/gaz"
@@ -56,6 +68,48 @@ export function AdminVendeurDetail({
   vendor: VendorProfile
   points: PointWithDispos[]
 }) {
+  const [, startTransition] = useTransition()
+  const [dialog, setDialog] = useState<"edit" | "reset" | "toggle" | null>(null)
+  const [feedback, setFeedback] = useState<ActionResult | null>(null)
+  const [edit, setEdit] = useState({ name: vendor.name, phoneNumber: vendor.phoneNumber ?? "" })
+
+  const handleToggle = () => {
+    setFeedback(null)
+    const formData = new FormData()
+    formData.set("userId", vendor.id)
+    formData.set("currentRole", vendor.role)
+    startTransition(async () => {
+      const result = await toggleVendorStatus(null, formData)
+      setFeedback(result)
+      if (result.ok) {
+        setDialog(null)
+        window.location.reload()
+      }
+    })
+  }
+
+  const handleSubmitEdit = (formData: FormData) => {
+    formData.set("userId", vendor.id)
+    setFeedback(null)
+    startTransition(async () => {
+      const result = await updateVendor(null, formData)
+      setFeedback(result)
+      if (result.ok) {
+        setDialog(null)
+        window.location.reload()
+      }
+    })
+  }
+
+  const handleReset = (formData: FormData) => {
+    formData.set("userId", vendor.id)
+    setFeedback(null)
+    startTransition(async () => {
+      const result = await resetUserPassword(null, formData)
+      setFeedback(result)
+    })
+  }
+
   const totalPoints = points.length
   const totalDispos = points.reduce((sum, p) => sum + p.disponibilites.length, 0)
   const activeDispos = points.reduce(
@@ -110,11 +164,15 @@ export function AdminVendeurDetail({
                   </p>
                 </div>
                 <div className="ml-auto flex items-center gap-2">
-                  <Button variant="outline">
+                  <Button
+                    variant="outline"
+                    nativeButton={false}
+                    render={<Link href="/admin/points-de-vente" />}
+                  >
                     <Plus className="size-4 mr-2" />
                     Ajouter un dépôt
                   </Button>
-                  <Button variant="destructive">
+                  <Button variant="destructive" onClick={() => setDialog("toggle")}>
                     <Shield className="size-4 mr-2" />
                     Désactiver
                   </Button>
@@ -145,7 +203,7 @@ export function AdminVendeurDetail({
                     <p className="text-3xl font-bold">{totalDispos}</p>
                   </div>
                   <div className="flex size-12 items-center justify-center rounded-full bg-blue-500/10 text-blue-600">
-                    <Package className="size-6" />
+                    <Cylinder className="size-6" />
                   </div>
                 </div>
               </CardContent>
@@ -171,7 +229,7 @@ export function AdminVendeurDetail({
                     <p className="text-3xl font-bold">{totalQty}</p>
                   </div>
                   <div className="flex size-12 items-center justify-center rounded-full bg-purple-500/10 text-purple-600">
-                    <Package className="size-6" />
+                    <Cylinder className="size-6" />
                   </div>
                 </div>
               </CardContent>
@@ -194,7 +252,12 @@ export function AdminVendeurDetail({
                     <p className="text-sm text-muted-foreground mt-1">
                       Ajoutez un dépôt pour commencer à publier des disponibilités
                     </p>
-                    <Button className="mt-4" variant="outline">
+                    <Button
+                      className="mt-4"
+                      variant="outline"
+                      nativeButton={false}
+                      render={<Link href="/admin/points-de-vente" />}
+                    >
                       <Plus className="size-4 mr-2" />
                       Ajouter un dépôt
                     </Button>
@@ -216,11 +279,14 @@ export function AdminVendeurDetail({
                           </CardDescription>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm" asChild>
-                            <a href={`/admin/points-de-vente/${point.id}`}>
-                              <Package className="size-3.5 mr-1.5" />
-                              Disponibilités
-                            </a>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            nativeButton={false}
+                            render={<a href={`/admin/points-de-vente/${point.id}`} />}
+                          >
+                            <Cylinder className="size-3.5 mr-1.5" />
+                            Disponibilités
                           </Button>
                         </div>
                       </CardHeader>
@@ -253,9 +319,9 @@ export function AdminVendeurDetail({
                                         <span className="ml-2">
                                           <Badge
                                             variant="outline"
-                                            className={availabilityBadgeClass[dispo.status] ?? "bg-muted"}
+                                            className={availabilityBadgeClass[dispo.status as keyof typeof availabilityBadgeClass] ?? "bg-muted"}
                                           >
-                                            {availabilityLabel[dispo.status] ?? dispo.status}
+                                            {availabilityLabel[dispo.status as keyof typeof availabilityLabel] ?? dispo.status}
                                           </Badge>
                                         </span>
                                       </p>
@@ -294,7 +360,7 @@ export function AdminVendeurDetail({
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Package className="size-5 text-primary" />
+                    <Cylinder className="size-5 text-primary" />
                     Toutes les disponibilités
                   </CardTitle>
                   <CardDescription>Liste chronologique de tous les signalements</CardDescription>
@@ -339,9 +405,9 @@ export function AdminVendeurDetail({
                               </div>
                               <Badge
                                 variant="outline"
-                                className={availabilityBadgeClass[dispo.status] ?? "bg-muted"}
+                                className={availabilityBadgeClass[dispo.status as keyof typeof availabilityBadgeClass] ?? "bg-muted"}
                               >
-                                {availabilityLabel[dispo.status] ?? dispo.status}
+                                {availabilityLabel[dispo.status as keyof typeof availabilityLabel] ?? dispo.status}
                               </Badge>
                             </div>
                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
@@ -425,28 +491,111 @@ export function AdminVendeurDetail({
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Settings className="size-5 text-primary" />
-                    Actions d'administration
+                    Actions d&apos;administration
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="flex flex-wrap gap-3">
-                  <Button variant="outline">
+                <CardContent className="space-y-4">
+                <div className="flex flex-wrap gap-3">
+                  <Button variant="outline" onClick={() => setDialog("edit")}>
                     <Settings className="size-4 mr-2" />
                     Modifier le profil
                   </Button>
-                  <Button variant="destructive">
+                  <Button variant="destructive" onClick={() => setDialog("toggle")}>
                     <Shield className="size-4 mr-2" />
                     Désactiver (→ Usager)
                   </Button>
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={() => setDialog("reset")}>
                     <KeyRound className="size-4 mr-2" />
                     Réinitialiser mot de passe
                   </Button>
+                </div>
+
+                {feedback && (
+                  <div
+                    className={cn(
+                      "flex items-start gap-2 text-sm rounded-lg border px-3 py-2",
+                      feedback.ok ? "text-emerald-700 bg-emerald-50 border-emerald-200" : "text-red-700 bg-red-50 border-red-200"
+                    )}
+                  >
+                    {feedback.ok ? <CheckCircle2 className="size-4 shrink-0 mt-0.5" /> : <X className="size-4 shrink-0 mt-0.5" />}
+                    <span className="break-words">{feedback.message}</span>
+                  </div>
+                )}
                 </CardContent>
               </Card>
             </TabsContent>
           </Tabs>
         </div>
       </div>
+
+      <Dialog open={dialog === "edit"} onOpenChange={(o) => { if (!o) setDialog(null) }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifier le profil</DialogTitle>
+            <DialogDescription>Mise à jour du nom et du téléphone du vendeur</DialogDescription>
+          </DialogHeader>
+          <form action={handleSubmitEdit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="vendor-name">Nom / Responsable</Label>
+              <Input id="vendor-name" name="name" value={edit.name} onChange={(e) => setEdit((s) => ({ ...s, name: e.target.value }))} required />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="vendor-phone">Téléphone</Label>
+              <Input id="vendor-phone" name="phoneNumber" value={edit.phoneNumber} onChange={(e) => setEdit((s) => ({ ...s, phoneNumber: e.target.value }))} placeholder="+237 6 99 00 00 00" />
+            </div>
+            {feedback && (
+              <p role="alert" className={cn("text-sm break-words", feedback.ok ? "text-emerald-600" : "text-destructive")}>{feedback.message}</p>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={() => setDialog(null)}>Annuler</Button>
+              <Button type="submit">Enregistrer</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={dialog === "toggle"} onOpenChange={(o) => { if (!o) setDialog(null) }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Désactiver (→ Usager)</DialogTitle>
+            <DialogDescription>
+              « {vendor.name} » perdra le rôle vendeur et redeviendra un usager classique.
+            </DialogDescription>
+          </DialogHeader>
+          {feedback && (
+            <p role="alert" className={cn("text-sm break-words", feedback.ok ? "text-emerald-600" : "text-destructive")}>{feedback.message}</p>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setDialog(null)}>Annuler</Button>
+            <Button variant="destructive" onClick={handleToggle}>Confirmer</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={dialog === "reset"} onOpenChange={(o) => { if (!o) setDialog(null) }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Réinitialiser le mot de passe</DialogTitle>
+            <DialogDescription>
+              Laissez vide pour générer un mot de passe temporaire aléatoire, ou saisissez un
+              nouveau mot de passe (8 caractères minimum).
+            </DialogDescription>
+          </DialogHeader>
+          <form action={handleReset} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="vendor-new-password">Nouveau mot de passe (facultatif)</Label>
+              <Input id="vendor-new-password" name="newPassword" type="text" placeholder="Mot de passe temporaire" />
+            </div>
+            {feedback && (
+              <p role="alert" className={cn("text-sm font-medium break-words", feedback.ok ? "text-emerald-600" : "text-destructive")}>{feedback.message}</p>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={() => setDialog(null)}>Annuler</Button>
+              <Button type="submit">Réinitialiser</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

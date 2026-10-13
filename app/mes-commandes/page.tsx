@@ -6,7 +6,7 @@ import { MesCommandes } from "@/app/_components/mes-commandes"
 import { requireUser } from "@/lib/session"
 
 export const metadata: Metadata = {
-  title: { absolute: "Mes commandes | GazPoint" },
+  title: { absolute: "Mes commandes | GazPoints" },
 }
 
 export default async function MesCommandesPage() {

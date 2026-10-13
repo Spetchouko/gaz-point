@@ -78,7 +78,7 @@ export function NotreDemarche() {
 
           <Card className="mt-10 border-0 bg-muted/60 p-6 shadow-none sm:p-8">
             <p className="text-pretty text-base leading-relaxed text-foreground sm:text-lg">
-              GazPoint est né de ce constat : ce n&apos;est pas le gaz qui manque,
+              GazPoints est né de ce constat : ce n&apos;est pas le gaz qui manque,
               c&apos;est l&apos;information. Le gaz, lui, est déjà là, à quelques
               kilomètres.
             </p>

@@ -3,15 +3,13 @@
 import { Suspense, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
+import { safeRedirect } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
-import Link from "next/link"
 import { Mail, Lock, Eye, EyeOff, Loader2, AlertCircle, ArrowLeft, Shield } from "lucide-react"
 import { useState } from "react"
-import Image from "next/image"
 
 function validateEmail(email: string): string | null {
   if (!email.trim()) return "L'email est requis."
@@ -28,17 +26,19 @@ function validatePassword(password: string): string | null {
 function AdminLoginPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get("redirect") ?? "/admin"
+  const redirectTo = safeRedirect(searchParams.get("redirect"), "/admin")
   const { data: session } = authClient.useSession()
 
   useEffect(() => {
     if (session?.user) {
       const role = (session.user as { role?: string }).role
-      if (role === "admin") {
+      // ONLY redirect to /admin if role is EXPLICITLY "admin" or "collaborateur"
+      // If role is "client", "vendor", or undefined: show login form (no redirect)
+      // This prevents the redirect loop when session state is uncertain
+      if (role === "admin" || role === "collaborateur") {
         router.push(redirectTo)
-      } else {
-        router.push("/dashboard")
       }
+      // If role is other/uncertain: don't redirect - show login form
     }
   }, [session, router, redirectTo])
 
@@ -129,7 +129,7 @@ function AdminLoginPageContent() {
             </div>
             <CardTitle className="text-xl font-bold">Connexion administrateur</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Accès réservé aux administrateurs GasPoint
+              Accès réservé aux administrateurs GAZ POINT
             </p>
           </CardHeader>
 
@@ -207,44 +207,6 @@ function AdminLoginPageContent() {
                 {loading ? <Loader2 className="size-4 mr-2 animate-spin" /> : "Se connecter"}
               </Button>
             </form>
-
-            <div className="mt-8 space-y-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase tracking-wider">
-                  <span className="bg-background px-2 text-muted-foreground">Autres espaces</span>
-                </div>
-              </div>
-
-              <Link
-                href="/connexion?redirect=/dashboard"
-                className="block w-full text-center"
-              >
-                <Button variant="outline" className="w-full gap-2 h-11">
-                  <Image src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width={16} height={16} className="size-4" />
-                  Espace usager
-                </Button>
-              </Link>
-
-              <Link
-                href="/connexion?redirect=/dashboard/vendeur"
-                className="block w-full text-center"
-              >
-                <Button variant="outline" className="w-full gap-2 h-11">
-                  <Store className="size-4 text-emerald-600" />
-                  Espace vendeur
-                </Button>
-              </Link>
-            </div>
-
-            <p className="text-center text-sm text-muted-foreground">
-              Pas encore de compte ?{" "}
-              <Link href="/inscription" className="text-purple-600 hover:underline font-medium">
-                Créer un compte usager ou vendeur
-              </Link>
-            </p>
           </CardContent>
         </Card>
       </div>

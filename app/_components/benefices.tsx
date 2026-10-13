@@ -1,4 +1,5 @@
 import {
+  Clock,
   Compass,
   MapPinOff,
   PackageCheck,
@@ -7,7 +8,7 @@ import {
   Timer,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 const benefits = [
   {
@@ -44,7 +45,7 @@ const benefits = [
 
 export function Benefices() {
   return (
-    <section className="w-full py-16 md:py-24 bg-gradient-section-reverse">
+    <section className="w-full border-y bg-linear-to-b from-muted/30 via-muted/60 to-muted/30 py-16 md:py-24">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
           <Badge variant="secondary" className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]">
@@ -57,32 +58,43 @@ export function Benefices() {
           </h2>
 
           <p className="mt-5 text-pretty text-base text-muted-foreground sm:text-lg">
-            GazPoint ne te vend pas juste une information : il t&apos;aide à choisir
+            GazPoints ne te vend pas juste une information : il t&apos;aide à choisir
             où aller, avant de te déplacer.
           </p>
         </div>
 
-        <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {benefits.map((benefit) => (
-            <li key={benefit.title}>
-              <Card className="h-full transition-all hover:border-primary/40 hover:shadow-md">
-                <CardHeader>
-                  <span className="mb-2 flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <div className="mx-auto mt-12 grid max-w-4xl gap-6 sm:grid-cols-3">
+          {benefits.map((benefit, idx) => (
+            <Card
+              key={benefit.title}
+              className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-md"
+            >
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <span className="flex size-11 items-center justify-center rounded-xl bg-destructive/10 text-destructive ring-1 ring-destructive/20">
                     <benefit.icon className="size-5" />
                   </span>
-                  <CardTitle className="text-lg font-semibold">
+                  <Badge variant="outline" className="gap-1 font-semibold text-muted-foreground">
+                    <Clock className="size-3" />
+                  </Badge>
+                </div>
+                <CardTitle className="mt-4 text-base">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Étape {idx + 1}
+                  </span>
+                  <span className="mt-1 block font-bold text-foreground">
                     {benefit.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-sm leading-relaxed">
-                    {benefit.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            </li>
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {benefit.description}
+                </p>
+              </CardContent>
+            </Card>
           ))}
-        </ul>
+        </div>
       </div>
     </section>
   )
