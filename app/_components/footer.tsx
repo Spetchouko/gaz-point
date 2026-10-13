@@ -14,6 +14,14 @@ const gazpoint = [
   { label: "Accueil", href: "/" },
 ]
 
+const legal = [
+  { label: "Mentions légales", href: "/mentions-legales" },
+  { label: "Conditions d'utilisation", href: "/cgu" },
+  { label: "Politique de confidentialité", href: "/politique-confidentialite" },
+  { label: "Politique cookies", href: "/politique-cookies" },
+  { label: "Conditions de vente", href: "/cgv" },
+]
+
 function FooterNav({
   title,
   items,
@@ -72,7 +80,7 @@ export function Footer() {
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:contents">
             <FooterNav title="Navigation" items={navigation} />
             <FooterNav title="GazPoints" items={gazpoint} />
-            {/* Section Informations légales supprimée - pages supprimées */}
+            <FooterNav title="Informations légales" items={legal} />
           </div>
         </div>
 

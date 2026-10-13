@@ -7,6 +7,7 @@ import * as schema from "@/db/schema";
 import { nextCookies } from "better-auth/next-js";
 import { headers } from "next/headers";
 import { phoneNumber, type PhoneNumberOptions } from "better-auth/plugins";
+import { sendVerificationEmail } from "@/lib/email";
 
 async function getRoleFromRegisterCookie(): Promise<"client" | "vendor"> {
   // Lecture côté serveur via l'en-tête cookie.
@@ -65,6 +66,18 @@ export const auth = betterAuth({
         // Exiger une vérification email avant toute connexion autorisée.
         requireEmailVerification: true,
         autoSignIn: false, // compte créé mais session bloquée tant que non vérifié
+        // Envoi du code de validation par email (6 chiffres, expire en 10 min)
+        sendVerificationEmail: async ({ user, code, expiresIn }) => {
+          // expiresIn est en secondes (Better Auth le calcule depuis verificationTokenExpiry)
+          const expiresInMinutes = Math.ceil((expiresIn ?? 600) / 60)
+          await sendVerificationEmail({
+            email: user.email,
+            code,
+            expiresInMinutes,
+          })
+        },
+        // Durée de validité du code : 10 minutes = 600 secondes
+        verificationTokenExpiry: 600,
     },
     // Anti-robot : Cloudflare Turnstile (middleware sur /sign-up/email et /sign-in/email).
     // Désactivé en mode test (AUDIT=1) pour permettre les tests automatisés.

@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 const petchImage = "/petch.png"
+const henokImage = "/team/henok.png"
 
 const equipe = [
   {
@@ -15,7 +16,8 @@ const equipe = [
   },
   {
     role: "Produit et developpement",
-    name: "[NOM ET PRENOM]",
+    name: "Tchoffo Henok",
+    image: henokImage,
     description:
       "Construit le service de recherche, la carte des points de vente et les espaces vendeurs.",
   },
