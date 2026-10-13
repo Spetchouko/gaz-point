@@ -25,6 +25,13 @@ export const auth = betterAuth({
         provider: "pg",
         schema,
     }),
+    // Autoriser les origines de confiance pour éviter l'erreur "Invalid origin"
+    trustedOrigins: [
+        "https://gazpoints.com",
+        "https://www.gazpoints.com",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
     user: {
         additionalFields: {
             phoneNumber: {
