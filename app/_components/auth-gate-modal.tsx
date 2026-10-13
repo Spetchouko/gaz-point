@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { CheckCircle2, Phone, Store, User } from "lucide-react"
-import { Turnstile } from "@/components/ui/turnstile"
 
 export function AuthGateModal() {
   const { isOpen, closeAuthModal, mode, setMode } = useAuthModal()
@@ -25,7 +24,6 @@ export function AuthGateModal() {
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [captchaToken, setCaptchaToken] = useState("")
 
   if (!isOpen) {
     return null
@@ -53,12 +51,6 @@ export function AuthGateModal() {
         return
       }
 
-      if (!captchaToken && mode !== "forgot-password") {
-        setError("Veuillez valider le CAPTCHA.")
-        setLoading(false)
-        return
-      }
-
       let home = "/dashboard"
       if (mode === "register") {
         const { error: signUpError } = await authClient.signUp.email({
@@ -67,7 +59,6 @@ export function AuthGateModal() {
           password,
           phoneNumber,
           role,
-          captchaToken,
         } as Parameters<typeof authClient.signUp.email>[0])
 
         if (signUpError) {
@@ -80,7 +71,6 @@ export function AuthGateModal() {
         const { error: signInError, data: signInData } = await authClient.signIn.email({
           email,
           password,
-          captchaToken,
         })
         if (signInError) {
           setError(signInError.message || "Identifiants incorrects.")
@@ -323,18 +313,6 @@ export function AuthGateModal() {
             <div className="flex items-start gap-1.5 rounded-md bg-emerald-500/10 p-2 text-xs font-medium text-emerald-600" role="status">
               <CheckCircle2 className="size-3.5 shrink-0 mt-0.5" />
               <span>{successMessage}</span>
-            </div>
-          )}
-
-          {/* CAPTCHA Turnstile */}
-          {mode !== "forgot-password" && (
-            <div className="pt-2">
-              <Turnstile
-                action={mode === "register" ? "inscription" : "connexion"}
-                onVerify={setCaptchaToken}
-                onExpire={() => setCaptchaToken("")}
-                onError={() => setCaptchaToken("")}
-              />
             </div>
           )}
 

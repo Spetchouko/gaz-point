@@ -6,7 +6,6 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { nextCookies } from "better-auth/next-js";
 import { headers } from "next/headers";
-import { captcha, type CaptchaOptions } from "better-auth/plugins";
 import { phoneNumber, type PhoneNumberOptions } from "better-auth/plugins";
 
 async function getRoleFromRegisterCookie(): Promise<"client" | "vendor"> {
@@ -62,13 +61,7 @@ export const auth = betterAuth({
     },
     // Anti-robot : Cloudflare Turnstile (middleware sur /sign-up/email et /sign-in/email).
     // Désactivé en mode test (AUDIT=1) pour permettre les tests automatisés.
-    captcha: process.env.AUDIT === "1" ? undefined : {
-        provider: "cloudflare-turnstile",
-        secretKey: process.env.TURNSTILE_SECRET_KEY as string,
-        // Optionnel : action attendue par le défi, hostname autorisés pour le fallback.
-        expectedAction: "inscription",
-        allowedHostnames: ["localhost", "127.0.0.1"],
-    },
+    captcha: undefined,
     // Plugin confirmation par SMS (code OTP). Le callback sendOTP doit être
     // fourni par l'intégrateur (ici on lève une erreur explicite si non configuré),
     // conformément à la contrainte "jamais simuler l'envoi".
@@ -195,12 +188,6 @@ export const auth = betterAuth({
     },
     plugins: [
       nextCookies(),
-      captcha({
-        provider: "cloudflare-turnstile",
-        secretKey: process.env.TURNSTILE_SECRET_KEY as string,
-        expectedAction: "inscription",
-        allowedHostnames: ["localhost", "127.0.0.1"],
-      } satisfies CaptchaOptions),
       phoneNumber({
         sendOTP: async ({ phoneNumber: _phoneNumber, code }: { phoneNumber: string; code: string }) => {
           throw new Error("L'envoi de code SMS n'est pas encore configuré. Veuillez activer la vérification par email ou configurer un fournisseur SMS.")

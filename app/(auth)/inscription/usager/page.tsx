@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, AlertCircle } from "lucide-react"
 import { useState } from "react"
-import { Turnstile } from "@/components/ui/turnstile"
 
 // === Mode de confirmation email ===
 const MODE_EMAIL = "email"
@@ -72,7 +71,6 @@ function InscriptionUsagerContent() {
   }>({})
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const [captchaToken, setCaptchaToken] = useState("")
 
   // ---------- Validation ----------
   const validateForm = () => {
@@ -100,12 +98,6 @@ function InscriptionUsagerContent() {
       return
     }
 
-    if (!captchaToken) {
-      setError("Veuillez valider le CAPTCHA.")
-      setLoading(false)
-      return
-    }
-
     setError("")
     setLoading(true)
 
@@ -120,7 +112,6 @@ function InscriptionUsagerContent() {
         password,
         phoneNumber: cleanPhoneNumber,
         role,
-        captchaToken,
       } as Parameters<typeof authClient.signUp.email>[0])
 
       if (signUpError) {
@@ -306,16 +297,6 @@ function InscriptionUsagerContent() {
                   {error}
                 </div>
               )}
-
-              {/* CAPTCHA Turnstile */}
-              <div className="pt-2">
-                <Turnstile
-                  action="inscription"
-                  onVerify={setCaptchaToken}
-                  onExpire={() => setCaptchaToken("")}
-                  onError={() => setCaptchaToken("")}
-                />
-              </div>
 
               <Button type="submit" className="w-full h-11" disabled={loading}>
                 Créer mon compte usager
