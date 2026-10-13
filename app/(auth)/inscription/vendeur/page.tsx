@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { Mail, Lock, Store, Eye, EyeOff, ArrowLeft, AlertCircle } from "lucide-react"
+import Image from "next/image"
 import { useState } from "react"
 
 // === Mode de confirmation email ===
@@ -299,6 +300,27 @@ function InscriptionVendeurContent() {
                 Créer un compte vendeur
               </Button>
             </form>
+
+            <div className="mt-8 space-y-6">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase tracking-wider">
+                  <span className="bg-background px-2 text-muted-foreground">Ou continuer avec</span>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full gap-2 h-11"
+                disabled={loading}
+                onClick={() => authClient.signIn.social({ provider: "google", callbackURL: redirectTo })}
+              >
+                <Image src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width={16} height={16} className="size-4" />
+                Continuer avec Google
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
