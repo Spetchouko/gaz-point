@@ -13,6 +13,7 @@ import {
   type PhoneNumberOptions,
 } from "better-auth/plugins";
 import { sendVerificationEmail } from "@/lib/email";
+import { recordConversionFromHeaders } from "@/lib/publicite-attribution";
 
 async function getRoleFromRegisterCookie(): Promise<"client" | "vendor"> {
   // Lecture côté serveur via l'en-tête cookie.
@@ -151,6 +152,14 @@ export const auth = betterAuth({
                         })
                     } catch (e) {
                         console.error("traffic_event signup logging failed", e)
+                    }
+                    // Attribution publicitaire : inscription dans les 30 jours après un clic.
+                    try {
+                        await recordConversionFromHeaders("signup", {
+                            userId: String(user.id ?? ""),
+                        })
+                    } catch (e) {
+                        console.error("publicite signup conversion failed", e)
                     }
                 },
             },

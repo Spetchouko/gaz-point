@@ -13,7 +13,7 @@ const document: LegalDocument = {
   title: "Politique relative aux cookies",
   intro:
     "Cette politique explique quels cookies et technologies de suivi sont utilisés sur GazPoints, à quelles fins, et comment vous pouvez les accepter, les refuser ou les supprimer. Elle complète la Politique de confidentialité.",
-  updated: "13 mai 2026",
+  updated: "14 octobre 2026",
   sections: [
     {
       id: "definition",
@@ -52,7 +52,7 @@ const document: LegalDocument = {
         {
           term: "Traceurs de mesure d'audience (nécessitent votre consentement)",
           value:
-            "Permettent de compter les visites, pages vues, inscriptions et connexions de façon anonyme pour améliorer le service. Aucun identifiant personnel n'est transmis.",
+            "Permettent de compter les visites, pages vues, inscriptions et connexions de façon anonyme, et de mesurer la performance des publicités (impressions, clics, conversions). Aucun identifiant personnel n'est transmis.",
         },
       ],
     },
@@ -105,12 +105,17 @@ const document: LegalDocument = {
         {
           term: "Événements collectés (après consentement)",
           value:
-            "Pageviews (chemin de la page, referrer host, paramètres UTM source/medium/campaign), Inscriptions (signup), Connexions (signin). L'adresse IP n'est pas stockée. L'identifiant utilisateur n'est lié qu'aux événements signup/signin (pas aux pageviews).",
+            "Pageviews (chemin de la page, referrer host, paramètres UTM source/medium/campaign), Inscriptions (signup), Connexions (signin). Performance publicitaire : impressions (bannière réellement visible ≥ 50 % pendant 1 s), clics, et conversions (inscription, recherche de gaz ou réservation attribuée au dernier clic dans les 30 jours). L'adresse IP n'est jamais stockée. L'identifiant utilisateur n'est lié qu'aux événements signup/signin (pas aux pageviews ni aux événements publicitaires).",
         },
         {
           term: "Stockage",
           value:
-            "Base de données PostgreSQL (table traffic_event) hébergée chez Neon. Aucune donnée n'est envoyée à un tiers.",
+            "Base de données PostgreSQL (tables traffic_event et publicite_event) hébergée chez Neon. Les événements publicitaires ne contiennent qu'un identifiant de visiteur aléatoire, sans nom, e-mail ni téléphone. Aucune donnée n'est envoyée à un tiers.",
+        },
+        {
+          term: "Cookie publicitaire gz_ad_ref",
+          value:
+            "Déposé uniquement après consentement, et seulement si vous cliquez sur une publicité. Contient l'identifiant de la publicité, un identifiant de clic aléatoire et l'horodatage du clic (aucune donnée personnelle). Cookie HTTP-only, SameSite=Lax, durée : 30 jours. Il permet de rattacher une inscription, une recherche ou une réservation à la publicité cliquée (attribution au dernier clic).",
         },
         {
           term: "Finalité",
@@ -128,7 +133,7 @@ const document: LegalDocument = {
             "Consentement (article 6.1.a RGPD par référence, standard international). Le bandeau ne propose pas de « tout accepter » par défaut : l'utilisateur doit agir positivement.",
         },
       ],
-      note: "Si vous refusez le consentement, **aucun événement n'est envoyé** au serveur /api/traffic. Le bandeau ne réapparaîtra pas pendant 12 mois (cookie gz_consent=rejected).",
+      note: "Si vous refusez le consentement, **aucun événement n'est envoyé** au serveur (/api/traffic ni /api/ads/event) et **aucun cookie publicitaire** n'est déposé. Le bandeau ne réapparaîtra pas pendant 12 mois (cookie gz_consent=rejected).",
     },
     {
       id: "reseaux-sociaux",

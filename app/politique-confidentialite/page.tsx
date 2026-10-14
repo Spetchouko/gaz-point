@@ -75,7 +75,7 @@ const document: LegalDocument = {
           value: "Exécution du contrat / obligation légale (sécurité).",
         },
         {
-          term: "Mesure d'audience anonyme (pages visitées, inscriptions, connexions)",
+          term: "Mesure d'audience anonyme (pages visitées, inscriptions, connexions) et performance des publicités (impressions, clics, conversions)",
           value: "Consentement (via bandeau cookies).",
         },
         {
@@ -114,6 +114,7 @@ const document: LegalDocument = {
         { term: "Historique d'achats (recharges)", value: "5 ans à compter de l'achat (obligation comptable)." },
         { term: "Avis publiés", value: "Tant que le compte auteur existe, puis 3 ans après suppression du compte (anonymisés)." },
         { term: "Événements de trafic (analytics consentis)", value: "13 mois maximum, agrégés ensuite." },
+        { term: "Événements publicitaires (publicite_event, consentis)", value: "13 mois maximum, agrégés ensuite. Aucune donnée personnelle : identifiant de visiteur aléatoire uniquement." },
         { term: "Journal d'actions admin", value: "3 ans." },
         { term: "Emails de contact / support", value: "3 ans après dernier échange." },
       ],

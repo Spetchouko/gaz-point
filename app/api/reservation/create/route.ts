@@ -4,6 +4,10 @@ import { reservation, disponibilite, pointDeVente, user } from "@/db/schema"
 import { eq, and, lt, sql } from "drizzle-orm"
 import { randomUUID } from "node:crypto"
 import { requireUser } from "@/lib/session"
+import {
+  AD_ATTRIBUTION_COOKIE,
+  recordConversionFromRequest,
+} from "@/lib/publicite-attribution"
 
 const DEFAULT_RESERVATION_AMOUNT = 1000 // FCFA
 const RESERVATION_EXPIRY_MINUTES = 30
@@ -260,6 +264,11 @@ export async function POST(req: NextRequest) {
 
       return { reservationId, reservationCode, expiresAt }
     })
+
+    // Attribution publicitaire : réservation faite dans les 30 jours après un clic.
+    if (req.cookies.get(AD_ATTRIBUTION_COOKIE)) {
+      await recordConversionFromRequest(req, "reservation", { userId: currentUser.id })
+    }
 
     return NextResponse.json({
       ok: true,

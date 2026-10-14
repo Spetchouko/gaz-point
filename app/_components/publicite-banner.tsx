@@ -1,8 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
+import {
+  IMPRESSION_MIN_VISIBLE_MS,
+  IMPRESSION_VISIBLE_RATIO,
+  sendClickEvent,
+  sendImpressionEvent,
+} from "@/lib/ads-client"
 
 export type PubliciteBannerData = {
   id: string
@@ -54,8 +60,59 @@ export function PubliciteBannerCard({
   animate?: boolean
   className?: string
 }) {
+  const cardRef = useRef<HTMLElement | null>(null)
+  const impressionCounted = useRef(false)
+
+  // Impression : comptée seulement si la bannière est réellement visible
+  // (≥ 50 % de la surface pendant ≥ 1 s), une seule fois par publicité.
+  useEffect(() => {
+    if (!interactive) return
+    if (typeof IntersectionObserver === "undefined") return
+    const element = cardRef.current
+    if (!element) return
+
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const clearTimer = () => {
+      if (timer) {
+        clearTimeout(timer)
+        timer = null
+      }
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (impressionCounted.current) continue
+          if (entry.isIntersecting && entry.intersectionRatio >= IMPRESSION_VISIBLE_RATIO) {
+            if (!timer) {
+              timer = setTimeout(() => {
+                timer = null
+                impressionCounted.current = true
+                sendImpressionEvent(ad.id)
+              }, IMPRESSION_MIN_VISIBLE_MS)
+            }
+          } else {
+            clearTimer()
+          }
+        }
+      },
+      { threshold: [0, IMPRESSION_VISIBLE_RATIO, 1] }
+    )
+
+    observer.observe(element)
+    return () => {
+      clearTimer()
+      observer.disconnect()
+    }
+  }, [ad.id, interactive])
+
+  const handleClick = () => {
+    if (interactive) sendClickEvent(ad.id)
+  }
+
   return (
     <article
+      ref={cardRef}
       className={cn(
         "flex h-auto w-full flex-col overflow-hidden rounded-2xl border bg-card shadow-md md:h-[200px] md:flex-row",
         animate && "animate-in fade-in duration-500 motion-reduce:animate-none",
@@ -108,6 +165,7 @@ export function PubliciteBannerCard({
               href={ad.linkUrl}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={handleClick}
               className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
             >
               En savoir plus

@@ -3,6 +3,10 @@ import { and, desc, eq, ilike, or } from "drizzle-orm"
 import { db } from "@/db"
 import { disponibilite, pointDeVente } from "@/db/schema"
 import { effectiveStatus, isStale } from "@/lib/gaz"
+import {
+  AD_ATTRIBUTION_COOKIE,
+  recordConversionFromRequest,
+} from "@/lib/publicite-attribution"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -100,6 +104,12 @@ export async function GET(request: NextRequest) {
   )
 
   const filtered = results.filter(Boolean)
+
+  // Attribution publicitaire : première recherche après un clic (fenêtre 30 j).
+  // Idempotent : une seule conversion « recherche » par clic.
+  if (request.cookies.get(AD_ATTRIBUTION_COOKIE)) {
+    await recordConversionFromRequest(request, "search")
+  }
 
   return NextResponse.json({ results: filtered })
 }

@@ -3,7 +3,10 @@ import { db } from "@/db"
 import { publicite } from "@/db/schema"
 import { desc } from "drizzle-orm"
 import { AdminPubliciteBoard } from "@/app/_components/admin-publicite-board"
+import { AdminPubliciteStats } from "@/app/_components/admin-publicite-stats"
 import { requireStaffModule } from "@/lib/session"
+import { getPubliciteStats } from "@/lib/publicite-stats"
+import { resolveAnalyticsRange } from "@/lib/publicite-analytics"
 import type { PubliciteRow } from "@/app/_components/admin-publicite-table"
 
 export const metadata: Metadata = {
@@ -36,10 +39,20 @@ function toRows(rows: (typeof publicite.$inferSelect)[]): PubliciteRow[] {
   })
 }
 
-export default async function AdminMarketingPage() {
+export default async function AdminMarketingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ period?: string; from?: string; to?: string }>
+}) {
   await requireStaffModule("marketing")
 
-  const publicites = await db.select().from(publicite).orderBy(desc(publicite.createdAt))
+  const params = await searchParams
+  const range = resolveAnalyticsRange(params.period, params.from, params.to)
+
+  const [publicites, stats] = await Promise.all([
+    db.select().from(publicite).orderBy(desc(publicite.createdAt)),
+    getPubliciteStats(range),
+  ])
 
   return (
     <div className="space-y-6">
@@ -52,6 +65,13 @@ export default async function AdminMarketingPage() {
       </header>
 
       <AdminPubliciteBoard publicites={toRows(publicites)} />
+
+      <AdminPubliciteStats
+        periodKey={range.key}
+        fromInput={range.fromInput}
+        toInput={range.toInput}
+        stats={stats}
+      />
     </div>
   )
 }

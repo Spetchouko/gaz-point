@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import { Cookie, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { CONSENT_EVENT } from "@/lib/ads-client"
 
 const KEY = "gz_consent"
 
@@ -67,6 +68,9 @@ export function ConsentBanner() {
     localStorage.setItem(KEY, "accepted")
     setAccepted(true)
     setShow(false)
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event(CONSENT_EVENT))
+    }
     if (lastSentPath !== pathname) {
       lastSentPath = pathname
       sendPageview(pathname)
@@ -77,6 +81,9 @@ export function ConsentBanner() {
     localStorage.setItem(KEY, "rejected")
     setAccepted(false)
     setShow(false)
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event(CONSENT_EVENT))
+    }
   }
 
   if (!show) return null
@@ -94,8 +101,11 @@ export function ConsentBanner() {
         <div className="flex-1 space-y-1">
           <p className="text-sm font-semibold">Gestion du suivi d&apos;audience</p>
           <p className="text-sm text-muted-foreground">
-            Nous mesurons anonymement le trafic (pages visitées, inscriptions) pour améliorer
-            GazPoints. Aucune donnée personnelle n&apos;est transmise, aucun cookie n&apos;est déposé pour cela.
+            Nous mesurons anonymement le trafic (pages visitées, inscriptions) et la
+            performance des publicités (impressions, clics, conversions) pour améliorer
+            GazPoints. Aucune donnée personnelle n&apos;est transmise. En cas de clic sur une
+            publicité, un identifiant anonyme et un cookie publicitaire (gz_ad_ref, 30 jours)
+            servent uniquement à mesurer son efficacité.
           </p>
         </div>
         <button

@@ -259,6 +259,36 @@ export const publicite = pgTable(
   (table) => [index("publicite_slot_status_idx").on(table.slot, table.status)]
 )
 
+export const publiciteEvent = pgTable(
+  "publicite_event",
+  {
+    id: text("id").primaryKey(),
+    publiciteId: text("publicite_id")
+      .notNull()
+      .references(() => publicite.id, { onDelete: "cascade" }),
+    eventType: text("event_type").notNull(), // 'impression' | 'click' | 'conversion'
+    conversionType: text("conversion_type"), // 'signup' | 'search' | 'reservation'
+    slot: text("slot"), // snapshot de l'emplacement au moment de l'événement
+    sourceCategory: text("source_category"), // 'direct' | 'search' | 'social' | 'referral' | 'campaign'
+    referrerHost: text("referrer_host"), // hôte seul, jamais l'URL complète
+    utmSource: text("utm_source"),
+    utmMedium: text("utm_medium"),
+    utmCampaign: text("utm_campaign"),
+    path: text("path"),
+    visitorId: text("visitor_id"), // identifiant aléatoire, non personnel
+    sessionId: text("session_id"),
+    attributionWindowDays: integer("attribution_window_days"),
+    consented: boolean("consented").default(false).notNull(),
+    eventKey: text("event_key").notNull().unique(), // idempotence des envois
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("publicite_event_publicite_id_idx").on(table.publiciteId),
+    index("publicite_event_created_at_idx").on(table.createdAt),
+    index("publicite_event_type_created_idx").on(table.eventType, table.createdAt),
+  ]
+)
+
 export const trafficEvent = pgTable(
   "traffic_event",
   {
