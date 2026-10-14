@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     return badRequest("Renseigne ton nom, ton email et ton message.")
   }
   if (!emailPattern.test(email)) {
-    return badRequest("L’adresse email n’est pas valide.")
+    return badRequest("L'adresse email n'est pas valide.")
   }
   if (message.length > 5000) {
     return badRequest("Le message est trop long (5 000 caractères maximum).")
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
   const appPassword = process.env.GMAIL_APP_PASSWORD
   if (!appPassword) {
     return NextResponse.json(
-      { ok: false, error: "Le formulaire n’est pas encore configuré." },
+      { ok: false, error: "Le formulaire n'est pas encore configuré." },
       { status: 503 }
     )
   }
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json(
-      { ok: false, error: "L’envoi a échoué. Réessaie ou écris-nous par email." },
+      { ok: false, error: "L'envoi a échoué. Réessaie ou écris-nous par email." },
       { status: 500 }
     )
   }

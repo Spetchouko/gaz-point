@@ -14,7 +14,7 @@ const avantages = [
   "Un espace professionnel pour publier tes stocks en temps réel",
   "Une fiche vérifiée avec badge certifié et contact direct",
   "Une place prioritaire dans les résultats de recherche",
-  "Des statistiques de vues et d’appels générés",
+  "Des statistiques de vues et d'appels générés",
 ]
 
 export function ContactVendeurs() {

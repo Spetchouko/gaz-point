@@ -33,7 +33,7 @@ export const user = pgTable("user", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .$onUpdate(() => /* @__PURE */ new Date())
     .notNull(),
 });
 
@@ -45,7 +45,7 @@ export const session = pgTable(
     token: text("token").notNull().unique(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => /* @__PURE */ new Date())
       .notNull(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
@@ -74,7 +74,7 @@ export const account = pgTable(
     password: text("password"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => /* @__PURE */ new Date())
       .notNull(),
   },
   (table) => [index("account_userId_idx").on(table.userId)],
@@ -90,7 +90,7 @@ export const verification = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => /* @__PURE */ new Date())
       .notNull(),
   },
   (table) => [index("verification_identifier_idx").on(table.identifier)],
@@ -111,7 +111,7 @@ export const pointDeVente = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => /* @__PURE */ new Date())
       .notNull(),
   },
   (table) => [index("point_de_vente_vendor_id_idx").on(table.vendorId)],
@@ -124,6 +124,7 @@ export const disponibilite = pgTable(
     pointId: text("point_id")
       .notNull()
       .references(() => pointDeVente.id, { onDelete: "cascade" }),
+    vendorId: text("vendor_id").references(() => user.id, { onDelete: "set null" }),
     status: text("status").notNull(), // AvailabilityStatus
     note: text("note"),
     quantity: integer("quantity"), // nombre de bouteilles disponibles
@@ -140,11 +141,11 @@ export const disponibilite = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => /* @__PURE */ new Date())
       .notNull(),
   },
-  (table) => [index("disponibilite_point_id_idx").on(table.pointId)],
-);
+  (table) => [index("disponibilite_point_id_idx").on(table.pointId), index("disponibilite_vendor_id_idx").on(table.vendorId)]
+)
 
 export const brand = pgTable(
   "brand",
@@ -253,7 +254,7 @@ export const publicite = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => /* @__PURE */ new Date())
       .notNull(),
   },
   (table) => [index("publicite_slot_status_idx").on(table.slot, table.status)]
@@ -322,7 +323,7 @@ export const avis = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => /* @__PURE */ new Date())
       .notNull(),
   },
   (table) => [
@@ -363,7 +364,7 @@ export const reservation = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => /* @__PURE */ new Date())
       .notNull(),
   },
   (table) => [
@@ -412,6 +413,10 @@ export const relations = defineRelations(
       point: r.one.pointDeVente({
         from: r.disponibilite.pointId,
         to: r.pointDeVente.id,
+      }),
+      vendor: r.one.user({
+        from: r.disponibilite.vendorId,
+        to: r.user.id,
       }),
       reporter: r.one.user({
         from: r.disponibilite.reportedBy,

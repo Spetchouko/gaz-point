@@ -1,6 +1,5 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
@@ -140,7 +139,7 @@ export const auth = betterAuth({
                     // Inscription réelle : journalisée pour les statistiques de trafic
                     try {
                         await db.insert(schema.trafficEvent).values({
-                            id: randomUUID(),
+                            id: crypto.randomUUID(),
                             eventType: "signup",
                             path: null,
                             referrer: null,
@@ -203,7 +202,7 @@ export const auth = betterAuth({
                     // Connexion réelle : journalisée pour les statistiques de trafic
                     try {
                         await db.insert(schema.trafficEvent).values({
-                            id: randomUUID(),
+                            id: crypto.randomUUID(),
                             eventType: "signin",
                             path: null,
                             referrer: null,

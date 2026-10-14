@@ -36,7 +36,7 @@ export async function addRecharge(
   }
   const purchasedAt = new Date(`${dateRaw}T12:00:00`)
   if (Number.isNaN(purchasedAt.getTime())) {
-    return { ok: false, message: "La date n’est pas valide." }
+    return { ok: false, message: "La date n'est pas valide." }
   }
 
   const points = await db

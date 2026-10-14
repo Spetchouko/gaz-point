@@ -22,6 +22,8 @@ import {
 import { createDisponibiliteAdmin, updateDisponibiliteAdmin, deleteDisponibiliteAdmin, type ActionResult } from "@/app/admin/actions"
 import { bottleFormats, availabilityLabel } from "@/lib/gaz"
 import type { AvailabilityStatus } from "@/db/schema"
+import { user } from "@/db/schema"
+import { eq } from "drizzle-orm"
 
 type PointOption = {
   id: string
@@ -63,6 +65,8 @@ type FormState = {
   expiresAt: string
   phone: string
   note: string
+  vendorId: string
+  vendorName: string
 }
 
 function initialFormState(editing: DispoData): FormState {
@@ -77,6 +81,8 @@ function initialFormState(editing: DispoData): FormState {
     expiresAt: toDateValue(editing?.expiresAt),
     phone: editing?.phone ?? "",
     note: editing?.note ?? "",
+    vendorId: editing?.vendorId ?? "",
+    vendorName: editing?.point?.vendorName ?? "",
   }
 }
 
@@ -293,6 +299,26 @@ export function AdminDisponibiliteForm({
                   <option key={p.id} value={p.name} />
                 ))}
               </datalist>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="vendor-select">Vendeur</Label>
+              <Select
+                value={formState.vendorId}
+                onValueChange={(v) => setFormState((s) => ({ ...s, vendorId: v ?? "", vendorName: "" }))}
+              >
+                <SelectTrigger id="vendor-select" className="w-full">
+                  <SelectValue placeholder="Choisir un vendeur" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Aucun</SelectItem>
+                  {points.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">

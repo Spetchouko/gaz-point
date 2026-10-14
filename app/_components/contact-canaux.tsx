@@ -15,7 +15,7 @@ const canaux = [
     href: "mailto:petchouko@gmail.com",
     value: "petchouko@gmail.com",
     description:
-      "Le canal principal. C’est ici que tu nous écris pour tout le reste.",
+      "Le canal principal. C'est ici que tu nous écris pour tout le reste.",
     note: "Réponse sous 48 h ouvrées.",
   },
   {
@@ -33,7 +33,7 @@ const canaux = [
     href: "https://wa.me/237659169960",
     value: "+237 659 16 99 60",
     description:
-      "Pour envoyer une photo de l’écran ou la photo d’un point de vente qui manque.",
+      "Pour envoyer une photo de l'écran ou la photo d'un point de vente qui manque.",
     note: "Les photos sont traitées comme des signalements.",
   },
   {

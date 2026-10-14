@@ -96,7 +96,7 @@ export async function createPointDeVente(
 ): Promise<ActionResult> {
   const { role } = await requirePro()
   if (role !== "admin") {
-    return { ok: false, message: "Action réservée à l’administration." }
+    return { ok: false, message: "Action réservée à l'administration." }
   }
 
   const name = String(formData.get("name") ?? "").trim()
@@ -108,7 +108,7 @@ export async function createPointDeVente(
   if (!name || !district || !address) {
     return {
       ok: false,
-      message: "Renseigne le nom, le quartier et l’adresse du dépôt.",
+      message: "Renseigne le nom, le quartier et l'adresse du dépôt.",
     }
   }
 
@@ -144,7 +144,7 @@ export async function assignVendor(
 ): Promise<ActionResult> {
   const { role } = await requirePro()
   if (role !== "admin") {
-    return { ok: false, message: "Action réservée à l’administration." }
+    return { ok: false, message: "Action réservée à l'administration." }
   }
 
   const pointId = String(formData.get("pointId") ?? "")

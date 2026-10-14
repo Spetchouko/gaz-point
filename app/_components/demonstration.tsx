@@ -69,8 +69,8 @@ const steps = [
     description: "Repère le point directement sur le plan.",
   },
   {
-    title: "Tu appelles ou ouvres l’itinéraire",
-    description: "Appelle le vendeur ou lance l’itinéraire.",
+    title: "Tu appelles ou ouvres l'itinéraire",
+    description: "Appelle le vendeur ou lance l'itinéraire.",
   },
 ]
 
@@ -81,7 +81,7 @@ const badgeClass: Record<Availability, string> = {
 }
 
 /* ------------------------------------------------------------------ */
-/* Blocs d’interface du téléphone (décoratifs : wrapper aria-hidden)   */
+/* Blocs d'interface du téléphone (décoratifs : wrapper aria-hidden)   */
 /* ------------------------------------------------------------------ */
 
 function Screen({ children }: { children: ReactNode }) {
@@ -346,7 +346,7 @@ function MapScreen() {
           </div>
           <div className="mt-1.5 flex items-center justify-center gap-1 rounded-lg bg-primary py-1.5 text-[9px] font-bold text-primary-foreground">
             <Navigation className="size-2.5" />
-            Ouvrir l’itinéraire
+            Ouvrir l'itinéraire
           </div>
         </div>
       </div>
@@ -548,7 +548,7 @@ export function Demonstration() {
         </div>
 
         <div className="mx-auto mt-12 grid max-w-4xl items-center gap-10 lg:grid-cols-2 lg:gap-8">
-          {/* Rail d’étapes (à droite sur desktop) */}
+          {/* Rail d'étapes (à droite sur desktop) */}
           <div className="order-2 lg:order-2">
             <ol className="space-y-2">
               {steps.map((stepItem, index) => {

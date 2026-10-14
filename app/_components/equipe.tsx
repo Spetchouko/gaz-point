@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 const petchImage = "/petch.png"
 const henokImage = "/team/henok.png"
+const fabiolaImage = "/team/Fabiola.png"
 
 const equipe = [
   {
@@ -12,20 +13,21 @@ const equipe = [
     name: "PETCHOUKO Solomon",
     image: petchImage,
     description:
-      "A lance GazPoints apres avoir constate le probleme sur le terrain, quartier par quartier.",
+      "A lancé GazPoints après avoir constat le problème sur le terrain, quartier par quartier.",
   },
   {
-    role: "Produit et developpement",
-    name: "Tchoffo Henok",
+    role: "Produit et développement",
+    name: "TCHOFFO HENOK",
     image: henokImage,
     description:
       "Construit le service de recherche, la carte des points de vente et les espaces vendeurs.",
   },
   {
     role: "Relation points de vente",
-    name: "[NOM ET PRENOM]",
+    name: "DJUIKOUO FABIOLA",
+    image: fabiolaImage,
     description:
-      "Accompagne les revendeurs qui rejoignent la plateforme et veille sur la fiabilite des informations.",
+      "Gère la communication et le support utilisateur sur la plateforme.",
   },
 ]
 
@@ -38,17 +40,17 @@ export function Equipe() {
             variant="secondary"
             className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]"
           >
-            L'equipe
+            L'équipe
           </Badge>
 
           <h2 className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            Une petite equipe,{" "}
+            Une petite équipe,{" "}
             <span className="text-primary">un grand territoire</span>
           </h2>
 
           <p className="mt-5 text-pretty text-base text-muted-foreground sm:text-lg">
-            GazPoints est porte par une equipe locale, a Douala. Nous couvrons
-            progressivement les quartiers ou le service est le plus utile.
+            GazPoints est portée par une équipe locale, à Douala. Nous couvrons
+            progressivement les quartiers où le service est le plus utile.
           </p>
         </div>
 
@@ -92,14 +94,14 @@ export function Equipe() {
 
         <p className="mx-auto mt-10 flex max-w-3xl flex-wrap items-center justify-center gap-2 text-sm text-muted-foreground">
           <Mail className="size-4 shrink-0" aria-hidden />
-          Tu es point de vente et tu veux apparaitre sur GazPoints ?{" "}
+          Tu es point de vente et tu veux apparaître sur GazPoints ?{" "}
           <Link
             href="/inscription"
             className="font-medium text-foreground underline underline-offset-4 transition-colors hover:text-primary"
           >
-            Cree ton espace vendeur
+            Crée ton espace vendeur
           </Link>
-          , ecris-nous a{" "}
+          , écris-nous à{" "}
           <a
             href="mailto:petchouko@gmail.com"
             className="font-medium text-foreground underline underline-offset-4 transition-colors hover:text-primary"

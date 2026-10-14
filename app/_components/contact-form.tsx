@@ -32,12 +32,12 @@ const sujets = [
   {
     objet: "Signalement",
     description:
-      "Un point de vente qui n’existe plus, une disponibilité fausse, une adresse erronée. On corrige la carte.",
+      "Un point de vente qui n'existe plus, une disponibilité fausse, une adresse erronée. On corrige la carte.",
   },
   {
     objet: "Problème technique",
     description:
-      "Une page qui ne s’affiche pas, une recherche qui ne trouve rien, une erreur d’interface.",
+      "Une page qui ne s'affiche pas, une recherche qui ne trouve rien, une erreur d'interface.",
   },
   {
     objet: "Données personnelles",
@@ -47,7 +47,7 @@ const sujets = [
   {
     objet: "Facturation",
     description:
-      "Une question sur l’abonnement Vendeur (5 000 FCFA/mois), un paiement, un remboursement ou une facture déjà réglée.",
+      "Une question sur l'abonnement Vendeur (5 000 FCFA/mois), un paiement, un remboursement ou une facture déjà réglée.",
   },
   {
     objet: "Partenariat ou presse",
@@ -82,7 +82,7 @@ export function ContactForm() {
 
       if (!response.ok) {
         setStatut("erreur")
-        setErreur(data?.error ?? "L’envoi a échoué. Réessaie plus tard.")
+        setErreur(data?.error ?? "L'envoi a échoué. Réessaie plus tard.")
         return
       }
 
@@ -93,7 +93,7 @@ export function ContactForm() {
       setMessage("")
     } catch {
       setStatut("erreur")
-      setErreur("Impossible d’envoyer le message. Vérifie ta connexion.")
+      setErreur("Impossible d'envoyer le message. Vérifie ta connexion.")
     }
   }
 
@@ -106,7 +106,7 @@ export function ContactForm() {
         <div className="mx-auto max-w-3xl text-center">
           <Badge variant="secondary" className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]">
             <Send className="size-3.5" />
-            Avant d’écrire
+            Avant d'écrire
           </Badge>
 
           <h2 className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
@@ -115,8 +115,8 @@ export function ContactForm() {
           </h2>
 
           <p className="mt-4 text-pretty text-base text-muted-foreground sm:text-lg">
-            Un objet clair, c’est une réponse en quelques heures au lieu de
-            plusieurs jours. Tu n’as aucun compte à créer.
+            Un objet clair, c'est une réponse en quelques heures au lieu de
+            plusieurs jours. Tu n'as aucun compte à créer.
           </p>
         </div>
 
@@ -205,7 +205,7 @@ export function ContactForm() {
 
                   {statut === "erreur" && erreur && (
                     <Alert variant="destructive">
-                      <AlertTitle>Échec de l’envoi</AlertTitle>
+                      <AlertTitle>Échec de l'envoi</AlertTitle>
                       <AlertDescription>{erreur}</AlertDescription>
                     </Alert>
                   )}
@@ -237,7 +237,7 @@ export function ContactForm() {
             <CardHeader>
               <CardTitle className="text-xl">Les objets possibles</CardTitle>
               <CardDescription>
-                Aucun objet n’est obligatoire, mais voici les plus courants.
+                Aucun objet n'est obligatoire, mais voici les plus courants.
               </CardDescription>
             </CardHeader>
 

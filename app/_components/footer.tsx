@@ -10,6 +10,7 @@ const navigation = [
 
 const gazpoint = [
   { label: "À propos", href: "/a-propos" },
+  { label: "Services", href: "/services" },
   { label: "Contact", href: "/contact" },
   { label: "Accueil", href: "/" },
 ]

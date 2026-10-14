@@ -22,7 +22,7 @@ export function AproposHero() {
           </Badge>
 
           <h1 className="mt-6 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            GazPoints veulent supprimer{" "}
+            GazPoints veut supprimer{" "}
             <span className="text-primary">les déplacements à vide</span> pour
             chercher du gaz.
           </h1>

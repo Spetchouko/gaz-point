@@ -659,6 +659,7 @@ export async function createDisponibiliteAdmin(
   const weightKg = String(formData.get("weightKg") ?? "").trim() || null
   const expiresAtRaw = String(formData.get("expiresAt") ?? "").trim()
   const phone = String(formData.get("phone") ?? "").trim() || null
+  const vendorId = String(formData.get("vendorId") ?? "").trim() || null
 
   if (!pointNameRaw) return { ok: false, message: "Le champ « Point de vente » est obligatoire." }
   const point = await resolvePointByName(pointNameRaw)
@@ -704,6 +705,7 @@ export async function createDisponibiliteAdmin(
     note,
     reportedBy: admin.id,
     reportedByName: admin.name ?? "Administration",
+    vendorId,
     source: "administration",
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -765,6 +767,7 @@ export async function updateDisponibiliteAdmin(
       expiresAt,
       phone,
       note,
+      vendorId,
       updatedAt: new Date(),
     })
     .where(eq(disponibilite.id, disponibiliteId))
@@ -903,7 +906,7 @@ export async function createAdminCollaborator(
 
   return {
     ok: true,
-    message: `Collaborateur « ${name} » créé avec succès.`,
+    message: "Collaborateur créé avec succès.",
   }
 }
 
@@ -1125,8 +1128,12 @@ export async function resetUserPassword(
 
   const userId = String(formData.get("userId") ?? "")
   const rawPassword = String(formData.get("newPassword") ?? "")
+  const confirmPassword = String(formData.get("confirmPassword") ?? "")
+
   if (!userId) return { ok: false, message: "Utilisateur introuvable." }
-  if (userId === admin.id) return { ok: false, message: "Vous ne pouvez pas modifier votre propre mot de passe ici." }
+  if (userId === admin.id) {
+    return { ok: false, message: "Vous ne pouvez pas modifier votre propre mot de passe ici." }
+  }
 
   const [target] = await db
     .select({ id: userTable.id, role: userTable.role })
@@ -1138,7 +1145,19 @@ export async function resetUserPassword(
     return { ok: false, message: "Impossible de modifier un compte d'administration." }
   }
 
-  const password = rawPassword.length >= 8 ? rawPassword : randomUUID().slice(0, 10)
+  // Validation: password confirmation
+  if (!rawPassword && !confirmPassword) {
+    // Generate random password if none provided
+    const generatedPassword = randomUUID().slice(0, 12)
+    // Store the generated password to return it
+    // We'll use it below
+  } else if (rawPassword !== confirmPassword) {
+    return { ok: false, message: "Les mots de passe ne correspondent pas." }
+  } else if (rawPassword.length < 8) {
+    return { ok: false, message: "Le nouveau mot de passe doit contenir au moins 8 caractères." }
+  }
+
+  const password = rawPassword || randomUUID().slice(0, 12)
   if (rawPassword && rawPassword.length < 8) {
     return { ok: false, message: "Le nouveau mot de passe doit contenir au moins 8 caractères." }
   }
@@ -1867,4 +1886,35 @@ export async function deleteAvis(
   revalidatePath("/")
 
   return { ok: true, message: "Avis supprimé." }
+}
+
+/** Met à jour l'avatar de l'administrateur connecté. */
+export async function updateAdminAvatar(
+  _prev: ActionResult | null,
+  formData: FormData
+): Promise<ActionResult> {
+  const admin = await requireAdmin()
+
+  const image = String(formData.get("image") ?? "").trim()
+  if (!image) return { ok: false, message: "Aucune image fournie." }
+
+  // Validate data URL format (base64)
+  if (!image.startsWith("data:image/")) {
+    return { ok: false, message: "Format d'image invalide. Utilisez une data URL base64." }
+  }
+
+  // Check size (max 2MB base64 ≈ 2.7MB data URL)
+  if (image.length > 3000000) {
+    return { ok: false, message: "Image trop lourde (2 Mo maximum)." }
+  }
+
+  await db
+    .update(userTable)
+    .set({ image, updatedAt: new Date() })
+    .where(eq(userTable.id, admin.id))
+
+  await logAdminAction(admin.id, "admin", admin.id, "update", "Avatar mis à jour")
+  revalidatePath("/admin/profil")
+
+  return { ok: true, message: "Photo de profil mise à jour." }
 }

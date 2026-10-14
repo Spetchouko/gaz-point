@@ -34,8 +34,14 @@ export function AdminCollaborateurForm() {
       const result = await createAdminCollaborator(null, formData)
       setFeedback(result)
       if (result.ok) {
+        // Recharger la liste des collaborateurs depuis le serveur
         router.refresh()
+        // Fermer le formulaire après un court délai pour permettre la refresh
+        setTimeout(() => setOpen(false), 500)
       }
+    } catch (error) {
+      // En cas d'erreur réseau ou inattendue, afficher un message explicite
+      setFeedback({ ok: false, message: "Erreur lors de la création du collaborateur. Veuillez réessayer." })
     } finally {
       setIsPending(false)
     }
@@ -65,7 +71,12 @@ export function AdminCollaborateurForm() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="collab-name">Nom</Label>
-                <Input id="collab-name" name="name" placeholder="Ex: Jean Dupont" required />
+                <Input
+                  id="collab-name"
+                  name="name"
+                  placeholder="Ex: Jean Dupont"
+                  required
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="collab-email">Email</Label>
@@ -102,7 +113,7 @@ export function AdminCollaborateurForm() {
 
             <p className="text-sm text-muted-foreground">
               Le collaborateur pourra consulter le tableau de bord et exporter les
-              données. Seul l&apos;administrateur peut gérer les accès.
+              données. Seul l'administrateur peut gérer les accès.
             </p>
 
             {feedback && (

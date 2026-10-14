@@ -7,25 +7,25 @@ const engagements = [
     icon: PiggyBank,
     title: "Gratuit pour les usagers",
     description:
-      "0 FCFA a vie, sans carte bancaire. Seul l'espace Vendeur est payant : 5 000 FCFA/mois, sans engagement. Les usagers ne paient jamais.",
+      "0 FCFA à vie, sans carte bancaire. Seul l'espace Vendeur est payant : 5 000 FCFA/mois, sans engagement. Les usagers ne paient jamais.",
   },
   {
     icon: Eye,
     title: "Transparent sur l'information",
     description:
-      "Un statut, une date et une source pour chaque point. Rien n'est affiche sans l'heure de la derniere mise a jour.",
+      "Un statut, une date et une source pour chaque point. Rien n'est affiché sans l'heure de la dernière mise à jour.",
   },
   {
     icon: MapPin,
     title: "Ancré dans les quartiers",
     description:
-      "Nous commencons la ou le probleme est quotidien, a Douala, et nous elargissons avec les points de vente qui nous rejoignent.",
+      "Nous commençons là où le problème est quotidien, à Douala, et nous élargissons avec les points de vente qui nous rejoignent.",
   },
   {
     icon: Ban,
     title: "Aucune promesse en trop",
     description:
-      "Nous ne garantissons pas qu'une bouteille restera disponible jusqu'a ton arrivee. Nous montrons ce qui a ete signale, et quand.",
+      "Nous ne garantissons pas qu'une bouteille restera disponible jusqu'à ton arrivée. Nous montrons ce qui a été signalé, et quand.",
   },
 ]
 
@@ -42,13 +42,13 @@ export function NotrePromesse() {
           </Badge>
 
           <h2 className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            Quatre regles qu'on{" "}
-            <span className="text-primary">negocie pas</span>
+            Quatre règles qu'on{" "}
+            <span className="text-primary">négocie pas</span>
           </h2>
 
           <p className="mt-5 text-pretty text-base text-muted-foreground sm:text-lg">
-            Elles sont la raison d'etre du service. Si GazPoints cessent de les
-            respecter, il ne sert plus a rien.
+            Elles sont la raison d'être du service. Si GazPoints cessent de les
+            respecter, il ne sert plus à rien.
           </p>
         </div>
 

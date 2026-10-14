@@ -12,7 +12,7 @@
   --popover: oklch(1.0000 0 0);
   --popover-foreground: oklch(0.0672 0 0);
   --primary: oklch(0.3776 0.1447 264.5076);
-  --primary-foreground: oklch(0.9698 0.0057 264.5324);
+  --primary-foreground: oklch(0.9055 0.0307 265.3249);
   --secondary: oklch(0.1448 0 0);
   --secondary-foreground: oklch(0.9758 0.0057 264.5326);
   --muted: oklch(0.9702 0 0);
@@ -22,7 +22,7 @@
   --destructive: oklch(0.4386 0.1753 14.1958);
   --destructive-foreground: oklch(1.0000 0 0);
   --border: oklch(0.9158 0 0);
-  --input: oklch(0.8400 0 0);
+  --input: oklch(1.0000 0 0);
   --ring: oklch(0.4467 0.1272 265.6182);
   --chart-1: oklch(0.4774 0.1654 256.4882);
   --chart-2: oklch(0.7479 0.1375 176.0249);
@@ -57,6 +57,11 @@
   --shadow-2xl: 0 1px 2px 0px hsl(225.5172 35.8025% 15.8824% / 0.13);
   --tracking-normal: 0em;
   --spacing: 0.24rem;
+
+  /* Couleurs de section pour le design trois couleurs */
+  --section-light: oklch(0.98 0.01 30);
+  --section-green: oklch(0.92 0.08 140);
+  --section-blue: oklch(0.95 0.06 200);
 }
 
 .dark {
@@ -77,7 +82,7 @@
   --destructive: oklch(0.6496 0.1202 12.3014);
   --destructive-foreground: oklch(0.9851 0 0);
   --border: oklch(0.2768 0 0);
-  --input: oklch(0.3600 0 0);
+  --input: oklch(0.1822 0 0);
   --ring: oklch(0.6497 0.1195 264.3295);
   --chart-1: oklch(0.6497 0.1195 264.3295);
   --chart-2: oklch(0.5196 0.1801 260.0927);
@@ -163,16 +168,12 @@
   --shadow-lg: var(--shadow-lg);
   --shadow-xl: var(--shadow-xl);
   --shadow-2xl: var(--shadow-2xl);
-}
 
-/* Animations de la section Démonstration (smartphone + main) */
-@theme {
   --animate-demo-float: demo-float 8s ease-in-out infinite;
   --animate-demo-swipe: demo-swipe 2.6s cubic-bezier(0.45, 0, 0.2, 1) infinite;
 
   @keyframes demo-float {
-    0%,
-    100% {
+    0%, 100% {
       transform: translateY(0);
     }
     50% {
@@ -181,8 +182,7 @@
   }
 
   @keyframes demo-swipe {
-    0%,
-    10% {
+    0%, 10% {
       transform: translateY(28px) rotate(0deg);
       opacity: 0;
     }
@@ -197,8 +197,7 @@
       transform: translateY(-30px) rotate(-2deg);
       opacity: 1;
     }
-    82%,
-    100% {
+    82%, 100% {
       transform: translateY(-32px) rotate(-2deg);
       opacity: 0;
     }
@@ -217,18 +216,16 @@
 
 @layer utilities {
   .bg-gradient-section {
-    background: linear-gradient(180deg, 
-      oklch(0.98 0.01 265) 0%, 
-      oklch(0.97 0.015 220) 50%, 
-      oklch(0.96 0.02 176) 100%
-    );
+    background: linear-gradient(180deg,
+        oklch(0.98 0.01 265) 0%,
+        oklch(0.97 0.015 220) 50%,
+        oklch(0.96 0.02 176) 100%);
   }
-  
+
   .bg-gradient-section-reverse {
-    background: linear-gradient(180deg, 
-      oklch(0.96 0.02 176) 0%, 
-      oklch(0.97 0.015 220) 50%, 
-      oklch(0.98 0.01 265) 100%
-    );
+    background: linear-gradient(180deg,
+        oklch(0.96 0.02 176) 0%,
+        oklch(0.97 0.015 220) 50%,
+        oklch(0.98 0.01 265) 100%);
   }
 }

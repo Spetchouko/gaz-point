@@ -55,7 +55,7 @@ export function MesCommandes({
         <header className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Mes commandes</h1>
           <p className="mt-2 text-muted-foreground">
-            L’historique de tes recharges de gaz, dépôt par dépôt.
+            L'historique de tes recharges de gaz, dépôt par dépôt.
           </p>
         </header>
 
@@ -87,9 +87,9 @@ export function MesCommandes({
                 <span className="flex size-12 items-center justify-center rounded-full bg-primary/10">
                   <Package className="size-6 text-primary" aria-hidden />
                 </span>
-                <p className="font-medium">Aucune recharge pour l’instant</p>
+                <p className="font-medium">Aucune recharge pour l'instant</p>
                 <p className="max-w-sm text-sm text-muted-foreground">
-                  Ajoute ta première recharge ci-dessus pour garder l’historique
+                  Ajoute ta première recharge ci-dessus pour garder l'historique
                   de tes achats de gaz.
                 </p>
               </CardContent>

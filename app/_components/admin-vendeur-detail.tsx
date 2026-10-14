@@ -578,13 +578,28 @@ export function AdminVendeurDetail({
             <DialogTitle>Réinitialiser le mot de passe</DialogTitle>
             <DialogDescription>
               Laissez vide pour générer un mot de passe temporaire aléatoire, ou saisissez un
-              nouveau mot de passe (8 caractères minimum).
+              nouveau mot de passe (8 caractères minimum). La confirmation est requise si vous
+ saisis un nouveau mot de passe.
             </DialogDescription>
           </DialogHeader>
           <form action={handleReset} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="vendor-new-password">Nouveau mot de passe (facultatif)</Label>
-              <Input id="vendor-new-password" name="newPassword" type="text" placeholder="Mot de passe temporaire" />
+              <Label htmlFor="vendor-new-password">Nouveau mot de passe</Label>
+              <Input
+                id="vendor-new-password"
+                name="newPassword"
+                type="password"
+                placeholder="Mot de passe temporaire"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="vendor-confirm-password">Confirmation</Label>
+              <Input
+                id="vendor-confirm-password"
+                name="confirmPassword"
+                type="password"
+                placeholder="Confirmez le mot de passe"
+              />
             </div>
             {feedback && (
               <p role="alert" className={cn("text-sm font-medium break-words", feedback.ok ? "text-emerald-600" : "text-destructive")}>{feedback.message}</p>

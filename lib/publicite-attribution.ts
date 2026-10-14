@@ -1,5 +1,3 @@
-import { randomUUID } from "node:crypto"
-import { headers } from "next/headers"
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { eq } from "drizzle-orm"
@@ -29,7 +27,7 @@ export type AdAttribution = {
 }
 
 export function newClickId(): string {
-  return randomUUID()
+  return crypto.randomUUID()
 }
 
 export function serializeAdAttribution(attribution: AdAttribution): string {
@@ -104,7 +102,7 @@ export async function recordConversion(input: {
     await db
       .insert(publiciteEvent)
       .values({
-        id: randomUUID(),
+        id: crypto.randomUUID(),
         publiciteId: ad.id,
         eventType: "conversion",
         conversionType: input.conversionType,

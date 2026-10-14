@@ -45,7 +45,7 @@ export default function InscriptionPage() {
         </div>
 
         {/* Cartes */}
-        <div className="grid max-w-[560px] mx-auto gap-4 md:grid-cols-2">
+        <div className="grid max-w-140 mx-auto gap-4 md:grid-cols-2">
 
           {/* Carte Usager - Bleu clair */}
           <Card
@@ -62,7 +62,7 @@ export default function InscriptionPage() {
             tabIndex={0}
             aria-label="Compte usager"
           >
-            <div className="relative mb-3 flex-shrink-0">
+            <div className="relative mb-3 shrink-0">
               <div className="size-12 rounded-full bg-sky-100 flex items-center justify-center mx-auto border border-sky-200">
                 <User className="size-5 text-sky-600" />
               </div>
@@ -102,7 +102,7 @@ export default function InscriptionPage() {
             tabIndex={0}
             aria-label="Compte vendeur"
           >
-            <div className="relative mb-3 flex-shrink-0">
+            <div className="relative mb-3 shrink-0">
               <div className="size-12 rounded-full bg-emerald-100 flex items-center justify-center mx-auto border border-emerald-200">
                 <Store className="size-5 text-emerald-600" />
               </div>

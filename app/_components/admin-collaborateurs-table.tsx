@@ -33,10 +33,10 @@ type CollaborateurRow = {
   permissions: AdminModuleUi[]
 }
 
-const roleConfig: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
-  admin: { label: "Administrateur", color: "bg-purple-100 text-purple-700", icon: Shield },
-  collaborateur: { label: "Collaborateur", color: "bg-indigo-100 text-indigo-700", icon: UserCheck },
-  client: { label: "Usager (désactivé)", color: "bg-sky-100 text-sky-700", icon: User },
+const roleConfig: Record<string, { label: string; color: string; Icon: React.ComponentType<{ className?: string }> }> = {
+  admin: { label: "Administrateur", color: "bg-purple-100 text-purple-700", Icon: Shield },
+  collaborateur: { label: "Collaborateur", color: "bg-indigo-100 text-indigo-700", Icon: UserCheck },
+  client: { label: "Usager (désactivé)", color: "bg-sky-100 text-sky-700", Icon: User },
 }
 
 export function AdminCollaborateursTable({ collaborateurs }: { collaborateurs: CollaborateurRow[] }) {
@@ -97,8 +97,9 @@ export function AdminCollaborateursTable({ collaborateurs }: { collaborateurs: C
             </thead>
             <tbody className="divide-y">
               {collaborateurs.map((c) => {
-                const role = roleConfig[c.role] ?? { label: c.role, color: "bg-muted text-foreground", icon: User }
+                const config = roleConfig[c.role] ?? { label: c.role, color: "bg-muted text-foreground", Icon: User }
                 const isAdmin = c.role === "admin"
+                const RoleIcon = config.Icon
                 return (
                   <tr key={c.id} className="hover:bg-muted/50 transition-colors">
                     <td className="px-4 py-3">
@@ -132,9 +133,9 @@ export function AdminCollaborateursTable({ collaborateurs }: { collaborateurs: C
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant="secondary" className={role.color}>
-                        <role.icon className="size-3 mr-1" />
-                        {role.label}
+                      <Badge variant="secondary" className={config.color}>
+                        <RoleIcon className="size-3 mr-1" />
+                        {config.label}
                       </Badge>
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell">
