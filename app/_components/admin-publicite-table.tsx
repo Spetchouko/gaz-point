@@ -1,6 +1,14 @@
 "use client"
 
-import { MoreHorizontal, PencilLine, Power, Trash2, Megaphone, ExternalLink } from "lucide-react"
+import {
+  Eye,
+  ExternalLink,
+  Megaphone,
+  MoreHorizontal,
+  PencilLine,
+  Power,
+  Trash2,
+} from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -11,6 +19,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { formatDate } from "@/lib/gaz"
+import {
+  isPubliciteImageUrl,
+  isPubliciteStatus,
+  PUBLICITE_STATUS_LABELS,
+  publiciteSlotShort,
+} from "@/lib/publicite-config"
 import { cn } from "@/lib/utils"
 
 export type PubliciteRow = {
@@ -37,11 +51,13 @@ export function AdminPubliciteTable({
   onEdit,
   onToggle,
   onDelete,
+  onPreview,
 }: {
   publicites: PubliciteRow[]
   onEdit: (p: PubliciteRow) => void
   onToggle: (p: PubliciteRow) => void
   onDelete: (p: PubliciteRow) => void
+  onPreview: (p: PubliciteRow) => void
 }) {
   if (publicites.length === 0) {
     return (
@@ -82,7 +98,7 @@ export function AdminPubliciteTable({
                 <tr key={ad.id} className="hover:bg-muted/50 transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      {ad.image ? (
+                      {ad.image && isPubliciteImageUrl(ad.image) ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={ad.image} alt="" className="h-10 w-14 rounded-md object-cover" />
                       ) : (
@@ -90,18 +106,26 @@ export function AdminPubliciteTable({
                           <Megaphone className="size-4 text-muted-foreground" />
                         </div>
                       )}
-                      <div>
-                        <p className="font-medium">{ad.title}</p>
+                      <div className="min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => onPreview(ad)}
+                          title="Prévisualiser la publicité"
+                          className="group flex items-center gap-1.5 text-left font-medium hover:text-primary hover:underline underline-offset-2"
+                        >
+                          <span className="truncate">{ad.title}</span>
+                          <Eye className="size-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+                        </button>
                         {ad.description && (
-                          <p className="max-w-md truncate text-xs text-muted-foreground">{ad.description}</p>
+                          <p className="max-w-md truncate text-xs text-muted-foreground">
+                            {ad.description}
+                          </p>
                         )}
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
-                    <Badge variant="outline">
-                      {ad.slot === "home_hero" ? "Accueil (bannière)" : "À propos"}
-                    </Badge>
+                    <Badge variant="outline">{publiciteSlotShort(ad.slot)}</Badge>
                   </td>
                   <td className="px-4 py-3 hidden lg:table-cell">
                     {ad.startAt || ad.endAt ? (
@@ -126,7 +150,15 @@ export function AdminPubliciteTable({
                           : "bg-red-50 text-red-700 border-red-200"
                       )}
                     >
-                      {future ? "Programmée" : past ? "Terminée" : ad.status === "active" ? "Active" : "Inactive"}
+                      {future
+                        ? "Programmée"
+                        : past
+                        ? "Terminée"
+                        : ad.status === "active"
+                        ? "Active"
+                        : isPubliciteStatus(ad.status)
+                        ? PUBLICITE_STATUS_LABELS[ad.status]
+                        : ad.status}
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -138,6 +170,10 @@ export function AdminPubliciteTable({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuItem onClick={() => onPreview(ad)} className="flex items-center gap-2">
+                          <Eye className="size-4" />
+                          Prévisualiser
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onEdit(ad)} className="flex items-center gap-2">
                           <PencilLine className="size-4" />
                           Modifier

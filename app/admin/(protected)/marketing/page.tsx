@@ -1,20 +1,10 @@
 import { Metadata } from "next"
 import { db } from "@/db"
 import { publicite } from "@/db/schema"
-import { desc, eq, gte, lte } from "drizzle-orm"
+import { desc } from "drizzle-orm"
 import { AdminPubliciteBoard } from "@/app/_components/admin-publicite-board"
 import { requireStaffModule } from "@/lib/session"
 import type { PubliciteRow } from "@/app/_components/admin-publicite-table"
-
-// Statuts disponibles pour le filtrage
-const PUBLICITE_STATUS_OPTIONS = [
-  { value: null as string | null, label: "Toutes" },
-  { value: "draft", label: "Brouillons" },
-  { value: "scheduled", label: "Programmées" },
-  { value: "active", label: "En cours" },
-  { value: "expired", label: "Terminées" },
-  { value: "suspended", label: "Suspendues" },
-]
 
 export const metadata: Metadata = {
   title: { absolute: "Marketing & publicités | Administration GAZ POINT" },
@@ -56,7 +46,8 @@ export default async function AdminMarketingPage() {
       <header>
         <h1 className="text-3xl font-bold tracking-tight">Marketing & publicités</h1>
         <p className="mt-2 text-muted-foreground">
-          Bannières d&apos;information et promotions affichées sur l&apos;accueil et la page À propos.
+          Deux emplacements sur l&apos;accueil : sous la bannière d&apos;accueil et
+          au-dessus de « Trouver mon Gaz ».
         </p>
       </header>
 

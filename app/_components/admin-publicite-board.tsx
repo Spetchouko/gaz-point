@@ -13,9 +13,11 @@ import {
 import { deletePublicite, togglePubliciteStatus } from "@/app/admin/actions"
 import { AdminPubliciteTable, type PubliciteRow } from "@/app/_components/admin-publicite-table"
 import { AdminPubliciteForm } from "@/app/_components/admin-publicite-form"
+import { AdminPublicitePreviewDialog } from "@/app/_components/admin-publicite-preview-dialog"
 
 export function AdminPubliciteBoard({ publicites }: { publicites: PubliciteRow[] }) {
   const [editTarget, setEditTarget] = useState<PubliciteRow | null | "new">(null)
+  const [previewTarget, setPreviewTarget] = useState<PubliciteRow | null>(null)
   const [toggleTarget, setToggleTarget] = useState<PubliciteRow | null>(null)
   const [toggleMsg, setToggleMsg] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<PubliciteRow | null>(null)
@@ -56,6 +58,7 @@ export function AdminPubliciteBoard({ publicites }: { publicites: PubliciteRow[]
         onEdit={(p) => setEditTarget(p)}
         onToggle={(p) => setToggleTarget(p)}
         onDelete={(p) => setDeleteTarget(p)}
+        onPreview={(p) => setPreviewTarget(p)}
       />
 
       <AdminPubliciteForm
@@ -63,6 +66,13 @@ export function AdminPubliciteBoard({ publicites }: { publicites: PubliciteRow[]
         open={editTarget !== null}
         onClose={() => setEditTarget(null)}
         edit={editTarget === "new" ? null : editTarget}
+      />
+
+      <AdminPublicitePreviewDialog
+        key={previewTarget?.id ?? "preview-closed"}
+        ad={previewTarget}
+        open={previewTarget !== null}
+        onClose={() => setPreviewTarget(null)}
       />
 
       <Dialog open={toggleTarget !== null} onOpenChange={() => setToggleTarget(null)}>

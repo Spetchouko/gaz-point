@@ -38,16 +38,158 @@ function getEligiblePublicites(ads: PubliciteBannerData[]): PubliciteBannerData[
 }
 
 /**
+ * Carte unique d'une publicité.
+ * Rendu partagé entre la landing page et les aperçus du dashboard Marketing :
+ * image compacte à gauche, titre + texte court + bouton d'action à droite.
+ * `interactive={false}` fige le bouton (aperçu non cliquable).
+ */
+export function PubliciteBannerCard({
+  ad,
+  interactive = true,
+  animate = true,
+  className,
+}: {
+  ad: PubliciteBannerData
+  interactive?: boolean
+  animate?: boolean
+  className?: string
+}) {
+  return (
+    <article
+      className={cn(
+        "flex h-auto w-full flex-col overflow-hidden rounded-2xl border bg-card shadow-md md:h-[200px] md:flex-row",
+        animate && "animate-in fade-in duration-500 motion-reduce:animate-none",
+        className
+      )}
+    >
+      {/* Zone image (gauche) */}
+      {ad.image && (
+        <div
+          className={cn(
+            "relative h-44 w-full shrink-0 overflow-hidden border-b bg-muted md:h-full md:w-[38%] md:border-b-0 md:border-r",
+            animate &&
+              "animate-in slide-in-from-right-8 fade-in duration-500 ease-out motion-reduce:animate-none"
+          )}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={ad.image}
+            alt=""
+            loading="lazy"
+            className="h-full w-full object-cover"
+          />
+        </div>
+      )}
+
+      {/* Zone contenu (droite) : titre + texte court + bouton d'action */}
+      <div className="flex flex-1 flex-col justify-center gap-1.5 p-4 sm:p-5 md:gap-2">
+        <h2 className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
+          {ad.title || "GazPoints"}
+        </h2>
+
+        {(ad.price !== null || ad.priceLabel) && (
+          <span className="w-fit rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+            {ad.priceLabel ??
+              (ad.price !== null
+                ? `${new Intl.NumberFormat("fr-FR").format(ad.price)} FCFA`
+                : "")}
+          </span>
+        )}
+
+        {ad.description && (
+          <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
+            {ad.description}
+          </p>
+        )}
+
+        {ad.linkUrl &&
+          (interactive ? (
+            <a
+              href={ad.linkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              En savoir plus
+              <ArrowRight className="size-4" />
+            </a>
+          ) : (
+            <span className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-sm font-semibold text-primary-foreground">
+              En savoir plus
+              <ArrowRight className="size-4" />
+            </span>
+          ))}
+      </div>
+    </article>
+  )
+}
+
+/**
+ * Aperçu contextuel d'une publicité à un emplacement donné.
+ * Reproduit le positionnement réel sur la landing : un repère gris figure la
+ * section voisine (au-dessus pour « sous la bannière », en dessous pour
+ * « au-dessus de Trouver mon Gaz »).
+ */
+export function PublicitePreview({
+  ad,
+  slot,
+  className,
+}: {
+  ad: PubliciteBannerData
+  slot: string
+  className?: string
+}) {
+  const aboveSearch = slot === "home_search"
+
+  return (
+    <div className={cn("space-y-2 rounded-xl border bg-muted/30 p-3", className)}>
+      {aboveSearch ? (
+        <PreviewBar label="Sections de la page…" subtle />
+      ) : (
+        <PreviewBar label="Section d'accueil (Hero)" />
+      )}
+
+      <div className="mx-auto w-full max-w-[800px]">
+        <PubliciteBannerCard ad={ad} interactive={false} animate={false} />
+      </div>
+
+      {aboveSearch ? (
+        <PreviewBar label="« Trouver mon Gaz » — recherche" />
+      ) : (
+        <PreviewBar label="Suite de la page…" subtle />
+      )}
+    </div>
+  )
+}
+
+function PreviewBar({ label, subtle = false }: { label: string; subtle?: boolean }) {
+  return (
+    <div
+      className={cn(
+        "flex h-9 items-center justify-center rounded-lg border border-dashed text-[11px] font-medium uppercase tracking-wide text-muted-foreground",
+        subtle ? "bg-background/60" : "bg-muted"
+      )}
+    >
+      {label}
+    </div>
+  )
+}
+
+/**
  * Bannière publicitaire GazPoints.
- * - Position : au-dessus de la section « Situation courante », jamais dans la Hero.
  * - Format : 800 × 200 px sur ordinateur, empilée et responsive sur mobile.
- * - Gabarit : image compacte à gauche (animation fluide de droite à gauche),
- *   titre + texte court + bouton d’action (URL admin) à droite.
- * - Données : réutilise le système marketing existant (slot home_hero).
+ * - Données : réutilise le système marketing existant (slots home_hero /
+ *   home_search).
  * - Tolérance : sans pub éligible → masquée ; champs manquants gérés
  *   (image / URL / description absentes).
  */
-export function PubliciteCarousel({ publicites }: { publicites: PubliciteBannerData[] }) {
+export function PubliciteCarousel({
+  publicites,
+  className,
+}: {
+  publicites: PubliciteBannerData[]
+  className?: string
+}) {
   const [index, setIndex] = useState(0)
 
   const ads = Array.isArray(publicites) ? publicites : []
@@ -71,59 +213,9 @@ export function PubliciteCarousel({ publicites }: { publicites: PubliciteBannerD
   return (
     <section
       aria-label="Bannière publicitaire GazPoints"
-      className="mx-auto w-full max-w-[800px] px-4"
+      className={cn("mx-auto w-full max-w-[800px] px-4", className)}
     >
-      <article
-        key={current.id}
-        className="flex h-auto w-full flex-col overflow-hidden rounded-2xl border bg-card shadow-md animate-in fade-in duration-500 motion-reduce:animate-none md:h-[200px] md:flex-row"
-      >
-        {/* Zone image (gauche) — animation droite → gauche à chaque slide */}
-        {current.image && (
-          <div className="relative h-44 w-full shrink-0 overflow-hidden border-b bg-muted animate-in slide-in-from-right-8 fade-in duration-500 ease-out motion-reduce:animate-none md:h-full md:w-[38%] md:border-b-0 md:border-r">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={current.image}
-              alt=""
-              loading="lazy"
-              className="h-full w-full object-cover"
-            />
-          </div>
-        )}
-
-        {/* Zone contenu (droite) : titre + texte court + bouton d’action */}
-        <div className="flex flex-1 flex-col justify-center gap-1.5 p-4 sm:p-5 md:gap-2">
-          <h2 className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
-            {current.title || "GazPoints"}
-          </h2>
-
-          {(current.price !== null || current.priceLabel) && (
-            <span className="w-fit rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
-              {current.priceLabel ??
-                (current.price !== null
-                  ? `${new Intl.NumberFormat("fr-FR").format(current.price)} FCFA`
-                  : "")}
-            </span>
-          )}
-
-          {current.description && (
-            <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
-              {current.description}
-            </p>
-          )}
-
-          {current.linkUrl && (
-            <a
-              href={current.linkUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              En savoir plus
-              <ArrowRight className="size-4" />
-            </a>
-          )}
-        </div>
-      </article>
+      <PubliciteBannerCard key={current.id} ad={current} />
 
       {/* Indicateurs de slide */}
       {eligibleAds.length > 1 && (

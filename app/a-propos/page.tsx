@@ -5,8 +5,6 @@ import { Equipe } from "@/app/_components/equipe"
 import { NotreDemarche } from "@/app/_components/notre-demarche"
 import { NotreMethode } from "@/app/_components/notre-methode"
 import { NotrePromesse } from "@/app/_components/notre-promesse"
-import { PubliciteCarousel } from "@/app/_components/publicite-banner"
-import { getPublicitesForSlot } from "@/lib/publicite"
 
 export const metadata: Metadata = {
   title: { absolute: "À propos | GazPoints" },
@@ -14,12 +12,11 @@ export const metadata: Metadata = {
     "GazPoints est un service d’information sur les points de vente de gaz de cuisson à Douala. Profil usager gratuit à vie, espace vendeur à 5 000 FCFA/mois : notre point de départ, nos engagements et la vérification de l’information.",
 }
 
-export default async function APropos() {
-  const aproposPublicites = await getPublicitesForSlot("apropos")
-
+export default function APropos() {
+  // Les publicités ne sont plus diffusées sur cette page : uniquement deux
+  // emplacements sur la landing page (sous la Hero et avant « Trouver mon Gaz »).
   return (
     <>
-      <PubliciteCarousel publicites={aproposPublicites} />
       <AproposHero />
       <NotreDemarche />
       <NotrePromesse />

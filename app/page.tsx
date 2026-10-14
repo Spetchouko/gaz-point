@@ -14,13 +14,20 @@ import { getPublicitesForSlot } from "@/lib/publicite"
 import { getApprovedAvis, type AvisPublic } from "@/lib/avis"
 
 export default async function Home() {
-  // La bannière est décorative : une panne du marketing ne doit jamais
-  // bloquer la landing. En cas d'erreur, elle est simplement masquée.
+  // Les bannières sont décoratives : une panne du marketing ne doit jamais
+  // bloquer la landing. En cas d'erreur, elles sont simplement masquées.
+  // Deux emplacements seulement : sous la Hero et au-dessus de « Trouver mon Gaz ».
   let homePublicites: PubliciteBannerData[] = []
+  let searchPublicites: PubliciteBannerData[] = []
   try {
     homePublicites = await getPublicitesForSlot("home_hero")
   } catch (error) {
     console.error("Impossible de charger les publicités home_hero :", error)
+  }
+  try {
+    searchPublicites = await getPublicitesForSlot("home_search")
+  } catch (error) {
+    console.error("Impossible de charger les publicités home_search :", error)
   }
 
   // Même principe pour les avis : seuls les avis approuvés sont publics,
@@ -39,6 +46,10 @@ export default async function Home() {
       <Storytelling />
       <Benefices />
       <Solution />
+      <PubliciteCarousel
+        publicites={searchPublicites}
+        className="py-8 md:py-12"
+      />
       <TrouverMonGaz />
       <Demonstration />
       <Fiabilite />

@@ -27,37 +27,21 @@ import {
   ADMIN_MODULES,
   type AdminModule,
 } from "@/lib/session"
+import {
+  PUBLICITE_SLOT_VALUES,
+  PUBLICITE_STATUSES,
+  derivePubliciteStatus,
+  isPubliciteStatus,
+  publiciteSlotLabel,
+  validatePubliciteDescription,
+  validatePubliciteImage,
+  validatePubliciteTitle,
+  type PubliciteStatus,
+} from "@/lib/publicite-config"
+
+export type { PubliciteStatus }
 
 export type ActionResult = { ok: boolean; message: string }
-
-// Nouveau système de statut pour les publicités programmables
-const VALID_PUBLICITE_STATUSES = ["draft", "scheduled", "active", "expired", "suspended"] as const
-export type PubliciteStatus = (typeof VALID_PUBLICITE_STATUSES)[number]
-
-/**
- * Détermine le statut initial en fonction des dates par rapport à maintenant.
- * - startAt dans le futur → scheduled
- * - endAt déjà écoulé → expired
- * - Dans la période → active
- * - Par défaut → draft
- */
-function determineInitialStatus(startAt: Date | null, endAt: Date | null): PubliciteStatus {
-  const now = new Date()
-  const startMs = startAt ? startAt.getTime() : 0
-  const endMs = endAt ? endAt.getTime() : 0
-  const nowMs = now.getTime()
-
-  if (startMs > nowMs) {
-    return "scheduled"
-  }
-  if (endMs > 0 && endMs <= nowMs) {
-    return "expired"
-  }
-  if (startMs <= nowMs && (endMs === 0 || endMs > nowMs)) {
-    return "active"
-  }
-  return "draft"
-}
 
 /**
  * Normalise une date en tenant compte du fuseau horaire d'Africa/Douala (Cameroun).
@@ -73,15 +57,13 @@ function normalizeCameroonTimezone(date: Date): Date {
 
 /**
  * Vérifie si une publicité avec le même titre et le même slot existe déjà.
- * On exclut l'ID courant si c'est une mise à jour.
  */
 async function checkDuplicateTitle(
-  db: any,
+  database: typeof db,
   title: string,
-  slot: string,
-  excludeId?: string
+  slot: string
 ): Promise<boolean> {
-  const [existing] = await db
+  const [existing] = await database
     .select({ id: publicite.id })
     .from(publicite)
     .where(
@@ -1462,8 +1444,8 @@ export async function createPublicite(
   const admin = (await requireStaffModule("marketing")).user
 
   const title = String(formData.get("title") ?? "").trim()
-  const description = String(formData.get("description") ?? "").trim() || null
-  const image = String(formData.get("image") ?? "").trim() || null
+  const descriptionRaw = String(formData.get("description") ?? "")
+  const imageRaw = String(formData.get("image") ?? "")
   const priceRaw = String(formData.get("price") ?? "").trim()
   const priceLabel = String(formData.get("priceLabel") ?? "").trim() || null
   const location = String(formData.get("location") ?? "").trim() || null
@@ -1474,11 +1456,24 @@ export async function createPublicite(
   const startAtRaw = String(formData.get("startAt") ?? "").trim()
   const endAtRaw = String(formData.get("endAt") ?? "").trim()
 
-  if (!title) return { ok: false, message: "Le titre est requis." }
-  if (slot !== "home_hero" && slot !== "apropos") return { ok: false, message: "Emplacement invalide." }
-  if (!VALID_PUBLICITE_STATUSES.includes(rawStatus as PubliciteStatus)) {
-    return { ok: false, message: `Statut invalide. Valeurs autorisées : ${VALID_PUBLICITE_STATUSES.join(", ")}` }
+  const titleError = validatePubliciteTitle(title)
+  if (titleError) return { ok: false, message: titleError }
+
+  const descriptionError = validatePubliciteDescription(descriptionRaw)
+  if (descriptionError) return { ok: false, message: descriptionError }
+
+  if (!PUBLICITE_SLOT_VALUES.includes(slot)) {
+    return { ok: false, message: "Emplacement invalide." }
   }
+  if (rawStatus && !isPubliciteStatus(rawStatus)) {
+    return { ok: false, message: `Statut invalide. Valeurs autorisées : ${PUBLICITE_STATUSES.join(", ")}` }
+  }
+
+  const imageCheck = validatePubliciteImage(imageRaw)
+  if (!imageCheck.ok) return { ok: false, message: imageCheck.error }
+
+  const description = descriptionRaw.trim() || null
+  const image = imageCheck.value
 
   const price = priceRaw ? Number.parseInt(priceRaw, 10) : null
   if (price !== null && (!Number.isFinite(price) || price < 0)) return { ok: false, message: "Prix invalide." }
@@ -1492,7 +1487,7 @@ export async function createPublicite(
   if (startAt && endAt && endAt < startAt) return { ok: false, message: "La date de fin doit suivre la date de début." }
 
   // Déterminer le statut initial en fonction des dates
-  const initialStatus = determineInitialStatus(startAt, endAt)
+  const initialStatus = derivePubliciteStatus(startAt, endAt)
 
   // Normaliser les fuseaux horaires (Africa/Douala)
   // On stocke en UTC adjustée pour Douala, l'affichage se fera en temps local
@@ -1534,8 +1529,8 @@ export async function updatePublicite(
 
   const id = String(formData.get("publiciteId") ?? "")
   const title = String(formData.get("title") ?? "").trim()
-  const description = String(formData.get("description") ?? "").trim() || null
-  const image = String(formData.get("image") ?? "").trim() || null
+  const descriptionRaw = String(formData.get("description") ?? "")
+  const imageRaw = String(formData.get("image") ?? "")
   const priceRaw = String(formData.get("price") ?? "").trim()
   const priceLabel = String(formData.get("priceLabel") ?? "").trim() || null
   const location = String(formData.get("location") ?? "").trim() || null
@@ -1547,11 +1542,25 @@ export async function updatePublicite(
   const endAtRaw = String(formData.get("endAt") ?? "").trim()
 
   if (!id) return { ok: false, message: "Publicité introuvable." }
-  if (!title) return { ok: false, message: "Le titre est requis." }
-  if (slot !== "home_hero" && slot !== "apropos") return { ok: false, message: "Emplacement invalide." }
-  if (!VALID_PUBLICITE_STATUSES.includes(status as PubliciteStatus)) {
-    return { ok: false, message: `Statut invalide. Valeurs autorisées : ${VALID_PUBLICITE_STATUSES.join(", ")}` }
+
+  const titleError = validatePubliciteTitle(title)
+  if (titleError) return { ok: false, message: titleError }
+
+  const descriptionError = validatePubliciteDescription(descriptionRaw)
+  if (descriptionError) return { ok: false, message: descriptionError }
+
+  if (!PUBLICITE_SLOT_VALUES.includes(slot)) {
+    return { ok: false, message: "Emplacement invalide." }
   }
+  if (status && !isPubliciteStatus(status)) {
+    return { ok: false, message: `Statut invalide. Valeurs autorisées : ${PUBLICITE_STATUSES.join(", ")}` }
+  }
+
+  const imageCheck = validatePubliciteImage(imageRaw)
+  if (!imageCheck.ok) return { ok: false, message: imageCheck.error }
+
+  const description = descriptionRaw.trim() || null
+  const image = imageCheck.value
 
   const price = priceRaw ? Number.parseInt(priceRaw, 10) : null
   if (price !== null && (!Number.isFinite(price) || price < 0)) return { ok: false, message: "Prix invalide." }
@@ -1565,7 +1574,7 @@ export async function updatePublicite(
   if (startAt && endAt && endAt < startAt) return { ok: false, message: "La date de fin doit suivre la date de début." }
 
   // Déterminer le nouveau statut en fonction des dates mises à jour
-  const newStatus = determineInitialStatus(startAt, endAt)
+  const newStatus = derivePubliciteStatus(startAt, endAt)
 
   // Normaliser les fuseaux horaires (Africa/Douala)
   if (startAt) startAt = normalizeCameroonTimezone(startAt)
@@ -1674,7 +1683,7 @@ export async function duplicatePublicite(
   // Vérifier si un titre en double existe
   let uniqueTitle = copyTitle
   let counter = 1
-  while (await checkDuplicateTitle(db, uniqueTitle, original.slot, undefined)) {
+  while (await checkDuplicateTitle(db, uniqueTitle, original.slot)) {
     uniqueTitle = `${original.title} (copie ${counter})`
     counter++
   }
@@ -1733,7 +1742,7 @@ export async function exportPublicitesCsv(): Promise<{ ok: boolean; csv?: string
     return [
       ad.id,
       ad.title,
-      ad.slot === "home_hero" ? "Accueil (bannière)" : "À propos",
+      publiciteSlotLabel(ad.slot),
       ad.status,
       startDisplay,
       endDisplay,
