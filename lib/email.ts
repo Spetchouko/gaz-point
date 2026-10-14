@@ -19,6 +19,24 @@ function createTransporter() {
   })
 }
 
+/**
+ * Vérifie que le serveur SMTP a réellement accepté le message.
+ * On ne considère jamais un envoi comme réussi sans cette confirmation :
+ * une promesse résolue sans destinataire accepté doit lever une erreur.
+ */
+function assertMailAccepted(
+  info: { accepted?: unknown[]; rejected?: unknown[]; response?: string },
+  email: string
+) {
+  const acceptedCount = Array.isArray(info.accepted) ? info.accepted.length : 0
+  const rejectedCount = Array.isArray(info.rejected) ? info.rejected.length : 0
+  if (acceptedCount === 0 || rejectedCount > 0) {
+    throw new Error(
+      `Le serveur SMTP n'a pas accepté le message destiné à ${email} (réponse: ${info.response ?? "inconnue"})`
+    )
+  }
+}
+
 export interface VerificationEmailParams {
   email: string
   code: string
@@ -70,13 +88,15 @@ Ce code expire dans ${expiresInMinutes} minutes. Ne le partagez avec personne.
 Si vous n'avez pas créé de compte sur GazPoints, ignorez cet email.
   `
 
-  await transporter.sendMail({
+  const info = await transporter.sendMail({
     from: `"GazPoints" <${GMAIL_USER}>`,
     to: email,
     subject: `Votre code de validation GazPoints : ${code}`,
     text,
     html,
   })
+  assertMailAccepted(info, email)
+  return info
 }
 
 export async function sendVerificationEmailResend({ email, code, expiresInMinutes }: VerificationEmailParams) {
@@ -116,13 +136,15 @@ Ce code expire dans ${expiresInMinutes} minutes. Ne le partagez avec personne.
 Si vous n'avez pas demandé ce code, ignorez cet email.
   `
 
-  await transporter.sendMail({
+  const info = await transporter.sendMail({
     from: `"GazPoints" <${GMAIL_USER}>`,
     to: email,
     subject: `Nouveau code de validation GazPoints : ${code}`,
     text,
     html,
   })
+  assertMailAccepted(info, email)
+  return info
 }
 
 export async function sendVendorApprovalResultEmail({

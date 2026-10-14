@@ -133,8 +133,31 @@ function InscriptionVendeurContent() {
         return
       }
 
-      // Inscription réussie — rediriger vers la page de validation
-      router.push(`/validation-email?mode=${MODE_EMAIL}&redirect=${encodeURIComponent(redirectTo)}`)
+      // Inscription réussie — déclencher l'envoi du code de vérification à 6 chiffres.
+      // Le compte est déjà créé : un échec d'envoi ne doit pas bloquer l'utilisateur.
+      // On le redirige dans tous les cas, avec un message clair en cas d'échec.
+      const normalizedEmail = email.trim().toLowerCase()
+      let sendOk = true
+      try {
+        const res = await fetch("/api/auth/email-otp/send-verification", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: normalizedEmail, resend: false }),
+        })
+        sendOk = res.ok
+        if (!sendOk) {
+          const data = await res.json().catch(() => null)
+          console.error("[signup-vendeur] envoi du code refusé:", data?.error?.message)
+        }
+      } catch (sendErr) {
+        console.error("[signup-vendeur] envoi du code échoué:", sendErr)
+        sendOk = false
+      }
+
+      const flags = sendOk ? "&sent=1" : "&sendError=1"
+      router.push(
+        `/validation-email?mode=${MODE_EMAIL}&email=${encodeURIComponent(normalizedEmail)}&redirect=${encodeURIComponent(redirectTo)}${flags}`
+      )
       router.refresh()
     } catch (err) {
       console.error("[signup-vendeur] catch error:", err)

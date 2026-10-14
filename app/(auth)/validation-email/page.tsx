@@ -13,47 +13,38 @@ const RESEND_COOLDOWN_SECONDS = 60
 
 function ValidationEmailContent() {
   const params = useSearchParams()
-  const redirectParam = params.get("redirect") || "/dashboard"
   const router = useRouter()
   const { data: session } = authClient.useSession()
 
+  // L'email est transmis par la page d'inscription (le compte n'a pas encore de
+  // session tant qu'il n'est pas vérifié). On retombe sur la session si présente.
+  const emailParam = (params.get("email") ?? "").trim().toLowerCase()
+  const email = emailParam || (session?.user?.email ?? "").toLowerCase()
+  const redirectParam = params.get("redirect") || "/dashboard"
+  const sentOk = params.get("sent") === "1"
+  const sendFailed = params.get("sendError") === "1"
+
   const [code, setCode] = useState("")
-  const [error, setError] = useState("")
+  const [error, setError] = useState(
+    sendFailed
+      ? "Le code n'a pas pu être envoyé. Cliquez sur « Renvoyer un code » pour réessayer."
+      : ""
+  )
+  const [notice, setNotice] = useState("")
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const [resending, setResending] = useState(false)
-  const [countdown, setCountdown] = useState(600) // 10 minutes en secondes
-  const [resendCooldown, setResendCooldown] = useState(0)
-  const [codeExpired, setCodeExpired] = useState(false)
+  // Un SEUL décompte : le délai de renvoi (60 s). Démarre après un envoi réussi.
+  const [resendCooldown, setResendCooldown] = useState(sentOk ? RESEND_COOLDOWN_SECONDS : 0)
 
-  // Vérifier si déjà connecté et email vérifié
+  // Déjà connecté et email vérifié → redirection immédiate.
   useEffect(() => {
     if (session?.user?.emailVerified) {
-      router.push(redirectParam ?? "/dashboard")
+      router.push(redirectParam)
     }
   }, [redirectParam, router, session])
 
-  // Compte à rebours principal (10 minutes)
-  useEffect(() => {
-    if (countdown <= 0) {
-      setCodeExpired(true)
-      setError("Votre code a expiré. Veuillez demander un nouveau code.")
-      return
-    }
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          setCodeExpired(true)
-          setError("Votre code a expiré. Veuillez demander un nouveau code.")
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [countdown])
-
-  // Cooldown pour le renvoi
+  // Minuterie unique du décompte de renvoi. Démontée proprement, aucun intervalle doublon.
   useEffect(() => {
     if (resendCooldown <= 0) return
     const timer = setInterval(() => {
@@ -68,84 +59,80 @@ function ValidationEmailContent() {
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
   }
 
-  const verifier = async () => {
-    setError("")
-    if (!code.trim()) {
-      setError("Veuillez entrer le code de vérification.")
+  const verifier = async (value: string) => {
+    const otp = value.trim()
+    if (loading || success) return
+    if (!email) {
+      setError("Session expirée. Veuillez recommencer la vérification.")
       return
     }
-    if (code.length !== CODE_LENGTH) {
+    if (otp.length !== CODE_LENGTH) {
       setError("Le code doit contenir 6 chiffres.")
       return
     }
-    if (codeExpired) {
-      setError("Votre code a expiré. Veuillez demander un nouveau code.")
-      return
-    }
-
+    setError("")
+    setNotice("")
     setLoading(true)
     try {
       const res = await fetch("/api/auth/email-otp/verify-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code,
-          email: session?.user?.email ?? "",
-        }),
+        body: JSON.stringify({ email, otp }),
       })
-      const data = await res.json()
-      if (data.error || !res.ok) {
-        const msg = data.error?.message ?? "Code invalide ou expiré."
-        if (msg.toLowerCase().includes("expire") || msg.toLowerCase().includes("invalid")) {
-          setError("Le code saisi est incorrect. Veuillez entrer le code reçu par email.")
-        } else {
-          setError(msg)
-        }
+      const data = (await res.json().catch(() => null)) as
+        | { message?: string; error?: { message?: string } }
+        | null
+      if (!res.ok || data?.error) {
+        const msg = data?.error?.message ?? data?.message ?? "Code invalide ou expiré."
+        setError(msg)
         setLoading(false)
         return
       }
-    } catch (err) {
-      console.error("[validation] catch error:", err)
+      setSuccess(true)
+      setError("")
+      await new Promise((r) => setTimeout(r, 800))
+      router.push(redirectParam)
+      router.refresh()
+    } catch {
       setError("Une erreur inattendue est survenue. Veuillez réessayer.")
       setLoading(false)
-      return
     }
-
-    setSuccess(true)
-    setError("")
-    await new Promise((r) => setTimeout(r, 1000))
-    router.push(redirectParam ?? "/dashboard")
-    router.refresh()
   }
 
   const renvoyerCode = async () => {
-    if (resendCooldown > 0) return
-    if (!session?.user?.email) {
-      setError("Session expirée. Veuillez recommencer l'inscription.")
+    if (resending || resendCooldown > 0) return
+    if (!email) {
+      setError("Session expirée. Veuillez recommencer la vérification.")
       return
     }
-
     setResending(true)
     setError("")
+    setNotice("")
     try {
       const res = await fetch("/api/auth/email-otp/send-verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: session.user.email }),
+        body: JSON.stringify({ email }),
       })
-      const data = await res.json()
-      if (data.error || !res.ok) {
-        setError(data.error?.message ?? "Impossible de renvoyer le code. Réessayez dans un instant.")
+      const data = (await res.json().catch(() => null)) as
+        | { error?: { message?: string; retryAfter?: number } }
+        | null
+      if (!res.ok || data?.error) {
+        setError(
+          data?.error?.message ??
+            "Impossible de renvoyer le code. Réessayez dans un instant."
+        )
+        const retryAfter = Number(data?.error?.retryAfter)
+        if (Number.isFinite(retryAfter) && retryAfter > 0) {
+          setResendCooldown(retryAfter)
+        }
         setResending(false)
         return
       }
-      // Succès : réinitialiser le compte à rebours principal et le cooldown
-      setCountdown(600)
-      setCodeExpired(false)
-      setResendCooldown(RESEND_COOLDOWN_SECONDS)
+      setNotice("Un nouveau code de vérification vient d'être envoyé à votre adresse e-mail.")
       setCode("")
-    } catch (err) {
-      console.error("[resend] catch error:", err)
+      setResendCooldown(RESEND_COOLDOWN_SECONDS)
+    } catch {
       setError("Une erreur inattendue est survenue. Veuillez réessayer.")
     }
     setResending(false)
@@ -159,60 +146,62 @@ function ValidationEmailContent() {
             <h2 className="text-2xl font-bold tracking-tight text-foreground">
               Confirmation email
             </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Entrez le code à 6 chiffres reçu par email.
-            </p>
           </CardHeader>
 
           <CardContent>
             {success && (
-              <div className="mb-6 text-center">
+              <div className="text-center">
                 <CheckCircle className="size-8 text-primary mx-auto mb-3" />
-                <p className="text-base text-foreground font-medium">Félicitations ! Votre compte a été créé avec succès.</p>
-                <p className="mt-1 text-sm text-muted-foreground">Redirection vers votre espace…</p>
+                <p className="text-base text-foreground font-medium">
+                  Félicitations ! Votre compte a été créé avec succès.
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Redirection vers votre espace…
+                </p>
               </div>
             )}
 
-            {error && (
-              <div className="mb-4 flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive" role="alert">
-                <AlertCircle className="size-4 shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            {!success && !error && (
+            {!success && (
               <div className="space-y-4">
-                {/* Compte à rebours */}
-                <div className="flex items-center justify-center gap-2 rounded-lg bg-muted/50 p-3">
-                  <Clock className="size-5 text-muted-foreground" aria-hidden />
-                  <span className="text-sm font-mono font-medium text-foreground" aria-live="polite">
-                    Code valide encore : {formatTime(countdown)}
-                  </span>
-                </div>
+                <p className="text-sm text-muted-foreground text-center">
+                  {notice ||
+                    "Un code de vérification à six chiffres a été envoyé à votre adresse e-mail. Saisissez-le pour confirmer votre compte."}
+                </p>
+
+                {error && (
+                  <div
+                    className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive"
+                    role="alert"
+                  >
+                    <AlertCircle className="size-4 shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
 
                 <Input
                   id="verification-code"
                   type="text"
-                  autoComplete="verification-code"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
                   placeholder="Code email à 6 chiffres"
                   value={code}
                   onChange={(e) => {
                     const val = e.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH)
                     setCode(val)
-                    if (val.length === CODE_LENGTH && !codeExpired) {
-                      verifier()
+                    if (val.length === CODE_LENGTH) {
+                      verifier(val)
                     }
                   }}
                   maxLength={CODE_LENGTH}
                   className="w-full h-11 rounded-md border border-border placeholder:text-muted-foreground focus:border-primary text-center text-lg tracking-widest"
-                  disabled={loading || codeExpired}
+                  disabled={loading || !email}
                   aria-label="Code de vérification à 6 chiffres"
                 />
 
                 <Button
-                  onClick={verifier}
+                  onClick={() => verifier(code)}
                   className="w-full"
-                  disabled={loading || code.length !== CODE_LENGTH || codeExpired}
+                  disabled={loading || !email || code.length !== CODE_LENGTH}
                 >
                   {loading ? (
                     <>
@@ -224,39 +213,27 @@ function ValidationEmailContent() {
                   )}
                 </Button>
 
-                <div className="text-center space-y-2">
-                  <p className="text-xs text-muted-foreground">
-                    Le code expire à <span className="font-mono">{formatTime(countdown)}</span>.
-                    {codeExpired && <span className="text-destructive"> (expiré)</span>}
-                  </p>
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={renvoyerCode}
-                    disabled={resending || resendCooldown > 0 || codeExpired === false && countdown > 540}
-                    className="w-full"
-                  >
-                    {resending ? (
-                      <>
-                        <Loader2 className="size-4 mr-2 animate-spin" />
-                        Envoi…
-                      </>
-                    ) : resendCooldown > 0 ? (
-                      <>
-                        <Clock className="size-4 mr-2" />
-                        Renvoyer dans {resendCooldown}s
-                      </>
-                    ) : (
-                      "Renvoyer le code"
-                    )}
-                  </Button>
-
-                  <p className="text-xs text-muted-foreground">
-                    Vous n'avez pas reçu l'email ? Vérifiez vos spams ou
-                    <span className="text-primary font-medium"> demandez un nouveau code </span>
-                    ci-dessus.
-                  </p>
+                <div className="text-center min-h-6">
+                  {resending ? (
+                    <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+                      <Loader2 className="size-3.5 animate-spin" />
+                      Envoi…
+                    </span>
+                  ) : resendCooldown > 0 ? (
+                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                      <Clock className="size-3.5" aria-hidden />
+                      Renvoyer possible dans{" "}
+                      <span className="font-mono">{formatTime(resendCooldown)}</span>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={renvoyerCode}
+                      className="text-sm text-primary hover:underline font-medium"
+                    >
+                      Vous n&apos;avez pas reçu le code ? Renvoyer un code
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -269,7 +246,11 @@ function ValidationEmailContent() {
 
 export default function ValidationEmailPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Chargement…</div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">Chargement…</div>
+      }
+    >
       <ValidationEmailContent />
     </Suspense>
   )

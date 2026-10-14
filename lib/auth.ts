@@ -6,7 +6,12 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { nextCookies } from "better-auth/next-js";
 import { headers } from "next/headers";
-import { phoneNumber, type PhoneNumberOptions } from "better-auth/plugins";
+import {
+  emailOTP,
+  phoneNumber,
+  type EmailOTPOptions,
+  type PhoneNumberOptions,
+} from "better-auth/plugins";
 import { sendVerificationEmail } from "@/lib/email";
 
 async function getRoleFromRegisterCookie(): Promise<"client" | "vendor"> {
@@ -66,26 +71,18 @@ export const auth = betterAuth({
         // Exiger une vérification email avant toute connexion autorisée.
         requireEmailVerification: true,
         autoSignIn: false, // compte créé mais session bloquée tant que non vérifié
-        // Envoi du code de validation par email (6 chiffres, expire en 10 min)
-        sendVerificationEmail: async ({
-          user,
-          code,
-          expiresIn,
-        }: {
-          user: { email: string }
-          code: string
-          expiresIn?: number
-        }) => {
-          // expiresIn est en secondes (Better Auth le calcule depuis verificationTokenExpiry)
-          const expiresInMinutes = Math.ceil((expiresIn ?? 600) / 60)
-          await sendVerificationEmail({
-            email: user.email,
-            code,
-            expiresInMinutes,
-          })
-        },
-        // Durée de validité du code : 10 minutes = 600 secondes
-        verificationTokenExpiry: 600,
+    },
+    // Vérification par code OTP à 6 chiffres (plugin emailOTP ci-dessous).
+    // L'envoi initial est déclenché explicitement APRÈS l'inscription, via la route
+    // POST /api/auth/email-otp/send-verification, afin qu'un échec d'envoi
+    // n'empêche pas la création du compte et soit signalé clairement à l'utilisateur.
+    // Le renvoi emprunte la même route (cooldown serveur de 60 s).
+    emailVerification: {
+        // Pas d'envoi automatique par le cœur de Better Auth : on garde la main
+        // sur le déclenchement et la gestion des erreurs d'envoi.
+        sendOnSignUp: false,
+        // Une session est créée dès que le code est validé (utilisateur connecté).
+        autoSignInAfterVerification: true,
     },
     // Anti-robot : Cloudflare Turnstile (middleware sur /sign-up/email et /sign-in/email).
     // Désactivé en mode test (AUDIT=1) pour permettre les tests automatisés.
@@ -215,11 +212,39 @@ export const auth = betterAuth({
         },
     },
     plugins: [
-      nextCookies(),
+      // Vérification d'email par code OTP à 6 chiffres.
+      // - overrideDefaultEmailVerification : l'email de vérification natif
+      //   (lien/token) est remplacé par l'envoi d'un code OTP ;
+      // - expiresIn : 10 minutes (600 s), identique à l'interface ;
+      // - storeOTP "hashed" : le code n'est jamais stocké en clair ;
+      // - allowedAttempts : 3 essais avant invalidation du code ;
+      // - resendStrategy "rotate" : un renvoi invalide l'ancien code.
+      emailOTP({
+        overrideDefaultEmailVerification: true,
+        expiresIn: 600,
+        otpLength: 6,
+        storeOTP: "hashed",
+        allowedAttempts: 3,
+        resendStrategy: "rotate",
+        // Envoi effectif du code par email (Nodemailer / Gmail SMTP).
+        // Toute erreur d'envoi remonte à l'appelant (jamais de faux succès).
+        async sendVerificationOTP({ email, otp, type }) {
+          if (type !== "email-verification") return
+          await sendVerificationEmail({
+            email,
+            code: otp,
+            expiresInMinutes: 10,
+          })
+        },
+      } satisfies EmailOTPOptions),
       phoneNumber({
         sendOTP: async ({ phoneNumber: _phoneNumber, code }: { phoneNumber: string; code: string }) => {
           throw new Error("L'envoi de code SMS n'est pas encore configuré. Veuillez activer la vérification par email ou configurer un fournisseur SMS.")
         },
       } satisfies PhoneNumberOptions),
+      // Doit rester EN DERNIER : le plugin d'intégration des cookies doit être
+      // placé après tous les autres afin que les `Set-Cookie` émis par leurs
+      // hooks soient bien transmis au store de cookies du framework.
+      nextCookies(),
     ],
 })
