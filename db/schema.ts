@@ -24,6 +24,12 @@ export const user = pgTable("user", {
   role: text("role").default("client").notNull(), // 'client' | 'vendor' | 'admin' | 'collaborateur'
   image: text("image"),
   isActive: boolean("is_active").default(true).notNull(),
+  // Approbation vendeur (cf. drizzle/0011_vendor_approval.sql)
+  approvalStatus: text("approval_status").default("none").notNull(), // 'none' | 'pending' | 'approved' | 'rejected'
+  approvalRequestedAt: timestamp("approval_requested_at"),
+  approvalProcessedAt: timestamp("approval_processed_at"),
+  approvalProcessedBy: text("approval_processed_by"), // FK "user"(id) — cf. 0011 (référence non déclarée côté Drizzle pour éviter la récursion de type)
+  rejectionReason: text("rejection_reason"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -121,6 +127,7 @@ export const disponibilite = pgTable(
     status: text("status").notNull(), // AvailabilityStatus
     note: text("note"),
     quantity: integer("quantity"), // nombre de bouteilles disponibles
+    reservedQuantity: integer("reserved_quantity").default(0).notNull(), // bouteilles réservées (cf. 0010)
     price: integer("price"), // prix en FCFA (legacy, non utilisé par le dashboard vendeur)
     format: text("format"), // format de bouteille ex: '6 kg', '12,5 kg', '15 kg'
     brand: text("brand"), // marque de la bouteille
@@ -294,8 +301,53 @@ export const avis = pgTable(
   ]
 )
 
+export const reservation = pgTable(
+  "reservation",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    clientName: text("client_name").notNull(),
+    clientPhone: text("client_phone"),
+    vendorId: text("vendor_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    pointId: text("point_id")
+      .notNull()
+      .references(() => pointDeVente.id, { onDelete: "cascade" }),
+    disponibiliteId: text("disponibilite_id").references(() => disponibilite.id, {
+      onDelete: "set null",
+    }),
+    brand: text("brand").notNull(),
+    format: text("format").notNull(),
+    quantity: integer("quantity").default(1).notNull(),
+    reservationCode: text("reservation_code").notNull().unique(),
+    amount: integer("amount").default(1000).notNull(),
+    amountType: text("amount_type").default("reservation").notNull(), // 'reservation' | 'consigne' | 'mixed'
+    status: text("status").default("confirmed").notNull(), // 'confirmed' | 'collected' | 'cancelled'
+    reservedAt: timestamp("reserved_at").defaultNow().notNull(),
+    collectedAt: timestamp("collected_at"),
+    cancelledAt: timestamp("cancelled_at"),
+    expiresAt: timestamp("expires_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("reservation_user_id_idx").on(table.userId),
+    index("reservation_vendor_id_idx").on(table.vendorId),
+    index("reservation_point_id_idx").on(table.pointId),
+    index("reservation_code_idx").on(table.reservationCode),
+    index("reservation_status_idx").on(table.status),
+    index("reservation_reserved_at_idx").on(table.reservedAt),
+  ]
+)
+
 export const relations = defineRelations(
-  { user, session, account, verification, pointDeVente, disponibilite, favori, recharge, adminAction, collaborateurPermission, publicite, trafficEvent, brand, avis },
+  { user, session, account, verification, pointDeVente, disponibilite, favori, recharge, adminAction, collaborateurPermission, publicite, trafficEvent, brand, avis, reservation },
   (r) => ({
     user: {
       sessions: r.many.session(),
@@ -378,6 +430,24 @@ export const relations = defineRelations(
       author: r.one.user({
         from: r.avis.userId,
         to: r.user.id,
+      }),
+    },
+    reservation: {
+      user: r.one.user({
+        from: r.reservation.userId,
+        to: r.user.id,
+      }),
+      vendor: r.one.user({
+        from: r.reservation.vendorId,
+        to: r.user.id,
+      }),
+      point: r.one.pointDeVente({
+        from: r.reservation.pointId,
+        to: r.pointDeVente.id,
+      }),
+      disponibilite: r.one.disponibilite({
+        from: r.reservation.disponibiliteId,
+        to: r.disponibilite.id,
       }),
     },
   })

@@ -67,7 +67,15 @@ export const auth = betterAuth({
         requireEmailVerification: true,
         autoSignIn: false, // compte créé mais session bloquée tant que non vérifié
         // Envoi du code de validation par email (6 chiffres, expire en 10 min)
-        sendVerificationEmail: async ({ user, code, expiresIn }) => {
+        sendVerificationEmail: async ({
+          user,
+          code,
+          expiresIn,
+        }: {
+          user: { email: string }
+          code: string
+          expiresIn?: number
+        }) => {
           // expiresIn est en secondes (Better Auth le calcule depuis verificationTokenExpiry)
           const expiresInMinutes = Math.ceil((expiresIn ?? 600) / 60)
           await sendVerificationEmail({

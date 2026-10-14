@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { CheckCircle, AlertCircle, Loader2, Clock } from "lucide-react"
-import { useState } from "react"
 
 const CODE_LENGTH = 6
 const RESEND_COOLDOWN_SECONDS = 60
