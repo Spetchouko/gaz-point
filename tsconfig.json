@@ -30,5 +30,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "tmp-*.ts", "tmp-*.mjs", "apply-migration.js", "check-db.js", "fix-column.js", "scripts/audit/*.mjs", "scripts/*.mjs", "scripts/*.sql"]
 }

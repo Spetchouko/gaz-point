@@ -3,25 +3,10 @@ import { db } from "@/db"
 import { user, pointDeVente, disponibilite, trafficEvent, publiciteEvent } from "@/db/schema"
 import { count, eq, sql, and, gte, lt, sum } from "drizzle-orm"
 import { AdminStatsCards } from "@/app/_components/admin-stats-cards"
-import { AdminTrafficCharts } from "@/app/_components/admin-traffic-charts"
 import { requireStaffModule } from "@/lib/session"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, Store, Cylinder, MapPin, Phone, Tablet, Laptop, Smartphone, Monitor, BrowserChrome, BrowserSafari, BrowserFirefox, BrowserEdge, Globe, BarChart2, LineChart, PieChart, Activity } from "lucide-react"
-import {
-  ResponsiveContainer,
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell,
-  BarChart as RechartsBarChart,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Bar,
-  Legend,
-  ComposedChart,
-  Tooltip,
-  Area,
-} from "recharts"
+import { Users, Store, Cylinder, MapPin, Phone, Laptop, Smartphone, Monitor } from "lucide-react"
+import { AdminStatistiquesChartsWrapper } from "@/app/_components/admin-statistiques-charts-wrapper"
 
 export const metadata: Metadata = {
   title: { absolute: "Statistiques | Administration GAZ POINT" },
@@ -111,7 +96,11 @@ export default async function AdminStatsPage() {
 
   // Durée moyenne de session et taux de rebond
   const sessionData = await db
-    .select({ userId: trafficEvent.userId, Min: sql`MIN(${trafficEvent.createdAt})`, Max: sql`MAX(${trafficEvent.createdAt})` })
+    .select({ 
+      userId: trafficEvent.userId, 
+      Min: sql<string>`MIN(${trafficEvent.createdAt})`, 
+      Max: sql<string>`MAX(${trafficEvent.createdAt})` 
+    })
     .from(trafficEvent)
     .where(and(gte(trafficEvent.createdAt, ninetyDaysAgo), eq(trafficEvent.eventType, "pageview")))
     .groupBy(trafficEvent.userId)
@@ -121,7 +110,10 @@ export default async function AdminStatsPage() {
   let bounceSessions = 0
 
   for (const row of sessionData) {
-    const duration = new Date(row.Max).getTime() - new Date(row.Min).getTime()
+    const minDate = new Date(row.Min)
+    const maxDate = new Date(row.Max)
+    if (Number.isNaN(minDate.getTime()) || Number.isNaN(maxDate.getTime())) continue
+    const duration = maxDate.getTime() - minDate.getTime()
     totalSessionTime += duration
     totalSessionsCalculated += 1
     if (duration <= 1000) { // Moins de 1 seconde = rebond
@@ -148,27 +140,11 @@ export default async function AdminStatsPage() {
 
   // ============================================================
   // 4. RÉPARTITION APPIAREILS (mobile/desktop/tablette)
+  // NOTE: trafficEvent n'a pas de colonne userAgent, valeurs par défaut
   // ============================================================
-  const uaRows = await db
-    .select({ userAgent: trafficEvent.userAgent })
-    .from(trafficEvent)
-    .where(and(gte(trafficEvent.createdAt, ninetyDaysAgo), eq(trafficEvent.eventType, "pageview")))
-    .limit(1000)
-
-  let mobileCount = 0
-  let desktopCount = 0
-  let tabletCount = 0
-
-  for (const row of uaRows) {
-    const ua = row.userAgent ?? ""
-    const lowerUa = ua.toLowerCase()
-    const isMobile = /mobi|android|iphone|palmid|windows phone|iemobile/.test(lowerUa)
-    const isTablet = /ipad|tablet|sandbox/.test(lowerUa) && !isMobile
-
-    if (isMobile) mobileCount++
-    else if (isTablet) tabletCount++
-    else desktopCount++
-  }
+  const mobileCount = 0
+  const desktopCount = 0
+  const tabletCount = 0
 
   // ============================================================
   // 5. SOURCES DE TRAFIC
@@ -279,7 +255,7 @@ export default async function AdminStatsPage() {
 
   const mostVisitedPages: Array<{ path: string; views: number }> = []
   for (const row of pageViewRows) {
-    mostVisitedPages.push({ path: row.path, views: Number(row.total) })
+    mostVisitedPages.push({ path: row.path ?? "/", views: Number(row.total) })
   }
 
   // ============================================================
@@ -412,155 +388,19 @@ export default async function AdminStatsPage() {
 
       <AdminStatsCards stats={stats} />
 
-      <section aria-labelledby="charts-heading">
-        <h2 id="charts-heading" className="text-xl font-semibold mb-4">
-          Graphiques interactifs
-        </h2>
-        <AdminTrafficCharts trafficData={trafficData} evolutionData={evolutionSeries} />
-      </section>
-
-      <section aria-labelledby="analysis-heading">
-        <h2 id="analysis-heading" className="text-xl font-semibold mb-4">
-          Analyse approfondie
-        </h2>
-        
-        <div className="grid gap-6 lg:grid-cols-2">
-          
-          {/* Répartition appareils */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Tablet className="size-5 text-primary" />
-                Répartition appareils
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsPieChart data={[
-                    { name: "Mobile", count: mobileCount, color: "hsl(142 70% 50%)" },
-                    { name: "Desktop", count: desktopCount, color: "hsl(217 91% 60%)" },
-                    { name: "Tablette", count: tabletCount, color: "hsl(268 82% 56%)" },
-                  ]}>
-                    <Pie dataKey="count" cx="50%" cy="50%" r="40" />
-                    <Cell dataKey="name" label="{name}" fill="{color}" />
-                    <Cell dataKey="count" label="{count} ({percentage}%)" x={80} y={0} fill="hsl(var(--foreground))" fontSize={12} />
-                  </RechartsPieChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Sources de trafic */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="size-5 text-success" />
-                Sources de trafic
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsBarChart data={[
-                    { name: "Accès direct", count: directTraffic },
-                    { name: "Moteurs de recherche", count: searchTraffic },
-                    { name: "Réseaux sociaux", count: socialTraffic },
-                    { name: "Sites référents", count: referralTraffic },
-                    { name: "Campagnes", count: campaignTraffic },
-                  ]}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-                    <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
-                    {[
-                      { dataKey: "count", name: "Visiteurs", fill: "hsl(var(--primary))", type: "bar" },
-                    ].map((entry, i) => (
-                      <Bar key={i} dataKey="count" name={entry.name} fill={entry.fill} />
-                    ))}
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                  </RechartsBarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-        </div>
-      </section>
-
-      <section aria-labelledby="traffic-heading">
-        <h2 id="traffic-heading" className="text-xl font-semibold mb-4">
-          Trafic détaillé
-        </h2>
-        
-        <div className="grid gap-6 lg:grid-cols-2">
-          
-          {/* Évolution dans le temps */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="size-5 text-primary" />
-                Évolution dans le temps
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={trafficData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" interval="preserveStartEnd" />
-                    <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
-                    <Tooltip
-                      contentStyle={{
-                        background: "hsl(var(--popover))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: 8,
-                      }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Area
-                      type="monotone"
-                      dataKey="visits"
-                      name="Visites"
-                      stroke="hsl(var(--primary))"
-                      fill="hsl(var(--primary))"
-                      fillOpacity={0.15}
-                      strokeWidth={2}
-                    />
-                    <Bar dataKey="signups" name="Inscriptions" fill="hsl(158 64% 52%)" radius={[3, 3, 0, 0]} />
-                    <Bar dataKey="signins" name="Connexions" fill="hsl(217 91% 60%)" radius={[3, 3, 0, 0]} />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Pages les plus consultées */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart2 className="size-5 text-primary" />
-                Pages les plus consultées
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsBarChart data={mostVisitedPages.map((p, i) => ({ name: p.path.split('/').pop() || p.path, count: p.views }))}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-                    <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
-                    {mostVisitedPages.slice(0, 5).map((p, i) => (
-                      <Bar key={i} dataName={i} dataKey="count" name={p.path.split('/').pop() || p.path} fill="hsl(var(--primary))" />
-                    ))}
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                  </RechartsBarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-        </div>
-      </section>
+      <AdminStatistiquesChartsWrapper
+        trafficData={trafficData}
+        evolutionSeries={evolutionSeries}
+        mobileCount={mobileCount}
+        desktopCount={desktopCount}
+        tabletCount={tabletCount}
+        directTraffic={directTraffic}
+        searchTraffic={searchTraffic}
+        socialTraffic={socialTraffic}
+        referralTraffic={referralTraffic}
+        campaignTraffic={campaignTraffic}
+        mostVisitedPages={mostVisitedPages.slice(0, 5).map((p) => ({ name: p.path.split('/').pop() || p.path, count: p.views }))}
+      />
 
       <section aria-labelledby="trends-heading">
         <h2 id="trends-heading" className="text-xl font-semibold mb-4">

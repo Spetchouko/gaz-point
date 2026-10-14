@@ -736,6 +736,7 @@ export async function updateDisponibiliteAdmin(
   const weightKg = String(formData.get("weightKg") ?? "").trim() || null
   const expiresAtRaw = String(formData.get("expiresAt") ?? "").trim()
   const phone = String(formData.get("phone") ?? "").trim() || null
+  const vendorId = String(formData.get("vendorId") ?? "").trim() || null
 
   if (!disponibiliteId) return { ok: false, message: "Disponibilité introuvable." }
   if (!pointId) return { ok: false, message: "Point de vente requis." }

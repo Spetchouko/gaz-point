@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Fragment } from "react"
 import { AproposCta } from "@/app/_components/apropos-cta"
 import { AproposHero } from "@/app/_components/apropos-hero"
 import { Equipe } from "@/app/_components/equipe"

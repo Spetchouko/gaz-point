@@ -32,6 +32,7 @@ export type DispoRow = {
   pointAddress: string
   vendorName: string
   vendorEmail: string
+  vendorId: string
 }
 
 export function AdminDisponibilitesTable({

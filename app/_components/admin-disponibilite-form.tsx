@@ -44,6 +44,8 @@ export type DispoData = {
   phone: string | null
   note: string | null
   pointName: string
+  vendorId: string
+  vendorName: string
 } | null
 
 const STATUSES: AvailabilityStatus[] = ["disponible", "a_confirmer", "indisponible"]
@@ -82,7 +84,7 @@ function initialFormState(editing: DispoData): FormState {
     phone: editing?.phone ?? "",
     note: editing?.note ?? "",
     vendorId: editing?.vendorId ?? "",
-    vendorName: editing?.point?.vendorName ?? "",
+    vendorName: editing?.vendorName ?? "",
   }
 }
 

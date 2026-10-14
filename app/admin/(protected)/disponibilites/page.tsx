@@ -97,6 +97,7 @@ export default async function AdminDisponibilitesPage({
       pointAddress: point?.address ?? "—",
       vendorName: vendor?.name ?? "—",
       vendorEmail: vendor?.email ?? "—",
+      vendorId: vendor?.id ?? "",
     }
   })
 

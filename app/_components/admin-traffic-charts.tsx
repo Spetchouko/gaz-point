@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -15,20 +15,18 @@ import {
   PieChart,
   Pie,
   Cell,
+  BarChart,
 } from "recharts"
 import {
   Activity,
   BarChart2,
   MapPin,
   Globe,
-  BrowserChrome,
-  BrowserSafari,
-  BrowserFirefox,
-  BrowserEdge,
   Smartphone,
   Laptop,
   Tablet,
   Users,
+  List,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -319,9 +317,18 @@ export function AdminTrafficCharts({
               <ResponsiveContainer width="100%" height="100%">
                 {view === "devices" && (
                   <PieChart data={deviceData}>
-                    <Pie dataKey="count" cx="50%" cy="50%" r="40" />
-                    <Cell dataKey="label" label="{label}" fill="{color}" />
-                    <Cell dataKey="count" label="{count}" x={80} y={0} fill="hsl(var(--foreground))" fontSize={12} />
+                    <Pie
+                      dataKey="count"
+                      cx="50%"
+                      cy="50%"
+                      r="40"
+                      label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                      labelLine={false}
+                    >
+                      {deviceData.map((entry, i) => (
+                        <Cell key={i} fill={entry.color} />
+                      ))}
+                    </Pie>
                   </PieChart>
                 )}
                 {view === "sources" && (
@@ -329,28 +336,24 @@ export function AdminTrafficCharts({
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" />
                     <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
-                    {sourceData.map((entry, i) => (
-                      <Bar key={i} dataKey="count" name={entry.label} fill={entry.color} />
-                    ))}
+                    <Bar dataKey="count" name="Visiteurs" fill="#8884d8" />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
                   </BarChart>
                 )}
                 {view === "pages" && (
-                  <BarChart data={[
-                    { name: "Visites", dataKey: "visits", fill: "hsl(var(--primary))" },
-                    { name: "Inscriptions", dataKey: "signups", fill: "hsl(158 64% 52%)" },
-                    { name: "Connexions", dataKey: "signins", fill: "hsl(217 91% 60%)" },
-                  ]}>
+                  <BarChart
+                    data={[
+                      { name: "Visites", visits: 0, signups: 0, signins: 0 },
+                      { name: "Inscriptions", visits: 0, signups: 0, signins: 0 },
+                      { name: "Connexions", visits: 0, signups: 0, signins: 0 },
+                    ]}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
                     <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
-                    {[
-                      { dataKey: "visits", name: "Visites", fill: "hsl(var(--primary))", type: "bar" },
-                      { dataKey: "signups", name: "Inscriptions", fill: "hsl(158 64% 52%)", type: "bar" },
-                      { dataKey: "signins", name: "Connexions", fill: "hsl(217 91% 60%)", type: "bar" },
-                    ].map((entry, i) => (
-                      <Bar key={i} dataKey={entry.dataKey} name={entry.name} fill={entry.fill} />
-                    ))}
+                    <Bar dataKey="visits" name="Visites" fill="hsl(var(--primary))" />
+                    <Bar dataKey="signups" name="Inscriptions" fill="hsl(158 64% 52%)" />
+                    <Bar dataKey="signins" name="Connexions" fill="hsl(217 91% 60%)" />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
                   </BarChart>
                 )}
@@ -408,7 +411,7 @@ export function AdminTrafficCharts({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Legend className="size-5" />
+              <List className="size-5" />
               Filtres et légendes
             </CardTitle>
           </CardHeader>
@@ -432,9 +435,9 @@ export function AdminTrafficCharts({
 }
 
 // Composant auxiliaire pour l'icône device
-function SmartphoneLaptopTablet() {
+function SmartphoneLaptopTablet({ className }: { className?: string }) {
   return (
-    <g>
+    <g className={className}>
       <Smartphone className="size-3 mr-1" />
       <Laptop className="size-3 mr-1" />
       <Tablet className="size-3" />

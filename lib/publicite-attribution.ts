@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
+import { headers } from "next/headers"
 import { eq } from "drizzle-orm"
 import { db } from "@/db"
 import { publicite, publiciteEvent } from "@/db/schema"

@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm"
 import { AdminStatsCards } from "@/app/_components/admin-stats-cards"
 import { requireAdmin } from "@/lib/session"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, Store, Cylinder, MapPin, Phone, Tablet, Laptop, Smartphone, Monitor, BrowserChrome, BrowserSafari, BrowserFirefox, BrowserEdge } from "lucide-react"
+import { Users, Store, Cylinder, MapPin, Phone, Tablet, Laptop, Smartphone, Monitor } from "lucide-react"
 import { AdminProfilWithAvatar } from "@/app/_components/admin-profil-with-avatareditor"
 
 export const metadata: Metadata = {

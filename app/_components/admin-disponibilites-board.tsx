@@ -51,6 +51,8 @@ export function AdminDisponibilitesBoard({
       phone: d.phone,
       note: d.note,
       pointName: d.pointName,
+      vendorId: d.vendorId,
+      vendorName: d.vendorName,
     })
     setFormKey((k) => k + 1)
     setOpen(true)
@@ -69,6 +71,8 @@ export function AdminDisponibilitesBoard({
       phone: d.phone,
       note: d.note,
       pointName: d.pointName,
+      vendorId: d.vendorId,
+      vendorName: d.vendorName,
     })
     setFormKey((k) => k + 1)
     setOpen(true)

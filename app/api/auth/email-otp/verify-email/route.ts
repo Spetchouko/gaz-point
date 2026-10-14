@@ -20,12 +20,14 @@ export async function POST(req: NextRequest) {
 
     // Use Better Auth's verifyOTP method
     const result = await auth.api.verifyEmailOTP({
-      body: { email, otp, type: "email-verification" },
+      body: { email, otp },
     })
 
-    if (result.error) {
+    // verifyEmailOTP returns { status: boolean; token: string; user: ... } on success
+    // or throws on error
+    if (!result || result.status === false) {
       return NextResponse.json(
-        { error: { message: result.error.message ?? "Code invalide ou expiré." } },
+        { error: { message: "Code invalide ou expiré." } },
         { status: 400 }
       )
     }

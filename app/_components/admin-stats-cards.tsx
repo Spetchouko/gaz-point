@@ -13,10 +13,6 @@ import {
   Laptop,
   Smartphone,
   Monitor,
-  BrowserChrome,
-  BrowserSafari,
-  BrowserFirefox,
-  BrowserEdge,
   AlarmClock,
   TrendingUp,
   Calendar,
@@ -210,7 +206,7 @@ const statCards = [
   {
     key: "referralTraffic",
     label: "Sites référents",
-    icon: Link,
+    icon: LinkIcon,
     color: "bg-purple-500/10 text-purple-600 border-purple-500/30",
     href: "/admin/statistiques",
   },
@@ -250,7 +246,7 @@ export function AdminStatsCards({ stats }: { stats: Stats }) {
                       card.color
                     )}
                   >
-                    <Icon className="size-6" aria-hidden />
+                    <Icon className="size-6" aria-hidden={true} />
                   </div>
                 </div>
               </CardContent>
