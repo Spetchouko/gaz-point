@@ -62,6 +62,17 @@ export async function requireCollaborator() {
   return user
 }
 
+export async function requireStaff(): Promise<StaffUser> {
+  const user = await requireUser()
+  const role = user.role ?? "client"
+  if (role !== "admin" && role !== "collaborateur") redirect("/admin/login")
+  const permissions =
+    role === "admin"
+      ? new Set<AdminModule>(ADMIN_MODULES)
+      : await getAdminPermissions(user.id)
+  return { user, role: role as "admin" | "collaborateur", permissions }
+}
+
 export async function getAdminPermissions(userId: string): Promise<Set<AdminModule>> {
   const rows = await db
     .select({ module: collaborateurPermission.module })

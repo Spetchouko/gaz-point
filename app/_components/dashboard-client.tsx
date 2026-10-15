@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator"
 import { LogOut } from "lucide-react"
 import { DashboardNav } from "@/app/_components/dashboard-nav"
 import { TrouverMonGaz } from "@/app/_components/trouver-mon-gaz"
+import { MesReservations } from "@/app/_components/mes-reservations"
 
 export function DashboardClient() {
   const router = useRouter()
@@ -45,6 +46,17 @@ export function DashboardClient() {
         </div>
 
         <TrouverMonGaz />
+
+        <Separator className="my-8" />
+
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold tracking-tight">Mes réservations</h2>
+          <p className="mt-1 text-muted-foreground">
+            Consultez l'historique de vos réservations et leurs statuts.
+          </p>
+        </div>
+
+        <MesReservations />
 
         <Separator className="my-8" />
 

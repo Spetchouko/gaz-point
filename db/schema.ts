@@ -302,9 +302,18 @@ export const trafficEvent = pgTable(
     utmCampaign: text("utm_campaign"),
     userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
     consented: boolean("consented").default(false).notNull(),
+    // Device & browser tracking
+    userAgent: text("user_agent"),
+    screenWidth: integer("screen_width"),
+    screenHeight: integer("screen_height"),
+    viewportWidth: integer("viewport_width"),
+    viewportHeight: integer("viewport_height"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => [index("traffic_event_created_at_idx").on(table.createdAt)]
+  (table) => [
+    index("traffic_event_created_at_idx").on(table.createdAt),
+    index("traffic_event_user_agent_idx").on(table.userAgent),
+  ]
 )
 
 export const avis = pgTable(

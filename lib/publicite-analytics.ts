@@ -171,9 +171,56 @@ export function formatPercent(value: number, digits = 1): string {
   return `${safe.toFixed(digits).replace(".", ",")} %`
 }
 
+/* ------------------------------ User Agent Parsing ------------------------------ */
+
+export interface ParsedUserAgent {
+  device: "mobile" | "tablet" | "desktop"
+  os?: string
+  browser?: string
+}
+
+/**
+ * Analyse un User-Agent string et extrait device, OS et navigateur.
+ * Fonctionne côté serveur (Node) et côté client.
+ */
+export function parseUserAgent(ua: string): ParsedUserAgent {
+  if (!ua || typeof ua !== "string") {
+    return { device: "desktop" }
+  }
+
+  const lowerUa = ua.toLowerCase()
+
+  // Device detection
+  const isMobile = /mobi|android|iphone|ipod|palmid|windows phone|iemobile|blackberry|opera mini|kindle|silk|playbook/.test(lowerUa)
+  const isTablet = /ipad|tablet|playbook|kindle|silk|android(?!.*mobile)/.test(lowerUa) && !isMobile
+  const device = isMobile ? "mobile" : isTablet ? "tablet" : "desktop"
+
+  // OS detection
+  let os: string | undefined
+  if (lowerUa.includes("android")) os = "Android"
+  else if (lowerUa.includes("iphone") || lowerUa.includes("ipad") || lowerUa.includes("ipod")) os = "iOS"
+  else if (lowerUa.includes("windows phone")) os = "Windows Phone"
+  else if (lowerUa.includes("windows")) os = "Windows"
+  else if (lowerUa.includes("mac os") || lowerUa.includes("macos")) os = "macOS"
+  else if (lowerUa.includes("linux")) os = "Linux"
+  else if (lowerUa.includes("cros")) os = "Chrome OS"
+
+  // Browser detection
+  let browser: string | undefined
+  if (lowerUa.includes("edg/") || lowerUa.includes("edge/")) browser = "Edge"
+  else if (lowerUa.includes("chrome") || lowerUa.includes("crios")) browser = "Chrome"
+  else if (lowerUa.includes("safari") && !lowerUa.includes("chrome") && !lowerUa.includes("chromium")) browser = "Safari"
+  else if (lowerUa.includes("firefox") || lowerUa.includes("fxios")) browser = "Firefox"
+  else if (lowerUa.includes("opera") || lowerUa.includes("opr/")) browser = "Opera"
+  else if (lowerUa.includes("samsungbrowser")) browser = "Samsung Browser"
+  else if (lowerUa.includes("ucbrowser")) browser = "UC Browser"
+
+  return { device, os, browser }
+}
+
 /* --------------------------------- Périodes --------------------------------- */
 
-export const ANALYTICS_PERIOD_KEYS = ["7", "30", "custom"] as const
+export const ANALYTICS_PERIOD_KEYS = ["today", "7", "30", "90", "custom"] as const
 export type AnalyticsPeriodKey = (typeof ANALYTICS_PERIOD_KEYS)[number]
 
 export type AnalyticsRange = {
@@ -231,7 +278,7 @@ function daysBetweenInclusive(from: Date, to: Date): number {
 }
 
 /**
- * Résout la période d'analyse (7 j, 30 j ou dates personnalisées).
+ * Résout la période d'analyse (today, 7 j, 30 j, 90 j ou dates personnalisées).
  * Toute entrée invalide retombe sur 30 jours pour ne jamais casser l'affichage.
  */
 export function resolveAnalyticsRange(
@@ -259,8 +306,29 @@ export function resolveAnalyticsRange(
     }
   }
 
-  const key: AnalyticsPeriodKey = period === "7" ? "7" : "30"
-  const days = key === "7" ? 7 : 30
+  let key: AnalyticsPeriodKey
+  let days: number
+
+  switch (period) {
+    case "today":
+      key = "today"
+      days = 1
+      break
+    case "7":
+      key = "7"
+      days = 7
+      break
+    case "90":
+      key = "90"
+      days = 90
+      break
+    case "30":
+    default:
+      key = "30"
+      days = 30
+      break
+  }
+
   const from = startOfDay(new Date(now.getTime() - (days - 1) * 86_400_000))
   return {
     key,

@@ -128,6 +128,12 @@ function postEvent(payload: {
         utmSource: utmValue("utm_source"),
         utmMedium: utmValue("utm_medium"),
         utmCampaign: utmValue("utm_campaign"),
+        // Device & browser tracking
+        userAgent: navigator.userAgent,
+        screenWidth: window.screen?.width ?? null,
+        screenHeight: window.screen?.height ?? null,
+        viewportWidth: window.innerWidth ?? null,
+        viewportHeight: window.innerHeight ?? null,
         consented: true,
       }),
     }).catch(() => {})

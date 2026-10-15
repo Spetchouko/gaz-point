@@ -74,14 +74,12 @@ export function UserMenu({ isMobile = false }: UserMenuProps) {
             {espaceLabel}
           </Link>
         </DropdownMenuItem>
-        {!isStaff && (
-          <DropdownMenuItem asChild>
-            <Link href="/profil" className="flex items-center gap-2">
-              <User className="size-4" />
-              Mon profil
-            </Link>
-          </DropdownMenuItem>
-        )}
+        <DropdownMenuItem asChild>
+          <Link href={isStaff ? "/admin/profil" : "/profil"} className="flex items-center gap-2">
+            <User className="size-4" />
+            Mon profil
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={handleSignOut}

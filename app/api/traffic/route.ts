@@ -11,10 +11,31 @@ function clean(value: unknown, max = MAX_STR_LENGTH): string | null {
   return trimmed.length > 0 ? trimmed : null
 }
 
+function cleanInt(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "string") {
+    const parsed = parseInt(value, 10)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+  return null
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json().catch(() => null)) as
-      | { path?: string; referrer?: string; utmSource?: string; utmMedium?: string; utmCampaign?: string }
+      | {
+          path?: string
+          referrer?: string
+          utmSource?: string
+          utmMedium?: string
+          utmCampaign?: string
+          // Device & browser tracking
+          userAgent?: string
+          screenWidth?: number
+          screenHeight?: number
+          viewportWidth?: number
+          viewportHeight?: number
+        }
       | null
     if (!body) return new NextResponse("invalid body", { status: 400 })
 
@@ -48,6 +69,12 @@ export async function POST(req: NextRequest) {
       utmCampaign: clean(body.utmCampaign, 100),
       userId: null,
       consented: true,
+      // Device & browser tracking
+      userAgent: clean(body.userAgent, 500),
+      screenWidth: cleanInt(body.screenWidth),
+      screenHeight: cleanInt(body.screenHeight),
+      viewportWidth: cleanInt(body.viewportWidth),
+      viewportHeight: cleanInt(body.viewportHeight),
     })
 
     return new NextResponse(null, { status: 204 })

@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
     points.map(async (point) => {
       const [report] = await db
         .select({
+          id: disponibilite.id,
           status: disponibilite.status,
           note: disponibilite.note,
           quantity: disponibilite.quantity,
@@ -99,6 +100,7 @@ export async function GET(request: NextRequest) {
         source: report?.source ?? null,
         stale: report ? isStale(report.createdAt) : false,
         expired,
+        disponibiliteId: report?.id ?? "",
       }
     })
   )

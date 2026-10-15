@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, MessageSquarePlus, Store, User } from "lucide-react"
+import { LayoutDashboard, MessageSquarePlus, Store, User, Calendar } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type DashboardNavProps = {
@@ -14,6 +14,7 @@ export function DashboardNav({ pro = false }: DashboardNavProps) {
 
   const clientLinks = [
     { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
+    { href: "/dashboard/reservations", label: "Mes réservations", icon: Calendar },
     { href: "/avis", label: "Donner mon avis", icon: MessageSquarePlus },
     { href: "/profil", label: "Mon profil", icon: User },
   ]

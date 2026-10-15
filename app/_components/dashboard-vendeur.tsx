@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge"
 import { DashboardNav } from "@/app/_components/dashboard-nav"
 import { DisponibiliteForm } from "@/app/_components/disponibilite-form"
 import { DisponibiliteList } from "@/app/_components/disponibilite-list"
+import { VerifierReservation } from "@/app/_components/verifier-reservation"
 import { availabilityLabel, availabilityBadgeClass } from "@/lib/gaz"
 import { formatDate } from "@/lib/gaz"
 import type { AvailabilityStatus } from "@/db/schema"
@@ -51,10 +52,12 @@ type GlobalStats = {
 }
 
 export function DashboardVendeur({
+  vendorId,
   vendorName,
   points,
   globalStats,
 }: {
+  vendorId: string
   vendorName: string
   points: PointWithStats[]
   globalStats: GlobalStats
@@ -212,6 +215,18 @@ export function DashboardVendeur({
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Section Vérifier une réservation */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold tracking-tight mb-4">Vérifier une réservation</h2>
+          <p className="text-muted-foreground mb-4">
+            Saisissez le code présenté par le client pour vérifier sa validité et confirmer le retrait.
+          </p>
+          <VerifierReservation
+            vendorId={vendorId}
+            points={points.map((p) => ({ id: p.id, name: p.name }))}
+          />
         </div>
 
         {/* Grille visuelle des disponibilités */}

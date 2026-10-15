@@ -8,6 +8,7 @@ import {
   MapPin,
   Phone,
   Search,
+  Shield,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -16,6 +17,7 @@ import { brands, formats } from "@/app/_components/donnees-demo"
 import { availabilityLabel } from "@/lib/gaz"
 import { authClient } from "@/lib/auth-client"
 import type { AvailabilityStatus } from "@/db/schema"
+import { ReservationModal } from "@/app/_components/reservation-modal"
 
 const selectClass =
   "mt-1.5 h-11 w-full appearance-none rounded-lg border bg-background px-3 pr-9 text-sm text-foreground outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50"
@@ -40,6 +42,7 @@ type SearchResult = {
   source: string | null
   stale: boolean
   expired: boolean
+  disponibiliteId: string
 }
 
 export function TrouverMonGaz() {
@@ -52,6 +55,47 @@ export function TrouverMonGaz() {
   const [results, setResults] = useState<SearchResult[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [reservationPoint, setReservationPoint] = useState<SearchResult | null>(null)
+  const [reservationLoading, setReservationLoading] = useState(false)
+
+  const handleReserve = async (amountType: "reservation" | "consigne") => {
+    if (!reservationPoint) return
+
+    setReservationLoading(true)
+    try {
+      const res = await fetch("/api/reservation/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          disponibiliteId: reservationPoint.disponibiliteId,
+          brand: reservationPoint.brand,
+          format: reservationPoint.format,
+          quantity: 1,
+          amountType,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Erreur lors de la réservation")
+      }
+
+      // The modal will show success via its own state
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Erreur lors de la réservation")
+    } finally {
+      setReservationLoading(false)
+    }
+  }
+
+  const openReservationModal = (point: SearchResult) => {
+    setReservationPoint(point)
+  }
+
+  const closeReservationModal = () => {
+    setReservationPoint(null)
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -254,9 +298,7 @@ export function TrouverMonGaz() {
                       )}
                       {point.brand && <p>Marque : {point.brand}</p>}
                       <p>Quantité : {point.quantity !== null ? `${point.quantity} bouteille${point.quantity > 1 ? "s" : ""}` : "—"}</p>
-                      {point.price !== null && (
-                        <p>Prix : {new Intl.NumberFormat("fr-FR").format(point.price)} FCFA</p>
-                      )}
+                      
                       {point.format && <p>Format : {point.format}</p>}
                       {point.phone && (
                         <p className="flex items-center gap-1">
@@ -271,6 +313,26 @@ export function TrouverMonGaz() {
                         </p>
                       )}
                     </div>
+
+                    <div className="mt-4 pt-3 border-t flex gap-2">
+                      <Button
+                        variant="outline"
+                        className="flex-1 gap-1"
+                        onClick={() => openReservationModal(point)}
+                        disabled={point.status !== "disponible" || !point.quantity || point.quantity <= 0}
+                      >
+                        <Shield className="size-3.5" />
+                        Réserver
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="flex-1 gap-1"
+                        onClick={() => openReservationModal(point)}
+                        disabled={point.status !== "disponible" || !point.quantity || point.quantity <= 0}
+                      >
+                        Sans réservation
+                      </Button>
+                    </div>
                   </Card>
                 ))}
               </div>
@@ -278,6 +340,15 @@ export function TrouverMonGaz() {
           </div>
         )}
       </div>
-    </section>
+
+    {reservationPoint && (
+      <ReservationModal
+        open={!!reservationPoint}
+        onClose={closeReservationModal}
+        point={reservationPoint}
+        onConfirm={handleReserve}
+      />
+    )}
+  </section>
   )
 }

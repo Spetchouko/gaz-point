@@ -24,7 +24,7 @@ export default async function ProfilPage() {
 
   return (
     <Profil
-      pro={profile.role === "vendor" || profile.role === "admin"}
+      pro={profile.role === "vendor" || profile.role === "admin" || profile.role === "collaborateur"}
       profile={{
         name: profile.name,
         email: profile.email,

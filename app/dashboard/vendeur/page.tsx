@@ -84,6 +84,7 @@ export default async function DashboardVendeurPage() {
 
   return (
     <DashboardVendeur
+      vendorId={user.id}
       vendorName={user.name}
       points={pointsWithStats}
       globalStats={globalStats}
