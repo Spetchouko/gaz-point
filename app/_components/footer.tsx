@@ -61,7 +61,7 @@ export function Footer() {
               href="/"
               className="inline-flex items-center gap-2 text-lg font-bold tracking-tight"
             >
-              <span className="flex size-8 items-center justify-center rounded-lg bg-white">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-primary">
                 <Image
                   src="/brand/logo.png"
                   alt=""
