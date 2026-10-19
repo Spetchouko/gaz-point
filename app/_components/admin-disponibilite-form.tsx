@@ -20,7 +20,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { createDisponibiliteAdmin, updateDisponibiliteAdmin, deleteDisponibiliteAdmin, type ActionResult } from "@/app/admin/actions"
-import { bottleFormats, availabilityLabel } from "@/lib/gaz"
 import type { AvailabilityStatus } from "@/db/schema"
 
 type PointOption = {
@@ -105,14 +104,12 @@ export function AdminDisponibiliteForm({
   const [step, setStep] = useState<"form" | "confirm" | "deleteConfirm">("form")
   const [feedback, setFeedback] = useState<ActionResult | null>(null)
 
-  if (!open) return null
-
   const pointName = formState.pointName.trim()
   const pointOk = isEditing
     ? formState.pointId !== ""
     : pointName !== "" &&
       points.some((p) => p.name.trim().toLowerCase() === pointName.toLowerCase())
-  const formatOk = bottleFormats.includes(formState.format as (typeof bottleFormats)[number])
+  const formatOk = formState.format.trim() !== ""
   const brandOk = formState.brand.trim() !== ""
   const noteOk = formState.note.trim() !== ""
   const isValid = pointOk && formatOk && brandOk && noteOk
@@ -121,8 +118,8 @@ export function AdminDisponibiliteForm({
     const missing: string[] = []
     if (!pointName) missing.push("« Point de vente »")
     else if (!pointOk) missing.push("« Point de vente » introuvable")
-    if (!formatOk) missing.push("« Format de la bouteille »")
-    if (!brandOk) missing.push("« Marque de la bouteille »")
+    if (!formatOk) missing.push("« Format de bouteille »")
+    if (!brandOk) missing.push("« Marque de bouteille »")
     if (!noteOk) missing.push("« Niveau de l'itinéraire »")
     return missing
   }
@@ -191,7 +188,7 @@ export function AdminDisponibiliteForm({
           <dd className="font-medium text-foreground">{displayPointName}</dd>
         </div>
         <div className="flex justify-between">
-          <dt>Format de la bouteille</dt>
+          <dt>Format de bouteille</dt>
           <dd className="font-medium text-foreground">{formState.format}</dd>
         </div>
         <div className="flex justify-between">
@@ -199,7 +196,7 @@ export function AdminDisponibiliteForm({
           <dd className="font-medium text-foreground">{availabilityLabel[formState.status]}</dd>
         </div>
         <div className="flex justify-between">
-          <dt>Marque de la bouteille</dt>
+          <dt>Marque de bouteille</dt>
           <dd className="font-medium text-foreground">{formState.brand.trim()}</dd>
         </div>
         <div className="flex justify-between">
@@ -324,7 +321,7 @@ export function AdminDisponibiliteForm({
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="format-select" className="flex items-center gap-1">
-                  Format de la bouteille
+                  Format de bouteille
                   <span className="text-destructive" aria-hidden>*</span>
                 </Label>
                 <Select
@@ -332,9 +329,10 @@ export function AdminDisponibiliteForm({
                   onValueChange={(v) => setFormState((s) => ({ ...s, format: v ?? "" }))}
                 >
                   <SelectTrigger id="format-select" className="w-full">
-                    <SelectValue placeholder="Choisis un format" />
+                    <SelectValue placeholder="Saisissez un format" />
                   </SelectTrigger>
                   <SelectContent>
+                    {/* Formats suggérés mais saisie libre acceptée */}
                     {bottleFormats.map((item) => (
                       <SelectItem key={item} value={item}>
                         {item}
@@ -345,43 +343,24 @@ export function AdminDisponibiliteForm({
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="status-select">Statut</Label>
-                <Select
-                  value={formState.status}
-                  onValueChange={(v) => setFormState((s) => ({ ...s, status: v as AvailabilityStatus }))}
-                >
-                  <SelectTrigger id="status-select" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUSES.map((item) => (
-                      <SelectItem key={item} value={item}>
-                        {availabilityLabel[item]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="brand-input" className="flex items-center gap-1">
+                  Marque de bouteille
+                  <span className="text-destructive" aria-hidden>*</span>
+                </Label>
+                <Input
+                  id="brand-input"
+                  type="text"
+                  list="brand-suggestions"
+                  value={formState.brand}
+                  onChange={(e) => setFormState((s) => ({ ...s, brand: e.target.value }))}
+                  placeholder="Ex: Total, Payo, Gazex..."
+                />
+                <datalist id="brand-suggestions">
+                  {brands.map((b) => (
+                    <option key={b} value={b} />
+                  ))}
+                </datalist>
               </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="brand-input" className="flex items-center gap-1">
-                Marque de la bouteille
-                <span className="text-destructive" aria-hidden>*</span>
-              </Label>
-              <Input
-                id="brand-input"
-                type="text"
-                list="brand-suggestions"
-                value={formState.brand}
-                onChange={(e) => setFormState((s) => ({ ...s, brand: e.target.value }))}
-                placeholder="Ex: Total, Payo, Gazex..."
-              />
-              <datalist id="brand-suggestions">
-                {brands.map((b) => (
-                  <option key={b} value={b} />
-                ))}
-              </datalist>
             </div>
 
             <div className="space-y-1.5">
@@ -398,39 +377,39 @@ export function AdminDisponibiliteForm({
               />
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="quantity-input">Quantité (facultatif)</Label>
-                <Input
-                  id="quantity-input"
-                  type="number"
-                  min="0"
-                  value={formState.quantity}
-                  onChange={(e) => setFormState((s) => ({ ...s, quantity: e.target.value }))}
-                  placeholder="Ex: 25"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="weight-input">Poids (kg, facultatif)</Label>
-                <Input
-                  id="weight-input"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={formState.weightKg}
-                  onChange={(e) => setFormState((s) => ({ ...s, weightKg: e.target.value }))}
-                  placeholder="Ex: 12,5"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="expires-input">Expire le (facultatif)</Label>
-                <Input
-                  id="expires-input"
-                  type="date"
-                  value={formState.expiresAt}
-                  onChange={(e) => setFormState((s) => ({ ...s, expiresAt: e.target.value }))}
-                />
-              </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="quantity-input">Quantité (facultatif)</Label>
+              <Input
+                id="quantity-input"
+                type="number"
+                min="0"
+                value={formState.quantity}
+                onChange={(e) => setFormState((s) => ({ ...s, quantity: e.target.value }))}
+                placeholder="Ex: 25"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="weight-input">Poids (kg, facultatif)</Label>
+              <Input
+                id="weight-input"
+                type="number"
+                step="0.1"
+                min="0"
+                value={formState.weightKg}
+                onChange={(e) => setFormState((s) => ({ ...s, weightKg: e.target.value }))}
+                placeholder="Ex: 12,5"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="expires-input">Expire le (facultatif)</Label>
+              <Input
+                id="expires-input"
+                type="date"
+                value={formState.expiresAt}
+                onChange={(e) => setFormState((s) => ({ ...s, expiresAt: e.target.value }))}
+              />
             </div>
 
             <div className="space-y-1.5">

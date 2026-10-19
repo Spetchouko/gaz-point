@@ -11,7 +11,6 @@ import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { Mail, Lock, Eye, EyeOff, Loader2, AlertCircle, ArrowLeft } from "lucide-react"
 import { useState } from "react"
-import Image from "next/image"
 
 function validateEmail(email: string): string | null {
   if (!email.trim()) return "L'email est requis."
@@ -169,15 +168,7 @@ function LoginPageContent() {
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Mot de passe</Label>
-                  <Link
-                    href="/mot-de-passe-oublie"
-                    className="text-sm text-primary hover:underline"
-                  >
-                    Mot de passe oublié ?
-                  </Link>
-                </div>
+                <Label htmlFor="password">Mot de passe</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
@@ -212,7 +203,10 @@ function LoginPageContent() {
               </div>
 
               {error && (
-                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive flex items-center gap-2" role="alert">
+                <div
+                  className="rounded-md bg-destructive/10 p-3 text-sm text-destructive flex items-center gap-2"
+                  role="alert"
+                >
                   <AlertCircle className="size-4 shrink-0" />
                   {error}
                 </div>
@@ -239,14 +233,23 @@ function LoginPageContent() {
                 disabled={loading}
                 onClick={() => authClient.signIn.social({ provider: "google", callbackURL: redirectTo })}
               >
-                <Image src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width={16} height={16} className="size-4" />
+                <Image
+                  src="https://www.svgrepo.com/show/475656/google-color.svg"
+                  alt="Google"
+                  width={16}
+                  height={16}
+                  className="size-4"
+                />
                 Continuer avec Google
               </Button>
             </div>
 
             <p className="text-center text-sm text-muted-foreground">
               Pas encore de compte ?{" "}
-              <Link href={`/inscription?redirect=${encodeURIComponent(redirectTo)}`} className="text-primary hover:underline font-medium">
+              <Link
+                href={`/inscription?redirect=${encodeURIComponent(redirectTo)}`}
+                className="text-primary hover:underline font-medium"
+              >
                 Créer un compte
               </Link>
             </p>

@@ -11,16 +11,8 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { upsertDisponibilite, deleteDisponibilite, type ActionResult } from "@/app/dashboard/pro/actions"
-import { availabilityLabel, bottleFormats } from "@/lib/gaz"
 import type { AvailabilityStatus } from "@/db/schema"
 
 type PointWithDispos = {
@@ -63,11 +55,13 @@ export function DisponibiliteForm({
 
   const [formState, setFormState] = useState({
     pointId: editingDispo?.pointId ?? "",
+    pointName: editingDispo?.pointName ?? "",
     format: editingDispo?.dispo.format ?? "",
     status: (editingDispo?.dispo.status as AvailabilityStatus) ?? "disponible",
     phone: editingDispo?.dispo.phone ?? "",
     quantity: editingDispo?.dispo.quantity ?? "",
-    directions: editingDispo?.dispo.note ?? "",
+    note: editingDispo?.dispo.note ?? "",
+    brand: editingDispo?.dispo.brand ?? "",
   })
 
   const [step, setStep] = useState<"form" | "confirm" | "deleteConfirm">("form")
@@ -120,10 +114,10 @@ export function DisponibiliteForm({
             <dd className="font-medium text-foreground">{formState.quantity}</dd>
           </div>
         )}
-        {formState.directions && (
+        {formState.note && (
           <div className="flex justify-between">
             <dt>Indication</dt>
-            <dd className="font-medium text-foreground">{formState.directions}</dd>
+            <dd className="font-medium text-foreground">{formState.note}</dd>
           </div>
         )}
         {formState.phone && (
@@ -170,84 +164,57 @@ export function DisponibiliteForm({
 
         {step === "form" && (
           <form action={handleSubmit} className="space-y-4">
-            <input type="hidden" name="pointId" value={formState.pointId} />
             <input type="hidden" name="format" value={formState.format} />
             <input type="hidden" name="status" value={formState.status} />
             <input type="hidden" name="phone" value={formState.phone} />
             <input type="hidden" name="quantity" value={formState.quantity} />
-            <input type="hidden" name="directions" value={formState.directions} />
+            <input type="hidden" name="note" value={formState.note} />
             {isEditing && (
               <input type="hidden" name="disponibiliteId" value={editingDispo?.dispo.id} />
             )}
 
             <div className="space-y-1.5">
-              <Label htmlFor="point-select">Point de vente</Label>
-              <Select
-                value={formState.pointId}
-                onValueChange={(v) => setFormState((s) => ({ ...s, pointId: v ?? "" }))}
-                disabled={isEditing}
-              >
-                <SelectTrigger id="point-select" className="w-full" disabled={isEditing}>
-                  <SelectValue placeholder="Sélectionne un dépôt" />
-                </SelectTrigger>
-                <SelectContent>
-                  {points.map((point) => (
-                    <SelectItem key={point.id} value={point.id}>
-                      {point.name} — {point.district}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="format-select">Format</Label>
-                <Select
-                  value={formState.format}
-                  onValueChange={(v) => setFormState((s) => ({ ...s, format: v ?? "" }))}
-                >
-                  <SelectTrigger id="format-select" className="w-full">
-                    <SelectValue placeholder="Choisis un format" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {bottleFormats.map((item) => (
-                      <SelectItem key={item} value={item}>
-                        {item}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="status-select">Statut</Label>
-                <Select
-                  value={formState.status}
-                  onValueChange={(v) => setFormState((s) => ({ ...s, status: v as AvailabilityStatus }))}
-                >
-                  <SelectTrigger id="status-select" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUSES.map((item) => (
-                      <SelectItem key={item} value={item}>
-                        {availabilityLabel[item]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Label htmlFor="point-name">Point de vente</Label>
+              <Input
+                id="point-name"
+                type="text"
+                value={formState.pointName}
+                onChange={(e) => setFormState((s) => ({ ...s, pointName: e.target.value }))}
+                placeholder="Saisissez le nom du dépôt"
+                required
+              />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="phone-input">Téléphone (facultatif)</Label>
+              <Label htmlFor="vendor-name">Vendeur</Label>
               <Input
-                id="phone-input"
-                type="tel"
-                value={formState.phone}
-                onChange={(e) => setFormState((s) => ({ ...s, phone: e.target.value }))}
-                placeholder="Ex: +237 6 99 00 00 00"
+                id="vendor-name"
+                type="text"
+                value={formState.brand}
+                onChange={(e) => setFormState((s) => ({ ...s, brand: e.target.value }))}
+                placeholder="Nom du vendeur ou du dépositaire"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="format-input">Format de bouteille</Label>
+              <Input
+                id="format-input"
+                type="text"
+                value={formState.format}
+                onChange={(e) => setFormState((s) => ({ ...s, format: e.target.value }))}
+                placeholder="Ex: 6 kg, 12,5 kg, 15 kg"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="brand-input">Marque de bouteille</Label>
+              <Input
+                id="brand-input"
+                type="text"
+                value={formState.brand}
+                onChange={(e) => setFormState((s) => ({ ...s, brand: e.target.value }))}
+                placeholder="Ex: Total, Payo, Gazex..."
               />
             </div>
 
@@ -268,8 +235,8 @@ export function DisponibiliteForm({
               <Label htmlFor="directions-input">Indication / itinéraire (facultatif)</Label>
               <Textarea
                 id="directions-input"
-                value={formState.directions}
-                onChange={(e) => setFormState((s) => ({ ...s, directions: e.target.value }))}
+                value={formState.note}
+                onChange={(e) => setFormState((s) => ({ ...s, note: e.target.value }))}
                 placeholder="Ex: Après Tradex, à côté de la pharmacie..."
                 rows={3}
               />
@@ -310,7 +277,7 @@ export function DisponibiliteForm({
             <input type="hidden" name="status" value={formState.status} />
             <input type="hidden" name="phone" value={formState.phone} />
             <input type="hidden" name="quantity" value={formState.quantity} />
-            <input type="hidden" name="directions" value={formState.directions} />
+            <input type="hidden" name="note" value={formState.note} />
             {confirmContent}
             <div className="flex gap-2">
               <Button type="submit" className="flex-1" disabled={!!feedback?.ok}>

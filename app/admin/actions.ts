@@ -667,10 +667,7 @@ export async function createDisponibiliteAdmin(
       message: `Point de vente « ${pointNameRaw} » introuvable. Saisissez ou sélectionnez un point de vente existant.`,
     }
   }
-  if (!format) return { ok: false, message: "Le champ « Format de la bouteille » est obligatoire." }
-  if (!bottleFormats.includes(format as (typeof bottleFormats)[number])) {
-    return { ok: false, message: "Format de bouteille invalide." }
-  }
+  if (!format) return { ok: false, message: "Le champ « Format de bouteille » est obligatoire." }
   if (!STATUSES.includes(status)) return { ok: false, message: "Statut invalide." }
   if (!brandRaw) return { ok: false, message: "Le champ « Marque de la bouteille » est obligatoire." }
   const brandName = await resolveBrandName(brandRaw)
@@ -739,9 +736,6 @@ export async function updateDisponibiliteAdmin(
   if (!disponibiliteId) return { ok: false, message: "Disponibilité introuvable." }
   if (!pointId) return { ok: false, message: "Point de vente requis." }
   if (!format) return { ok: false, message: "Le champ « Format de la bouteille » est obligatoire." }
-  if (!bottleFormats.includes(format as (typeof bottleFormats)[number])) {
-    return { ok: false, message: "Format de bouteille invalide." }
-  }
   if (!STATUSES.includes(status)) return { ok: false, message: "Statut invalide." }
   if (!brandRaw) return { ok: false, message: "Le champ « Marque de la bouteille » est obligatoire." }
   const brandName = await resolveBrandName(brandRaw)

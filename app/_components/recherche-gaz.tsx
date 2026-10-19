@@ -13,7 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { brands, formats } from "@/app/_components/donnees-demo"
+import { formats } from "@/app/_components/donnees-demo"
 import { availabilityLabel } from "@/lib/gaz"
 import { authClient } from "@/lib/auth-client"
 import type { AvailabilityStatus } from "@/db/schema"
@@ -132,7 +132,14 @@ export function RechercheGaz() {
       const res = await fetch(`/api/recherche?${params.toString()}`)
       if (!res.ok) throw new Error("Recherche impossible")
       const data = await res.json()
-      setResults(data.results ?? [])
+      const results: SearchResult[] = data.results ?? []
+
+      // Message spécifique lorsqu'aucune marque correspondante n'est trouvée
+      if (brand && results.length === 0) {
+        setError(`Aucun point de ne Correspondance pour la marque "${brand}". Essaye un autre nom ou laisse vide pour voir tous les points.`)
+      } else {
+        setResults(results)
+      }
     } catch {
       setError("Une erreur est survenue lors de la recherche.")
     } finally {
@@ -156,19 +163,14 @@ export function RechercheGaz() {
               >
                 Marque
               </label>
-              <select
+              <Input
                 id="recherche-marque"
+                type="text"
                 value={brand}
-                onChange={(event) => setBrand(event.target.value)}
+                onChange={(e) => setBrand(e.target.value)}
+                placeholder="Nom de la marque (ex: Total, Payo, Gazex...)"
                 className={selectClass}
-              >
-                <option value="">Toutes les marques</option>
-                {brands.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
+              />
               <ChevronDown className="pointer-events-none absolute right-3 bottom-3.5 size-4 text-muted-foreground" />
             </div>
 

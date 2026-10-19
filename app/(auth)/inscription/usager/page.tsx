@@ -9,22 +9,37 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, AlertCircle } from "lucide-react"
-import Image from "next/image"
 import { useState } from "react"
 
-// === Mode de confirmation email ===
 const MODE_EMAIL = "email"
 
 function validateEmail(email: string): string | null {
   if (!email.trim()) return "L'email est requis."
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(email)) return "Format d'email invalide."
-  
+
   const domain = email.split("@")[1]?.toLowerCase()
-  if (domain && ["10minutemail.com", "guerrillamail.com", "mailinator.com", "tempmail.com",
-    "throwawaymail.com", "yopmail.com", "trashmail.com", "getnada.com",
-    "maildrop.cc", "sharklasers.com", "grr.la", "spamgourmet.com",
-    "temp-mail.org", "fakeinbox.com", "dispostable.com", "mintemail.com"].includes(domain)) {
+  if (
+    domain &&
+    [
+      "10minutemail.com",
+      "guerrillamail.com",
+      "mailinator.com",
+      "tempmail.com",
+      "throwawaymail.com",
+      "yopmail.com",
+      "trashmail.com",
+      "getnada.com",
+      "maildrop.cc",
+      "sharklasers.com",
+      "grr.la",
+      "spamgourmet.com",
+      "temp-mail.org",
+      "fakeinbox.com",
+      "dispostable.com",
+      "mintemail.com",
+    ].includes(domain)
+  ) {
     return "Les emails temporaires ne sont pas autorisés."
   }
   return null
@@ -39,6 +54,7 @@ function validatePassword(password: string): string | null {
 function validateName(name: string): string | null {
   if (!name.trim()) return "Le nom est requis."
   if (name.trim().length < 2) return "Le nom doit contenir au moins 2 caractères."
+  if (name.trim().length > 50) return "Le nom ne doit pas dépasser 50 caractères."
   return null
 }
 
@@ -117,14 +133,24 @@ function InscriptionUsagerContent() {
 
       if (signUpError) {
         console.error("[signup-usager] signUpError:", JSON.stringify(signUpError, null, 2))
-        const errorMessage = signUpError.message ?? "Impossible de créer le compte."
-        if (errorMessage.toLowerCase().includes("email") || errorMessage.toLowerCase().includes("already") || errorMessage.toLowerCase().includes("déjà") || errorMessage.toLowerCase().includes("exist")) {
+        const errorMessage =
+          signUpError.message ?? "Impossible de créer le compte."
+        if (
+          errorMessage.toLowerCase().includes("email") ||
+          errorMessage.toLowerCase().includes("already") ||
+          errorMessage.toLowerCase().includes("déjà") ||
+          errorMessage.toLowerCase().includes("exist")
+        ) {
           setFieldErrors((prev) => ({ ...prev, email: "Cette adresse email est déjà utilisée. Essayez de vous connecter." }))
-        } else if (errorMessage.toLowerCase().includes("phone") || errorMessage.toLowerCase().includes("téléphone")) {
-          setFieldErrors((prev) => ({ ...prev, phoneNumber: errorMessage }))
-        } else if (errorMessage.toLowerCase().includes("password") || errorMessage.toLowerCase().includes("mot de passe")) {
+        } else if (
+          errorMessage.toLowerCase().includes("password") ||
+          errorMessage.toLowerCase().includes("mot de passe")
+        ) {
           setFieldErrors((prev) => ({ ...prev, password: errorMessage }))
-        } else if (errorMessage.toLowerCase().includes("name") || errorMessage.toLowerCase().includes("nom")) {
+        } else if (
+          errorMessage.toLowerCase().includes("name") ||
+          errorMessage.toLowerCase().includes("nom")
+        ) {
           setFieldErrors((prev) => ({ ...prev, name: errorMessage }))
         } else {
           setError(errorMessage)
@@ -183,23 +209,6 @@ function InscriptionUsagerContent() {
   return (
     <div className="min-h-screen bg-background px-4 py-8 flex items-center justify-center">
       <div className="w-full max-w-md">
-        {/* ---------- Choix du mode (visible mais simplifié) ---------- */}
-        <div className="mb-6">
-          <Card className="p-4 md:p-6 text-sm">
-            <CardHeader className="flex justify-between items-center mb-3">
-              <h3 className="font-medium text-foreground">
-                Confirmation par email
-              </h3>
-              <span className="text-sm text-primary font-medium">
-                Email
-              </span>
-            </CardHeader>
-            <p className="text-xs text-muted-foreground">
-              Un code vous sera envoyé sur votre adresse email.
-            </p>
-          </Card>
-        </div>
-
         {/* ---------- Retourn en arrière ---------- */}
         <div className="mb-6">
           <Button
@@ -243,87 +252,115 @@ function InscriptionUsagerContent() {
                     className="pl-10 h-11"
                     disabled={loading}
                     aria-invalid={submitted && !!fieldErrors.name}
-                    aria-describedby={submitted && fieldErrors.name ? "name-error" : undefined}
+                    aria-describedby={
+                      submitted && fieldErrors.name ? "name-error" : undefined
+                    }
                   />
                 </div>
                 {submitted && fieldErrors.name && (
-                  <p id="name-error" className="text-sm text-destructive" role="alert">
+                  <p
+                    id="name-error"
+                    className="text-sm text-destructive"
+                    role="alert"
+                  >
                     {fieldErrors.name}
                   </p>
                 )}
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="votre@email.com"
-                    value={email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                    onBlur={() => setSubmitted(true)}
-                    required
-                    className="pl-10 h-11"
-                    disabled={loading}
-                    aria-invalid={submitted && !!fieldErrors.email}
-                    aria-describedby={submitted && fieldErrors.email ? "email-error" : undefined}
-                  />
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      autoComplete="email"
+                      placeholder="votre@email.com"
+                      value={email}
+                      onChange={(e) => handleInputChange("email", e.target.value)}
+                      onBlur={() => setSubmitted(true)}
+                      required
+                      className="pl-10 h-11"
+                      disabled={loading}
+                      aria-invalid={submitted && !!fieldErrors.email}
+                      aria-describedby={
+                        submitted && fieldErrors.email ? "email-error" : undefined
+                      }
+                    />
+                  </div>
+                  {submitted && fieldErrors.email && (
+                    <p
+                      id="email-error"
+                      className="text-sm text-destructive"
+                      role="alert"
+                    >
+                      {fieldErrors.email}
+                    </p>
+                  )}
                 </div>
-                {submitted && fieldErrors.email && (
-                  <p id="email-error" className="text-sm text-destructive" role="alert">
-                    {fieldErrors.email}
-                  </p>
-                )}
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Mot de passe</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    placeholder="6 caractères minimum"
-                    value={password}
-                    onChange={(e) => handleInputChange("password", e.target.value)}
-                    onBlur={() => setSubmitted(true)}
-                    required
-                    minLength={6}
-                    className="pl-10 pr-10 h-11"
-                    disabled={loading}
-                    aria-invalid={submitted && !!fieldErrors.password}
-                    aria-describedby={submitted && fieldErrors.password ? "password-error" : undefined}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    disabled={loading}
-                    aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-                  >
-                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                  </button>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Mot de passe</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
+                      placeholder="6 caractères minimum"
+                      value={password}
+                      onChange={(e) => handleInputChange("password", e.target.value)}
+                      onBlur={() => setSubmitted(true)}
+                      required
+                      minLength={6}
+                      className="pl-10 pr-10 h-11"
+                      disabled={loading}
+                      aria-invalid={submitted && !!fieldErrors.password}
+                      aria-describedby={
+                        submitted && fieldErrors.password ? "password-error" : undefined
+                      }
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      disabled={loading}
+                      aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                    >
+                      {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  </div>
+                  {submitted && fieldErrors.password && (
+                    <p
+                      id="password-error"
+                      className="text-sm text-destructive"
+                      role="alert"
+                    >
+                      {fieldErrors.password}
+                    </p>
+                  )}
                 </div>
-                {submitted && fieldErrors.password && (
-                  <p id="password-error" className="text-sm text-destructive" role="alert">
-                    {fieldErrors.password}
-                  </p>
-                )}
               </div>
 
               {error && (
-                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive flex items-center gap-2" role="alert">
+                <div
+                  className="rounded-md bg-destructive/10 p-3 text-sm text-destructive flex items-center gap-2"
+                  role="alert"
+                >
                   <AlertCircle className="size-4 shrink-0" />
                   {error}
                 </div>
               )}
 
               <Button type="submit" className="w-full h-11" disabled={loading}>
-                Créer mon compte usager
+                {loading
+                  ? <Button
+                      render={<Loader2 className="size-4 mr-2 animate-spin" />}
+                      nativeButton={false}
+                    >
+                      Création en cours...
+                    </Button>
+                  : "Créer mon compte usager"}
               </Button>
             </form>
 
@@ -333,7 +370,9 @@ function InscriptionUsagerContent() {
                   <div className="w-full border-t border-border" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase tracking-wider">
-                  <span className="bg-background px-2 text-muted-foreground">Ou continuer avec</span>
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Ou continuer avec
+                  </span>
                 </div>
               </div>
 
@@ -343,7 +382,13 @@ function InscriptionUsagerContent() {
                 disabled={loading}
                 onClick={() => authClient.signIn.social({ provider: "google", callbackURL: redirectTo })}
               >
-                <Image src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width={16} height={16} className="size-4" />
+                <Image
+                  src="https://www.svgrepo.com/show/475656/google-color.svg"
+                  alt="Google"
+                  width={16}
+                  height={16}
+                  className="size-4"
+                />
                 Continuer avec Google
               </Button>
             </div>

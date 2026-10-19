@@ -96,7 +96,7 @@ export function Storytelling() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm leading-relaxed text-muted-foreground">
+                <p className="text-sm sm:text-base leading-relaxed text-muted-foreground">
                   {item.description}
                 </p>
               </CardContent>
