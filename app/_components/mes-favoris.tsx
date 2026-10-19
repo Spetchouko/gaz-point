@@ -73,10 +73,10 @@ export function MesFavoris({
                 <span className="flex size-12 items-center justify-center rounded-full bg-primary/10">
                   <Heart className="size-6 text-primary" aria-hidden />
                 </span>
-                <p className="font-medium">Aucun favori pour l'instant</p>
+                <p className="font-medium">Aucun favori pour l&apos;instant</p>
                 <p className="max-w-sm text-sm text-muted-foreground">
                   Ajoute des dépôts depuis la liste ci-dessous pour les retrouver
-                  d'un coup d'œil.
+                  d&apos;un coup d&apos;œil.
                 </p>
               </CardContent>
             </Card>

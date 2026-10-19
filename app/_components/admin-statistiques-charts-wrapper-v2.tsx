@@ -149,7 +149,7 @@ export function AdminStatistiquesChartsWrapperV2({
 
       <section aria-labelledby="entryexit-heading">
         <h2 id="entryexit-heading" className="text-xl font-semibold mb-4">
-          Pages d'entrée et de sortie
+          Pages d&apos;entrée et de sortie
         </h2>
         <EntryExitChart data={entryExitPages} />
       </section>

@@ -284,13 +284,19 @@ export async function upsertDisponibilite(
     }
   }
 
-  // Auto-status based on quantity if not explicitly set by user
-  const effectiveStatus = quantity > 0 ? "disponible" : "indisponible"
+  // Le statut saisi pilote l'affichage : une quantité à 0 force "indisponible",
+  // sinon on conserve le statut choisi (a_confirmer ne doit pas être écrasé).
+  const effectiveStatus = quantity === 0 ? "indisponible" : status
 
   if (disponibiliteId) {
     // UPDATE existing
     const [existing] = await db
-      .select({ id: disponibilite.id, pointId: disponibilite.pointId })
+      .select({
+        id: disponibilite.id,
+        pointId: disponibilite.pointId,
+        quantity: disponibilite.quantity,
+        reservedQuantity: disponibilite.reservedQuantity,
+      })
       .from(disponibilite)
       .where(eq(disponibilite.id, disponibiliteId))
       .limit(1)
@@ -298,8 +304,21 @@ export async function upsertDisponibilite(
     if (!existing) {
       return { ok: false, message: "Disponibilité introuvable." }
     }
+
+    // L'autorisation se juge sur le point de la ligne modifiée, jamais sur le
+    // pointId fourni par le client : sinon un vendeur pourrait modifier la
+    // disponibilité d'un autre dépôt en envoyant son propre pointId.
+    if (existing.pointId !== pointId) {
+      return { ok: false, message: "Disponibilité introuvable pour ce dépôt." }
+    }
     if (role === "vendor" && point.vendorId !== user.id) {
       return { ok: false, message: "Tu ne peux modifier que tes propres disponibilités." }
+    }
+    if (quantity < (existing.reservedQuantity ?? 0)) {
+      return {
+        ok: false,
+        message: `Quantité insuffisante : ${existing.reservedQuantity} bouteille(s) sont déjà réservées.`,
+      }
     }
 
     await db

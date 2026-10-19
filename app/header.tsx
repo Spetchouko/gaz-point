@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { LogIn, Menu, Shield, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -34,7 +34,6 @@ const navLinks = [
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
-  const router = useRouter()
   const closeMenu = () => setMobileMenuOpen(false)
   const { data: session } = authClient.useSession()
   const isAuthenticated = !!session?.user

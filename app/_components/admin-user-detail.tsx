@@ -1,6 +1,7 @@
 "use client"
 
 import { useTransition, useState } from "react"
+import { useRouter } from "next/navigation"
 import { User, Store, Calendar, Shield, KeyRound, Settings, Power, Trash2, CheckCircle2, X } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -71,6 +72,7 @@ export function AdminUserDetail({
   currentUserId?: string
 }) {
   const [, startTransition] = useTransition()
+  const router = useRouter()
   const [dialog, setDialog] = useState<DialogKind>(null)
   const [feedback, setFeedback] = useState<ActionResult | null>(null)
   const [edit, setEdit] = useState({
@@ -92,7 +94,7 @@ export function AdminUserDetail({
       setFeedback(result)
       if (result.ok) {
         setDialog(null)
-        window.location.reload()
+        router.refresh()
       }
     })
   }
@@ -105,7 +107,8 @@ export function AdminUserDetail({
       const result = await deleteUser(null, formData)
       setFeedback(result)
       if (result.ok) {
-        window.location.assign("/admin/users")
+        router.push("/admin/users")
+        router.refresh()
       }
     })
   }

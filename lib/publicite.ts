@@ -1,12 +1,17 @@
 import { db } from "@/db"
 import { publicite } from "@/db/schema"
-import { eq, desc, gte, and, or } from "drizzle-orm"
+import { eq, desc, and, lte, or, gt, isNull } from "drizzle-orm"
+
 /**
- * Récupère les publicités pour un slot donné.
- * - status = "active" : affichées immédiatement
- * - status = "scheduled" : affichées si startAt <= maintenant
- * - status = "draft" : toujours affichables selon contexte
- * - status = "expired" / "suspended" : cachées
+ * Récupère les publicités affichables pour un slot donné.
+ *
+ * Règles (alignées sur `getEligiblePublicites` côté client) :
+ * - `active`  : affichée tant que `endAt` est absente ou future ;
+ * - `scheduled`: affichée seulement si `startAt` est passée (et `endAt` future) ;
+ * - `draft` / `expired` / `suspended` : jamais affichées.
+ *
+ * La borne de fin est vérifiée ici aussi : une campagne dont la date de fin est
+ * passée ne doit pas rester visible si le cron de expiration n'a pas tourné.
  */
 export async function getPublicitesForSlot(slot: string) {
   const now = new Date()
@@ -19,11 +24,10 @@ export async function getPublicitesForSlot(slot: string) {
           eq(publicite.slot, slot),
           or(
             eq(publicite.status, "active"),
-            and(
-              eq(publicite.status, "scheduled"),
-              gte(publicite.startAt, now)
-            )
-          )
+            and(eq(publicite.status, "scheduled"), lte(publicite.startAt, now))
+          ),
+          or(isNull(publicite.endAt), gt(publicite.endAt, now)),
+          or(isNull(publicite.startAt), lte(publicite.startAt, now))
         )
       )
       .orderBy(desc(publicite.createdAt))

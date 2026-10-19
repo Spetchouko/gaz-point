@@ -52,7 +52,7 @@ export function DashboardClient() {
         <div className="mb-8">
           <h2 className="text-2xl font-bold tracking-tight">Mes réservations</h2>
           <p className="mt-1 text-muted-foreground">
-            Consultez l'historique de vos réservations et leurs statuts.
+            Consultez l&apos;historique de vos réservations et leurs statuts.
           </p>
         </div>
 

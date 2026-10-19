@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
-import { reservation, disponibilite, pointDeVente, user } from "@/db/schema"
-import { eq, and, lt, sql } from "drizzle-orm"
+import { reservation, disponibilite, pointDeVente } from "@/db/schema"
+import { eq, and, sql } from "drizzle-orm"
 import { randomUUID } from "node:crypto"
-import { requireUser } from "@/lib/session"
+import { getCurrentUser } from "@/lib/session"
 import {
   AD_ATTRIBUTION_COOKIE,
   recordConversionFromRequest,
@@ -11,6 +11,7 @@ import {
 
 const DEFAULT_RESERVATION_AMOUNT = 1000 // FCFA
 const RESERVATION_EXPIRY_MINUTES = 30
+const MAX_RESERVATION_QUANTITY = 20
 
 function generateReservationCode(pointName: string): string {
   const now = new Date()
@@ -34,14 +35,26 @@ async function ensureUniqueCode(baseCode: string): Promise<string> {
       .limit(1)
     if (existing.length === 0) return code
     attempt++
+    if (attempt > 99) {
+      throw new Error("Impossible de générer un code de réservation unique")
+    }
     const suffix = attempt.toString().padStart(2, "0")
     code = baseCode.slice(0, 10) + suffix
   }
 }
 
+function cleanText(value: unknown, max: number): string | null {
+  if (typeof value !== "string") return null
+  const trimmed = value.trim().slice(0, max)
+  return trimmed.length > 0 ? trimmed : null
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const currentUser = await requireUser()
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
+      return NextResponse.json({ error: "Non authentifié" }, { status: 401 })
+    }
     const body = (await req.json().catch(() => null)) as {
       disponibiliteId?: string
       pointId?: string
@@ -55,14 +68,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Requête invalide" }, { status: 400 })
     }
 
-    const {
-      disponibiliteId,
-      pointId,
-      brand,
-      format,
-      quantity = 1,
-      amountType = "reservation",
-    } = body
+    const disponibiliteId = cleanText(body.disponibiliteId, 100)
+    const pointId = cleanText(body.pointId, 100)
+    const brand = cleanText(body.brand, 80)
+    const format = cleanText(body.format, 80)
+    const rawQuantity = body.quantity ?? 1
+    const amountType =
+      body.amountType === "consigne" || body.amountType === "mixed"
+        ? body.amountType
+        : "reservation"
 
     if (!brand || !format) {
       return NextResponse.json(
@@ -71,22 +85,38 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    let targetDisponibiliteId = disponibiliteId
-    let targetPointId = pointId
+    // La quantité doit être un entier strictement positif et borné : sans ce
+    // contrôle une quantité négative réduirait le stock réservé.
+    if (
+      typeof rawQuantity !== "number" ||
+      !Number.isInteger(rawQuantity) ||
+      rawQuantity < 1 ||
+      rawQuantity > MAX_RESERVATION_QUANTITY
+    ) {
+      return NextResponse.json(
+        { error: `Quantité invalide (entre 1 et ${MAX_RESERVATION_QUANTITY})` },
+        { status: 400 }
+      )
+    }
+    const quantity = rawQuantity
 
-    // If disponibiliteId provided, verify it exists and get point info
+    const dispoColumns = {
+      id: disponibilite.id,
+      pointId: disponibilite.pointId,
+      quantity: disponibilite.quantity,
+      reservedQuantity: disponibilite.reservedQuantity,
+      brand: disponibilite.brand,
+      format: disponibilite.format,
+      status: disponibilite.status,
+      expiresAt: disponibilite.expiresAt,
+    }
+
+    let targetDisponibiliteId: string
+    let targetPointId: string
+
     if (disponibiliteId) {
       const [dispo] = await db
-        .select({
-          id: disponibilite.id,
-          pointId: disponibilite.pointId,
-          quantity: disponibilite.quantity,
-          reservedQuantity: disponibilite.reservedQuantity,
-          brand: disponibilite.brand,
-          format: disponibilite.format,
-          status: disponibilite.status,
-          expiresAt: disponibilite.expiresAt,
-        })
+        .select(dispoColumns)
         .from(disponibilite)
         .where(eq(disponibilite.id, disponibiliteId))
         .limit(1)
@@ -101,7 +131,6 @@ export async function POST(req: NextRequest) {
       targetPointId = dispo.pointId
       targetDisponibiliteId = dispo.id
 
-      // Check if expired
       if (dispo.expiresAt && new Date(dispo.expiresAt) < new Date()) {
         return NextResponse.json(
           { error: "Cette disponibilité a expiré" },
@@ -109,7 +138,6 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      // Check status
       if (dispo.status !== "disponible") {
         return NextResponse.json(
           { error: "Cette disponibilité n'est plus disponible" },
@@ -117,7 +145,6 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      // Check available quantity (quantity - reservedQuantity)
       const available = (dispo.quantity ?? 0) - (dispo.reservedQuantity ?? 0)
       if (available < quantity) {
         return NextResponse.json(
@@ -126,18 +153,8 @@ export async function POST(req: NextRequest) {
         )
       }
     } else if (pointId) {
-      // If only pointId provided, find the latest disponibilite for this point
       const [dispo] = await db
-        .select({
-          id: disponibilite.id,
-          pointId: disponibilite.pointId,
-          quantity: disponibilite.quantity,
-          reservedQuantity: disponibilite.reservedQuantity,
-          brand: disponibilite.brand,
-          format: disponibilite.format,
-          status: disponibilite.status,
-          expiresAt: disponibilite.expiresAt,
-        })
+        .select(dispoColumns)
         .from(disponibilite)
         .where(
           and(
@@ -157,7 +174,6 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      // Check if expired
       if (dispo.expiresAt && new Date(dispo.expiresAt) < new Date()) {
         return NextResponse.json(
           { error: "Cette disponibilité a expiré" },
@@ -165,7 +181,6 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      // Check available quantity
       const available = (dispo.quantity ?? 0) - (dispo.reservedQuantity ?? 0)
       if (available < quantity) {
         return NextResponse.json(
@@ -174,6 +189,7 @@ export async function POST(req: NextRequest) {
         )
       }
 
+      targetPointId = dispo.pointId
       targetDisponibiliteId = dispo.id
     } else {
       return NextResponse.json(
@@ -182,74 +198,57 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Get point details for code generation
     const [point] = await db
       .select({ name: pointDeVente.name, vendorId: pointDeVente.vendorId })
       .from(pointDeVente)
-      .where(eq(pointDeVente.id, targetPointId!))
+      .where(eq(pointDeVente.id, targetPointId))
       .limit(1)
 
-    if (!point) {
+    if (!point || !point.vendorId) {
       return NextResponse.json(
         { error: "Point de vente introuvable" },
         { status: 404 }
       )
     }
 
-    // Get vendor user info
-    const [vendor] = await db
-      .select({ id: user.id })
-      .from(user)
-      .where(eq(user.id, point.vendorId!))
-      .limit(1)
-
-    // Generate unique reservation code
     const baseCode = generateReservationCode(point.name)
     const reservationCode = await ensureUniqueCode(baseCode)
-
-    // Calculate expiry time
     const expiresAt = new Date(Date.now() + RESERVATION_EXPIRY_MINUTES * 60 * 1000)
+    const reservationId = randomUUID()
 
-    // Use a transaction to ensure atomicity
-    const result = await db.transaction(async (tx) => {
-      // Lock the disponibilite row and check again
-      const [lockedDispo] = await tx
-        .select({
-          id: disponibilite.id,
-          quantity: disponibilite.quantity,
-          reservedQuantity: disponibilite.reservedQuantity,
-        })
-        .from(disponibilite)
-        .where(eq(disponibilite.id, targetDisponibiliteId!))
-        .limit(1)
+    // Le driver neon-http ne supporte pas db.transaction(). L'atomicité est
+    // obtenue par un UPDATE conditionnel : l'incrément du stock réservé ne
+    // s'applique que si le stock restant est suffisant. Deux requêtes
+    // concurrentes ne peuvent donc pas réserver la même bouteille.
+    const reserved = await db
+      .update(disponibilite)
+      .set({
+        reservedQuantity: sql`${disponibilite.reservedQuantity} + ${quantity}`,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(disponibilite.id, targetDisponibiliteId),
+          sql`COALESCE(${disponibilite.quantity}, 0) - ${disponibilite.reservedQuantity} >= ${quantity}`
+        )
+      )
+      .returning({ id: disponibilite.id })
 
-      if (!lockedDispo) {
-        throw new Error("Disponibilité introuvable lors de la transaction")
-      }
+    if (reserved.length === 0) {
+      return NextResponse.json(
+        { error: "Stock insuffisant pour cette réservation" },
+        { status: 409 }
+      )
+    }
 
-      const available = (lockedDispo.quantity ?? 0) - (lockedDispo.reservedQuantity ?? 0)
-      if (available < quantity) {
-        throw new Error("Stock insuffisant (concurrence)")
-      }
-
-      // Increment reserved quantity
-      await tx
-        .update(disponibilite)
-        .set({
-          reservedQuantity: (lockedDispo.reservedQuantity ?? 0) + quantity,
-          updatedAt: new Date(),
-        })
-        .where(eq(disponibilite.id, targetDisponibiliteId!))
-
-      // Create reservation
-      const reservationId = randomUUID()
-      await tx.insert(reservation).values({
+    try {
+      await db.insert(reservation).values({
         id: reservationId,
         userId: currentUser.id,
         clientName: currentUser.name,
         clientPhone: currentUser.phoneNumber ?? null,
-        vendorId: point.vendorId!,
-        pointId: targetPointId!,
+        vendorId: point.vendorId,
+        pointId: targetPointId,
         disponibiliteId: targetDisponibiliteId,
         brand,
         format,
@@ -261,9 +260,19 @@ export async function POST(req: NextRequest) {
         expiresAt,
         reservedAt: new Date(),
       })
-
-      return { reservationId, reservationCode, expiresAt }
-    })
+    } catch (insertError) {
+      // Compensation : on relâche le stock réservé si la réservation n'a pas
+      // pu être créée, afin de ne pas bloquer une bouteille inutilement.
+      await db
+        .update(disponibilite)
+        .set({
+          reservedQuantity: sql`GREATEST(0, ${disponibilite.reservedQuantity} - ${quantity})`,
+          updatedAt: new Date(),
+        })
+        .where(eq(disponibilite.id, targetDisponibiliteId))
+        .catch(() => undefined)
+      throw insertError
+    }
 
     // Attribution publicitaire : réservation faite dans les 30 jours après un clic.
     if (req.cookies.get(AD_ATTRIBUTION_COOKIE)) {
@@ -273,9 +282,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       reservation: {
-        id: result.reservationId,
-        code: result.reservationCode,
-        expiresAt: result.expiresAt.toISOString(),
+        id: reservationId,
+        code: reservationCode,
+        expiresAt: expiresAt.toISOString(),
         amount: DEFAULT_RESERVATION_AMOUNT,
         amountType,
         brand,

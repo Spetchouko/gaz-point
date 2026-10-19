@@ -17,7 +17,10 @@ import { brands, formats } from "@/app/_components/donnees-demo"
 import { availabilityLabel } from "@/lib/gaz"
 import { authClient } from "@/lib/auth-client"
 import type { AvailabilityStatus } from "@/db/schema"
-import { ReservationModal } from "@/app/_components/reservation-modal"
+import {
+  ReservationModal,
+  type ReservationResult,
+} from "@/app/_components/reservation-modal"
 
 const selectClass =
   "mt-1.5 h-11 w-full appearance-none rounded-lg border bg-background px-3 pr-9 text-sm text-foreground outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50"
@@ -56,36 +59,40 @@ export function TrouverMonGaz() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [reservationPoint, setReservationPoint] = useState<SearchResult | null>(null)
-  const [reservationLoading, setReservationLoading] = useState(false)
 
-  const handleReserve = async (amountType: "reservation" | "consigne") => {
-    if (!reservationPoint) return
+  const handleReserve = async (
+    amountType: "reservation" | "consigne"
+  ): Promise<ReservationResult> => {
+    if (!reservationPoint) {
+      throw new Error("Aucun point sélectionné")
+    }
 
-    setReservationLoading(true)
-    try {
-      const res = await fetch("/api/reservation/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          disponibiliteId: reservationPoint.disponibiliteId,
-          brand: reservationPoint.brand,
-          format: reservationPoint.format,
-          quantity: 1,
-          amountType,
-        }),
-      })
+    const res = await fetch("/api/reservation/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        disponibiliteId: reservationPoint.disponibiliteId,
+        brand: reservationPoint.brand,
+        format: reservationPoint.format,
+        quantity: 1,
+        amountType,
+      }),
+    })
 
-      const data = await res.json()
+    const data = await res.json()
 
-      if (!res.ok || data.error) {
-        throw new Error(data.error || "Erreur lors de la réservation")
-      }
+    if (!res.ok || data.error) {
+      throw new Error(data.error || "Erreur lors de la réservation")
+    }
 
-      // The modal will show success via its own state
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur lors de la réservation")
-    } finally {
-      setReservationLoading(false)
+    return {
+      code: data.reservation.code,
+      expiresAt: data.reservation.expiresAt,
+      amount: data.reservation.amount,
+      amountType: data.reservation.amountType,
+      brand: data.reservation.brand,
+      format: data.reservation.format,
+      quantity: data.reservation.quantity,
     }
   }
 
@@ -324,14 +331,18 @@ export function TrouverMonGaz() {
                         <Shield className="size-3.5" />
                         Réserver
                       </Button>
-                      <Button
-                        variant="ghost"
-                        className="flex-1 gap-1"
-                        onClick={() => openReservationModal(point)}
-                        disabled={point.status !== "disponible" || !point.quantity || point.quantity <= 0}
-                      >
-                        Sans réservation
-                      </Button>
+                      {point.phone && (
+                        <Button
+                          variant="ghost"
+                          className="flex-1 gap-1"
+                          render={
+                            <a href={`tel:${point.phone.replace(/\s/g, "")}`}>
+                              <Phone className="size-3.5" />
+                              Appeler
+                            </a>
+                          }
+                        />
+                      )}
                     </div>
                   </Card>
                 ))}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState, useState } from "react"
+import { useState } from "react"
 import { MapPin, Cylinder, Phone, Plus, ShieldCheck, Store, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { reportDisponibilite, upsertDisponibilite, type ActionResult } from "@/app/dashboard/pro/actions"
+import { upsertDisponibilite, type ActionResult } from "@/app/dashboard/pro/actions"
 import { DashboardNav } from "@/app/_components/dashboard-nav"
 import { availabilityLabel } from "@/lib/gaz"
 import type { AvailabilityStatus } from "@/db/schema"
@@ -46,11 +46,9 @@ type PointWithDispos = {
 }
 
 export function EspaceVendeur({
-  vendorName,
   vendorPhone,
   points,
 }: {
-  vendorName: string
   vendorPhone: string | null
   points: PointWithDispos[]
 }) {

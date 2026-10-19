@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
-import { reservation, pointDeVente, user } from "@/db/schema"
+import { reservation, pointDeVente } from "@/db/schema"
 import { eq, desc, and, inArray } from "drizzle-orm"
-import { requirePro } from "@/lib/session"
+import { getProUser } from "@/lib/session"
 import { formatDateTime } from "@/lib/gaz"
 
 export async function GET(req: NextRequest) {
   try {
-    const { user, role } = await requirePro()
+    const auth = await getProUser()
+    if (!auth) {
+      return NextResponse.json({ error: "Accès réservé aux vendeurs" }, { status: 401 })
+    }
+    const { user, role } = auth
     if (role !== "vendor") {
       return NextResponse.json({ error: "Accès réservé aux vendeurs" }, { status: 403 })
     }

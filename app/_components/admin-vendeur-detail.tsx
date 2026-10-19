@@ -120,9 +120,6 @@ export function AdminVendeurDetail({
     (sum, p) => sum + p.disponibilites.reduce((s, d) => s + (d.quantity ?? 0), 0),
     0
   )
-  const lastUpdate = points
-    .flatMap((p) => p.disponibilites.map((d) => new Date(d.createdAt)))
-    .sort((a, b) => b.getTime() - a.getTime())[0]
 
   return (
     <div className="min-h-screen bg-background py-8">

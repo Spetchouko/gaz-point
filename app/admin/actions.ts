@@ -16,7 +16,6 @@ import {
   avis,
   brand as brandTable,
   type AvailabilityStatus,
-  type AvailabilitySource,
 } from "@/db/schema"
 import { bottleFormats } from "@/lib/gaz"
 import {
@@ -442,7 +441,6 @@ export async function exportDisponibilitesCsv(
 }
 
 const STATUSES: AvailabilityStatus[] = ["disponible", "a_confirmer", "indisponible"]
-const SOURCES: AvailabilitySource[] = ["vendeur", "administration"]
 
 function normalizeText(value: string): string {
   return value.trim().replace(/\s+/g, " ")
@@ -1148,10 +1146,7 @@ export async function resetUserPassword(
 
   // Validation: password confirmation
   if (!rawPassword && !confirmPassword) {
-    // Generate random password if none provided
-    const generatedPassword = randomUUID().slice(0, 12)
-    // Store the generated password to return it
-    // We'll use it below
+    // Aucun mot de passe fourni : un mot de passe aléatoire est généré ci-dessous.
   } else if (rawPassword !== confirmPassword) {
     return { ok: false, message: "Les mots de passe ne correspondent pas." }
   } else if (rawPassword.length < 8) {
@@ -1736,14 +1731,12 @@ export async function duplicatePublicite(
 
 // Exporter la liste des publicités en CSV
 export async function exportPublicitesCsv(): Promise<{ ok: boolean; csv?: string; message: string }> {
-  const admin = await requireAdmin()
+  await requireAdmin()
 
   const publicites = await db
     .select()
     .from(publicite)
     .orderBy(desc(publicite.createdAt))
-
-  const now = new Date()
 
   const headers = [
     "ID",

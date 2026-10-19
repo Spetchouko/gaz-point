@@ -39,7 +39,7 @@ export function AdminCollaborateurForm() {
         // Fermer le formulaire après un court délai pour permettre la refresh
         setTimeout(() => setOpen(false), 500)
       }
-    } catch (error) {
+    } catch {
       // En cas d'erreur réseau ou inattendue, afficher un message explicite
       setFeedback({ ok: false, message: "Erreur lors de la création du collaborateur. Veuillez réessayer." })
     } finally {
@@ -113,7 +113,7 @@ export function AdminCollaborateurForm() {
 
             <p className="text-sm text-muted-foreground">
               Le collaborateur pourra consulter le tableau de bord et exporter les
-              données. Seul l'administrateur peut gérer les accès.
+              données. Seul l&apos;administrateur peut gérer les accès.
             </p>
 
             {feedback && (

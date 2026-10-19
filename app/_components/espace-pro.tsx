@@ -113,7 +113,7 @@ export function EspacePro({
               </span>
               <p className="font-medium">Aucun dépôt rattaché à ton compte</p>
               <p className="max-w-md text-sm text-muted-foreground">
-                Contacte l'administration (petchouko@gmail.com) pour faire
+                Contacte l&apos;administration (petchouko@gmail.com) pour faire
                 rattacher ton dépôt, puis tu pourras y signaler la disponibilité
                 du gaz.
               </p>
@@ -318,7 +318,7 @@ function FormulaireSignalement({
             </li>
           )}
           <li>
-            La date et l'heure de publication seront enregistrées
+            La date et l&apos;heure de publication seront enregistrées
             automatiquement.
           </li>
         </ul>

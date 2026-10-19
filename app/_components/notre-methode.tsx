@@ -43,7 +43,7 @@ export function NotreMethode() {
           </Badge>
 
           <h2 className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            D'où vient l'information que tu vois
+            D&apos;où vient l&apos;information que tu vois
           </h2>
 
           <p className="mt-5 text-pretty text-base text-muted-foreground sm:text-lg">
@@ -101,7 +101,7 @@ export function NotreMethode() {
               <Separator className="my-4" />
 
               <p className="text-pretty text-sm font-medium text-foreground">
-                Une information honnête vaut mieux qu'une information
+                Une information honnête vaut mieux qu&apos;une information
                 rassurante.
               </p>
             </CardContent>

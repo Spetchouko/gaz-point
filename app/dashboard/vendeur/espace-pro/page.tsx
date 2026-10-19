@@ -4,7 +4,6 @@ import { db } from "@/db"
 import { disponibilite, pointDeVente } from "@/db/schema"
 import { EspaceVendeur } from "@/app/_components/espace-vendeur"
 import { requirePro } from "@/lib/session"
-import { effectiveStatus, formatDateTime } from "@/lib/gaz"
 
 export const metadata: Metadata = {
   title: { absolute: "Espace professionnel | GazPoints" },
@@ -41,7 +40,6 @@ export default async function EspaceVendeurPage() {
 
   return (
     <EspaceVendeur
-      vendorName={user.name}
       vendorPhone={user.phoneNumber ?? null}
       points={points.map((point) => ({
         id: point.id,

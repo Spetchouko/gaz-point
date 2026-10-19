@@ -1,12 +1,15 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { db } from "@/db"
 import { user, pointDeVente } from "@/db/schema"
-import { eq, inArray, desc, or } from "drizzle-orm"
-import { requireAdmin } from "@/lib/session"
+import { eq, inArray, desc } from "drizzle-orm"
+import { getAdminUser } from "@/lib/session"
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    await requireAdmin()
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: "Accès réservé à l'administration" }, { status: 403 })
+    }
 
     // Get all vendors with their approval status
     const vendors = await db

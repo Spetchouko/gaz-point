@@ -35,6 +35,26 @@ export async function getCurrentUser() {
   return (user as SessionUser | undefined) ?? null
 }
 
+/**
+ * Variantes pour les Route Handlers : ne redirigent jamais (un redirect()
+ * lève NEXT_REDIRECT et serait avalé par le try/catch du handler → 500).
+ * Retournent null si l'utilisateur n'est pas authentifié / n'a pas le rôle.
+ */
+export async function getProUser(): Promise<{ user: SessionUser; role: ProRole } | null> {
+  const user = await getCurrentUser()
+  if (!user) return null
+  const role = user.role ?? "client"
+  if (role !== "vendor" && role !== "admin" && role !== "collaborateur") return null
+  return { user, role: role as ProRole }
+}
+
+export async function getAdminUser(): Promise<SessionUser | null> {
+  const user = await getCurrentUser()
+  if (!user) return null
+  if ((user.role ?? "client") !== "admin") return null
+  return user
+}
+
 export async function requireUser() {
   const user = await getCurrentUser()
   if (!user) redirect("/connexion")

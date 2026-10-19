@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
-import { user, pointDeVente } from "@/db/schema"
+import { user } from "@/db/schema"
 import { eq } from "drizzle-orm"
-import { requireAdmin } from "@/lib/session"
+import { getAdminUser } from "@/lib/session"
 import { sendVendorApprovalResultEmail } from "@/lib/email"
 
 export async function POST(req: NextRequest) {
   try {
-    const currentUser = await requireAdmin()
+    const currentUser = await getAdminUser()
+    if (!currentUser) {
+      return NextResponse.json({ error: "Accès réservé à l'administration" }, { status: 403 })
+    }
     const body = (await req.json().catch(() => null)) as { vendorId?: string; reason?: string } | null
 
     if (!body?.vendorId) {

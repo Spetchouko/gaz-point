@@ -16,17 +16,17 @@ export default function Services() {
           <strong>Abonnement usager</strong> : compte gratuit à vie, suivi de vos commandes, historique de vos recherches.
         </li>
         <li className="text-sm text-primary-foreground/80">
-          <strong>Espace vendeur</strong> : inscription des points de vente, publication d'offres, gestion des disponibilités.
+          <strong>Espace vendeur</strong> : inscription des points de vente, publication d&apos;offres, gestion des disponibilités.
         </li>
         <li className="text-sm text-primary-foreground/80">
-          <strong>Support technique</strong> : assistance pour les problèmes de connexion, questions sur l'utilisation du gaz.
+          <strong>Support technique</strong> : assistance pour les problèmes de connexion, questions sur l&apos;utilisation du gaz.
         </li>
       </ul>
 
       <section className="mt-8">
         <h2 className="text-xl font-semibold text-primary-foreground mb-4">FAQ rapide</h2>
         <ul className="text-sm text-primary-foreground/80 space-y-2">
-          <li>Comment m'inscrire ?</li>
+          <li>Comment m&apos;inscrire ?</li>
           <li>Comment modifier mon annonce ?</li>
           <li>Comment contacter le support ?</li>
         </ul>

@@ -40,7 +40,7 @@ export function Equipe() {
             variant="secondary"
             className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]"
           >
-            L'équipe
+            L&apos;équipe
           </Badge>
 
           <h2 className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">

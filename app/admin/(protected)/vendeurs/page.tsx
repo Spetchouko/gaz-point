@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { db } from "@/db"
 import { user, pointDeVente, disponibilite } from "@/db/schema"
-import { count, eq, desc, ilike, or, sql, and, inArray } from "drizzle-orm"
+import { eq, desc, inArray } from "drizzle-orm"
 import { AdminVendeursTable } from "@/app/_components/admin-vendeurs-table"
 import { AdminSearchFilters } from "@/app/_components/admin-search-filters"
 import { requireStaffModule } from "@/lib/session"

@@ -1,32 +1,10 @@
-import { Building2, Clock, ShieldCheck, Store } from "lucide-react"
+import { Building2, Clock, Store } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { StatusDot } from "@/app/_components/statuts"
 import {
-  availabilityLabel,
   demoPoints,
-  formatAge,
-  type Availability,
-  type GasSource,
 } from "@/app/_components/donnees-demo"
-
-const statusNote: Record<Availability, string> = {
-  disponible: "Le vendeur a confirmé il y a quelques minutes.",
-  à_confirmer:
-    "Information pas encore confirmée par le vendeur. Appelle avant de partir.",
-  indisponible: "Le point est signalé comme épuisé. Rien n'est caché.",
-}
-
-const sourceLabel: Record<GasSource, string> = {
-  vendeur: "Signalé par le vendeur",
-  administration: "Mis à jour par l'administration",
-}
-
-const sourceIcon: Record<GasSource, typeof Store> = {
-  vendeur: Store,
-  administration: Building2,
-}
 
 export function Fiabilite() {
   const examples = [demoPoints[0], demoPoints[2], demoPoints[4]]
@@ -54,8 +32,6 @@ export function Fiabilite() {
         {/* Exemples de points de vente - cartes centrées */}
         <div className="mx-auto mt-12 grid max-w-4xl gap-6 sm:grid-cols-3">
           {examples.map((point) => {
-            const Source = sourceIcon[point.updatedBy]
-
             return (
               <Card
                 key={point.id}

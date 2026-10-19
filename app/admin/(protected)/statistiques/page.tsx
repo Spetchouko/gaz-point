@@ -1,13 +1,14 @@
 import { Metadata } from "next"
 import { db } from "@/db"
-import { user, pointDeVente, disponibilite, trafficEvent, publiciteEvent } from "@/db/schema"
-import { count, eq, sql, and, gte, lt, sum, desc } from "drizzle-orm"
+import { user, pointDeVente, disponibilite, trafficEvent } from "@/db/schema"
+import { count, eq, sql, and, gte, lt, sum } from "drizzle-orm"
 import { AdminStatsCards } from "@/app/_components/admin-stats-cards"
 import { requireStaffModule } from "@/lib/session"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, Store, Cylinder, MapPin, Phone, Laptop, Smartphone, Monitor } from "lucide-react"
+import { Users, Store, Cylinder, MapPin } from "lucide-react"
 import { AdminStatistiquesChartsWrapperV2 } from "@/app/_components/admin-statistiques-charts-wrapper-v2"
-import { resolveAnalyticsRange, parseUserAgent, type AnalyticsRange } from "@/lib/publicite-analytics"
+import { StatsRangeSelector } from "@/app/_components/stats-range-selector"
+import { resolveAnalyticsRange, parseUserAgent } from "@/lib/publicite-analytics"
 
 export const metadata: Metadata = {
   title: { absolute: "Statistiques | Administration GAZ POINT" },
@@ -422,34 +423,11 @@ export default async function AdminStatsPage({
             Indicateurs globaux, trafic anonyme et tendances de la plateforme
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            defaultValue={range.key}
-            onChange={(e) => {
-              const p = new URLSearchParams()
-              p.set("period", e.target.value)
-              if (e.target.value === "custom") {
-                p.set("from", range.fromInput)
-                p.set("to", range.toInput)
-              }
-              window.location.search = p.toString()
-            }}
-            className="h-9 rounded-lg border bg-background px-3 py-1.5 text-sm"
-          >
-            <option value="today">Aujourd'hui</option>
-            <option value="7">7 derniers jours</option>
-            <option value="30">30 derniers jours</option>
-            <option value="90">90 derniers jours</option>
-            <option value="custom">Période personnalisée</option>
-          </select>
-          {range.key === "custom" && (
-            <>
-              <input type="date" defaultValue={range.fromInput} onChange={(e) => { const p = new URLSearchParams(); p.set("period", "custom"); p.set("from", e.target.value); p.set("to", range.toInput); window.location.search = p.toString() }} className="h-9 rounded-lg border bg-background px-3 text-sm" />
-              <span className="text-muted-foreground">→</span>
-              <input type="date" defaultValue={range.toInput} onChange={(e) => { const p = new URLSearchParams(); p.set("period", "custom"); p.set("from", range.fromInput); p.set("to", e.target.value); window.location.search = p.toString() }} className="h-9 rounded-lg border bg-background px-3 text-sm" />
-            </>
-          )}
-        </div>
+        <StatsRangeSelector
+          currentKey={range.key}
+          fromInput={range.fromInput}
+          toInput={range.toInput}
+        />
       </header>
 
       <AdminStatsCards stats={stats} />
@@ -492,7 +470,7 @@ export default async function AdminStatsPage({
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                    <span className="text-sm text-muted-foreground">Aujourd'hui</span>
+                    <span className="text-sm text-muted-foreground">Aujourd&apos;hui</span>
                     <span className="font-bold text-lg">{today}</span>
                   </div>
                   <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">

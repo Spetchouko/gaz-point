@@ -22,8 +22,6 @@ import {
 import { createDisponibiliteAdmin, updateDisponibiliteAdmin, deleteDisponibiliteAdmin, type ActionResult } from "@/app/admin/actions"
 import { bottleFormats, availabilityLabel } from "@/lib/gaz"
 import type { AvailabilityStatus } from "@/db/schema"
-import { user } from "@/db/schema"
-import { eq } from "drizzle-orm"
 
 type PointOption = {
   id: string

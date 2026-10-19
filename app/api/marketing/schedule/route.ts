@@ -1,90 +1,69 @@
+import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
 import { publicite } from "@/db/schema"
-import { eq, gte, and, lt, sql } from "drizzle-orm"
+import { and, eq, lte, lt, isNotNull } from "drizzle-orm"
 
-export async function GET() {
+/**
+ * Tâche planifiée : active les campagnes programmées arrivées à échéance et
+ * expire celles dont la date de fin est passée.
+ *
+ * Protection : l'endpoint est public par nature (appelé par un cron), il exige
+ * donc un secret partagé. Sans `CRON_SECRET` configuré, l'accès est refusé
+ * plutôt que laissé ouvert : n'importe qui pourrait sinon manipuler l'état des
+ * campagnes publicitaires.
+ */
+function isAuthorized(req: NextRequest): boolean {
+  const secret = process.env.CRON_SECRET
+  if (!secret) return false
+
+  const header = req.headers.get("authorization")
+  if (header === `Bearer ${secret}`) return true
+
+  // Certains planificateurs ne permettent qu'une URL.
+  return req.nextUrl.searchParams.get("secret") === secret
+}
+
+export async function GET(req: NextRequest) {
+  if (!isAuthorized(req)) {
+    return NextResponse.json({ ok: false, message: "Non autorisé" }, { status: 401 })
+  }
+
   try {
     const now = new Date()
-    const doualaTimezone = "Africa/Douala"
-    const doualaTime = new Intl.DateTimeFormat("en-CA", {
-      timeZone: doualaTimezone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    })
-      .format(now)
-      .replace(",", "")
-    // Apply Cameroon timezone offset (1 hour) to align with actions.ts
-    const nowAdjusted = new Date(now.getTime() - 3600000)
 
-    // Trouver les campagnes programmées dont l'heure de début est écoulée
-    const toActivate = await db
-      .select()
-      .from(publicite)
+    const activated = await db
+      .update(publicite)
+      .set({ status: "active", updatedAt: new Date() })
       .where(
         and(
           eq(publicite.status, "scheduled"),
-          gte(publicite.startAt, nowAdjusted)
+          isNotNull(publicite.startAt),
+          lte(publicite.startAt, now)
         )
       )
+      .returning({ id: publicite.id })
 
-    // Trouver les campagnes actives dont la date de fin est écoulée
-    const toExpire = await db
-      .select()
-      .from(publicite)
+    const expired = await db
+      .update(publicite)
+      .set({ status: "expired", updatedAt: new Date() })
       .where(
         and(
           eq(publicite.status, "active"),
-          lt(publicite.endAt, nowAdjusted)
+          isNotNull(publicite.endAt),
+          lt(publicite.endAt, now)
         )
       )
+      .returning({ id: publicite.id })
 
-    // Mettre à jour les campagnes à expirer
-    const expiryUpdates = await Promise.all(
-      toExpire.map((ad) =>
-        db
-          .update(publicite)
-          .set({ status: "expired" })
-          .where(eq(publicite.id, ad.id))
-      )
-    )
-
-    // Trouver les campagnes à activer (startAt <= now mais status = scheduled)
-    const toActivate2 = await db
-      .select()
-      .from(publicite)
-      .where(
-        and(
-          eq(publicite.status, "scheduled"),
-          sql`${publicite.startAt} <= ${now}`
-        )
-      )
-
-    const activationUpdates = await Promise.all(
-      toActivate2.map((ad) =>
-        db
-          .update(publicite)
-          .set({ status: "active" })
-          .where(eq(publicite.id, ad.id))
-      )
-    )
-
-    // Journaliser les actions
-
-    return Response.json({
+    return NextResponse.json({
       ok: true,
-      doualaTime,
-      activated: activationUpdates.length,
-      expired: expiryUpdates.length,
-      message: `Campagnes traitées: ${activationUpdates.length} activées, ${expiryUpdates.length} expirées`,
+      activated: activated.length,
+      expired: expired.length,
+      message: `Campagnes traitées : ${activated.length} activées, ${expired.length} expirées`,
     })
   } catch (error) {
     console.error("Erreur dans le schedule marketing cron:", error)
-    return Response.json(
+    return NextResponse.json(
       { ok: false, message: "Erreur lors du traitement du scheduling" },
       { status: 500 }
     )

@@ -1,1 +1,0 @@
-Done. The migration file drizzle/0008_add_updated_at_to_publicite.sql has been created with the ALTER TABLE command to add the missing updated_at column to the publicite table. This fixes the DrizzleQueryError that was occurring when getPublicitesForSlot("home_hero") tried to select the updated_at column that didn't exist in the database.

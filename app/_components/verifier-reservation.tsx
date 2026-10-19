@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Search, CheckCircle, XCircle, AlertCircle, Loader2, Calendar, MapPin, Phone, Package, Copy, Check } from "lucide-react"
+import { Search, CheckCircle, XCircle, AlertCircle, Loader2, Calendar, MapPin, Phone, Copy, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { formatPrice } from "@/lib/gaz"
 
@@ -51,13 +51,7 @@ const statusIcons: Record<string, React.ReactNode> = {
   expired: <AlertCircle className="size-3.5" />,
 }
 
-export function VerifierReservation({
-  vendorId,
-  points,
-}: {
-  vendorId: string
-  points: { id: string; name: string }[]
-}) {
+export function VerifierReservation() {
   const [code, setCode] = useState("")
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<VerifiedReservation | null>(null)

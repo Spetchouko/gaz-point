@@ -50,7 +50,7 @@ export function Solution() {
         </div>
 
         <div className="mx-auto mt-12 grid max-w-4xl gap-6 sm:grid-cols-3">
-          {steps.map((step, index) => (
+          {steps.map((step) => (
             <Card
               key={step.title}
               className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-md"

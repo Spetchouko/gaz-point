@@ -20,7 +20,7 @@ export default async function ReservationsPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Mes réservations</h1>
           <p className="mt-2 text-muted-foreground">
-            Consultez l'historique de vos réservations et leurs statuts.
+            Consultez l&apos;historique de vos réservations et leurs statuts.
           </p>
         </div>
 

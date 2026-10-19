@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useMemo } from "react"
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -19,8 +19,6 @@ import {
 } from "recharts"
 import {
   Activity,
-  BarChart2,
-  MapPin,
   Globe,
   Smartphone,
   Laptop,
@@ -29,7 +27,6 @@ import {
   List,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 type TrafficDay = {
@@ -76,57 +73,22 @@ export function AdminTrafficCharts({
   evolutionData: EvolutionDay[]
 }) {
   const [period, setPeriod] = useState<"7" | "30" | "90">("30")
-  const [view, setView] = useState<"devices" | "sources" | "pages">("sources")
+  const [view, setView] = useState<"devices" | "sources">("sources")
 
   const days = period === "7" ? 7 : period === "30" ? 30 : 90
   const trafficSlice = trafficData.slice(-days)
 
-  // Device breakdown - using userAgent detection logic
-  const [deviceData, setDeviceData] = useState<DeviceBreakdown[]>([
-    { label: "Mobile", count: 0, color: "hsl(142 70% 50%)" },
-    { label: "Desktop", count: 0, color: "hsl(217 91% 60%)" },
-    { label: "Tablette", count: 0, color: "hsl(268 82% 56%)" },
-  ])
-
-  // Source breakdown
-  const [sourceData, setSourceData] = useState<SourceBreakdown[]>([
-    { label: "Accès direct", count: 0, color: "hsl(39 91% 63%)" },
-    { label: "Moteurs de recherche", count: 0, color: "hsl(184 56% 50%)" },
-    { label: "Réseaux sociaux", count: 0, color: "hsl(220 95% 55%)" },
-    { label: "Sites référents", count: 0, color: "hsl(270 62% 54%)" },
-    { label: "Campagnes", count: 0, color: "hsl(224 71% 45%)" },
-  ])
-
-  // Period filter buttons
-  const periodButtons = PERIODS.map((p) => (
-    <Button
-      key={p.key}
-      type="button"
-      variant={period === p.key ? "default" : "outline"}
-      size="sm"
-      onClick={() => setPeriod(p.key)}
-      className={cn(
-        "px-3 py-1.5 text-sm font-medium transition-colors",
-        period === p.key ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"
-      )}
-    >
-      {p.label}
-    </Button>
-  ))
-
-  // Device detection from userAgent
-  useEffect(() => {
-    const uaRows = trafficData
-      .filter((d) => d.userAgent)
-      .slice(-days)
+  // Répartition par appareil : calculée à partir des user-agents, dérivée
+  // directement des données (pas d'état intermédiaire ni d'effet).
+  const deviceData: DeviceBreakdown[] = useMemo(() => {
+    const uaRows = trafficData.filter((d) => d.userAgent).slice(-days)
 
     let mobileCount = 0
     let desktopCount = 0
     let tabletCount = 0
 
     for (const row of uaRows) {
-      const ua = row.userAgent ?? ""
-      const lowerUa = ua.toLowerCase()
+      const lowerUa = (row.userAgent ?? "").toLowerCase()
       const isMobile = /mobi|android|iphone|ipad|palmid|windows phone|iemobile/.test(lowerUa)
       const isTablet = /ipad|tablet|sandbox/.test(lowerUa) && !isMobile
 
@@ -135,15 +97,15 @@ export function AdminTrafficCharts({
       else desktopCount++
     }
 
-    setDeviceData([
+    return [
       { label: "Mobile", count: mobileCount, color: "hsl(142 70% 50%)" },
       { label: "Desktop", count: desktopCount, color: "hsl(217 91% 60%)" },
       { label: "Tablette", count: tabletCount, color: "hsl(268 82% 56%)" },
-    ])
-  }, [period, trafficData])
+    ]
+  }, [days, trafficData])
 
-  // Source classification
-  useEffect(() => {
+  // Classification des sources, elle aussi dérivée des données.
+  const sourceData: SourceBreakdown[] = useMemo(() => {
     const SEARCH_HOSTS = [
       "google.", "bing.", "yahoo.", "duckduckgo.", "qwant.", "ecosia.",
       "yandex.", "baidu.", "startpage.", "search.brave.",
@@ -214,30 +176,19 @@ export function AdminTrafficCharts({
       counts[source]++
     }
 
-    setSourceData([
+    return [
       { label: "Accès direct", count: counts.direct, color: "hsl(39 91% 63%)" },
       { label: "Moteurs de recherche", count: counts.search, color: "hsl(184 56% 50%)" },
       { label: "Réseaux sociaux", count: counts.social, color: "hsl(220 95% 55%)" },
       { label: "Sites référents", count: counts.referral, color: "hsl(270 62% 54%)" },
       { label: "Campagnes", count: counts.campaign, color: "hsl(224 71% 45%)" },
-    ])
-  }, [period, trafficData])
+    ]
+  }, [days, trafficData])
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled
-            title="GazPoints couvre actuellement l'analyse détaillée"
-            className="pointer-events-none"
-          >
-            <MapPin className="size-4 mr-1" />
-            Vue : {view === "devices" ? "Appareils" : view === "sources" ? "Sources" : "Pages"}
-          </Button>
           <div className="flex overflow-hidden rounded-lg border">
             {PERIODS.map((p) => (
               <button
@@ -253,9 +204,31 @@ export function AdminTrafficCharts({
               </button>
             ))}
           </div>
+          <div className="flex overflow-hidden rounded-lg border">
+            <button
+              type="button"
+              onClick={() => setView("sources")}
+              className={cn(
+                "px-3 py-1.5 text-sm font-medium transition-colors",
+                view === "sources" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"
+              )}
+            >
+              Sources
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("devices")}
+              className={cn(
+                "px-3 py-1.5 text-sm font-medium transition-colors",
+                view === "devices" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"
+              )}
+            >
+              Appareils
+            </button>
+          </div>
         </div>
         <p className="text-sm text-muted-foreground">
-          {days} derniers jours · vue: {view}
+          {days} derniers jours
         </p>
       </div>
 
@@ -306,9 +279,7 @@ export function AdminTrafficCharts({
             <CardTitle className="flex items-center gap-2">
               {view === "devices"
                 ? <SmartphoneLaptopTablet className="size-5 text-primary" />
-                : view === "sources"
-                  ? <Globe className="size-5 text-success" />
-                  : <BarChart2 className="size-5 text-primary" />
+                : <Globe className="size-5 text-success" />
               }
             </CardTitle>
           </CardHeader>
@@ -337,23 +308,6 @@ export function AdminTrafficCharts({
                     <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" />
                     <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
                     <Bar dataKey="count" name="Visiteurs" fill="#8884d8" />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                  </BarChart>
-                )}
-                {view === "pages" && (
-                  <BarChart
-                    data={[
-                      { name: "Visites", visits: 0, signups: 0, signins: 0 },
-                      { name: "Inscriptions", visits: 0, signups: 0, signins: 0 },
-                      { name: "Connexions", visits: 0, signups: 0, signins: 0 },
-                    ]}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-                    <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
-                    <Bar dataKey="visits" name="Visites" fill="hsl(var(--primary))" />
-                    <Bar dataKey="signups" name="Inscriptions" fill="hsl(158 64% 52%)" />
-                    <Bar dataKey="signins" name="Connexions" fill="hsl(217 91% 60%)" />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
                   </BarChart>
                 )}
@@ -421,7 +375,7 @@ export function AdminTrafficCharts({
                 <strong>Période :</strong> {period === "7" ? "7 derniers jours" : period === "30" ? "30 derniers jours" : "90 derniers jours"}
               </p>
               <p className="text-sm text-muted-foreground">
-                <strong>Vue :</strong> {view === "devices" ? "Répartition appareils" : view === "sources" ? "Sources de trafic" : "Pages consultées"}
+                <strong>Vue :</strong> {view === "devices" ? "Répartition appareils" : "Sources de trafic"}
               </p>
               <p className="text-sm text-muted-foreground">
                 <strong>Interactions :</strong> Cliquer sur les légendes pour afficher/masquer une série de données. Passer la souris sur les barres/pieces pour voir les valeurs précises.

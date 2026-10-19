@@ -244,7 +244,7 @@ export function OSPieChart({ data }: { data: OSData[] }) {
             <path d="M8 21h8" />
             <path d="M12 17v4" />
           </svg>
-          Systèmes d'exploitation
+          Systèmes d&apos;exploitation
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -312,7 +312,7 @@ export function ResolutionBarChart({ data }: { data: ResolutionData[] }) {
             <path d="M12 17v4" />
             <path d="M2 12h20" />
           </svg>
-          Résolutions d'écran
+          Résolutions d&apos;écran
         </CardTitle>
       </CardHeader>
       <CardContent>

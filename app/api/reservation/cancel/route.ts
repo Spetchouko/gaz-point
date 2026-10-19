@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
 import { reservation, disponibilite } from "@/db/schema"
-import { eq } from "drizzle-orm"
-import { requireUser } from "@/lib/session"
+import { eq, and, sql } from "drizzle-orm"
+import { getCurrentUser } from "@/lib/session"
 
 export async function POST(req: NextRequest) {
   try {
-    const currentUser = await requireUser()
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
+      return NextResponse.json({ error: "Non authentifié" }, { status: 401 })
+    }
     const body = (await req.json().catch(() => null)) as { reservationId?: string } | null
 
     if (!body?.reservationId) {
@@ -47,36 +50,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Réservation déjà annulée" }, { status: 400 })
     }
 
-    // Release reserved quantity
-    await db.transaction(async (tx) => {
-      await tx
-        .update(reservation)
+    // Le driver neon-http ne supporte pas db.transaction(). L'UPDATE
+    // conditionnel garantit qu'une réservation ne peut être annulée qu'une
+    // seule fois, donc que le stock n'est libéré qu'une seule fois.
+    const [cancelled] = await db
+      .update(reservation)
+      .set({
+        status: "cancelled",
+        cancelledAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(reservation.id, res.id), eq(reservation.status, "confirmed")))
+      .returning({ id: reservation.id })
+
+    if (!cancelled) {
+      return NextResponse.json({ error: "Réservation déjà annulée" }, { status: 400 })
+    }
+
+    if (res.disponibiliteId) {
+      await db
+        .update(disponibilite)
         .set({
-          status: "cancelled",
-          cancelledAt: new Date(),
+          reservedQuantity: sql`GREATEST(0, ${disponibilite.reservedQuantity} - ${res.quantity})`,
           updatedAt: new Date(),
         })
-        .where(eq(reservation.id, res.id))
-
-      if (res.disponibiliteId) {
-        const [dispo] = await tx
-          .select({ reservedQuantity: disponibilite.reservedQuantity })
-          .from(disponibilite)
-          .where(eq(disponibilite.id, res.disponibiliteId!))
-          .limit(1)
-
-        if (dispo) {
-          const newReserved = Math.max(0, (dispo.reservedQuantity ?? 0) - res.quantity)
-          await tx
-            .update(disponibilite)
-            .set({
-              reservedQuantity: newReserved,
-              updatedAt: new Date(),
-            })
-            .where(eq(disponibilite.id, res.disponibiliteId!))
-        }
-      }
-    })
+        .where(eq(disponibilite.id, res.disponibiliteId))
+    }
 
     return NextResponse.json({ ok: true, message: "Réservation annulée" })
   } catch (err) {

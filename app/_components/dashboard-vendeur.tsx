@@ -52,12 +52,10 @@ type GlobalStats = {
 }
 
 export function DashboardVendeur({
-  vendorId,
   vendorName,
   points,
   globalStats,
 }: {
-  vendorId: string
   vendorName: string
   points: PointWithStats[]
   globalStats: GlobalStats
@@ -223,10 +221,7 @@ export function DashboardVendeur({
           <p className="text-muted-foreground mb-4">
             Saisissez le code présenté par le client pour vérifier sa validité et confirmer le retrait.
           </p>
-          <VerifierReservation
-            vendorId={vendorId}
-            points={points.map((p) => ({ id: p.id, name: p.name }))}
-          />
+          <VerifierReservation />
         </div>
 
         {/* Grille visuelle des disponibilités */}

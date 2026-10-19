@@ -346,7 +346,7 @@ function MapScreen() {
           </div>
           <div className="mt-1.5 flex items-center justify-center gap-1 rounded-lg bg-primary py-1.5 text-[9px] font-bold text-primary-foreground">
             <Navigation className="size-2.5" />
-            Ouvrir l'itinéraire
+            Ouvrir l&apos;itinéraire
           </div>
         </div>
       </div>

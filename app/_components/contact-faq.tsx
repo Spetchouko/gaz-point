@@ -24,7 +24,7 @@ export function ContactFaq() {
           </h2>
 
           <p className="mx-auto mt-4 max-w-xl text-pretty text-base text-muted-foreground">
-            La gratuité pour les usagers, l'abonnement Vendeur, la fiabilité des
+            La gratuité pour les usagers, l&apos;abonnement Vendeur, la fiabilité des
             informations, la localisation, la vie privée : les questions les plus
             fréquentes sont déjà traitées.
           </p>

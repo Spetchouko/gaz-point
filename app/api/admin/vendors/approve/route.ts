@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
-import { user, pointDeVente } from "@/db/schema"
+import { user } from "@/db/schema"
 import { eq } from "drizzle-orm"
-import { requireAdmin } from "@/lib/session"
+import { getAdminUser } from "@/lib/session"
 import { sendVendorApprovalResultEmail } from "@/lib/email"
 
 export async function POST(req: NextRequest) {
   try {
-    const currentUser = await requireAdmin()
+    const currentUser = await getAdminUser()
+    if (!currentUser) {
+      return NextResponse.json({ error: "Accès réservé à l'administration" }, { status: 403 })
+    }
     const body = (await req.json().catch(() => null)) as { vendorId?: string } | null
 
     if (!body?.vendorId) {
@@ -35,20 +38,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Vendeur déjà approuvé" }, { status: 400 })
     }
 
-    // Get vendor's points for location info in email
-    const points = await db
-      .select({
-        district: pointDeVente.district,
-        address: pointDeVente.address,
-      })
-      .from(pointDeVente)
-      .where(eq(pointDeVente.vendorId, vendor.id))
-
-    const location = points.length > 0
-      ? points.map((p) => `${p.address}, ${p.district}`).join(" ; ")
-      : "Non renseigné"
-
-    // Update vendor approval status
+    // Send approval email to vendor
     await db
       .update(user)
       .set({

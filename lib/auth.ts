@@ -102,7 +102,7 @@ export const auth = betterAuth({
         // Envoi du code OTP. On ne simule jamais l'envoi ; si cette fonction
         // n'est pas remplacée par une vraie intégration, Better Auth lèvera
         // SEND_OTP_NOT_IMPLEMENTED.
-        sendOTP: async ({ phoneNumber, code }: { phoneNumber: string; code: string }) => {
+        sendOTP: async () => {
           throw new Error("L'envoi de code SMS n'est pas encore configuré. Veuillez activer la vérification par email ou configurer un fournisseur SMS.")
         },
         // Meilleure pratique : stocker le statut de vérification dans les champs
@@ -246,7 +246,7 @@ export const auth = betterAuth({
         },
       } satisfies EmailOTPOptions),
       phoneNumber({
-        sendOTP: async ({ phoneNumber: _phoneNumber, code }: { phoneNumber: string; code: string }) => {
+        sendOTP: async () => {
           throw new Error("L'envoi de code SMS n'est pas encore configuré. Veuillez activer la vérification par email ou configurer un fournisseur SMS.")
         },
       } satisfies PhoneNumberOptions),

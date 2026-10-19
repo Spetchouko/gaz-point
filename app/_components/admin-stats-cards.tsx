@@ -8,7 +8,6 @@ import {
   Cylinder,
   UserCheck,
   BadgeCheck,
-  Phone,
   Tablet,
   Laptop,
   Smartphone,

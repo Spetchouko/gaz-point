@@ -20,7 +20,7 @@ export function AproposCta() {
           </Badge>
 
           <h2 className="mt-6 text-balance text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-            Vérifie d'abord où il y en a.
+            Vérifie d&apos;abord où il y en a.
           </h2>
 
           <p className="mx-auto mt-5 max-w-lg text-pretty text-base text-primary-foreground/80">

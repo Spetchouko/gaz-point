@@ -245,7 +245,7 @@ function FormulaireInformations({
           Informations personnelles
         </CardTitle>
         <CardDescription>
-          Votre nom et votre numéro de téléphone. L'adresse email ne peut pas être
+          Votre nom et votre numéro de téléphone. L&apos;adresse email ne peut pas être
           modifiée ici.
         </CardDescription>
       </CardHeader>
@@ -276,7 +276,7 @@ function FormulaireInformations({
             <Label htmlFor="email">Adresse email</Label>
             <Input id="email" value={profile.email} disabled />
             <p className="text-xs text-muted-foreground">
-              Pour changer d'email, écrivez à petchouko@gmail.com.
+              Pour changer d&apos;email, écrivez à petchouko@gmail.com.
             </p>
           </div>
 

@@ -4,7 +4,7 @@ import { db } from "@/db"
 import { disponibilite, pointDeVente } from "@/db/schema"
 import { DashboardVendeur } from "@/app/_components/dashboard-vendeur"
 import { requirePro } from "@/lib/session"
-import { effectiveStatus, formatDateTime } from "@/lib/gaz"
+import { effectiveStatus } from "@/lib/gaz"
 
 export const metadata: Metadata = {
   title: { absolute: "Espace vendeur | GazPoints" },
@@ -27,7 +27,6 @@ export default async function DashboardVendeurPage() {
 
   const dispoByPoint = new Map<string, DispoRow[]>()
   let totalQuantity = 0
-  let availableCount = 0
   let lastUpdate: Date | null = null
 
   if (points.length > 0) {
@@ -44,7 +43,6 @@ export default async function DashboardVendeurPage() {
       // Stats globales
       if (report.status === "disponible" && report.quantity && report.quantity > 0) {
         totalQuantity += report.quantity
-        availableCount++
       }
       if (!lastUpdate || new Date(report.createdAt) > lastUpdate) {
         lastUpdate = new Date(report.createdAt)
@@ -84,7 +82,6 @@ export default async function DashboardVendeurPage() {
 
   return (
     <DashboardVendeur
-      vendorId={user.id}
       vendorName={user.name}
       points={pointsWithStats}
       globalStats={globalStats}

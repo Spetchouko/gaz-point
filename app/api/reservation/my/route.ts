@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
 import { reservation, pointDeVente } from "@/db/schema"
 import { eq, desc, and } from "drizzle-orm"
-import { requireUser } from "@/lib/session"
+import { getCurrentUser } from "@/lib/session"
 import { formatDateTime } from "@/lib/gaz"
 
 export async function GET(req: NextRequest) {
   try {
-    const currentUser = await requireUser()
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
+      return NextResponse.json({ error: "Non authentifié" }, { status: 401 })
+    }
     const { searchParams } = new URL(req.url)
     const status = searchParams.get("status")
 
