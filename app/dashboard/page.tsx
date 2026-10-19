@@ -15,9 +15,8 @@ export default async function DashboardPage() {
     redirect("/admin")
   }
 
-  if (role === "vendor") {
-    redirect("/dashboard/vendeur")
-  }
+  // Allow vendors to access client dashboard features (search, reservations)
+  // They can still access /dashboard/vendeur for vendor-specific features
 
   return (
     <div className="min-h-screen bg-background py-12">

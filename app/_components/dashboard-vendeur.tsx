@@ -115,7 +115,7 @@ export function DashboardVendeur({
     return (
       <div className="min-h-screen bg-background py-12">
         <div className="container mx-auto max-w-4xl px-4">
-          <DashboardNav pro={true} />
+          <DashboardNav pro={true} isVendor={true} />
           <header className="mb-8 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Espace vendeur</h1>
@@ -146,7 +146,7 @@ export function DashboardVendeur({
   return (
     <div className="min-h-screen bg-background py-12">
       <div className="container mx-auto max-w-4xl px-4">
-        <DashboardNav pro={true} />
+        <DashboardNav pro={true} isVendor={true} />
         <header className="mb-8 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Espace vendeur</h1>

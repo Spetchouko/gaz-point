@@ -2,31 +2,47 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, MessageSquarePlus, Store, User, Calendar } from "lucide-react"
+import { LayoutDashboard, MessageSquarePlus, Store, User, Calendar, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type DashboardNavProps = {
   pro?: boolean
+  isVendor?: boolean
 }
 
-export function DashboardNav({ pro = false }: DashboardNavProps) {
+export function DashboardNav({ pro = false, isVendor = false }: DashboardNavProps) {
   const pathname = usePathname()
 
   const clientLinks = [
-    { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
+    { href: "/dashboard", label: "Rechercher", icon: Search },
     { href: "/dashboard/reservations", label: "Mes réservations", icon: Calendar },
     { href: "/avis", label: "Donner mon avis", icon: MessageSquarePlus },
     { href: "/profil", label: "Mon profil", icon: User },
   ]
 
   const vendorLinks = [
-    { href: "/dashboard/vendeur", label: "Tableau de bord", icon: LayoutDashboard },
+    { href: "/dashboard/vendeur", label: "Espace vendeur", icon: Store },
     { href: "/dashboard/vendeur/espace-pro", label: "Espace pro", icon: Store },
     { href: "/avis", label: "Donner mon avis", icon: MessageSquarePlus },
     { href: "/profil", label: "Mon profil", icon: User },
   ]
 
-  const links = pro ? vendorLinks : clientLinks
+  // For vendors, combine both sets of links so they can switch between modes
+  const links = isVendor
+    ? [
+        // Vendor features
+        { href: "/dashboard/vendeur", label: "Espace vendeur", icon: Store },
+        { href: "/dashboard/vendeur/espace-pro", label: "Espace pro", icon: Store },
+        // Client features
+        { href: "/dashboard", label: "Rechercher", icon: Search },
+        { href: "/dashboard/reservations", label: "Mes réservations", icon: Calendar },
+        // Common
+        { href: "/avis", label: "Donner mon avis", icon: MessageSquarePlus },
+        { href: "/profil", label: "Mon profil", icon: User },
+      ]
+    : pro
+    ? vendorLinks
+    : clientLinks
 
   const isActive = (href: string) =>
     href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href)
