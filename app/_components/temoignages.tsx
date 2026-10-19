@@ -23,7 +23,7 @@ function AvatarMark({
     return (
       <Avatar className={cn("size-12 shrink-0", className)}>
         <AvatarImage src={avatarUrl} alt="" />
-        <AvatarFallback className="bg-primary/10 text-base font-semibold text-primary">
+        <AvatarFallback className="bg-mint text-base font-semibold text-primary-strong">
           {name.charAt(0).toUpperCase()}
         </AvatarFallback>
       </Avatar>
@@ -32,7 +32,7 @@ function AvatarMark({
 
   return (
     <Avatar className={cn("size-12 shrink-0", className)}>
-      <AvatarFallback className="bg-primary/10 text-lg font-semibold text-primary">
+      <AvatarFallback className="bg-mint text-lg font-semibold text-primary-strong">
         {name.charAt(0).toUpperCase()}
       </AvatarFallback>
     </Avatar>
@@ -65,7 +65,7 @@ export function TemoignageCard({ item }: { item: AvisPublic }) {
           </p>
         </CardContent>
 
-        <CardFooter className="mt-auto border-t pt-4">
+        <CardFooter className="mt-auto border-t border-border pt-4">
           <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {item.type === "vendeur" ? "Vendeur" : "Usager"}
           </span>
@@ -86,7 +86,7 @@ export function Temoignages({ avis }: { avis: AvisPublic[] }) {
   const visible = avis.slice(current * PAGE_SIZE, current * PAGE_SIZE + PAGE_SIZE)
 
   return (
-    <section className="w-full border-y py-16 md:py-24 bg-gradient-section-reverse">
+    <section className="w-full bg-sand py-16 md:py-24">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-2xl text-center">
           <Badge
@@ -96,12 +96,13 @@ export function Temoignages({ avis }: { avis: AvisPublic[] }) {
             Ils utilisent GazPoints
           </Badge>
 
-          <h2 className="mt-6 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+          <h2 className="mt-6 text-balance font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
             La parole à ceux qui l&apos;utilisent
           </h2>
 
           <p className="mt-5 text-pretty text-base text-muted-foreground sm:text-lg">
-            Des usagers et des vendeurs racontent ce que GazPoints change pour eux.
+            Des usagers et des vendeurs racontent ce que GazPoints change pour
+            eux.
           </p>
         </div>
 
@@ -118,7 +119,7 @@ export function Temoignages({ avis }: { avis: AvisPublic[] }) {
               onClick={() => setPage(Math.max(current - 1, 0))}
               disabled={current === 0}
               aria-label="Avis précédents"
-              className="inline-flex size-10 items-center justify-center rounded-full border bg-card text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex size-10 items-center justify-center rounded-full border border-border bg-white text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
             >
               <ChevronLeft className="size-5" />
             </button>
@@ -132,7 +133,7 @@ export function Temoignages({ avis }: { avis: AvisPublic[] }) {
               onClick={() => setPage(Math.min(current + 1, pages - 1))}
               disabled={current >= pages - 1}
               aria-label="Avis suivants"
-              className="inline-flex size-10 items-center justify-center rounded-full border bg-card text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex size-10 items-center justify-center rounded-full border border-border bg-white text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
             >
               <ChevronRight className="size-5" />
             </button>

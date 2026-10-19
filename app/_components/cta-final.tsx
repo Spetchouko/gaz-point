@@ -1,28 +1,23 @@
 "use client"
 
-import { ArrowDown, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
 export function CtaFinal() {
   return (
-    <section className="w-full py-16 md:py-24">
+    <section className="w-full bg-background py-16 md:py-24">
       <div className="container mx-auto px-4">
-        <div className="mx-auto max-w-3xl rounded-3xl bg-primary px-6 py-12 text-center text-primary-foreground md:px-12 md:py-16">
-          <p className="text-balance text-sm font-medium text-primary-foreground/70 sm:text-base">
-            Ton gaz est fini&nbsp;?
-          </p>
-          <Badge variant="secondary" className="mt-3 h-6 bg-primary-foreground/15 px-3 text-xs font-semibold uppercase tracking-[0.15em] text-primary-foreground">
+        <div className="relative mx-auto max-w-3xl overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-primary-strong px-6 py-12 text-center text-primary-foreground shadow-xl md:px-12 md:py-16">
+          <Badge
+            variant="secondary"
+            className="mt-1 h-6 bg-primary-foreground/15 px-3 text-xs font-semibold uppercase tracking-[0.15em] text-primary-foreground"
+          >
             Ne pars pas chercher au hasard
           </Badge>
 
-          <ArrowDown
-            className="mx-auto mt-6 size-5 text-primary-foreground/40"
-            aria-hidden
-          />
-
-          <h2 className="mt-6 text-balance text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
+          <h2 className="mt-5 text-balance font-heading text-4xl font-bold tracking-tight sm:text-5xl">
             Vérifie d&apos;abord où il y en a.
           </h2>
 
@@ -30,7 +25,7 @@ export function CtaFinal() {
             <Link href="/#trouver-du-gaz">
               <Button
                 size="lg"
-                className="h-12 w-full gap-2 bg-primary-foreground px-6 text-base text-primary hover:bg-primary-foreground/90 sm:w-auto cursor-pointer"
+                className="h-12 w-full gap-2 bg-primary-foreground px-8 text-base text-primary hover:bg-primary-foreground/90 sm:w-auto cursor-pointer"
               >
                 Trouver mon gaz
                 <ArrowRight className="size-4" />
@@ -38,7 +33,7 @@ export function CtaFinal() {
             </Link>
           </div>
 
-          <p className="mt-6 text-xs text-primary-foreground/60">
+          <p className="mt-6 text-xs text-primary-foreground/70">
             Gratuit · Sans abonnement · Sans carte bancaire
           </p>
         </div>

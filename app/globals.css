@@ -1,59 +1,128 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-/* Mobile-first base styles */
+/* ------------------------------------------------------------------ */
+/* Brand palette — centralisée ici (Tailwind v4 theme)                 */
+/* Vert #16834A · Bleu #174A7E · Vert clair #EAF5EE                    */
+/* Bleu clair #EFF4FA · Gris #F5F7F6                                   */
+/* ------------------------------------------------------------------ */
+@theme {
+  /* Marque */
+  --color-primary: #16834a;
+  --color-primary-strong: #0e5c34;
+  --color-primary-foreground: #ffffff;
+
+  --color-navy: #174a7e;
+  --color-navy-strong: #103657;
+  --color-navy-foreground: #ffffff;
+
+  /* Fonds alternés */
+  --color-mint: #eaf5ee;
+  --color-sky: #eff4fa;
+  --color-sand: #f5f7f6;
+
+  /* Neutres */
+  --color-background: #ffffff;
+  --color-foreground: #17251e;
+  --color-card: #ffffff;
+  --color-card-foreground: #17251e;
+  --color-muted: #f5f7f6;
+  --color-muted-foreground: #5b6b62;
+  --color-border: #dfe8e2;
+  --color-input: #dfe8e2;
+  --color-ring: #16834a;
+  --color-destructive: #b42318;
+
+  /* Secondary = bleu marque (badges, boutons) */
+  --color-secondary: #eff4fa;
+  --color-secondary-foreground: #174a7e;
+
+  /* Typographie — Geist chargé via next/font (layout.tsx) */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+
+  /* Arrondis */
+  --radius-4xl: 2rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Base                                                                */
+/* ------------------------------------------------------------------ */
 html {
   scroll-behavior: smooth;
 }
 
 body {
-  @apply antialiased;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
   font-feature-settings: "rlig" 1, "calt" 1;
-  background: var(--background);
-  color: var(--foreground);
 }
 
-/* Ensure images don't overflow on mobile */
-img {
-  max-width: 100%;
-  height: auto;
+/* Les titres utilisent la police de marque */
+h1,
+h2,
+h3,
+.font-heading {
+  font-family: var(--font-heading);
 }
 
-/* Make tables responsive */
+/* Focus visible pour navigation clavier */
+*:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+/* Tableaux responsifs */
 table {
   width: 100%;
   font-size: 0.875rem;
 }
 
-/* Focus visible for keyboard navigation */
-*:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+/* Images : pas de débordement sur mobile */
+img {
+  max-width: 100%;
+  height: auto;
 }
 
-/* Reduce motion for reduced motion preference */
+/* Respect de prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
-  * {
-    transition: none;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
-/* Improve tap target hit areas */
-@supports (selector(:hover)) {
-  .btn,
-  .link-hover {
-    @media (hover: hover) {
-      transition: color 0.2s;
-    }
+/* Zones tactiles confortables */
+.btn,
+.link-hover {
+  @media (hover: hover) {
+    transition: color 0.2s, background-color 0.2s, border-color 0.2s;
   }
 }
 
-/* Mobile-first typography scaling */
-@media (max-width: 640px) {
-  h1 { font-size: 1.25rem; line-height: 1.75rem; }
-  h2 { font-size: 1.125rem; line-height: 1.75rem; }
-  h3 { font-size: 1rem; line-height: 1.5rem; }
-  p { font-size: 0.875rem; line-height: 1.5rem; }
-  .lead { font-size: 1.125rem; line-height: 1.75rem; }
+/* ------------------------------------------------------------------ */
+/* Utilitaires de marque                                               */
+/* ------------------------------------------------------------------ */
+
+/* Dégradé de section : bleu clair → blanc (haut de page, sections clés) */
+@utility bg-gradient-section {
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-sky) 0%,
+    var(--color-background) 100%
+  );
+}
+
+/* Dégradé inversé : blanc → bleu clair */
+@utility bg-gradient-section-reverse {
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-background) 0%,
+    var(--color-sky) 100%
+  );
 }

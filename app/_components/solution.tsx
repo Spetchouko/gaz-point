@@ -1,9 +1,21 @@
 "use client"
 
-import { ArrowRight, Cylinder, Clock, ListChecks, MapPinned, Navigation } from "lucide-react"
+import {
+  ArrowRight,
+  Cylinder,
+  ListChecks,
+  MapPinned,
+  Navigation,
+} from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { useTrouverGaz } from "@/lib/use-trouver-gaz"
 
 const steps = [
@@ -35,15 +47,18 @@ export function Solution() {
   return (
     <section
       id="comment-ca-marche"
-      className="w-full scroll-mt-16 border-y bg-linear-to-b from-muted/30 via-muted/60 to-muted/30 py-16 md:py-24"
+      className="w-full scroll-mt-16 bg-mint py-16 md:py-24"
     >
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
-          <Badge variant="secondary" className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]">
+          <Badge
+            variant="secondary"
+            className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]"
+          >
             La solution
           </Badge>
 
-          <h2 className="mt-6 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+          <h2 className="mt-6 text-balance font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
             Vérifie où trouver ton gaz{" "}
             <span className="text-primary">avant de te déplacer</span>
           </h2>
@@ -56,14 +71,9 @@ export function Solution() {
               className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-md"
             >
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <span className="flex size-11 items-center justify-center rounded-xl bg-destructive/10 text-destructive ring-1 ring-destructive/20">
-                    <step.icon className="size-5" />
-                  </span>
-                  <Badge variant="outline" className="gap-1 font-semibold text-muted-foreground">
-                    <Clock className="size-3" />
-                  </Badge>
-                </div>
+                <span className="flex size-11 items-center justify-center rounded-xl bg-white text-primary shadow-sm ring-1 ring-border">
+                  <step.icon className="size-5" />
+                </span>
                 <CardTitle className="mt-3 text-base font-semibold">
                   {step.title}
                 </CardTitle>

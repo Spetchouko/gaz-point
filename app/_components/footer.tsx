@@ -32,7 +32,7 @@ function FooterNav({
 }) {
   return (
     <nav aria-label={title}>
-      <h2 className="text-xs font-medium uppercase tracking-[0.15em] text-primary-foreground/50">
+      <h2 className="font-heading text-xs font-semibold uppercase tracking-[0.15em] text-primary-foreground/60">
         {title}
       </h2>
       <ul className="mt-4 space-y-2.5">
@@ -53,15 +53,15 @@ function FooterNav({
 
 export function Footer() {
   return (
-    <footer className="w-full bg-primary text-primary-foreground">
-      <div className="container mx-auto px-4 lg:px-32 py-12 pb-20 md:py-14 md:pb-20">
+    <footer className="w-full bg-gradient-to-br from-navy to-navy-strong text-primary-foreground">
+      <div className="container mx-auto px-4 py-12 pb-20 md:py-14 md:pb-20">
         <div className="grid gap-8 md:grid-cols-[1.3fr_1fr_1fr_1fr] md:gap-8">
           <div>
             <Link
               href="/"
               className="inline-flex items-center gap-2 text-lg font-bold tracking-tight"
             >
-              <span className="flex size-8 items-center justify-center rounded-lg bg-[#F5F5F2]">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-white">
                 <Image
                   src="/brand/logo.png"
                   alt=""
@@ -88,9 +88,7 @@ export function Footer() {
         <div className="mt-10">
           <Separator className="bg-primary-foreground/15" />
           <div className="flex flex-col gap-2 pt-6 text-xs text-primary-foreground/60 sm:flex-row sm:items-center sm:justify-between">
-            <p>
-              © {new Date().getFullYear()} GazPoints. Tous droits réservés.
-            </p>
+            <p>© {new Date().getFullYear()} GazPoints. Tous droits réservés.</p>
             <p>Fait à Douala, Cameroun.</p>
           </div>
         </div>

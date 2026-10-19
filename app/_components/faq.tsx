@@ -9,7 +9,13 @@ import {
 } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { useTrouverGaz } from "@/lib/use-trouver-gaz"
 
 const questions = [
@@ -56,51 +62,57 @@ export function Faq() {
   return (
     <section
       id="faq"
-      className="w-full scroll-mt-16 py-16 md:py-24"
+      className="w-full scroll-mt-16 bg-mint py-16 md:py-24"
     >
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
-          <Badge variant="secondary" className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]">
+          <Badge
+            variant="secondary"
+            className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]"
+          >
             Questions fréquentes
           </Badge>
 
-          <h2 className="mt-6 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+          <h2 className="mt-6 text-balance font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
             Tu as une question&nbsp;?
           </h2>
           <p className="mt-4 text-pretty text-base text-muted-foreground">
-            Tout comprendre sur les profils Usagers, Vendeurs et le fonctionnement de la plateforme.
+            Tout comprendre sur les profils Usagers, Vendeurs et le
+            fonctionnement de la plateforme.
           </p>
         </div>
 
         <div className="mx-auto mt-12 grid max-w-4xl gap-4 lg:grid-cols-3">
-          <Accordion className="rounded-2xl border bg-card px-5 lg:col-span-2 md:px-6">
+          <Accordion className="rounded-2xl border border-border bg-white px-5 shadow-sm lg:col-span-2 md:px-6">
             {questions.map((item) => (
               <AccordionItem key={item.question} value={item.question}>
-                <AccordionTrigger className="py-4 text-base font-medium hover:no-underline text-left">
+                <AccordionTrigger className="py-4 text-base font-medium text-left hover:no-underline">
                   {item.question}
                 </AccordionTrigger>
-                <AccordionContent className="pb-5 text-muted-foreground text-sm leading-relaxed">
+                <AccordionContent className="pb-5 text-sm leading-relaxed text-muted-foreground">
                   {item.answer}
                 </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
 
-          <Card className="h-full">
+          <Card className="h-full border-0 bg-primary text-primary-foreground shadow-md">
             <CardHeader>
-              <span className="mb-3 flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <span className="mb-3 flex size-10 items-center justify-center rounded-lg bg-primary-foreground/15 text-primary-foreground">
                 <MessageCircleQuestion className="size-5" />
               </span>
-              <CardTitle className="text-lg">
+              <CardTitle className="font-heading text-lg text-primary-foreground">
                 Prêt à commencer&nbsp;?
               </CardTitle>
-              <CardDescription>
-                Créez votre compte en quelques secondes et vérifiez votre numéro de téléphone pour accéder à GazPoints.
+              <CardDescription className="text-primary-foreground/75">
+                Créez votre compte en quelques secondes et vérifiez votre numéro
+                de téléphone pour accéder à GazPoints.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button
-                className="h-11 w-full gap-2 cursor-pointer font-semibold"
+                variant="secondary"
+                className="h-11 w-full gap-2 cursor-pointer bg-primary-foreground font-semibold text-primary hover:bg-primary-foreground/90"
                 onClick={handleAction}
               >
                 Trouver du gaz

@@ -2,13 +2,11 @@ import { Hero } from "@/app/hero"
 import { Acces } from "@/app/_components/acces"
 import { Benefices } from "@/app/_components/benefices"
 import { CtaFinal } from "@/app/_components/cta-final"
-import { Demonstration } from "@/app/_components/demonstration"
 import { Faq } from "@/app/_components/faq"
 import { Fiabilite } from "@/app/_components/fiabilite"
 import { Solution } from "@/app/_components/solution"
 import { Storytelling } from "@/app/_components/storytelling"
 import { Temoignages } from "@/app/_components/temoignages"
-import { TrouverMonGaz } from "@/app/_components/trouver-mon-gaz"
 import { PubliciteCarousel, type PubliciteBannerData } from "@/app/_components/publicite-banner"
 import { getPublicitesForSlot } from "@/lib/publicite"
 import { getApprovedAvis, type AvisPublic } from "@/lib/avis"
@@ -16,14 +14,8 @@ import { getApprovedAvis, type AvisPublic } from "@/lib/avis"
 export default async function Home() {
   // Les bannières sont décoratives : une panne du marketing ne doit jamais
   // bloquer la landing. En cas d'erreur, elles sont simplement masquées.
-  // Deux emplacements seulement : sous la Hero et au-dessus de « Trouver mon Gaz ».
-  let homePublicites: PubliciteBannerData[] = []
+  // Deux emplacements seulement : sous la recherche et au-dessus de la FAQ.
   let searchPublicites: PubliciteBannerData[] = []
-  try {
-    homePublicites = await getPublicitesForSlot("home_hero")
-  } catch (error) {
-    console.error("Impossible de charger les publicités home_hero :", error)
-  }
   try {
     searchPublicites = await getPublicitesForSlot("home_search")
   } catch (error) {
@@ -42,7 +34,6 @@ export default async function Home() {
   return (
     <>
       <Hero />
-      <PubliciteCarousel publicites={homePublicites} />
       <Storytelling />
       <Benefices />
       <Solution />
@@ -50,8 +41,6 @@ export default async function Home() {
         publicites={searchPublicites}
         className="py-8 md:py-12"
       />
-      <TrouverMonGaz />
-      <Demonstration />
       <Fiabilite />
       <Faq />
       <Temoignages avis={avis} />

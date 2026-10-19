@@ -39,14 +39,14 @@ export function Header() {
   const isAuthenticated = !!session?.user
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/85 backdrop-blur-md supports-backdrop-filter:bg-background/65">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/90 backdrop-blur-md">
       <div className="container mx-auto flex h-16 items-center justify-between gap-6 px-4 lg:px-32 lg:grid lg:grid-cols-[auto_1fr_auto] lg:gap-8">
         <Link
           href="/"
           onClick={closeMenu}
           className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
         >
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#ffffff] ring-2 ring-black/5 shadow-xs">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-mint ring-1 ring-primary/15 shadow-xs">
             <Image
               src="/brand/logo.png"
               alt=""
@@ -76,7 +76,7 @@ export function Header() {
           ) : (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="gap-2 hidden sm:flex">
+                <Button variant="ghost" className="hidden gap-2 sm:flex cursor-pointer">
                   <UserPlus className="size-4" />
                   <span>Compte</span>
                 </Button>
@@ -119,16 +119,19 @@ export function Header() {
               render={
                 <button
                   type="button"
-                  className="inline-flex size-9 items-center justify-center rounded-lg text-foreground transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 lg:hidden"
+                  className="inline-flex size-9 items-center justify-center rounded-lg text-foreground transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 lg:hidden cursor-pointer"
                 >
                   <Menu className="size-5" />
                   <span className="sr-only">Ouvrir le menu</span>
                 </button>
               }
             />
-            <SheetContent side="right" className="w-[85vw] max-w-sm flex flex-col justify-between p-0">
+            <SheetContent
+              side="right"
+              className="flex w-[85vw] max-w-sm flex-col justify-between p-0"
+            >
               <div>
-                <SheetHeader className="border-b p-4">
+                <SheetHeader className="border-b border-border p-4">
                   <SheetTitle>Menu</SheetTitle>
                   <p className="text-sm text-muted-foreground">
                     Navigation GazPoints
@@ -147,9 +150,11 @@ export function Header() {
                       {link.label}
                     </Link>
                   ))}
-                  <div className="border-t my-2" />
+                  <div className="my-2 border-t border-border" />
                   <div className="space-y-2">
-                    <p className="px-3 py-2 text-sm font-medium text-muted-foreground">Compte</p>
+                    <p className="px-3 py-2 text-sm font-medium text-muted-foreground">
+                      Compte
+                    </p>
                     {isAuthenticated ? (
                       <UserMenu isMobile />
                     ) : (
