@@ -331,14 +331,14 @@ export function AdminPubliciteForm({
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1.5">
                       <span
-                        className="inline-block size-6 rounded border-2 border-dashed"
+                        className="inline-block size-6 rounded border border-dashed"
                         aria-hidden
                       />
                       Carré 1:1
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span
-                        className="inline-block h-5 w-7 rounded border-2 border-dashed"
+                        className="inline-block h-5 w-7 rounded border border-dashed"
                         aria-hidden
                       />
                       Paysage 4:3

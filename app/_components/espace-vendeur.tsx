@@ -279,7 +279,7 @@ function DisponibiliteVendeurForm({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative w-full max-w-lg bg-background rounded-xl shadow-xl p-6 max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full max-w-lg bg-background rounded-xl shadow-sm p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">
             {isEditing ? "Modifier la disponibilité" : "Publier une disponibilité"}
@@ -334,7 +334,7 @@ function DisponibiliteVendeurForm({
                   required
                 >
                   <SelectTrigger id="format-select" className="w-full">
-                    <SelectValue placeholder="Choisis un format" />
+                    <SelectValue placeholder="Sélectionner le format" />
                   </SelectTrigger>
                   <SelectContent>
                     {FORMATS.map((item) => (
@@ -374,8 +374,7 @@ function DisponibiliteVendeurForm({
                 min="0"
                 value={formState.quantity}
                 onChange={(e) => setFormState((s) => ({ ...s, quantity: e.target.value }))}
-                placeholder="Ex: 25"
-                required
+                placeholder="Ex : 25"
               />
             </div>
 

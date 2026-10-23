@@ -62,7 +62,7 @@ export function Acces() {
         {/* 2 Profils de cartes : Usager & Vendeur */}
         <div className="mx-auto mt-12 grid max-w-4xl gap-6 sm:grid-cols-2">
           {/* Profil 1 : Usager / Client */}
-          <Card className="h-full border-0 bg-white shadow-sm transition-all hover:shadow-md">
+          <Card className="h-full border-0 bg-white shadow-sm transition-all hover:shadow-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <span className="flex size-10 items-center justify-center rounded-lg bg-mint text-primary-strong">
@@ -126,12 +126,12 @@ export function Acces() {
           {/* Profil 2 : Vendeur / Responsable dépôt */}
           <div className="relative h-full">
             {/* Top Tag (hors du Card pour ne pas être coupé par overflow-hidden) */}
-            <div className="absolute -top-3.5 right-5 z-10 flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary-foreground shadow-md ring-2 ring-white">
+            <div className="absolute -top-3.5 right-5 z-10 flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary-foreground shadow-sm ring-1 ring-white">
               <Crown className="size-3" />
               Professionnel
             </div>
 
-            <Card className="h-full overflow-visible border-2 border-primary bg-white px-6 py-6 shadow-md transition-all hover:shadow-lg sm:px-7 sm:py-7">
+            <Card className="h-full overflow-visible border border-primary bg-white px-6 py-6 shadow-sm transition-all hover:shadow-sm sm:px-7 sm:py-7">
               <div className="flex items-center justify-between">
                 <span className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-xs">
                   <Store className="size-5" />
@@ -177,7 +177,7 @@ export function Acces() {
               <Link href="/inscription">
                 <Button
                   size="lg"
-                  className="mt-6 h-11 w-full gap-2 text-sm font-semibold bg-primary text-primary-foreground shadow-md hover:bg-primary-strong cursor-pointer"
+                  className="mt-6 h-11 w-full gap-2 text-sm font-semibold bg-primary text-primary-foreground shadow-sm hover:bg-primary-strong cursor-pointer"
                 >
                   Créer un compte Vendeur
                   <ArrowRight className="size-4" />

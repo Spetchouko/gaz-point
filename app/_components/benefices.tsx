@@ -68,7 +68,7 @@ export function Benefices() {
           {benefits.map((benefit) => (
             <Card
               key={benefit.title}
-              className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-md"
+              className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-sm"
             >
               <CardHeader>
                 <span className="flex size-11 items-center justify-center rounded-xl bg-mint text-primary-strong ring-1 ring-primary/20">

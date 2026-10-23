@@ -92,7 +92,7 @@ export function ConsentBanner() {
     <div
       role="region"
       aria-label="Consentement au suivi d'audience"
-      className="fixed bottom-4 left-1/2 z-50 w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 rounded-xl border bg-card/95 p-4 shadow-lg backdrop-blur sm:p-5"
+      className="fixed bottom-4 left-1/2 z-50 w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 rounded-xl border bg-card/95 p-4 shadow-sm backdrop-blur sm:p-5"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
         <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10">

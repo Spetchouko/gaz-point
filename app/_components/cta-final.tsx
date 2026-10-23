@@ -9,7 +9,7 @@ export function CtaFinal() {
   return (
     <section className="w-full bg-background py-16 md:py-24">
       <div className="container mx-auto px-4">
-        <div className="relative mx-auto max-w-3xl overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-primary-strong px-6 py-12 text-center text-primary-foreground shadow-xl md:px-12 md:py-16">
+        <div className="relative mx-auto max-w-3xl overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-primary-strong px-6 py-12 text-center text-primary-foreground shadow-sm md:px-12 md:py-16">
           <Badge
             variant="secondary"
             className="mt-1 h-6 bg-primary-foreground/15 px-3 text-xs font-semibold uppercase tracking-[0.15em] text-primary-foreground"

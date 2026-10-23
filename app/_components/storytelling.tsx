@@ -71,7 +71,7 @@ export function Storytelling() {
           {painPoints.map((item, idx) => (
             <Card
               key={item.title}
-              className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-md"
+              className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-sm"
             >
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -147,7 +147,7 @@ export function Storytelling() {
         <div className="mx-auto mt-12 max-w-xl text-center">
           <Button
             size="lg"
-            className="h-12 w-full gap-2 px-8 text-base font-semibold shadow-md sm:w-auto cursor-pointer"
+            className="h-12 w-full gap-2 px-8 text-base font-semibold shadow-sm sm:w-auto cursor-pointer"
             onClick={handleAction}
           >
             Trouver mon gaz maintenant

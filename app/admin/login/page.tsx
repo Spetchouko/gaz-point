@@ -122,7 +122,7 @@ function AdminLoginPageContent() {
           </Button>
         </div>
 
-        <Card className="shadow-xl">
+        <Card className="shadow-sm">
           <CardHeader className="text-center pb-2">
             <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-navy/10 text-navy ring-1 ring-navy/20">
               <Shield className="size-6" />

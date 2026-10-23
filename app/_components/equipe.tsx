@@ -57,7 +57,7 @@ export function Equipe() {
         <ul className="mx-auto mt-12 grid max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {equipe.map((membre) => (
             <li key={membre.role}>
-              <Card className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-md">
+              <Card className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-sm">
                 <CardHeader className="text-center">
                   <Avatar className="mx-auto size-12 ring-1 ring-primary/20">
                     {membre.image ? (

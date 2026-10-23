@@ -59,7 +59,7 @@ export function NotreDemarche() {
           {constats.map((constat) => (
             <Card
               key={constat.title}
-              className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-md"
+              className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-sm"
             >
               <CardHeader>
                 <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">

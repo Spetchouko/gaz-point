@@ -49,7 +49,7 @@ export function AproposHero() {
         </div>
 
         <div className="mt-12 mx-auto">
-          <Card className="mx-auto flex size-36 shrink-0 items-center justify-center border-none bg-background p-8 shadow-md lg:size-48">
+          <Card className="mx-auto flex size-36 shrink-0 items-center justify-center border-none bg-background p-8 shadow-sm lg:size-48">
             <Image
               src="/brand/logo.png"
               alt=""

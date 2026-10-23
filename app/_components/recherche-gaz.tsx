@@ -150,7 +150,7 @@ export function RechercheGaz() {
 
   return (
     <>
-      <Card className="p-5 shadow-lg shadow-primary/5 ring-1 ring-border sm:p-7">
+      <Card className="p-5 shadow-sm shadow-primary/5 ring-1 ring-border sm:p-7">
         <form onSubmit={handleSubmit} className="space-y-4">
           <p className="font-heading text-sm font-semibold text-foreground">
             Quelle bouteille tu cherches&nbsp;?

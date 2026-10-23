@@ -234,7 +234,7 @@ function InscriptionVendeurContent() {
           </Button>
         </div>
 
-        <Card className="shadow-xl">
+        <Card className="shadow-sm">
           <CardHeader className="text-center pb-2">
             <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-success/10 text-success ring-1 ring-success/20">
               <Store className="size-6" />
@@ -447,7 +447,7 @@ function ConfigurationProfilVendeur() {
   return (
     <div className="min-h-screen bg-background px-4 py-8 flex items-center justify-center">
       <div className="w-full max-w-md">
-        <Card className="shadow-xl">
+        <Card className="shadow-sm">
           <CardHeader className="text-center pb-2">
             <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-success/10 text-success ring-1 ring-success/20">
               <Store className="size-6" />

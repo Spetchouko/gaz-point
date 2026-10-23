@@ -59,7 +59,7 @@ function KpiCard({
   accent: string
 }) {
   return (
-    <Card className="border transition-shadow hover:shadow-md">
+    <Card className="border transition-shadow hover:shadow-sm">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
           <span className={`flex size-7 items-center justify-center rounded-full ${accent}`}>

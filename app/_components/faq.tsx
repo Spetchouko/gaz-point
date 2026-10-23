@@ -96,7 +96,7 @@ export function Faq() {
             ))}
           </Accordion>
 
-          <Card className="h-full border-0 bg-primary text-primary-foreground shadow-md">
+          <Card className="h-full border-0 bg-primary text-primary-foreground shadow-sm">
             <CardHeader>
               <span className="mb-3 flex size-10 items-center justify-center rounded-lg bg-primary-foreground/15 text-primary-foreground">
                 <MessageCircleQuestion className="size-5" />

@@ -51,7 +51,7 @@ export default function InscriptionPage() {
           <Card
             className={cn(
               CARD_HEIGHT,
-              "flex flex-col items-center rounded-xl bg-info/5 border-info/20 hover:border-info/40 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer p-4",
+              "flex flex-col items-center rounded-xl bg-info/5 border-info/20 hover:border-info/40 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 cursor-pointer p-4",
               selectedRole === "user"
                 ? "border-info ring-2 ring-info/20 bg-info/10"
                 : ""
@@ -91,7 +91,7 @@ export default function InscriptionPage() {
           <Card
             className={cn(
               CARD_HEIGHT,
-              "flex flex-col items-center rounded-xl bg-success/5 border-success/20 hover:border-success/40 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer p-4",
+              "flex flex-col items-center rounded-xl bg-success/5 border-success/20 hover:border-success/40 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 cursor-pointer p-4",
               selectedRole === "vendor"
                 ? "border-success ring-2 ring-success/20 bg-success/10"
                 : ""

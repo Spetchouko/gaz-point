@@ -121,7 +121,7 @@ export function ContactForm() {
         </div>
 
         <div className="mx-auto mt-12 grid max-w-5xl gap-6 lg:grid-cols-[1.25fr_1fr]">
-          <Card className="transition-all hover:shadow-md">
+          <Card className="transition-all hover:shadow-sm">
             <CardHeader>
               <CardTitle className="text-xl">Le formulaire</CardTitle>
               <CardDescription>

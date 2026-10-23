@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useState } from "react"
 import { CheckCircle2, Trash2 } from "lucide-react"
@@ -11,7 +11,14 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { availabilityLabel } from "@/lib/gaz"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { availabilityLabel, bottleFormats } from "@/lib/gaz"
 import { Textarea } from "@/components/ui/textarea"
 import { createDisponibiliteAdmin, updateDisponibiliteAdmin, deleteDisponibiliteAdmin, type ActionResult } from "@/app/admin/actions"
 import type { AvailabilityStatus } from "@/db/schema"
@@ -52,7 +59,6 @@ type FormState = {
   quantity: string
   format: string
   brand: string
-  weightKg: string
   expiresAt: string
   phone: string
   note: string
@@ -68,13 +74,19 @@ function initialFormState(editing: DispoData): FormState {
     quantity: editing?.quantity?.toString() ?? "",
     format: editing?.format ?? "",
     brand: editing?.brand ?? "",
-    weightKg: editing?.weightKg ?? "",
     expiresAt: toDateValue(editing?.expiresAt),
     phone: editing?.phone ?? "",
     note: editing?.note ?? "",
     vendorId: editing?.vendorId ?? "",
     vendorName: editing?.vendorName ?? "",
   }
+}
+
+/** Met uniquement la première lettre en majuscule, sans toucher au reste. */
+function capitalizeFirst(value: string): string {
+  const trimmed = value.trim()
+  if (!trimmed) return ""
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1)
 }
 
 export function AdminDisponibiliteForm({
@@ -95,72 +107,56 @@ export function AdminDisponibiliteForm({
   const [formState, setFormState] = useState<FormState>(() => initialFormState(editingDispo))
   const [step, setStep] = useState<"form" | "confirm" | "deleteConfirm">("form")
   const [feedback, setFeedback] = useState<ActionResult | null>(null)
+  const [pending, setPending] = useState(false)
+  const [submitAttempted, setSubmitAttempted] = useState(false)
 
   const pointName = formState.pointName.trim()
-  const pointOk = isEditing
-    ? formState.pointId !== ""
-    : pointName !== "" &&
-      points.some((p) => p.name.trim().toLowerCase() === pointName.toLowerCase())
-  const formatOk = formState.format.trim() !== ""
-  const brandOk = formState.brand.trim() !== ""
-  const noteOk = formState.note.trim() !== ""
-  const isValid = pointOk && formatOk && brandOk && noteOk
 
-  const missingFields = (): string[] => {
-    const missing: string[] = []
-    if (!pointName) missing.push("« Point de vente »")
-    else if (!pointOk) missing.push("« Point de vente » introuvable")
-    if (!formatOk) missing.push("« Format de bouteille »")
-    if (!brandOk) missing.push("« Marque de bouteille »")
-    if (!noteOk) missing.push("« Niveau de l'itinéraire »")
-    return missing
-  }
+  // Seuls le point de vente et le format sont réellement indispensables :
+  // la marque et l'itinéraire restent facultatifs et ne bloquent jamais le bouton.
+  const missingFields = [
+    ...(pointName ? [] : ["« Point de vente »"]),
+    ...(formState.format.trim() ? [] : ["« Format de la bouteille »"]),
+  ]
+  const isValid = missingFields.length === 0
 
   const submitAction = async (formData: FormData) => {
-    const result = isEditing
-      ? await updateDisponibiliteAdmin(null, formData)
-      : await createDisponibiliteAdmin(null, formData)
-    setFeedback(result)
-    if (result.ok) {
-      setFormState(initialFormState(null))
-      setStep("form")
-      onClose()
+    if (pending) return
+    setPending(true)
+    try {
+      const result = isEditing
+        ? await updateDisponibiliteAdmin(null, formData)
+        : await createDisponibiliteAdmin(null, formData)
+      setFeedback(result)
+      if (result.ok) {
+        setFormState(initialFormState(null))
+        setStep("form")
+        setSubmitAttempted(false)
+        onClose()
+      }
+    } finally {
+      setPending(false)
     }
   }
 
   const deleteAction = async (formData: FormData) => {
-    const result = await deleteDisponibiliteAdmin(null, formData)
-    setFeedback(result)
-    if (result.ok) onClose()
+    if (pending) return
+    setPending(true)
+    try {
+      const result = await deleteDisponibiliteAdmin(null, formData)
+      setFeedback(result)
+      if (result.ok) onClose()
+    } finally {
+      setPending(false)
+    }
   }
 
-  const optionalFields = (
-    <>
-      <input type="hidden" name="quantity" value={formState.quantity} />
-      <input type="hidden" name="weightKg" value={formState.weightKg} />
-      <input type="hidden" name="expiresAt" value={formState.expiresAt} />
-      <input type="hidden" name="phone" value={formState.phone} />
-    </>
-  )
-
-  const hiddenFields = (
-    <>
-      {isEditing ? (
-        <>
-          <input type="hidden" name="disponibiliteId" value={editingDispo?.id ?? ""} />
-          <input type="hidden" name="pointId" value={formState.pointId} />
-        </>
-      ) : (
-        <input type="hidden" name="pointName" value={formState.pointName} />
-      )}
-      <input type="hidden" name="format" value={formState.format} />
-      <input type="hidden" name="status" value={formState.status} />
-      <input type="hidden" name="brand" value={formState.brand} />
-      <input type="hidden" name="note" value={formState.note} />
-      <input type="hidden" name="vendorName" value={formState.vendorName} />
-      {optionalFields}
-    </>
-  )
+  // Exactement les trois formats canoniques ; à l'édition d'une ancienne
+  // disponibilité, sa valeur d'origine reste sélectionnable.
+  const formatItems =
+    formState.format && !(bottleFormats as readonly string[]).includes(formState.format)
+      ? [formState.format, ...bottleFormats]
+      : [...bottleFormats]
 
   const selectedPoint = points.find((p) => p.id === formState.pointId)
   const displayPointName =
@@ -188,10 +184,12 @@ export function AdminDisponibiliteForm({
           <dt>Statut</dt>
           <dd className="font-medium text-foreground">{availabilityLabel[formState.status]}</dd>
         </div>
-        <div className="flex justify-between">
-          <dt>Marque de bouteille</dt>
-          <dd className="font-medium text-foreground">{formState.brand.trim()}</dd>
-        </div>
+        {formState.brand.trim() && (
+          <div className="flex justify-between">
+            <dt>Marque de bouteille</dt>
+            <dd className="font-medium text-foreground">{formState.brand.trim()}</dd>
+          </div>
+        )}
         <div className="flex justify-between">
           <dt>Niveau de l&apos;itinéraire</dt>
           <dd className="font-medium text-foreground">{formState.note.trim()}</dd>
@@ -206,12 +204,6 @@ export function AdminDisponibiliteForm({
           <div className="flex justify-between">
             <dt>Quantité</dt>
             <dd className="font-medium text-foreground">{formState.quantity}</dd>
-          </div>
-        )}
-        {formState.weightKg && (
-          <div className="flex justify-between">
-            <dt>Poids</dt>
-            <dd className="font-medium text-foreground">{formState.weightKg} kg</dd>
           </div>
         )}
         {formState.expiresAt && (
@@ -266,7 +258,8 @@ export function AdminDisponibiliteForm({
           <form
             onSubmit={(e) => {
               e.preventDefault()
-              if (isValid) setStep("confirm")
+              setSubmitAttempted(true)
+              if (isValid && !pending) setStep("confirm")
             }}
             className="space-y-4"
           >
@@ -280,7 +273,18 @@ export function AdminDisponibiliteForm({
                 type="text"
                 list="point-name-suggestions"
                 value={formState.pointName}
-                onChange={(e) => setFormState((s) => ({ ...s, pointName: e.target.value }))}
+                onChange={(e) => {
+                  const next = e.target.value
+                  const match = points.find(
+                    (p) => p.name.trim().toLowerCase() === next.trim().toLowerCase()
+                  )
+                  // Préremplissage du vendeur d'après le dépôt reconnu.
+                  setFormState((s) => ({
+                    ...s,
+                    pointName: next,
+                    vendorName: s.vendorName ? s.vendorName : match?.vendorName ?? s.vendorName,
+                  }))
+                }}
                 placeholder="Saisissez ou sélectionnez un point de vente"
                 disabled={isEditing}
               />
@@ -289,6 +293,11 @@ export function AdminDisponibiliteForm({
                   <option key={p.id} value={p.name} />
                 ))}
               </datalist>
+              {submitAttempted && !pointName && (
+                <p className="text-xs text-destructive">
+                  Le point de vente est requis.
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -298,7 +307,7 @@ export function AdminDisponibiliteForm({
                 type="text"
                 value={formState.vendorName}
                 onChange={(e) => setFormState((s) => ({ ...s, vendorName: e.target.value }))}
-                placeholder="Saisissez le nom du vendeur"
+                placeholder="Nom du vendeur (facultatif)"
               />
             </div>
 
@@ -308,110 +317,109 @@ export function AdminDisponibiliteForm({
                   Format de bouteille
                   <span className="text-destructive" aria-hidden>*</span>
                 </Label>
-                <Input
-                  id="format-input"
-                  type="text"
-                  value={formState.format}
-                  onChange={(e) => setFormState((s) => ({ ...s, format: e.target.value }))}
-                  placeholder="Ex: 6 kg, 12,5 kg, 15 kg"
-                />
+                <Select
+                  value={formState.format || undefined}
+                  onValueChange={(v) => setFormState((s) => ({ ...s, format: v ?? "" }))}
+                >
+                  <SelectTrigger id="format-input" className="w-full">
+                    <SelectValue placeholder="Sélectionner le format" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {formatItems.map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {item}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="brand-input" className="flex items-center gap-1">
-                  Marque de bouteille
-                  <span className="text-destructive" aria-hidden>*</span>
-                </Label>
+                <Label htmlFor="brand-input">Marque de bouteille</Label>
                 <Input
                   id="brand-input"
                   type="text"
+                  list="brand-suggestions"
                   value={formState.brand}
                   onChange={(e) => setFormState((s) => ({ ...s, brand: e.target.value }))}
-                  placeholder="Ex: Total, Payo, Gazex..."
+                  onBlur={() => setFormState((s) => ({ ...s, brand: capitalizeFirst(s.brand) }))}
+                  placeholder="Ex. : Total, Tradex, Bocom…"
                 />
+                <datalist id="brand-suggestions">
+                  {brands.map((b) => (
+                    <option key={b} value={b} />
+                  ))}
+                </datalist>
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="note-input" className="flex items-center gap-1">
-                Niveau de l&apos;itinéraire
-                <span className="text-destructive" aria-hidden>*</span>
-              </Label>
+              <Label htmlFor="note-input">Niveau de l&apos;itinéraire (facultatif)</Label>
               <Textarea
                 id="note-input"
+                name="note"
                 value={formState.note}
                 onChange={(e) => setFormState((s) => ({ ...s, note: e.target.value }))}
-                placeholder="Ex: Après Tradex, à côté de la pharmacie..."
+                placeholder="Ex : après Tradex, à côté de la pharmacie…"
                 rows={3}
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="quantity-input">Quantité (facultatif)</Label>
-              <Input
-                id="quantity-input"
-                type="number"
-                min="0"
-                value={formState.quantity}
-                onChange={(e) => setFormState((s) => ({ ...s, quantity: e.target.value }))}
-                placeholder="Ex: 25"
-              />
-            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="quantity-input">Quantité (facultatif)</Label>
+                <Input
+                  id="quantity-input"
+                  name="quantity"
+                  type="number"
+                  min="0"
+                  value={formState.quantity}
+                  onChange={(e) => setFormState((s) => ({ ...s, quantity: e.target.value }))}
+                  placeholder="Ex : 25"
+                />
+              </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="weight-input">Poids (kg, facultatif)</Label>
-              <Input
-                id="weight-input"
-                type="number"
-                step="0.1"
-                min="0"
-                value={formState.weightKg}
-                onChange={(e) => setFormState((s) => ({ ...s, weightKg: e.target.value }))}
-                placeholder="Ex: 12,5"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="expires-input">Expire le (facultatif)</Label>
-              <Input
-                id="expires-input"
-                type="date"
-                value={formState.expiresAt}
-                onChange={(e) => setFormState((s) => ({ ...s, expiresAt: e.target.value }))}
-              />
+              <div className="space-y-1.5">
+                <Label htmlFor="expires-input">Expire le (facultatif)</Label>
+                <Input
+                  id="expires-input"
+                  name="expiresAt"
+                  type="date"
+                  value={formState.expiresAt}
+                  onChange={(e) => setFormState((s) => ({ ...s, expiresAt: e.target.value }))}
+                />
+              </div>
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="phone-input">Téléphone (facultatif)</Label>
               <Input
                 id="phone-input"
+                name="phone"
                 type="tel"
                 value={formState.phone}
                 onChange={(e) => setFormState((s) => ({ ...s, phone: e.target.value }))}
-                placeholder="Ex: +237 6 99 00 00 00"
+                placeholder="Ex. : +237 6 99 00 00 00"
               />
             </div>
 
-            {!isValid && (
+            {submitAttempted && missingFields.length > 0 && (
               <p role="alert" className="text-sm text-destructive">
-                Champ{missingFields().length > 1 ? "s" : ""} manquant
-                {missingFields().length > 1 ? "s" : ""} : {missingFields().join(", ")}.
+                Champ{missingFields.length > 1 ? "s" : ""} requis manquant
+                {missingFields.length > 1 ? "s" : ""} : {missingFields.join(", ")}.
               </p>
             )}
 
             <div className="flex flex-col sm:flex-row gap-2">
-              <Button
-                type="submit"
-                className="flex-1"
-                disabled={!isValid}
-              >
-                {isEditing ? "Enregistrer les modifications" : "Créer la disponibilité"}
+              <Button type="submit" className="flex-1" disabled={pending}>
+                {pending ? "Enregistrement en cours…" : isEditing ? "Enregistrer les modifications" : "Créer la disponibilité"}
               </Button>
               {isEditing && (
                 <Button
                   type="button"
                   variant="destructive"
                   onClick={() => setStep("deleteConfirm")}
+                  disabled={pending}
                 >
                   <Trash2 className="size-4 mr-2" />
                   Supprimer
@@ -427,11 +435,26 @@ export function AdminDisponibiliteForm({
 
         {step === "confirm" && (
           <form action={submitAction} className="space-y-4">
-            {hiddenFields}
+            {isEditing ? (
+              <>
+                <input type="hidden" name="disponibiliteId" value={editingDispo?.id ?? ""} />
+                <input type="hidden" name="pointId" value={formState.pointId} />
+              </>
+            ) : (
+              <input type="hidden" name="pointName" value={formState.pointName} />
+            )}
+            <input type="hidden" name="format" value={formState.format} />
+            <input type="hidden" name="status" value={formState.status} />
+            <input type="hidden" name="brand" value={formState.brand} />
+            <input type="hidden" name="note" value={formState.note} />
+            <input type="hidden" name="vendorName" value={formState.vendorName} />
+            <input type="hidden" name="quantity" value={formState.quantity} />
+            <input type="hidden" name="expiresAt" value={formState.expiresAt} />
+            <input type="hidden" name="phone" value={formState.phone} />
             {confirmContent}
             <div className="flex gap-2">
-              <Button type="submit" className="flex-1" disabled={!!feedback?.ok}>
-                Confirmer
+              <Button type="submit" className="flex-1" disabled={pending}>
+                {pending ? "Enregistrement en cours…" : "Confirmer"}
               </Button>
               <Button type="button" variant="ghost" onClick={() => setStep("form")}>
                 Annuler
@@ -446,7 +469,7 @@ export function AdminDisponibiliteForm({
             <input type="hidden" name="disponibiliteId" value={editingDispo?.id ?? ""} />
             {deleteConfirmContent}
             <div className="flex gap-2">
-              <Button type="submit" variant="destructive" className="flex-1">
+              <Button type="submit" variant="destructive" className="flex-1" disabled={pending}>
                 Supprimer définitivement
               </Button>
               <Button type="button" variant="ghost" onClick={() => setStep("form")}>

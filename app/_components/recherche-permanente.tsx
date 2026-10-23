@@ -37,7 +37,7 @@ export function RecherchePermanente() {
         type="button"
         onClick={handleClick}
         className={cn(
-          "pointer-events-auto flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-lg shadow-foreground/10 transition-colors hover:bg-primary/90 cursor-pointer",
+          "pointer-events-auto flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm shadow-foreground/10 transition-colors hover:bg-primary/90 cursor-pointer",
           "sm:h-11"
         )}
       >

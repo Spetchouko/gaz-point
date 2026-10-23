@@ -68,7 +68,7 @@ export function Solution() {
           {steps.map((step) => (
             <Card
               key={step.title}
-              className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-md"
+              className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-sm"
             >
               <CardHeader>
                 <span className="flex size-11 items-center justify-center rounded-xl bg-white text-primary shadow-sm ring-1 ring-border">
@@ -88,7 +88,7 @@ export function Solution() {
         <div className="mx-auto mt-12 max-w-xl text-center">
           <Button
             size="lg"
-            className="h-12 w-full gap-2 px-8 text-base font-semibold shadow-md sm:w-auto cursor-pointer"
+            className="h-12 w-full gap-2 px-8 text-base font-semibold shadow-sm sm:w-auto cursor-pointer"
             onClick={handleAction}
           >
             Trouver du gaz

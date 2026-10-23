@@ -114,7 +114,7 @@ export function PubliciteBannerCard({
     <article
       ref={cardRef}
       className={cn(
-        "flex h-auto w-full flex-col overflow-hidden rounded-2xl border bg-card shadow-md md:h-[200px] md:flex-row",
+        "flex h-auto w-full flex-col overflow-hidden rounded-2xl border bg-card shadow-sm md:h-[200px] md:flex-row",
         animate && "animate-in fade-in duration-500 motion-reduce:animate-none",
         className
       )}

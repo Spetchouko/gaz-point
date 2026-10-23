@@ -21,7 +21,7 @@ export function ContactVendeurs() {
   return (
     <section className="w-full py-16 md:py-24">
       <div className="container mx-auto px-4">
-        <Card className="mx-auto max-w-5xl overflow-visible border-2 border-primary bg-primary/5 p-6 md:p-10">
+        <Card className="mx-auto max-w-5xl overflow-visible border border-primary bg-primary/5 p-6 md:p-10">
           <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr] lg:gap-12">
             <div>
               <div className="flex items-center gap-3">

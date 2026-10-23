@@ -461,7 +461,7 @@ export default async function AdminStatsPage({
             const seven = trends["7j"][card.key as keyof typeof trends["7j"]]
             const thirty = trends["30j"][card.key as keyof typeof trends["30j"]]
             return (
-              <Card key={card.key} className="border transition-shadow hover:shadow-md">
+              <Card key={card.key} className="border transition-shadow hover:shadow-sm">
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <Icon className="size-4" />

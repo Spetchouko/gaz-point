@@ -230,7 +230,7 @@ export function AdminStatsCards({ stats }: { stats: Stats }) {
             href={card.href}
             className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
-            <Card className="h-full border transition-shadow hover:shadow-md hover:border-primary/40">
+            <Card className="h-full border transition-shadow hover:shadow-sm hover:border-primary/40">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>

@@ -224,7 +224,7 @@ function InscriptionUsagerContent() {
           </Button>
         </div>
 
-        <Card className="shadow-xl">
+        <Card className="shadow-sm">
           <CardHeader className="text-center pb-2">
             <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-info/10 text-info ring-1 ring-info/20">
               <User className="size-6" />

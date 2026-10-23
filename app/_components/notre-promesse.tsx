@@ -55,7 +55,7 @@ export function NotrePromesse() {
         <ul className="mx-auto mt-12 grid max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {engagements.map((engagement) => (
             <li key={engagement.title}>
-              <Card className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-md">
+              <Card className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-sm">
                 <CardHeader>
                   <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
                     <engagement.icon className="size-5" aria-hidden />
