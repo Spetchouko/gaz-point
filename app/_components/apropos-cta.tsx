@@ -45,7 +45,7 @@ export function AproposCta() {
               nativeButton={false}
               variant="ghost"
               size="lg"
-              className="h-12 w-full gap-2 border border-primary-foreground/25 px-6 text-base text-primary-foreground hover:border-primary-foreground/50 hover:bg-primary-foreground/10 hover:text-primary-foreground sm:w-auto"
+              className="h-12 w-full gap-2 border border-border px-6 text-base text-foreground hover:border-border hover:bg-muted hover:text-foreground sm:w-auto"
             >
               Voir les questions fréquentes
             </Button>

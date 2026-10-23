@@ -98,7 +98,7 @@ export function NotreMethode() {
                 ))}
               </ul>
 
-              <Separator className="my-4" />
+              <Separator className="my-4 bg-border" />
 
               <p className="text-pretty text-sm font-medium text-foreground">
                 Une information honnête vaut mieux qu&apos;une information

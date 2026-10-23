@@ -89,7 +89,7 @@ export function ContactVendeurs() {
                   ))}
                 </ul>
 
-                <Separator className="my-4" />
+                <Separator className="my-4 bg-border" />
 
                 <p className="text-xs leading-relaxed text-muted-foreground">
                   Déjà inscrit ?{" "}

@@ -96,15 +96,15 @@ export function Faq() {
             ))}
           </Accordion>
 
-          <Card className="h-full border-0 bg-primary text-primary-foreground shadow-sm">
+          <Card className="h-full border-0 bg-mint shadow-sm">
             <CardHeader>
-              <span className="mb-3 flex size-10 items-center justify-center rounded-lg bg-primary-foreground/15 text-primary-foreground">
+              <span className="mb-3 flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <MessageCircleQuestion className="size-5" />
               </span>
-              <CardTitle className="font-heading text-lg text-primary-foreground">
+              <CardTitle className="font-heading text-lg text-foreground">
                 Prêt à commencer&nbsp;?
               </CardTitle>
-              <CardDescription className="text-primary-foreground/75">
+              <CardDescription className="text-muted-foreground">
                 Créez votre compte en quelques secondes et vérifiez votre numéro
                 de téléphone pour accéder à GazPoints.
               </CardDescription>
@@ -112,7 +112,7 @@ export function Faq() {
             <CardContent>
               <Button
                 variant="secondary"
-                className="h-11 w-full gap-2 cursor-pointer bg-primary-foreground font-semibold text-primary hover:bg-primary-foreground/90"
+                className="h-11 w-full gap-2 cursor-pointer bg-primary font-semibold text-primary-foreground hover:bg-primary-strong"
                 onClick={handleAction}
               >
                 Trouver du gaz

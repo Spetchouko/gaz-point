@@ -124,7 +124,7 @@ function AdminLoginPageContent() {
 
         <Card className="shadow-sm">
           <CardHeader className="text-center pb-2">
-            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-navy/10 text-navy ring-1 ring-navy/20">
+            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
               <Shield className="size-6" />
             </div>
             <CardTitle className="text-xl font-bold">Connexion administrateur</CardTitle>

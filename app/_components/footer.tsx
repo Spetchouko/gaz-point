@@ -32,7 +32,7 @@ function FooterNav({
 }) {
   return (
     <nav aria-label={title}>
-      <h2 className="font-heading text-xs font-semibold uppercase tracking-[0.15em] text-primary-foreground/60">
+      <h2 className="font-heading text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
         {title}
       </h2>
       <ul className="mt-4 space-y-2.5">
@@ -40,7 +40,7 @@ function FooterNav({
           <li key={item.href}>
             <Link
               href={item.href}
-              className="text-sm text-primary-foreground/80 transition-colors hover:text-primary-foreground"
+              className="text-sm text-foreground/70 transition-colors hover:text-foreground"
             >
               {item.label}
             </Link>
@@ -53,7 +53,7 @@ function FooterNav({
 
 export function Footer() {
   return (
-    <footer className="w-full bg-gradient-to-br from-navy to-navy-strong text-primary-foreground">
+    <footer className="w-full bg-mint">
       <div className="container mx-auto px-4 py-12 pb-20 md:py-14 md:pb-20">
         <div className="grid gap-8 md:grid-cols-[1.3fr_1fr_1fr_1fr] md:gap-8">
           <div>
@@ -73,7 +73,7 @@ export function Footer() {
               GazPoints
             </Link>
 
-            <p className="mt-4 max-w-xs text-pretty text-sm text-primary-foreground/70">
+            <p className="mt-4 max-w-xs text-pretty text-sm text-muted-foreground">
               Vérifie où il y en a avant de te déplacer.
             </p>
           </div>
@@ -86,8 +86,8 @@ export function Footer() {
         </div>
 
         <div className="mt-10">
-          <Separator className="bg-primary-foreground/15" />
-          <div className="flex flex-col gap-2 pt-6 text-xs text-primary-foreground/60 sm:flex-row sm:items-center sm:justify-between">
+          <Separator className="bg-border" />
+          <div className="flex flex-col gap-2 pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
             <p>© {new Date().getFullYear()} GazPoints. Tous droits réservés.</p>
             <p>Fait à Douala, Cameroun.</p>
           </div>

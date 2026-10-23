@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function Services() {
   return (
     <section className="py-12 max-w-md mx-auto">
-      <h1 className="mb-6 text-2xl font-bold text-primary-foreground border-b pb-2 border-primary-foreground/50">Nos services</h1>
+      <h1 className="mb-6 text-2xl font-bold text-primary-foreground border-b pb-2 border-border">Nos services</h1>
 
       <ul className="space-y-4 mb-8">
         <li className="text-sm text-primary-foreground/80">

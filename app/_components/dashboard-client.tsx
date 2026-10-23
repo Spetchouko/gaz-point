@@ -47,7 +47,7 @@ export function DashboardClient() {
 
         <TrouverMonGaz />
 
-        <Separator className="my-8" />
+        <Separator className="my-8 bg-border" />
 
         <div className="mb-8">
           <h2 className="text-2xl font-bold tracking-tight">Mes réservations</h2>
@@ -58,7 +58,7 @@ export function DashboardClient() {
 
         <MesReservations />
 
-        <Separator className="my-8" />
+        <Separator className="my-8 bg-border" />
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
