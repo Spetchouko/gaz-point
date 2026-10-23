@@ -130,7 +130,7 @@ export function AdminVendeurDetail({
             <p className="mt-2 text-muted-foreground">Compte professionnel et dépôts rattachés</p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 gap-1.5">
+            <Badge variant="secondary" className="bg-success/10 text-success gap-1.5">
               <Store className="size-3" />
               Vendeur
             </Badge>
@@ -143,14 +143,14 @@ export function AdminVendeurDetail({
               <div className="flex flex-wrap items-center gap-4">
                 <Avatar className="size-20">
                   <AvatarImage src={vendor.image ?? undefined} alt={vendor.name} />
-                  <AvatarFallback className="bg-emerald-100 text-2xl font-semibold text-emerald-600">
+                  <AvatarFallback className="bg-success/10 text-2xl font-semibold text-success">
                     {vendor.name?.charAt(0).toUpperCase() ?? "V"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="truncate text-2xl font-semibold">{vendor.name}</p>
-                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 gap-1.5">
+                    <Badge variant="secondary" className="bg-success/10 text-success gap-1.5">
                       <Store className="size-3" />
                       Vendeur
                     </Badge>
@@ -186,7 +186,7 @@ export function AdminVendeurDetail({
                     <p className="text-sm text-muted-foreground">Dépôts rattachés</p>
                     <p className="text-3xl font-bold">{totalPoints}</p>
                   </div>
-                  <div className="flex size-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
+                  <div className="flex size-12 items-center justify-center rounded-full bg-success/10 text-success">
                     <Store className="size-6" />
                   </div>
                 </div>
@@ -199,7 +199,7 @@ export function AdminVendeurDetail({
                     <p className="text-sm text-muted-foreground">Disponibilités totales</p>
                     <p className="text-3xl font-bold">{totalDispos}</p>
                   </div>
-                  <div className="flex size-12 items-center justify-center rounded-full bg-blue-500/10 text-blue-600">
+                  <div className="flex size-12 items-center justify-center rounded-full bg-info/10 text-info">
                     <Cylinder className="size-6" />
                   </div>
                 </div>
@@ -210,9 +210,9 @@ export function AdminVendeurDetail({
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Disponibilités actives</p>
-                    <p className="text-3xl font-bold text-emerald-600">{activeDispos}</p>
+                    <p className="text-3xl font-bold text-success">{activeDispos}</p>
                   </div>
-                  <div className="flex size-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
+                  <div className="flex size-12 items-center justify-center rounded-full bg-success/10 text-success">
                     <TrendingUp className="size-6" />
                   </div>
                 </div>
@@ -225,7 +225,7 @@ export function AdminVendeurDetail({
                     <p className="text-sm text-muted-foreground">Bouteilles totales</p>
                     <p className="text-3xl font-bold">{totalQty}</p>
                   </div>
-                  <div className="flex size-12 items-center justify-center rounded-full bg-purple-500/10 text-purple-600">
+                  <div className="flex size-12 items-center justify-center rounded-full bg-navy/10 text-navy">
                     <Cylinder className="size-6" />
                   </div>
                 </div>
@@ -452,7 +452,7 @@ export function AdminVendeurDetail({
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Rôle</label>
-                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 gap-1.5">
+                    <Badge variant="secondary" className="bg-success/10 text-success gap-1.5">
                       <Store className="size-3" />
                       Vendeur
                     </Badge>
@@ -511,7 +511,7 @@ export function AdminVendeurDetail({
                   <div
                     className={cn(
                       "flex items-start gap-2 text-sm rounded-lg border px-3 py-2",
-                      feedback.ok ? "text-emerald-700 bg-emerald-50 border-emerald-200" : "text-red-700 bg-red-50 border-red-200"
+                      feedback.ok ? "text-success bg-success/5 border-success/20" : "text-destructive bg-destructive/5 border-destructive/20"
                     )}
                   >
                     {feedback.ok ? <CheckCircle2 className="size-4 shrink-0 mt-0.5" /> : <X className="size-4 shrink-0 mt-0.5" />}
@@ -541,7 +541,7 @@ export function AdminVendeurDetail({
               <Input id="vendor-phone" name="phoneNumber" value={edit.phoneNumber} onChange={(e) => setEdit((s) => ({ ...s, phoneNumber: e.target.value }))} placeholder="+237 6 99 00 00 00" />
             </div>
             {feedback && (
-              <p role="alert" className={cn("text-sm break-words", feedback.ok ? "text-emerald-600" : "text-destructive")}>{feedback.message}</p>
+              <p role="alert" className={cn("text-sm break-words", feedback.ok ? "text-success" : "text-destructive")}>{feedback.message}</p>
             )}
             <div className="flex justify-end gap-2">
               <Button type="button" variant="ghost" onClick={() => setDialog(null)}>Annuler</Button>
@@ -560,7 +560,7 @@ export function AdminVendeurDetail({
             </DialogDescription>
           </DialogHeader>
           {feedback && (
-            <p role="alert" className={cn("text-sm break-words", feedback.ok ? "text-emerald-600" : "text-destructive")}>{feedback.message}</p>
+            <p role="alert" className={cn("text-sm break-words", feedback.ok ? "text-success" : "text-destructive")}>{feedback.message}</p>
           )}
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setDialog(null)}>Annuler</Button>
@@ -599,7 +599,7 @@ export function AdminVendeurDetail({
               />
             </div>
             {feedback && (
-              <p role="alert" className={cn("text-sm font-medium break-words", feedback.ok ? "text-emerald-600" : "text-destructive")}>{feedback.message}</p>
+              <p role="alert" className={cn("text-sm font-medium break-words", feedback.ok ? "text-success" : "text-destructive")}>{feedback.message}</p>
             )}
             <div className="flex justify-end gap-2">
               <Button type="button" variant="ghost" onClick={() => setDialog(null)}>Annuler</Button>

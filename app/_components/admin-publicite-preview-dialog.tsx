@@ -74,7 +74,7 @@ export function AdminPublicitePreviewDialog({
 
         <div className="space-y-5">
           {legacySlot && (
-            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+            <p className="rounded-lg border border-warning/20 bg-warning/5 px-3 py-2 text-xs text-warning">
               Cette publicité utilise l&apos;ancien emplacement «{" "}
               {publiciteSlotLabel(ad.slot)} » qui n&apos;est plus diffusé. Elle
               n&apos;apparaît donc plus sur le site.

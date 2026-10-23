@@ -205,7 +205,7 @@ function FormulaireRecharge({ points }: { points: PointRow[] }) {
             {state && (
               <p
                 role={state.ok ? "status" : "alert"}
-                className={state.ok ? "text-sm text-emerald-600" : "text-sm text-destructive"}
+                className={state.ok ? "text-sm text-success" : "text-sm text-destructive"}
               >
                 {state.message}
               </p>

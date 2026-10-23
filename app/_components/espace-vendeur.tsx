@@ -446,7 +446,7 @@ function DisponibiliteVendeurForm({
         )}
 
         {feedback?.ok && (
-          <div className="flex items-center gap-2 text-sm text-emerald-600">
+          <div className="flex items-center gap-2 text-sm text-success">
             <Cylinder className="size-4" />
             {feedback.message}
           </div>

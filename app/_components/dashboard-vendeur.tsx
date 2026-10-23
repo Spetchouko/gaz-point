@@ -177,7 +177,7 @@ export function DashboardVendeur({
                   <p className="text-sm text-muted-foreground">Bouteilles totales</p>
                   <p className="text-3xl font-bold">{globalStats.totalQuantity}</p>
                 </div>
-                <span className="flex size-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
+                <span className="flex size-12 items-center justify-center rounded-full bg-success/10 text-success">
                   <Cylinder className="size-6" />
                 </span>
               </div>
@@ -188,9 +188,9 @@ export function DashboardVendeur({
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Dépôts avec stock</p>
-                  <p className="text-3xl font-bold text-emerald-600">{globalStats.availablePoints}</p>
+                  <p className="text-3xl font-bold text-success">{globalStats.availablePoints}</p>
                 </div>
-                <span className="flex size-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
+                <span className="flex size-12 items-center justify-center rounded-full bg-success/10 text-success">
                   <TrendingUp className="size-6" />
                 </span>
               </div>

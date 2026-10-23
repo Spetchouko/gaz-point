@@ -105,7 +105,7 @@ export function AdminPointsTable({
                       <p className="text-xs text-muted-foreground">{p.vendorEmail}</p>
                     </div>
                   ) : (
-                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                    <Badge variant="outline" className="bg-warning/5 text-warning border-warning/20">
                       <UserPlus className="size-3 mr-1" />
                       Sans vendeur
                     </Badge>
@@ -130,7 +130,7 @@ export function AdminPointsTable({
                 <td className="px-4 py-3">
                   <Badge
                     variant="outline"
-                    className={p.isActive ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-700 border-red-200"}
+                    className={p.isActive ? "bg-success/5 text-success border-success/20" : "bg-destructive/5 text-destructive border-destructive/20"}
                   >
                     {p.isActive ? "Actif" : "Inactif"}
                   </Badge>

@@ -1,9 +1,19 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ */
-/* Brand palette — centralisée ici (Tailwind v4 theme)                 */
-/* Vert #16834A · Bleu #174A7E · Vert clair #EAF5EE                    */
-/* Bleu clair #EFF4FA · Gris #F5F7F6                                   */
+/* Système de design GazPoints — Tailwind v4 (shadcn/ui base-nova)      */
+/*                                                                     */
+/* Tous les composants consomment exclusivement ces tokens sémantiques. */
+/* Aucune couleur de palette Tailwind brute (emerald, sky, red...) ne   */
+/* doit être écrite en dur dans le code applicatif.                     */
+/*                                                                     */
+/* Palette de marque :                                                  */
+/*  Vert profond  #16834A → primaire, actions principales               */
+/*  Bleu navy     #174A7E → secondaire, informations, dashboards        */
+/*  Bleu info     #1F6FB2 → accents informatifs (AA ≥ 5:1 sur blanc)    */
+/*  Fonds clairs  mint #EAF5EE · sky #EFF4FA · sand #F5F7F6             */
+/*  Textes        #17251E (gris profond) · #5B6B62 (secondaire)         */
+/*  États         success #17804A · warning #B45309 · erreur #B42318    */
 /* ------------------------------------------------------------------ */
 @theme {
   /* Marque */
@@ -15,7 +25,24 @@
   --color-navy-strong: #103657;
   --color-navy-foreground: #ffffff;
 
-  /* Fonds alternés */
+  /* États sémantiques (contraste AA vérifié sur les fonds clairs) */
+  --color-success: #17804a;
+  --color-success-strong: #0f6b38;
+  --color-success-foreground: #ffffff;
+
+  --color-warning: #b45309;
+  --color-warning-strong: #92400e;
+  --color-warning-foreground: #ffffff;
+
+  --color-info: #1f6fb2;
+  --color-info-strong: #174a7e;
+  --color-info-foreground: #ffffff;
+
+  --color-destructive: #b42318;
+  --color-destructive-strong: #99131c;
+  --color-destructive-foreground: #ffffff;
+
+  /* Fonds alternés des sections */
   --color-mint: #eaf5ee;
   --color-sky: #eff4fa;
   --color-sand: #f5f7f6;
@@ -25,20 +52,30 @@
   --color-foreground: #17251e;
   --color-card: #ffffff;
   --color-card-foreground: #17251e;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #17251e;
   --color-muted: #f5f7f6;
   --color-muted-foreground: #5b6b62;
   --color-border: #dfe8e2;
   --color-input: #dfe8e2;
   --color-ring: #16834a;
-  --color-destructive: #b42318;
 
-  /* Secondary = bleu marque (badges, boutons) */
+  /* Secondary = bleu marque pâle (badges, boutons) */
   --color-secondary: #eff4fa;
   --color-secondary-foreground: #174a7e;
 
-  /* Typographie — Geist chargé via next/font (layout.tsx) */
+  /* Graphiques (convention shadcn/ui : --color-chart-1..5) */
+  --color-chart-1: #16834a;
+  --color-chart-2: #174a7e;
+  --color-chart-3: #1f6fb2;
+  --color-chart-4: #b45309;
+  --color-chart-5: #5b6b62;
+
+  /* Typographie — une seule famille : Geist, chargée via next/font
+     (voir app/layout.tsx). Mono héritée du même système. */
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
   /* Arrondis */
   --radius-4xl: 2rem;
@@ -55,16 +92,26 @@ body {
   background: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-sans);
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
-/* Les titres utilisent la police de marque */
+/* Les titres utilisent la police de marque, resserrée et équilibrée */
 h1,
 h2,
 h3,
 .font-heading {
   font-family: var(--font-heading);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+/* Sélection aux couleurs de marque (::selection) */
+::selection {
+  background-color: color-mix(in oklch, var(--color-primary) 18%, transparent);
+  color: var(--color-foreground);
 }
 
 /* Focus visible pour navigation clavier */
@@ -124,5 +171,14 @@ img {
     to bottom,
     var(--color-background) 0%,
     var(--color-sky) 100%
+  );
+}
+
+/* Dégradé teinté vert : blanc → mint (sections positives / CTA) */
+@utility bg-gradient-section-mint {
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-background) 0%,
+    var(--color-mint) 100%
   );
 }

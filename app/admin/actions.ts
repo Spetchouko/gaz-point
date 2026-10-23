@@ -17,7 +17,6 @@ import {
   brand as brandTable,
   type AvailabilityStatus,
 } from "@/db/schema"
-import { bottleFormats } from "@/lib/gaz"
 import {
   requireAdmin,
   requireStaffModule,
@@ -461,6 +460,17 @@ async function resolvePointByName(pointName: string): Promise<{ id: string; name
   return point ?? null
 }
 
+async function resolveVendorByName(vendorName: string): Promise<string | null> {
+  const name = normalizeText(vendorName)
+  if (!name) return null
+  const [vendor] = await db
+    .select({ id: userTable.id })
+    .from(userTable)
+    .where(and(eq(userTable.role, "vendor"), sql`lower(btrim(${userTable.name})) = ${name.toLowerCase()}`))
+    .limit(1)
+  return vendor?.id ?? null
+}
+
 async function resolveBrandName(brandName: string): Promise<string> {
   const display = normalizeText(brandName)
   if (!display) return ""
@@ -657,8 +667,7 @@ export async function createDisponibiliteAdmin(
   const weightKg = String(formData.get("weightKg") ?? "").trim() || null
   const expiresAtRaw = String(formData.get("expiresAt") ?? "").trim()
   const phone = String(formData.get("phone") ?? "").trim() || null
-  const vendorId = String(formData.get("vendorId") ?? "").trim() || null
-
+  const vendorNameRaw = String(formData.get("vendorName") ?? "").trim()
   if (!pointNameRaw) return { ok: false, message: "Le champ « Point de vente » est obligatoire." }
   const point = await resolvePointByName(pointNameRaw)
   if (!point) {
@@ -666,6 +675,17 @@ export async function createDisponibiliteAdmin(
       ok: false,
       message: `Point de vente « ${pointNameRaw} » introuvable. Saisissez ou sélectionnez un point de vente existant.`,
     }
+  }
+  let resolvedVendorId: string | null = vendorNameRaw
+    ? await resolveVendorByName(vendorNameRaw)
+    : null
+  if (!resolvedVendorId) {
+    const [pointRow] = await db
+      .select({ vendorId: pointDeVente.vendorId })
+      .from(pointDeVente)
+      .where(eq(pointDeVente.id, point.id))
+      .limit(1)
+    resolvedVendorId = pointRow?.vendorId ?? null
   }
   if (!format) return { ok: false, message: "Le champ « Format de bouteille » est obligatoire." }
   if (!STATUSES.includes(status)) return { ok: false, message: "Statut invalide." }
@@ -700,7 +720,7 @@ export async function createDisponibiliteAdmin(
     note,
     reportedBy: admin.id,
     reportedByName: admin.name ?? "Administration",
-    vendorId,
+    vendorId: resolvedVendorId,
     source: "administration",
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -731,10 +751,21 @@ export async function updateDisponibiliteAdmin(
   const weightKg = String(formData.get("weightKg") ?? "").trim() || null
   const expiresAtRaw = String(formData.get("expiresAt") ?? "").trim()
   const phone = String(formData.get("phone") ?? "").trim() || null
-  const vendorId = String(formData.get("vendorId") ?? "").trim() || null
+  const vendorNameRaw = String(formData.get("vendorName") ?? "").trim()
 
   if (!disponibiliteId) return { ok: false, message: "Disponibilité introuvable." }
   if (!pointId) return { ok: false, message: "Point de vente requis." }
+  let resolvedVendorId: string | null = vendorNameRaw
+    ? await resolveVendorByName(vendorNameRaw)
+    : null
+  if (!vendorNameRaw) {
+    const [existingDispo] = await db
+      .select({ vendorId: disponibilite.vendorId })
+      .from(disponibilite)
+      .where(eq(disponibilite.id, disponibiliteId))
+      .limit(1)
+    resolvedVendorId = existingDispo?.vendorId ?? null
+  }
   if (!format) return { ok: false, message: "Le champ « Format de la bouteille » est obligatoire." }
   if (!STATUSES.includes(status)) return { ok: false, message: "Statut invalide." }
   if (!brandRaw) return { ok: false, message: "Le champ « Marque de la bouteille » est obligatoire." }
@@ -760,7 +791,7 @@ export async function updateDisponibiliteAdmin(
       expiresAt,
       phone,
       note,
-      vendorId,
+      vendorId: resolvedVendorId,
       updatedAt: new Date(),
     })
     .where(eq(disponibilite.id, disponibiliteId))

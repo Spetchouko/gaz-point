@@ -36,10 +36,10 @@ type UserRow = {
 }
 
 const roleConfig: Record<string, { label: string; color: string }> = {
-  client: { label: "Usager", color: "bg-sky-100 text-sky-700" },
-  vendor: { label: "Vendeur", color: "bg-emerald-100 text-emerald-700" },
-  admin: { label: "Administrateur", color: "bg-purple-100 text-purple-700" },
-  collaborateur: { label: "Collaborateur", color: "bg-orange-100 text-orange-700" },
+  client: { label: "Usager", color: "bg-info/10 text-info" },
+  vendor: { label: "Vendeur", color: "bg-success/10 text-success" },
+  admin: { label: "Administrateur", color: "bg-navy/10 text-navy" },
+  collaborateur: { label: "Collaborateur", color: "bg-warning/10 text-warning" },
 }
 
 export function AdminUsersTable({
@@ -133,7 +133,7 @@ export function AdminUsersTable({
                         {u.name}
                       </Link>
                       {u.emailVerified && (
-                        <BadgeCheck className="size-4 text-emerald-600 shrink-0" aria-label="Email vérifié" />
+                        <BadgeCheck className="size-4 text-success shrink-0" aria-label="Email vérifié" />
                       )}
                     </div>
                   </td>
@@ -157,7 +157,7 @@ export function AdminUsersTable({
                     </Badge>
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
-                    <Badge variant="outline" className={u.isActive ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-700 border-red-200"}>
+                    <Badge variant="outline" className={u.isActive ? "bg-success/5 text-success border-success/20" : "bg-destructive/5 text-destructive border-destructive/20"}>
                       {u.isActive ? "Actif" : "Inactif"}
                     </Badge>
                   </td>

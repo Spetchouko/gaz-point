@@ -73,8 +73,8 @@ export function AdminCollaborateurDetail({
   const isSelf = profile.id === currentUserId
   const roleLabel = isAdmin ? "Administrateur" : "Collaborateur"
   const roleColor = isAdmin
-    ? "bg-purple-100 text-purple-700"
-    : "bg-indigo-100 text-indigo-700"
+    ? "bg-navy/10 text-navy"
+    : "bg-navy/10 text-navy"
 
   const handleDisable = () => {
     setFeedback(null)
@@ -158,7 +158,7 @@ export function AdminCollaborateurDetail({
               {profile.emailVerified && (
                 <Badge
                   variant="outline"
-                  className="bg-emerald-50 text-emerald-700 border-emerald-200"
+                  className="bg-success/5 text-success border-success/20"
                 >
                   Email vérifié
                 </Badge>
@@ -206,7 +206,7 @@ export function AdminCollaborateurDetail({
           </CardHeader>
           <CardContent>
             {isAdmin ? (
-              <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+              <Badge variant="secondary" className="bg-navy/10 text-navy">
                 Tous les accès
               </Badge>
             ) : permissions.length > 0 ? (
@@ -250,7 +250,7 @@ export function AdminCollaborateurDetail({
           )}
 
           {feedback && !feedback.ok && (
-            <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
               <X className="size-4 shrink-0" />
               <span className="break-words">{feedback.message}</span>
             </div>

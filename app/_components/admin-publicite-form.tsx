@@ -66,7 +66,7 @@ function CharCounter({ value, max }: { value: string; max: number }) {
         ratio >= 1
           ? "font-semibold text-destructive"
           : ratio >= 0.9
-            ? "text-amber-600"
+            ? "text-warning"
             : "text-muted-foreground"
       )}
     >
@@ -347,7 +347,7 @@ export function AdminPubliciteForm({
                   </div>
 
                   {imageInfo && (
-                    <p className="text-xs text-emerald-600">{imageInfo}</p>
+                    <p className="text-xs text-success">{imageInfo}</p>
                   )}
                   {fieldErrors.image && (
                     <p className="text-xs text-destructive">{fieldErrors.image}</p>
@@ -451,7 +451,7 @@ export function AdminPubliciteForm({
                   ))}
                 </select>
                 {legacySlot && (
-                  <p className="text-xs text-amber-600">
+                  <p className="text-xs text-warning">
                     Cet emplacement n&apos;est plus diffusé. Choisissez un nouvel
                     emplacement pour enregistrer.
                   </p>
@@ -536,7 +536,7 @@ export function AdminPubliciteForm({
               role="alert"
               className={cn(
                 "text-sm",
-                feedback.ok ? "text-emerald-600" : "text-destructive"
+                feedback.ok ? "text-success" : "text-destructive"
               )}
             >
               {feedback.message}

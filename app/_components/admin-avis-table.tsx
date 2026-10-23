@@ -29,10 +29,10 @@ export type AvisRow = {
 }
 
 const statusClasses: Record<AvisStatus, string> = {
-  pending: "bg-amber-50 text-amber-700 border-amber-200",
-  approved: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  rejected: "bg-red-50 text-red-700 border-red-200",
-  hidden: "bg-gray-100 text-gray-600 border-gray-200",
+  pending: "bg-warning/5 text-warning border-warning/20",
+  approved: "bg-success/5 text-success border-success/20",
+  rejected: "bg-destructive/5 text-destructive border-destructive/20",
+  hidden: "bg-muted text-muted-foreground border-border",
 }
 
 export function AdminAvisTable({

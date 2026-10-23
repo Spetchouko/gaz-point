@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, AlertCircle } from "lucide-react"
+import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, AlertCircle, Loader2 } from "lucide-react"
+import Image from "next/image"
 import { useState } from "react"
 
 const MODE_EMAIL = "email"
@@ -225,7 +226,7 @@ function InscriptionUsagerContent() {
 
         <Card className="shadow-xl">
           <CardHeader className="text-center pb-2">
-            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-sky-100 text-sky-600 ring-1 ring-sky-200">
+            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-info/10 text-info ring-1 ring-info/20">
               <User className="size-6" />
             </div>
             <CardTitle className="text-xl font-bold">Créer un compte usager</CardTitle>
@@ -353,14 +354,7 @@ function InscriptionUsagerContent() {
               )}
 
               <Button type="submit" className="w-full h-11" disabled={loading}>
-                {loading
-                  ? <Button
-                      render={<Loader2 className="size-4 mr-2 animate-spin" />}
-                      nativeButton={false}
-                    >
-                      Création en cours...
-                    </Button>
-                  : "Créer mon compte usager"}
+                {loading ? (<><Loader2 className="size-4 mr-2 animate-spin" />Création en cours...</>) : "Créer mon compte usager"}
               </Button>
             </form>
 

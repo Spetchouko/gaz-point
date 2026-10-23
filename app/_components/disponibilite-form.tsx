@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { availabilityLabel } from "@/lib/gaz"
 import { Textarea } from "@/components/ui/textarea"
 import { upsertDisponibilite, deleteDisponibilite, type ActionResult } from "@/app/dashboard/pro/actions"
 import type { AvailabilityStatus } from "@/db/schema"
@@ -38,8 +39,6 @@ type EditingDispo = {
   pointName: string
 } | null
 
-const STATUSES: AvailabilityStatus[] = ["disponible", "indisponible"]
-
 export function DisponibiliteForm({
   open,
   onClose,
@@ -61,7 +60,7 @@ export function DisponibiliteForm({
     phone: editingDispo?.dispo.phone ?? "",
     quantity: editingDispo?.dispo.quantity ?? "",
     note: editingDispo?.dispo.note ?? "",
-    brand: editingDispo?.dispo.brand ?? "",
+    brand: (editingDispo?.dispo as { brand?: string | null })?.brand ?? "",
   })
 
   const [step, setStep] = useState<"form" | "confirm" | "deleteConfirm">("form")
@@ -312,7 +311,7 @@ export function DisponibiliteForm({
         )}
 
         {feedback?.ok && (
-          <div className="flex items-center gap-2 text-sm text-emerald-600">
+          <div className="flex items-center gap-2 text-sm text-success">
             <CheckCircle2 className="size-4" />
             {feedback.message}
           </div>

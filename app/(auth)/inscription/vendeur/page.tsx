@@ -6,6 +6,7 @@ import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { Mail, Lock, Store, Eye, EyeOff, ArrowLeft, AlertCircle } from "lucide-react"
@@ -14,6 +15,11 @@ import { useState } from "react"
 
 // === Mode de confirmation email ===
 const MODE_EMAIL = "email"
+
+/** Message d'erreur de l'adresse du dépôt (vide si valide). */
+function getBusinessAddressError(address: string): string | null {
+  return address.trim() ? null : "L'adresse du dépôt est requise."
+}
 
 function validateEmail(email: string): string | null {
   if (!email.trim()) return "L'email est requis."
@@ -230,7 +236,7 @@ function InscriptionVendeurContent() {
 
         <Card className="shadow-xl">
           <CardHeader className="text-center pb-2">
-            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 ring-1 ring-emerald-200">
+            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-success/10 text-success ring-1 ring-success/20">
               <Store className="size-6" />
             </div>
             <CardTitle className="text-xl font-bold">Créer un compte vendeur</CardTitle>
@@ -400,9 +406,7 @@ function ConfigurationProfilVendeur() {
 
   // ---------- Validation ----------
   const validateConfigForm = () => {
-    const businessAddressError = businessAddress.trim()
-      ? null
-      : "L'adresse du dépôt est requise."
+    const businessAddressError = getBusinessAddressError(businessAddress)
     const businessPhoneError =
       businessPhone.trim() && /^[\d\s\+\-\(\)]+$/.test(businessPhone)
         ? null
@@ -445,7 +449,7 @@ function ConfigurationProfilVendeur() {
       <div className="w-full max-w-md">
         <Card className="shadow-xl">
           <CardHeader className="text-center pb-2">
-            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 ring-1 ring-emerald-200">
+            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-success/10 text-success ring-1 ring-success/20">
               <Store className="size-6" />
             </div>
             <CardTitle className="text-xl font-bold">Configuration du profil vendeur</CardTitle>
@@ -472,9 +476,9 @@ function ConfigurationProfilVendeur() {
                     disabled={loading}
                   />
                 </div>
-                {error && businessAddressError && (
+                {error && getBusinessAddressError(businessAddress) && (
                   <p className="text-sm text-destructive" role="alert">
-                    {businessAddressError}
+                    {getBusinessAddressError(businessAddress)}
                   </p>
                 )}
               </div>
@@ -501,10 +505,8 @@ function ConfigurationProfilVendeur() {
                 <Label htmlFor="businessDescription">Description</Label>
                 <div className="relative">
                   <Store className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
+                  <Textarea
                     id="businessDescription"
-                    type="text"
-                    autoComplete="textarea"
                     placeholder="Décrivez votre point de vente (horaires, spécialités...)"
                     value={businessDescription}
                     onChange={(e) => setBusinessDescription(e.target.value)}

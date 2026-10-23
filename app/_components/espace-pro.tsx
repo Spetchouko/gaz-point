@@ -220,7 +220,7 @@ function CartePoint({
                 </p>
               )}
               {stale && (
-                <p className="text-xs text-amber-600">
+                <p className="text-xs text-warning">
                   Non actualisé depuis plus de 24 h : la plateforme affiche ce
                   statut « à confirmer ».
                 </p>
@@ -474,7 +474,7 @@ function FormulaireSignalement({
           Vérifier le signalement
         </Button>
         {feedback?.ok && (
-          <p role="status" className="text-sm text-emerald-600">
+          <p role="status" className="text-sm text-success">
             {feedback.message}
           </p>
         )}
@@ -544,7 +544,7 @@ function FormulaireRattachement({
         <p
           role={state.ok ? "status" : "alert"}
           className={
-            state.ok ? "w-full text-sm text-emerald-600" : "w-full text-sm text-destructive"
+            state.ok ? "w-full text-sm text-success" : "w-full text-sm text-destructive"
           }
         >
           {state.message}
@@ -662,7 +662,7 @@ function CreationPoint({ vendors }: { vendors: VendorOption[] }) {
                 role={feedback.ok ? "status" : "alert"}
                 className={
                   feedback.ok
-                    ? "text-sm text-emerald-600"
+                    ? "text-sm text-success"
                     : "text-sm text-destructive"
                 }
               >

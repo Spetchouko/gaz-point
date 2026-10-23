@@ -32,7 +32,7 @@ const CHART_COLORS = {
   mobile: "hsl(142 70% 50%)",
   desktop: "hsl(217 91% 60%)",
   tablet: "hsl(268 82% 56%)",
-  visits: "hsl(var(--primary))",
+  visits: "#16834a",
   signups: "hsl(158 64% 52%)",
   signins: "hsl(217 91% 60%)",
   entries: "hsl(158 64% 52%)",
@@ -92,10 +92,10 @@ export function SourceBarChart({ data }: { data: SourceData[] }) {
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <RechartsBarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-              <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
-              <Bar dataKey="count" fill="hsl(var(--primary))" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#dfe8e2" />
+              <XAxis dataKey="name" stroke="#5b6b62" />
+              <YAxis tick={{ fontSize: 11 }} stroke="#5b6b62" allowDecimals={false} />
+              <Bar dataKey="count" fill="#16834a" />
               <Legend wrapperStyle={{ fontSize: 12 }} />
             </RechartsBarChart>
           </ResponsiveContainer>
@@ -120,13 +120,13 @@ export function TrafficComposedChart({ data }: { data: TrafficData[] }) {
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" interval="preserveStartEnd" />
-              <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#dfe8e2" />
+              <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#5b6b62" interval="preserveStartEnd" />
+              <YAxis tick={{ fontSize: 11 }} stroke="#5b6b62" allowDecimals={false} />
               <Tooltip
                 contentStyle={{
-                  background: "hsl(var(--popover))",
-                  border: "1px solid hsl(var(--border))",
+                  background: "#ffffff",
+                  border: "1px solid #dfe8e2",
                   borderRadius: 8,
                 }}
               />
@@ -167,10 +167,10 @@ export function PageBarChart({ data }: { data: PageData[] }) {
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <RechartsBarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-              <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
-              <Bar dataKey="count" fill="hsl(var(--primary))" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#dfe8e2" />
+              <XAxis dataKey="name" stroke="#5b6b62" />
+              <YAxis tick={{ fontSize: 11 }} stroke="#5b6b62" allowDecimals={false} />
+              <Bar dataKey="count" fill="#16834a" />
               <Legend wrapperStyle={{ fontSize: 12 }} />
             </RechartsBarChart>
           </ResponsiveContainer>
@@ -185,7 +185,7 @@ export function EvolutionChart({ data }: { data: EvolutionData[] }) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <svg className="size-5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg className="size-5 text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
             <circle cx="9" cy="7" r="4" />
             <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -198,13 +198,13 @@ export function EvolutionChart({ data }: { data: EvolutionData[] }) {
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-              <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#dfe8e2" />
+              <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#5b6b62" />
+              <YAxis tick={{ fontSize: 11 }} stroke="#5b6b62" allowDecimals={false} />
               <Tooltip
                 contentStyle={{
-                  background: "hsl(var(--popover))",
-                  border: "1px solid hsl(var(--border))",
+                  background: "#ffffff",
+                  border: "1px solid #dfe8e2",
                   borderRadius: 8,
                 }}
               />
@@ -212,8 +212,8 @@ export function EvolutionChart({ data }: { data: EvolutionData[] }) {
                 type="monotone"
                 dataKey="users"
                 name="Utilisateurs"
-                stroke="hsl(var(--primary))"
-                fill="hsl(var(--primary))"
+                stroke="#16834a"
+                fill="#16834a"
                 fillOpacity={0.15}
                 strokeWidth={2}
               />
@@ -288,10 +288,10 @@ export function BrowserBarChart({ data }: { data: BrowserData[] }) {
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <RechartsBarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-              <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
-              <Bar dataKey="count" fill="hsl(var(--primary))" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#dfe8e2" />
+              <XAxis dataKey="name" stroke="#5b6b62" />
+              <YAxis tick={{ fontSize: 11 }} stroke="#5b6b62" allowDecimals={false} />
+              <Bar dataKey="count" fill="#16834a" />
               <Legend wrapperStyle={{ fontSize: 12 }} />
             </RechartsBarChart>
           </ResponsiveContainer>
@@ -319,10 +319,10 @@ export function ResolutionBarChart({ data }: { data: ResolutionData[] }) {
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <RechartsBarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-              <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
-              <Bar dataKey="count" fill="hsl(var(--primary))" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#dfe8e2" />
+              <XAxis dataKey="name" stroke="#5b6b62" />
+              <YAxis tick={{ fontSize: 11 }} stroke="#5b6b62" allowDecimals={false} />
+              <Bar dataKey="count" fill="#16834a" />
               <Legend wrapperStyle={{ fontSize: 12 }} />
             </RechartsBarChart>
           </ResponsiveContainer>
@@ -350,9 +350,9 @@ export function EntryExitChart({ data }: { data: EntryExitData[] }) {
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <RechartsBarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-              <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#dfe8e2" />
+              <XAxis dataKey="name" stroke="#5b6b62" />
+              <YAxis tick={{ fontSize: 11 }} stroke="#5b6b62" allowDecimals={false} />
               <Bar dataKey="entries" name="Entrées" fill={CHART_COLORS.entries} />
               <Bar dataKey="exits" name="Sorties" fill={CHART_COLORS.exits} />
               <Legend wrapperStyle={{ fontSize: 12 }} />

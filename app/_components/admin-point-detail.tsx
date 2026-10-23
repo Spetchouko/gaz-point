@@ -92,7 +92,7 @@ export function AdminPointDetail({
             <h1 className="text-3xl font-bold tracking-tight">{point.name}</h1>
             <Badge
               variant="outline"
-              className={point.isActive ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-700 border-red-200"}
+              className={point.isActive ? "bg-success/5 text-success border-success/20" : "bg-destructive/5 text-destructive border-destructive/20"}
             >
               {point.isActive ? "Actif" : "Inactif"}
             </Badge>
@@ -126,7 +126,7 @@ export function AdminPointDetail({
             variant="outline"
             size="sm"
             onClick={() => setConfirm("toggle")}
-            className={!point.isActive ? "text-emerald-700" : ""}
+            className={!point.isActive ? "text-success" : ""}
           >
             <Power className="size-4 mr-2" />
             {point.isActive ? "Désactiver" : "Réactiver"}
@@ -173,7 +173,7 @@ export function AdminPointDetail({
                 <span className="text-muted-foreground"> ({point.vendorEmail})</span>
               </p>
             ) : (
-              <p className="flex items-center gap-2 text-amber-700">
+              <p className="flex items-center gap-2 text-warning">
                 <UserPlus className="size-4" />
                 Aucun vendeur rattaché
               </p>
@@ -235,7 +235,7 @@ export function AdminPointDetail({
                       {d.brand ? ` · ${d.brand}` : ""}
                     </span>
                   </div>
-                  <span className={cn("text-xs", d.status === "disponible" ? "text-emerald-600" : "text-muted-foreground")}>
+                  <span className={cn("text-xs", d.status === "disponible" ? "text-success" : "text-muted-foreground")}>
                     MAJ {d.updatedAt ? formatDate(d.updatedAt) : formatDate(d.createdAt)}
                   </span>
                 </div>

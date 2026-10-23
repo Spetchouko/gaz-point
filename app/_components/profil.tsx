@@ -208,7 +208,7 @@ function FormulaireAvatar({
           {feedback && (
             <p
               role={feedback.ok ? "status" : "alert"}
-              className={cn("w-full text-sm", feedback.ok ? "text-emerald-600" : "text-destructive")}
+              className={cn("w-full text-sm", feedback.ok ? "text-success" : "text-destructive")}
             >
               {feedback.message}
             </p>
@@ -309,7 +309,7 @@ function FormulaireInformations({
               <p
                 role={feedback.ok ? "status" : "alert"}
                 className={
-                  feedback.ok ? "text-sm text-emerald-600" : "text-sm text-destructive"
+                  feedback.ok ? "text-sm text-success" : "text-sm text-destructive"
                 }
               >
                 {feedback.message}
@@ -439,7 +439,7 @@ function FormulaireMotDePasse() {
               <p
                 role={feedback.ok ? "status" : "alert"}
                 className={
-                  feedback.ok ? "text-sm text-emerald-600" : "text-sm text-destructive"
+                  feedback.ok ? "text-sm text-success" : "text-sm text-destructive"
                 }
               >
                 {feedback.message}

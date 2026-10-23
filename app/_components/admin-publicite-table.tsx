@@ -142,12 +142,12 @@ export function AdminPubliciteTable({
                       variant="outline"
                       className={cn(
                         ad.status === "active" && !past
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          ? "bg-success/5 text-success border-success/20"
                           : future
-                          ? "bg-blue-50 text-blue-700 border-blue-200"
+                          ? "bg-info/5 text-info border-info/20"
                           : past
-                          ? "bg-gray-100 text-gray-600 border-gray-200"
-                          : "bg-red-50 text-red-700 border-red-200"
+                          ? "bg-muted text-muted-foreground border-border"
+                          : "bg-destructive/5 text-destructive border-destructive/20"
                       )}
                     >
                       {future

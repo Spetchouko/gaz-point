@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "www.svgrepo.com",
+      },
+    ],
+  },
   experimental: {
     // Les publicités acceptent des images jusqu'à 5 Mo (limite vérifiée côté
     // serveur dans lib/publicite-config.ts). Le formulaire transmet l'image

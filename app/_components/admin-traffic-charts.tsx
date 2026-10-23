@@ -245,13 +245,13 @@ export function AdminTrafficCharts({
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={trafficSlice} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" interval="preserveStartEnd" />
-                  <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#dfe8e2" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#5b6b62" interval="preserveStartEnd" />
+                  <YAxis tick={{ fontSize: 11 }} stroke="#5b6b62" allowDecimals={false} />
                   <Tooltip
                     contentStyle={{
-                      background: "hsl(var(--popover))",
-                      border: "1px solid hsl(var(--border))",
+                      background: "#ffffff",
+                      border: "1px solid #dfe8e2",
                       borderRadius: 8,
                     }}
                   />
@@ -260,8 +260,8 @@ export function AdminTrafficCharts({
                     type="monotone"
                     dataKey="visits"
                     name="Visites"
-                    stroke="hsl(var(--primary))"
-                    fill="hsl(var(--primary))"
+                    stroke="#16834a"
+                    fill="#16834a"
                     fillOpacity={0.15}
                     strokeWidth={2}
                   />
@@ -304,10 +304,10 @@ export function AdminTrafficCharts({
                 )}
                 {view === "sources" && (
                   <BarChart data={sourceData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" />
-                    <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
-                    <Bar dataKey="count" name="Visiteurs" fill="#8884d8" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#dfe8e2" />
+                    <XAxis dataKey="label" stroke="#5b6b62" />
+                    <YAxis tick={{ fontSize: 11 }} stroke="#5b6b62" allowDecimals={false} />
+                    <Bar dataKey="count" name="Visiteurs" fill="#16834a" />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
                   </BarChart>
                 )}
@@ -320,7 +320,7 @@ export function AdminTrafficCharts({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Users className="size-5 text-emerald-600" />
+              <Users className="size-5 text-success" />
               Évolution utilisateurs / vendeurs
             </CardTitle>
           </CardHeader>
@@ -328,13 +328,13 @@ export function AdminTrafficCharts({
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={evolutionData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#dfe8e2" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#5b6b62" />
+                  <YAxis tick={{ fontSize: 11 }} stroke="#5b6b62" allowDecimals={false} />
                   <Tooltip
                     contentStyle={{
-                      background: "hsl(var(--popover))",
-                      border: "1px solid hsl(var(--border))",
+                      background: "#ffffff",
+                      border: "1px solid #dfe8e2",
                       borderRadius: 8,
                     }}
                   />
@@ -342,8 +342,8 @@ export function AdminTrafficCharts({
                     type="monotone"
                     dataKey="users"
                     name="Utilisateurs"
-                    stroke="hsl(var(--primary))"
-                    fill="hsl(var(--primary))"
+                    stroke="#16834a"
+                    fill="#16834a"
                     fillOpacity={0.15}
                     strokeWidth={2}
                   />

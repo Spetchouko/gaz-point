@@ -121,7 +121,7 @@ export function AdminCollaborateurForm() {
                 role={feedback.ok ? "status" : "alert"}
                 className={
                   feedback.ok
-                    ? "flex items-center gap-2 text-sm text-emerald-600"
+                    ? "flex items-center gap-2 text-sm text-success"
                     : "text-sm text-destructive"
                 }
               >

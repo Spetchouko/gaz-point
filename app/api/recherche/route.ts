@@ -92,13 +92,18 @@ export async function GET(request: NextRequest) {
     const report =
       pointReports.find(
         (item) =>
-          (!brand || item.brand === brand) && (!format || item.format === format)
+          (!brand || (item.brand ?? "").toLowerCase() === brand.toLowerCase()) &&
+          (!format || (item.format ?? "").toLowerCase() === format.toLowerCase())
       ) ?? null
 
     const matchesBrand =
-      !brand || report?.brand === brand || (point.brands?.includes(brand) ?? false)
+      !brand ||
+      (report?.brand ?? "").toLowerCase() === brand.toLowerCase() ||
+      (point.brands?.some((b) => b.toLowerCase() === brand.toLowerCase()) ?? false)
     const matchesFormat =
-      !format || report?.format === format || (point.formats?.includes(format) ?? false)
+      !format ||
+      (report?.format ?? "").toLowerCase() === format.toLowerCase() ||
+      (point.formats?.some((f) => f.toLowerCase() === format.toLowerCase()) ?? false)
 
     if (!matchesBrand || !matchesFormat) continue
 

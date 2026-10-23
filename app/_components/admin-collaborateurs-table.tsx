@@ -34,9 +34,9 @@ type CollaborateurRow = {
 }
 
 const roleConfig: Record<string, { label: string; color: string; Icon: React.ComponentType<{ className?: string }> }> = {
-  admin: { label: "Administrateur", color: "bg-purple-100 text-purple-700", Icon: Shield },
-  collaborateur: { label: "Collaborateur", color: "bg-indigo-100 text-indigo-700", Icon: UserCheck },
-  client: { label: "Usager (désactivé)", color: "bg-sky-100 text-sky-700", Icon: User },
+  admin: { label: "Administrateur", color: "bg-navy/10 text-navy", Icon: Shield },
+  collaborateur: { label: "Collaborateur", color: "bg-navy/10 text-navy", Icon: UserCheck },
+  client: { label: "Usager (désactivé)", color: "bg-info/10 text-info", Icon: User },
 }
 
 export function AdminCollaborateursTable({ collaborateurs }: { collaborateurs: CollaborateurRow[] }) {
@@ -117,7 +117,7 @@ export function AdminCollaborateursTable({ collaborateurs }: { collaborateurs: C
                     </td>
                     <td className="px-4 py-3 hidden lg:table-cell">
                       {isAdmin ? (
-                        <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+                        <Badge variant="secondary" className="bg-navy/10 text-navy">
                           Tous les accès
                         </Badge>
                       ) : c.permissions.length > 0 ? (

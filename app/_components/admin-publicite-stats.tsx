@@ -33,12 +33,12 @@ import { publiciteSlotShort } from "@/lib/publicite-config"
 import { formatPercent, type PubliciteStats } from "@/lib/publicite-analytics"
 
 const CHART_COLORS = {
-  impressions: "#0ea5e9",
-  clicks: "#f59e0b",
-  conversions: "#10b981",
+  impressions: "#1f6fb2",
+  clicks: "#b45309",
+  conversions: "#17804a",
 }
 
-const SOURCE_COLORS = ["#64748b", "#0ea5e9", "#8b5cf6", "#f59e0b", "#10b981"]
+const SOURCE_COLORS = ["#5b6b62", "#1f6fb2", "#174a7e", "#b45309", "#16834a"]
 
 const PERIOD_BUTTONS = [
   { key: "7", label: "7 jours" },
@@ -199,35 +199,35 @@ export function AdminPubliciteStats({
           value={totals.impressions.toLocaleString("fr-FR")}
           hint="Bannière réellement visible (≥ 50 % / 1 s)"
           icon={Eye}
-          accent="bg-sky-500/10 text-sky-600"
+          accent="bg-info/10 text-info"
         />
         <KpiCard
           label="Clics"
           value={totals.clicks.toLocaleString("fr-FR")}
           hint="Clics externes sur la bannière"
           icon={MousePointerClick}
-          accent="bg-amber-500/10 text-amber-600"
+          accent="bg-warning/10 text-warning"
         />
         <KpiCard
           label="Conversions"
           value={totals.conversions.toLocaleString("fr-FR")}
           hint="Inscription, recherche ou réservation"
           icon={Target}
-          accent="bg-emerald-500/10 text-emerald-600"
+          accent="bg-success/10 text-success"
         />
         <KpiCard
           label="Taux de clic (CTR)"
           value={formatPercent(totals.ctr)}
           hint="Clics ÷ impressions"
           icon={Percent}
-          accent="bg-violet-500/10 text-violet-600"
+          accent="bg-navy/10 text-navy"
         />
         <KpiCard
           label="Taux de conversion"
           value={formatPercent(totals.conversionRate)}
           hint="Conversions ÷ clics"
           icon={TrendingUp}
-          accent="bg-teal-500/10 text-teal-600"
+          accent="bg-info/10 text-info"
         />
       </div>
 
@@ -241,7 +241,7 @@ export function AdminPubliciteStats({
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={series} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#dfe8e2" vertical={false} />
                   <XAxis dataKey="label" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
                   <YAxis
                     yAxisId="left"

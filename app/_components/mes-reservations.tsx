@@ -39,10 +39,10 @@ const statusLabels: Record<string, string> = {
 }
 
 const statusColors: Record<string, string> = {
-  confirmed: "bg-blue-500/10 text-blue-600 border-blue-500/30",
-  collected: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
-  cancelled: "bg-red-500/10 text-red-600 border-red-500/30",
-  expired: "bg-amber-500/10 text-amber-600 border-amber-500/30",
+  confirmed: "bg-info/10 text-info border-info/20",
+  collected: "bg-success/10 text-success border-success/20",
+  cancelled: "bg-destructive/10 text-destructive border-destructive/20",
+  expired: "bg-warning/10 text-warning border-warning/20",
 }
 
 const statusIcons: Record<string, React.ReactNode> = {
@@ -146,7 +146,7 @@ export function MesReservations() {
                       aria-label={copiedCode === res.reservationCode ? "Copié !" : "Copier le code"}
                     >
                       {copiedCode === res.reservationCode ? (
-                        <CheckCircle className="size-4 text-emerald-600" />
+                        <CheckCircle className="size-4 text-success" />
                       ) : (
                         <Copy className="size-4" />
                       )}
@@ -180,17 +180,17 @@ export function MesReservations() {
                     {res.reservedAtFormatted}
                   </p>
                   {res.isExpired && (
-                    <p className="text-xs text-amber-600 font-medium">
+                    <p className="text-xs text-warning font-medium">
                       Expirée le {res.expiresAt ? new Date(res.expiresAt).toLocaleString("fr-FR") : ""}
                     </p>
                   )}
                   {res.collectedAtFormatted && (
-                    <p className="text-xs text-emerald-600">
+                    <p className="text-xs text-success">
                       Retirée le {res.collectedAtFormatted}
                     </p>
                   )}
                   {res.cancelledAtFormatted && (
-                    <p className="text-xs text-red-600">
+                    <p className="text-xs text-destructive">
                       Annulée le {res.cancelledAtFormatted}
                     </p>
                   )}

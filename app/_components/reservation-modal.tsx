@@ -90,7 +90,7 @@ export function ReservationModal({
       <Dialog open={true} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-emerald-600">
+            <DialogTitle className="flex items-center gap-2 text-success">
               <CheckCircle className="size-5" />
               Réservation confirmée
             </DialogTitle>
@@ -99,17 +99,17 @@ export function ReservationModal({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-4">
-              <p className="text-center text-xs font-medium uppercase tracking-wide text-emerald-600">
+            <div className="rounded-lg bg-success/5 border border-success/20 p-4">
+              <p className="text-center text-xs font-medium uppercase tracking-wide text-success">
                 Code de retrait
               </p>
-              <p className="mt-1 text-center font-mono text-lg font-bold tracking-wider text-emerald-700">
+              <p className="mt-1 text-center font-mono text-lg font-bold tracking-wider text-success">
                 {success.code}
               </p>
-              <p className="mt-1 text-center text-sm text-emerald-600">
+              <p className="mt-1 text-center text-sm text-success">
                 À présenter au vendeur pour le retrait
               </p>
-              <p className="mt-2 text-center text-xs text-emerald-500">
+              <p className="mt-2 text-center text-xs text-success-foreground0">
                 Expire le{" "}
                 {new Date(success.expiresAt).toLocaleTimeString("fr-FR", {
                   hour: "2-digit",
@@ -194,7 +194,7 @@ export function ReservationModal({
                     retour de la bouteille vide). Le prix du gaz se paiera au dépôt.
                   </p>
                 </div>
-                <span className="font-semibold text-emerald-600">
+                <span className="font-semibold text-success">
                   {formatPrice(RESERVATION_AMOUNT)}
                 </span>
               </div>

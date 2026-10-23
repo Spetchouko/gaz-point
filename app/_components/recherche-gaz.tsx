@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { formats } from "@/app/_components/donnees-demo"
 import { availabilityLabel } from "@/lib/gaz"
 import { authClient } from "@/lib/auth-client"
@@ -136,7 +137,7 @@ export function RechercheGaz() {
 
       // Message spécifique lorsqu'aucune marque correspondante n'est trouvée
       if (brand && results.length === 0) {
-        setError(`Aucun point de ne Correspondance pour la marque "${brand}". Essaye un autre nom ou laisse vide pour voir tous les points.`)
+        setError(`Aucun point trouvé pour la marque « ${brand} ». Vérifie l'orthographe ou laisse le champ vide pour voir tous les points.`)
       } else {
         setResults(results)
       }
@@ -171,7 +172,6 @@ export function RechercheGaz() {
                 placeholder="Nom de la marque (ex: Total, Payo, Gazex...)"
                 className={selectClass}
               />
-              <ChevronDown className="pointer-events-none absolute right-3 bottom-3.5 size-4 text-muted-foreground" />
             </div>
 
             <div className="relative">
@@ -283,8 +283,8 @@ export function RechercheGaz() {
                           point.status === "disponible"
                             ? "border-primary/30 bg-mint text-primary-strong"
                             : point.status === "a_confirmer"
-                              ? "border-amber-500/30 bg-amber-500/10 text-amber-600"
-                              : "border-red-500/30 bg-red-500/10 text-red-600"
+                              ? "border-warning/20 bg-warning/10 text-warning"
+                              : "border-destructive/20 bg-destructive/10 text-destructive"
                         }
                       >
                         {availabilityLabel[point.status]}
@@ -294,7 +294,7 @@ export function RechercheGaz() {
 
                   <div className="mt-3 space-y-1 text-xs text-muted-foreground">
                     {point.expired && point.expiresAt && (
-                      <p className="flex items-center gap-1 text-red-600">
+                      <p className="flex items-center gap-1 text-destructive">
                         <MapPin className="size-3" />
                         Signalement expiré depuis le{" "}
                         {new Date(point.expiresAt).toLocaleDateString("fr-FR")}

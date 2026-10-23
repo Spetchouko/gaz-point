@@ -11,14 +11,8 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { availabilityLabel } from "@/lib/gaz"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { createDisponibiliteAdmin, updateDisponibiliteAdmin, deleteDisponibiliteAdmin, type ActionResult } from "@/app/admin/actions"
 import type { AvailabilityStatus } from "@/db/schema"
 
@@ -44,8 +38,6 @@ export type DispoData = {
   vendorId: string
   vendorName: string
 } | null
-
-const STATUSES: AvailabilityStatus[] = ["disponible", "a_confirmer", "indisponible"]
 
 function toDateValue(value: Date | string | null | undefined): string {
   if (!value) return ""
@@ -165,6 +157,7 @@ export function AdminDisponibiliteForm({
       <input type="hidden" name="status" value={formState.status} />
       <input type="hidden" name="brand" value={formState.brand} />
       <input type="hidden" name="note" value={formState.note} />
+      <input type="hidden" name="vendorName" value={formState.vendorName} />
       {optionalFields}
     </>
   )
@@ -299,47 +292,29 @@ export function AdminDisponibiliteForm({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="vendor-select">Vendeur</Label>
-              <Select
-                value={formState.vendorId}
-                onValueChange={(v) => setFormState((s) => ({ ...s, vendorId: v ?? "", vendorName: "" }))}
-              >
-                <SelectTrigger id="vendor-select" className="w-full">
-                  <SelectValue placeholder="Choisir un vendeur" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Aucun</SelectItem>
-                  {points.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="vendor-input">Vendeur</Label>
+              <Input
+                id="vendor-input"
+                type="text"
+                value={formState.vendorName}
+                onChange={(e) => setFormState((s) => ({ ...s, vendorName: e.target.value }))}
+                placeholder="Saisissez le nom du vendeur"
+              />
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="format-select" className="flex items-center gap-1">
+                <Label htmlFor="format-input" className="flex items-center gap-1">
                   Format de bouteille
                   <span className="text-destructive" aria-hidden>*</span>
                 </Label>
-                <Select
+                <Input
+                  id="format-input"
+                  type="text"
                   value={formState.format}
-                  onValueChange={(v) => setFormState((s) => ({ ...s, format: v ?? "" }))}
-                >
-                  <SelectTrigger id="format-select" className="w-full">
-                    <SelectValue placeholder="Saisissez un format" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {/* Formats suggérés mais saisie libre acceptée */}
-                    {bottleFormats.map((item) => (
-                      <SelectItem key={item} value={item}>
-                        {item}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(e) => setFormState((s) => ({ ...s, format: e.target.value }))}
+                  placeholder="Ex: 6 kg, 12,5 kg, 15 kg"
+                />
               </div>
 
               <div className="space-y-1.5">
@@ -350,16 +325,10 @@ export function AdminDisponibiliteForm({
                 <Input
                   id="brand-input"
                   type="text"
-                  list="brand-suggestions"
                   value={formState.brand}
                   onChange={(e) => setFormState((s) => ({ ...s, brand: e.target.value }))}
                   placeholder="Ex: Total, Payo, Gazex..."
                 />
-                <datalist id="brand-suggestions">
-                  {brands.map((b) => (
-                    <option key={b} value={b} />
-                  ))}
-                </datalist>
               </div>
             </div>
 
@@ -489,7 +458,7 @@ export function AdminDisponibiliteForm({
         )}
 
         {feedback?.ok && (
-          <div className="flex items-center gap-2 text-sm text-emerald-600">
+          <div className="flex items-center gap-2 text-sm text-success">
             <CheckCircle2 className="size-4" />
             {feedback.message}
           </div>

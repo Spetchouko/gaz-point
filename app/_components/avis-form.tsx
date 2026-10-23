@@ -79,7 +79,7 @@ export function AvisForm({
             role="status"
             className={
               state.ok
-                ? "flex items-center gap-2 text-sm text-emerald-600"
+                ? "flex items-center gap-2 text-sm text-success"
                 : "text-sm text-destructive"
             }
           >

@@ -149,7 +149,7 @@ function CartePoint({ point }: { point: PointFavori }) {
                 </span>
               </p>
               {stale && (
-                <p className="text-xs text-amber-600">
+                <p className="text-xs text-warning">
                   Non actualisé depuis plus de 24 h : statut affiché « à
                   confirmer ».
                 </p>

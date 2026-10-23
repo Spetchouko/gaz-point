@@ -97,7 +97,7 @@ export function AdminCollabPermissionsDialog({
                     type="checkbox"
                     checked={checked}
                     onChange={() => toggle(module)}
-                    className="mt-0.5 size-4 accent-[hsl(var(--primary))]"
+                    className="mt-0.5 size-4 accent-[#16834a]"
                   />
                   <span className="min-w-0">
                     <span className="block text-sm font-medium text-foreground">

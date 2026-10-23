@@ -107,7 +107,7 @@ function ResetPasswordPageContent() {
       <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex size-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20">
+            <div className="mx-auto mb-4 flex size-11 items-center justify-center rounded-xl bg-success/10 text-success ring-1 ring-success/20">
               <CheckCircle2 className="size-6" />
             </div>
             <CardTitle className="text-2xl">Mot de passe réinitialisé</CardTitle>

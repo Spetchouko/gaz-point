@@ -56,9 +56,9 @@ const availabilityLabel: Record<string, string> = {
 }
 
 const availabilityBadgeClass: Record<string, string> = {
-  disponible: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
-  a_confirmer: "bg-amber-500/10 text-amber-600 border-amber-500/30",
-  indisponible: "bg-red-500/10 text-red-600 border-red-500/30",
+  disponible: "bg-success/10 text-success border-success/20",
+  a_confirmer: "bg-warning/10 text-warning border-warning/20",
+  indisponible: "bg-destructive/10 text-destructive border-destructive/20",
 }
 
 export function AdminVendeursTable({ vendors }: { vendors: VendorRow[] }) {
@@ -178,7 +178,7 @@ export function AdminVendeursTable({ vendors }: { vendors: VendorRow[] }) {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <Badge variant={v.hasActiveDispo ? "default" : "secondary"} className={v.hasActiveDispo ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground"}>
+                    <Badge variant={v.hasActiveDispo ? "default" : "secondary"} className={v.hasActiveDispo ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}>
                       {v.hasActiveDispo ? "Actif" : "Inactif"}
                     </Badge>
                   </td>

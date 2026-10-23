@@ -408,10 +408,10 @@ export default async function AdminStatsPage({
   }
 
   const trendCards = [
-    { key: "users", label: "Utilisateurs", icon: Users, color: "bg-sky-500/10 text-sky-600 border-sky-500/30" },
-    { key: "vendors", label: "Vendeurs", icon: Store, color: "bg-emerald-500/10 text-emerald-600 border-emerald-600/30" },
-    { key: "points", label: "Points de vente", icon: MapPin, color: "bg-amber-500/10 text-amber-600 border-amber-500/30" },
-    { key: "dispos", label: "Disponibilités", icon: Cylinder, color: "bg-blue-500/10 text-blue-600 border-blue-500/30" },
+    { key: "users", label: "Utilisateurs", icon: Users, color: "bg-info/10 text-info border-info/30" },
+    { key: "vendors", label: "Vendeurs", icon: Store, color: "bg-success/10 text-success border-success/20" },
+    { key: "points", label: "Points de vente", icon: MapPin, color: "bg-warning/10 text-warning border-warning/20" },
+    { key: "dispos", label: "Disponibilités", icon: Cylinder, color: "bg-info/10 text-info border-info/20" },
   ] as const
 
   return (

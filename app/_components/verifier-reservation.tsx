@@ -38,10 +38,10 @@ const statusLabels: Record<string, string> = {
 }
 
 const statusColors: Record<string, string> = {
-  confirmed: "bg-blue-500/10 text-blue-600 border-blue-500/30",
-  collected: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
-  cancelled: "bg-red-500/10 text-red-600 border-red-500/30",
-  expired: "bg-amber-500/10 text-amber-600 border-amber-500/30",
+  confirmed: "bg-info/10 text-info border-info/20",
+  collected: "bg-success/10 text-success border-success/20",
+  cancelled: "bg-destructive/10 text-destructive border-destructive/20",
+  expired: "bg-warning/10 text-warning border-warning/20",
 }
 
 const statusIcons: Record<string, React.ReactNode> = {
@@ -195,7 +195,7 @@ export function VerifierReservation() {
                   Réservé le {new Date(result.reservedAt).toLocaleString("fr-FR")}
                 </p>
                 {result.isExpired && (
-                  <p className="text-sm text-amber-600 font-medium">
+                  <p className="text-sm text-warning font-medium">
                     Expirée le {result.expiresAt ? new Date(result.expiresAt).toLocaleString("fr-FR") : ""}
                   </p>
                 )}
@@ -246,7 +246,7 @@ export function VerifierReservation() {
               <Button
                 onClick={handleCollect}
                 disabled={collecting}
-                className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-emerald-50"
+                className="w-full gap-2 bg-success hover:bg-success-strong text-success-foreground"
               >
                 {collecting ? (
                   <>
@@ -263,8 +263,8 @@ export function VerifierReservation() {
             )}
 
             {result.status === "collected" && (
-              <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-center">
-                <p className="text-emerald-700 font-medium flex items-center justify-center gap-2">
+              <div className="rounded-lg bg-success/5 border border-success/20 p-3 text-center">
+                <p className="text-success font-medium flex items-center justify-center gap-2">
                   <CheckCircle className="size-4" />
                   Bouteille déjà retirée le{" "}
                   {result.collectedAt ? new Date(result.collectedAt).toLocaleString("fr-FR") : ""}
@@ -273,8 +273,8 @@ export function VerifierReservation() {
             )}
 
             {result.status === "cancelled" && (
-              <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-center">
-                <p className="text-red-700 font-medium flex items-center justify-center gap-2">
+              <div className="rounded-lg bg-destructive/5 border border-destructive/20 p-3 text-center">
+                <p className="text-destructive font-medium flex items-center justify-center gap-2">
                   <XCircle className="size-4" />
                   Réservation annulée
                 </p>
@@ -282,8 +282,8 @@ export function VerifierReservation() {
             )}
 
             {result.status === "expired" && (
-              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-center">
-                <p className="text-amber-700 font-medium flex items-center justify-center gap-2">
+              <div className="rounded-lg bg-warning/5 border border-warning/20 p-3 text-center">
+                <p className="text-warning font-medium flex items-center justify-center gap-2">
                   <AlertCircle className="size-4" />
                   Réservation expirée
                 </p>

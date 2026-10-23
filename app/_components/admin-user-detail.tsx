@@ -56,10 +56,10 @@ type Profile = {
 }
 
 const roleConfig: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
-  client: { label: "Usager", color: "bg-sky-100 text-sky-700", icon: User },
-  vendor: { label: "Vendeur", color: "bg-emerald-100 text-emerald-700", icon: Store },
-  admin: { label: "Administrateur", color: "bg-purple-100 text-purple-700", icon: Shield },
-  collaborateur: { label: "Collaborateur", color: "bg-orange-100 text-orange-700", icon: User },
+  client: { label: "Usager", color: "bg-info/10 text-info", icon: User },
+  vendor: { label: "Vendeur", color: "bg-success/10 text-success", icon: Store },
+  admin: { label: "Administrateur", color: "bg-navy/10 text-navy", icon: Shield },
+  collaborateur: { label: "Collaborateur", color: "bg-warning/10 text-warning", icon: User },
 }
 
 type DialogKind = "edit" | "role" | "active" | "delete" | "reset" | null
@@ -136,7 +136,7 @@ export function AdminUserDetail({
               <role.icon className="size-3" />
               {role.label}
             </Badge>
-            <Badge variant="outline" className={profile.isActive ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-700 border-red-200"}>
+            <Badge variant="outline" className={profile.isActive ? "bg-success/5 text-success border-success/20" : "bg-destructive/5 text-destructive border-destructive/20"}>
               {profile.isActive ? "Compte actif" : "Compte inactif"}
             </Badge>
           </div>
@@ -282,7 +282,7 @@ export function AdminUserDetail({
                     <div
                       className={cn(
                         "flex items-center gap-2 text-sm rounded-lg border px-3 py-2",
-                        feedback.ok ? "text-emerald-700 bg-emerald-50 border-emerald-200" : "text-red-700 bg-red-50 border-red-200"
+                        feedback.ok ? "text-success bg-success/5 border-success/20" : "text-destructive bg-destructive/5 border-destructive/20"
                       )}
                     >
                       {feedback.ok ? <CheckCircle2 className="size-4 shrink-0" /> : <X className="size-4 shrink-0" />}
@@ -395,7 +395,7 @@ export function AdminUserDetail({
               </Select>
             </div>
             {feedback && (
-              <p role="alert" className={cn("text-sm", feedback.ok ? "text-emerald-600" : "text-destructive")}>{feedback.message}</p>
+              <p role="alert" className={cn("text-sm", feedback.ok ? "text-success" : "text-destructive")}>{feedback.message}</p>
             )}
             <div className="flex justify-end gap-2">
               <Button type="button" variant="ghost" onClick={() => setDialog(null)}>Annuler</Button>
@@ -418,7 +418,7 @@ export function AdminUserDetail({
             </DialogDescription>
           </DialogHeader>
           {feedback && (
-            <p role="alert" className={cn("text-sm", feedback.ok ? "text-emerald-600" : "text-destructive")}>{feedback.message}</p>
+            <p role="alert" className={cn("text-sm", feedback.ok ? "text-success" : "text-destructive")}>{feedback.message}</p>
           )}
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setDialog(null)}>Annuler</Button>
@@ -456,7 +456,7 @@ export function AdminUserDetail({
             </DialogDescription>
           </DialogHeader>
           {feedback && (
-            <p role="alert" className={cn("text-sm", feedback.ok ? "text-emerald-600" : "text-destructive")}>{feedback.message}</p>
+            <p role="alert" className={cn("text-sm", feedback.ok ? "text-success" : "text-destructive")}>{feedback.message}</p>
           )}
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setDialog(null)}>Annuler</Button>
@@ -498,7 +498,7 @@ export function AdminUserDetail({
               <Input id="newPassword" name="newPassword" type="text" placeholder="Mot de passe temporaire" />
             </div>
             {feedback && (
-              <p role="alert" className={cn("text-sm font-medium break-words", feedback.ok ? "text-emerald-600" : "text-destructive")}>{feedback.message}</p>
+              <p role="alert" className={cn("text-sm font-medium break-words", feedback.ok ? "text-success" : "text-destructive")}>{feedback.message}</p>
             )}
             <div className="flex justify-end gap-2">
               <Button type="button" variant="ghost" onClick={() => setDialog(null)}>Annuler</Button>
@@ -519,7 +519,7 @@ export function AdminUserDetail({
             </DialogDescription>
           </DialogHeader>
           {feedback && (
-            <p role="alert" className={cn("text-sm", feedback.ok ? "text-emerald-600" : "text-destructive")}>{feedback.message}</p>
+            <p role="alert" className={cn("text-sm", feedback.ok ? "text-success" : "text-destructive")}>{feedback.message}</p>
           )}
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setDialog(null)}>Annuler</Button>

@@ -132,7 +132,7 @@ export function ContactForm() {
 
             <CardContent>
               {statut === "succes" ? (
-                <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900 *:data-[slot=alert-description]:text-emerald-800">
+                <Alert className="border-success/20 bg-success/5 text-success *:data-[slot=alert-description]:text-success">
                   <AlertTitle>Message envoyé</AlertTitle>
                   <AlertDescription>
                     Merci ! Ta demande est bien reçue, nous te répondons par

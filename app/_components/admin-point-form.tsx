@@ -116,7 +116,7 @@ export function AdminPointForm({
               </select>
             </div>
             {feedback && (
-              <p role="alert" className={cn("text-sm", feedback.ok ? "text-emerald-600" : "text-destructive")}>{feedback.message}</p>
+              <p role="alert" className={cn("text-sm", feedback.ok ? "text-success" : "text-destructive")}>{feedback.message}</p>
             )}
             <div className="flex justify-end gap-2">
               <Button type="button" variant="ghost" onClick={onClose}>Annuler</Button>
@@ -211,7 +211,7 @@ export function AdminPointForm({
               </select>
             </div>
             {feedback && (
-              <p role="alert" className={cn("text-sm", feedback.ok ? "text-emerald-600" : "text-destructive")}>{feedback.message}</p>
+              <p role="alert" className={cn("text-sm", feedback.ok ? "text-success" : "text-destructive")}>{feedback.message}</p>
             )}
             <div className="flex justify-end gap-2">
               <Button type="button" variant="ghost" onClick={onClose}>Annuler</Button>
