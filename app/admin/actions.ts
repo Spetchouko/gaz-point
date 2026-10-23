@@ -689,9 +689,7 @@ export async function createDisponibiliteAdmin(
   }
   if (!format) return { ok: false, message: "Le champ « Format de bouteille » est obligatoire." }
   if (!STATUSES.includes(status)) return { ok: false, message: "Statut invalide." }
-  if (!brandRaw) return { ok: false, message: "Le champ « Marque de la bouteille » est obligatoire." }
-  const brandName = await resolveBrandName(brandRaw)
-  if (!note) return { ok: false, message: "Le champ « Niveau de l'itinéraire » est obligatoire." }
+  const brandName = brandRaw ? await resolveBrandName(brandRaw) : ""
   const quantity = quantityRaw ? Number.parseInt(quantityRaw, 10) : null
   if (quantity !== null && (!Number.isFinite(quantity) || quantity < 0)) return { ok: false, message: "Quantité invalide." }
   if (phone && !/^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{1,9}$/.test(phone)) {
@@ -713,11 +711,11 @@ export async function createDisponibiliteAdmin(
     status,
     quantity,
     format,
-    brand: brandName,
+    brand: brandName || null,
     weightKg,
     expiresAt,
     phone,
-    note,
+    note: note || null,
     reportedBy: admin.id,
     reportedByName: admin.name ?? "Administration",
     vendorId: resolvedVendorId,
@@ -768,9 +766,7 @@ export async function updateDisponibiliteAdmin(
   }
   if (!format) return { ok: false, message: "Le champ « Format de la bouteille » est obligatoire." }
   if (!STATUSES.includes(status)) return { ok: false, message: "Statut invalide." }
-  if (!brandRaw) return { ok: false, message: "Le champ « Marque de la bouteille » est obligatoire." }
-  const brandName = await resolveBrandName(brandRaw)
-  if (!note) return { ok: false, message: "Le champ « Niveau de l'itinéraire » est obligatoire." }
+  const brandName = brandRaw ? await resolveBrandName(brandRaw) : ""
   const quantity = quantityRaw ? Number.parseInt(quantityRaw, 10) : null
   if (quantity !== null && (!Number.isFinite(quantity) || quantity < 0)) return { ok: false, message: "Quantité invalide." }
   if (phone && !/^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{1,9}$/.test(phone)) {
