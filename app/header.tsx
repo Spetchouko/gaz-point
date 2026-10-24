@@ -22,16 +22,19 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { authClient } from "@/lib/auth-client"
 import { UserMenu } from "@/app/_components/user-menu"
+import { SettingsPopover } from "@/app/_components/settings-popover"
+import { useTranslation } from "@/lib/i18n"
 
 const navLinks = [
-  { href: "/", label: "Accueil" },
-  { href: "/#comment-ca-marche", label: "Comment ça marche" },
-  { href: "/#faq", label: "FAQ" },
-  { href: "/a-propos", label: "À propos" },
-  { href: "/contact", label: "Contact" },
+  { href: "/", labelKey: "nav_home" },
+  { href: "/#comment-ca-marche", labelKey: "nav_how" },
+  { href: "/#faq", labelKey: "nav_faq" },
+  { href: "/a-propos", labelKey: "nav_about" },
+  { href: "/contact", labelKey: "nav_contact" },
 ]
 
 export function Header() {
+  const t = useTranslation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
   const closeMenu = () => setMobileMenuOpen(false)
@@ -78,7 +81,7 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="hidden gap-2 sm:flex cursor-pointer">
                   <UserPlus className="size-4" />
-                  <span>Compte</span>
+                  <span>{t("nav_account")}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
@@ -88,7 +91,7 @@ export function Header() {
                     className="flex items-center gap-2"
                   >
                     <UserPlus className="size-4" />
-                    S&apos;inscrire
+                    {t("nav_register")}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -97,7 +100,7 @@ export function Header() {
                     className="flex items-center gap-2"
                   >
                     <LogIn className="size-4" />
-                    Se connecter
+                    {t("nav_login")}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -107,13 +110,14 @@ export function Header() {
                     className="flex items-center gap-2"
                   >
                     <Shield className="size-4" />
-                    Connexion administrateur
+                    {t("nav_admin_login")}
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
 
+          <SettingsPopover />
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger
               render={
@@ -122,7 +126,7 @@ export function Header() {
                   className="inline-flex size-9 items-center justify-center rounded-lg text-foreground transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 lg:hidden cursor-pointer"
                 >
                   <Menu className="size-5" />
-                  <span className="sr-only">Ouvrir le menu</span>
+                  <span className="sr-only">{t("nav_account")}</span>
                 </button>
               }
             />
@@ -134,7 +138,7 @@ export function Header() {
                 <SheetHeader className="border-b border-border p-4">
                   <SheetTitle>Menu</SheetTitle>
                   <p className="text-sm text-muted-foreground">
-                    Navigation GazPoints
+                    {t("nav_home")} — {t("nav_contact")}
                   </p>
                 </SheetHeader>
 
@@ -147,13 +151,13 @@ export function Header() {
                       aria-current={pathname === link.href ? "page" : undefined}
                       className="rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
                     >
-                      {link.label}
+                      {t(link.labelKey)}
                     </Link>
                   ))}
                   <div className="my-2 border-t border-border" />
                   <div className="space-y-2">
                     <p className="px-3 py-2 text-sm font-medium text-muted-foreground">
-                      Compte
+                      {t("nav_account")}
                     </p>
                     {isAuthenticated ? (
                       <UserMenu isMobile />
@@ -198,20 +202,21 @@ export function Header() {
 
 function NavLink({
   href,
-  label,
+  labelKey,
   active,
 }: {
   href: string
-  label: string
+  labelKey: string
   active?: boolean
 }) {
+  const t = useTranslation()
   return (
     <Link
       href={href}
       data-active={active || undefined}
       className="relative py-1 text-sm font-medium text-muted-foreground transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:origin-left after:scale-x-0 after:bg-primary after:transition-transform hover:text-foreground hover:after:scale-x-100 data-active:text-foreground data-active:after:scale-x-100"
     >
-      {label}
+      {t(labelKey)}
     </Link>
   )
 }

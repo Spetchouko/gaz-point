@@ -12,7 +12,7 @@ const document: LegalDocument = {
   eyebrow: "Conditions générales de vente",
   title: "Conditions générales de vente",
   intro:
-    "Les présentes conditions régissent la souscription et l'utilisation de l'abonnement vendeur GazPoints (accès au tableau de bord de publication des disponibilités). Elles complètent les Conditions générales d'utilisation (CGU). En souscrivant, le vendeur accepte les CGV et les CGU dans leur intégralité.",
+    "Ces conditions régissent la souscription et l'utilisation de l'abonnement vendeur GazPoints (accès au tableau de bord de publication des disponibilités). Elles complètent les Conditions générales d'utilisation.",
   updated: "13 octobre 2026",
   sections: [
     {

@@ -13,17 +13,17 @@ const document: LegalDocument = {
   title: "Politique de confidentialité",
   intro:
     "GazPoints attache une importance capitale à la protection de vos données personnelles. Cette politique explique quelles données nous collectons, pourquoi, comment nous les protégeons et quels sont vos droits. Elle s'applique à tous les utilisateurs du site et de l'application GazPoints.",
-  updated: "13 avril 2026",
+  updated: "14 octobre 2026",
   sections: [
     {
       id: "responsable",
-      title: "1. Responsable de traitement",
+      title: "1. Responsable du traitement",
       paragraphs: [
-        "Le responsable de traitement est GazPoints, représenté par son équipe éditoriale et technique, basée à Douala, Cameroun.",
+        "GazPoints, équipe basée à Douala, Cameroun, est responsable du traitement de vos données personnelles.",
       ],
       items: [
         { term: "Email", value: "contact@gazpoints.com" },
-        { term: "Adresse postale", value: "Douala, Cameroun" },
+        { term: "Adresse", value: "Douala, Cameroun" },
       ],
     },
     {
@@ -126,16 +126,14 @@ const document: LegalDocument = {
         "Mesures techniques et organisationnelles mises en œuvre :",
       ],
       list: [
-        "Mots de passe hachés avec bcrypt (via Better Auth), jamais stockés en clair.",
-        "Connexions HTTPS/TLS 1.2+ sur tout le site.",
-        "Cookies de session HttpOnly, Secure, SameSite=Lax.",
-        "Vérification email obligatoire avant toute connexion.",
-        "Protection anti-robot (Turnstile) sur les formulaires sensibles.",
-        "Accès base de données restreint aux IP autorisées (Neon).",
-        "Journal d'audit des actions d'administration (traçabilité).",
-        "Sauvegardes automatiques quotidiennes de la base de données (Neon).",
+        "Mots de passe hachés (bcrypt via Better Auth), jamais stockés en clair.",
+        "Connexions HTTPS/TLS 1.2+, cookies de session sécurisés (HttpOnly, Secure, SameSite=Lax).",
+        "Protection anti-robot (Cloudflare Turnstile) sur les formulaires sensibles.",
+        "Vérification email obligatoire avant connexion.",
+        "Accès base restreint aux IP autorisées, sauvegardes automatiques quotidiennes (Neon).",
+        "Journal d'audit des actions administratives pour la traçabilité.",
+        "Aucune mesure n'est absolue. En cas de violation susceptible d'engendrer un risque élevé, nous vous informerons dans les meilleurs délais, conformément à la réglementation.",
       ],
-      note: "Malgré ces mesures, aucun système n'offre une sécurité absolue. En cas de violation de données susceptible d'engendrer un risque élevé pour vos droits, nous vous en informerons dans les meilleurs délais conformément à la réglementation.",
     },
     {
       id: "droits",

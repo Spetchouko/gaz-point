@@ -52,7 +52,7 @@ export default function AdminSettingsPage() {
                 <label className="text-sm font-medium">Email de contact</label>
                 <input
                   type="email"
-                  defaultValue="petchouko@gmail.com"
+                  defaultValue="gazpoints@gmail.com"
                   className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
                   readOnly
                 />

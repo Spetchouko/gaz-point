@@ -32,9 +32,9 @@ const document: LegalDocument = {
         "Vous pouvez changer d'avis à tout moment en supprimant le cookie « gz_consent » ou le localStorage associé, ce qui fera réapparaître le bandeau.",
       ],
       list: [
-        "Accepter : autorise le dépôt des traceurs d'audience (analytics).",
+        "Accepter : autorise le dépôt des traceurs d'audience (analytics internes, anonymes).",
         "Refuser : aucun traceur d'audience n'est déposé. Un cookie technique « gz_consent=rejected » mémorise votre choix pour 12 mois.",
-        "Fermer le bandeau (croix) : équivaut à un refus. Aucun traceur d'audience n'est déposé.",
+        "Fermer le bandeau (croix) : équivaut à un refus.",
       ],
     },
     {

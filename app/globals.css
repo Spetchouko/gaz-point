@@ -182,3 +182,37 @@ img {
     var(--color-mint) 100%
   );
 }
+
+.dark {
+  --color-background: #0a0f14;
+  --color-foreground: #e8ebe9;
+  --color-card: #10141a;
+  --color-card-foreground: #e8ebe9;
+  --color-popover: #10141a;
+  --color-popover-foreground: #e8ebe9;
+  --color-muted: #131820;
+  --color-muted-foreground: #a3a9ad;
+  --color-border: #1a2230;
+  --color-input: #1a2230;
+  --color-ring: #16834a;
+  --color-primary: #16834a;
+  --color-primary-strong: #1f9b5c;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #131820;
+  --color-secondary-foreground: #e8ebe9;
+  --color-success: #17804a;
+  --color-success-strong: #1f9b5c;
+  --color-success-foreground: #ffffff;
+  --color-warning: #b45309;
+  --color-warning-strong: #d97706;
+  --color-warning-foreground: #ffffff;
+  --color-info: #1f6fb2;
+  --color-info-strong: #2a8fd6;
+  --color-info-foreground: #ffffff;
+  --color-destructive: #b42318;
+  --color-destructive-strong: #d62828;
+  --color-destructive-foreground: #ffffff;
+  --color-mint: #0f1a14;
+  --color-sky: #0f1520;
+  --color-sand: #111418;
+}

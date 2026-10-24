@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
 import nodemailer from "nodemailer"
 
-const CONTACT_EMAIL = process.env.CONTACT_EMAIL ?? "petchouko@gmail.com"
-const GMAIL_USER = process.env.GMAIL_USER ?? "petchouko@gmail.com"
+const CONTACT_EMAIL = process.env.CONTACT_EMAIL ?? "gazpoints@gmail.com"
+const GMAIL_USER = process.env.GMAIL_USER ?? "gazpoints@gmail.com"
 
 const OBJETS = [
   "Question générale",

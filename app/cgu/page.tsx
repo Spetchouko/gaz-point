@@ -9,18 +9,18 @@ export const metadata: Metadata = {
 }
 
 const document: LegalDocument = {
-  eyebrow: "Conditions générales d'utilisation",
-  title: "Conditions générales d'utilisation",
+  eyebrow: "Conditions d'utilisation",
+  title: "Conditions d'utilisation",
   intro:
-    "Les présentes conditions régissent l'accès et l'utilisation du service GazPoints. En créant un compte ou en naviguant sur le site, vous acceptez ces termes dans leur intégralité. Si vous n'êtes pas d'accord, merci de ne pas utiliser le service.",
+    "En naviguant sur GazPoints ou en créant un compte, vous acceptez ces conditions. Si vous ne êtes pas d'accord, merci de ne pas utiliser le service.",
   updated: "13 mars 2026",
   sections: [
     {
       id: "objet",
-      title: "1. Objet du service",
+      title: "1. Ce que fait GazPoints",
       paragraphs: [
-        "GazPoints est un service d'information qui permet aux particuliers de vérifier la disponibilité des bouteilles de gaz de cuisson auprès des points de vente partenaires à Douala, Cameroun.",
-        "Le service met en relation les consommateurs (usagers) et les dépositaires de gaz (vendeurs). GazPoints n'achète, ne vend, ne livre et ne stocke aucune bouteille de gaz.",
+        "GazPoints est un service d'information. Il permet aux particuliers de vérifier si des bouteilles de gaz sont disponibles auprès des points de vente partenaires à Douala, Cameroun.",
+        "Le service met en relation les consommateurs et les vendeurs. GazPoints n'achète pas, ne vend pas, ne livre pas et ne stocke pas de gaz.",
       ],
     },
     {

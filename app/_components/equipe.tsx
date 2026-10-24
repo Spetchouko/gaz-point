@@ -103,10 +103,10 @@ export function Equipe() {
           </Link>
           , écris-nous à{" "}
           <a
-            href="mailto:petchouko@gmail.com"
+            href="mailto:gazpoints@gmail.com"
             className="font-medium text-foreground underline underline-offset-4 transition-colors hover:text-primary"
           >
-            petchouko@gmail.com
+            gazpoints@gmail.com
           </a>
           , ou passe par la{" "}
           <Link

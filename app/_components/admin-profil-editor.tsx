@@ -276,7 +276,7 @@ function FormulaireInformations({
             <Label htmlFor="email">Adresse email</Label>
             <Input id="email" value={profile.email} disabled />
             <p className="text-xs text-muted-foreground">
-              Pour changer d&apos;email, écrivez à petchouko@gmail.com.
+              Pour changer d&apos;email, écrivez à gazpoints@gmail.com.
             </p>
           </div>
 

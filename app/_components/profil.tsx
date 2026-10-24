@@ -87,13 +87,11 @@ export function Profil({
             </CardContent>
           </Card>
 
-          {pro && (
-            <FormulaireAvatar
-              profile={profile}
-              onChanged={setAvatar}
-              onUpdated={() => refetch()}
-            />
-          )}
+          <FormulaireAvatar
+            profile={profile}
+            onChanged={setAvatar}
+            onUpdated={() => refetch()}
+          />
 
           <FormulaireInformations
             profile={profile}
@@ -226,6 +224,7 @@ function FormulaireInformations({
   profile: ProfilData
   onUpdated: () => void
 }) {
+  const [editMode, setEditMode] = useState(false)
   const [name, setName] = useState(profile.name)
   const [phoneNumber, setPhoneNumber] = useState(profile.phoneNumber ?? "")
   const [feedback, setFeedback] = useState<Feedback>(null)
@@ -278,6 +277,7 @@ function FormulaireInformations({
               id="name"
               value={name}
               onChange={(event) => setName(event.target.value)}
+              disabled={!editMode}
               placeholder="Ex : Jean Dupont"
               required
             />
@@ -289,6 +289,7 @@ function FormulaireInformations({
               id="phoneNumber"
               value={phoneNumber}
               onChange={(event) => setPhoneNumber(event.target.value)}
+              disabled={!editMode}
               placeholder="Ex : +237 6 99 00 00 00"
             />
           </div>
@@ -297,14 +298,19 @@ function FormulaireInformations({
             <Label htmlFor="email">Adresse email</Label>
             <Input id="email" value={profile.email} disabled />
             <p className="text-xs text-muted-foreground">
-              Pour changer d&apos;email, écris à petchouko@gmail.com.
+              Pour changer d&apos;email, écris à gazpoints@gmail.com.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
-            <Button type="submit" disabled={loading}>
-              {loading ? "Enregistrement…" : "Enregistrer les modifications"}
-            </Button>
+            {!editMode ? (
+              <Button type="button" onClick={() => setEditMode(true)} className="gap-2">Modifier mon profil</Button>
+            ) : (
+              <>
+                <Button type="submit" disabled={loading} className="gap-2">{loading ? "Enregistrement…" : "Enregistrer"}</Button>
+                <Button type="button" variant="outline" onClick={() => { setEditMode(false); setName(profile.name); setPhoneNumber(profile.phoneNumber ?? ""); setFeedback(null); }}>Annuler</Button>
+              </>
+            )}
             {feedback && (
               <p
                 role={feedback.ok ? "status" : "alert"}

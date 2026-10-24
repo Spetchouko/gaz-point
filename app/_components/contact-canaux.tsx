@@ -12,8 +12,8 @@ const canaux = [
   {
     icon: Mail,
     title: "Email",
-    href: "mailto:petchouko@gmail.com",
-    value: "petchouko@gmail.com",
+    href: "mailto:gazpoints@gmail.com",
+    value: "gazpoints@gmail.com",
     description:
       "Le canal principal. C'est ici que tu nous écris pour tout le reste.",
     note: "Réponse sous 48 h ouvrées.",

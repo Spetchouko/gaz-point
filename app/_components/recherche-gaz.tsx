@@ -65,6 +65,7 @@ export function RechercheGaz() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [reservationPoint, setReservationPoint] = useState<SearchResult | null>(null)
+  const [defaultAmountType, setDefaultAmountType] = useState<"reservation" | "consigne">("reservation")
 
   const handleReserve = async (
     amountType: "reservation" | "consigne"
@@ -102,8 +103,9 @@ export function RechercheGaz() {
     }
   }
 
-  const openReservationModal = (point: SearchResult) => {
+  const openReservationModal = (point: SearchResult, defaultType?: "reservation" | "consigne") => {
     setReservationPoint(point)
+    setDefaultAmountType(defaultType ?? "reservation")
   }
 
   const closeReservationModal = () => {
@@ -323,7 +325,7 @@ export function RechercheGaz() {
                     )}
                   </div>
 
-                  <div className="mt-4 flex gap-2 border-t border-border pt-3">
+                  <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-3">
                     <Button
                       variant="outline"
                       className="h-9 flex-1 gap-1 text-xs cursor-pointer"
@@ -337,10 +339,19 @@ export function RechercheGaz() {
                       <Shield className="size-3.5" />
                       Réserver
                     </Button>
+                    {point.status === "disponible" && (
+                      <Button
+                        variant="default"
+                        className="h-9 flex-1 gap-1 text-xs cursor-pointer"
+                        onClick={() => openReservationModal(point, "consigne")}
+                      >
+                        Consigner cette bouteille
+                      </Button>
+                    )}
                     {point.phone && (
                       <Button
                         variant="ghost"
-                        className="h-9 flex-1 gap-1 text-xs cursor-pointer"
+                        className="h-9 shrink-0 gap-1 text-xs cursor-pointer"
                         render={
                           <a href={`tel:${point.phone.replace(/\s/g, "")}`}>
                             <Phone className="size-3.5" />
@@ -363,6 +374,7 @@ export function RechercheGaz() {
           onClose={closeReservationModal}
           point={reservationPoint}
           onConfirm={handleReserve}
+          defaultAmountType={defaultAmountType}
         />
       )}
     </>

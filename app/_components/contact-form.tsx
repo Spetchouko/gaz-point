@@ -257,10 +257,10 @@ export function ContactForm() {
                 <Mail className="mt-0.5 size-3.5 shrink-0" aria-hidden />
                 Tu préfères ton propre client email ? Écris directement à{" "}
                 <a
-                  href="mailto:petchouko@gmail.com"
+                  href="mailto:gazpoints@gmail.com"
                   className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
                 >
-                  petchouko@gmail.com
+                  gazpoints@gmail.com
                 </a>
                 .
               </p>

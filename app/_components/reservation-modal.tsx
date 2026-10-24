@@ -44,6 +44,7 @@ export function ReservationModal({
   onClose,
   point,
   onConfirm,
+  defaultAmountType,
 }: {
   open: boolean
   onClose: () => void
@@ -51,8 +52,9 @@ export function ReservationModal({
   onConfirm: (
     amountType: "reservation" | "consigne"
   ) => Promise<ReservationResult | void>
+  defaultAmountType?: "reservation" | "consigne"
 }) {
-  const [amountType, setAmountType] = useState<"reservation" | "consigne">("reservation")
+  const [amountType, setAmountType] = useState<"reservation" | "consigne">(defaultAmountType ?? "reservation")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<ReservationResult | null>(null)

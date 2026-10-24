@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/app/_components/theme-provider";
+import { LangProvider } from "@/app/_components/lang-provider";
 import { Header } from "@/app/header";
 import { Footer } from "@/app/_components/footer";
 import { RecherchePermanente } from "@/app/_components/recherche-permanente";
 import { ConsentBanner } from "@/app/_components/consent-banner";
+import { LangUpdater } from "@/app/_components/lang-updater";
+import { NavigationLoader } from "@/app/_components/navigation-loader";
 import { PwaRegistration } from "@/app/_components/pwa-registration";
+import { PwaInstallPrompt } from "@/app/_components/pwa-install-prompt";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,15 +49,27 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <head>
         <meta name="apple-mobile-web-app-title" content="GazPoints" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("gaz-theme");if(t==="dark")document.documentElement.classList.add("dark");else if(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches)document.documentElement.classList.add("dark");else document.documentElement.classList.remove("dark");}catch(e){}})();`,
+          }}
+        />
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className="min-h-full flex flex-col">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <ThemeProvider>
+          <LangProvider>
+            <LangUpdater />
+            <NavigationLoader />
+            <Header />
+          <main className="flex-1">{children}</main>
+            <Footer />
+          </LangProvider>
+        </ThemeProvider>
         <RecherchePermanente />
         <ConsentBanner />
         <PwaRegistration />
+        <PwaInstallPrompt />
       </body>
     </html>
   );

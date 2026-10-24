@@ -130,7 +130,7 @@ export function DashboardVendeur({
               </span>
               <p className="font-medium">Aucun dépôt rattaché à ton compte</p>
               <p className="max-w-md text-sm text-muted-foreground">
-                Contacte l&apos;administration (petchouko@gmail.com) pour faire
+                Contacte l&apos;administration (gazpoints@gmail.com) pour faire
                 rattacher ton dépôt, puis tu pourras y signaler la disponibilité
                 du gaz.
               </p>
