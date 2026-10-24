@@ -1,15 +1,13 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Settings, Sun, Monitor, Moon, Check, Globe } from "lucide-react"
+import { Settings, Sun, Monitor, Moon, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "@/app/_components/theme-provider"
-import { useLang } from "@/app/_components/lang-provider"
 import { useTranslation } from "@/lib/i18n"
 
 export function SettingsPopover() {
   const { theme, setTheme } = useTheme()
-  const { lang, setLang } = useLang()
   const t = useTranslation()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -61,28 +59,6 @@ export function SettingsPopover() {
                   <Icon className="size-4" />
                   <span className="flex-1 text-left">{label}</span>
                   {theme === key && <Check className="size-4" />}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="mt-4">
-            <h3 className="text-sm font-semibold mb-2">{t("settings_language")}</h3>
-            <div className="space-y-1">
-              {[
-                { key: "fr" as const, label: t("settings_fr") },
-                { key: "en" as const, label: t("settings_en") },
-              ].map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => { setLang(key); setOpen(false) }}
-                  className={`w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
-                    lang === key ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted"
-                  }`}
-                  aria-pressed={lang === key}
-                >
-                  <Globe className="size-4" />
-                  <span className="flex-1 text-left">{label}</span>
-                  {lang === key && <Check className="size-4" />}
                 </button>
               ))}
             </div>
