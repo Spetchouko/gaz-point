@@ -100,7 +100,7 @@ export function ContactForm() {
   return (
     <section
       id="ecrire"
-      className="w-full scroll-mt-16 border-y bg-muted/50 py-16 md:py-24"
+      className="w-full scroll-mt-16 border-t border-border bg-muted/50 py-16 md:py-24"
     >
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
@@ -243,7 +243,7 @@ export function ContactForm() {
 
             <CardContent className="space-y-4">
               {sujets.map((sujet) => (
-                <div key={sujet.objet} className="border-b pb-4 last:border-b-0 last:pb-0">
+                <div key={sujet.objet} className="border-b border-border pb-4 last:border-b-0 last:pb-0">
                   <p className="text-sm font-medium text-foreground">
                     {sujet.objet}
                   </p>

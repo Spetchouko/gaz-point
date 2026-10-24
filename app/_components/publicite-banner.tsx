@@ -123,7 +123,7 @@ export function PubliciteBannerCard({
       {ad.image && (
         <div
           className={cn(
-            "relative h-44 w-full shrink-0 overflow-hidden border-b bg-muted md:h-full md:w-[38%] md:border-b-0 md:border-r",
+            "relative h-44 w-full shrink-0 overflow-hidden border-b border-border bg-muted md:h-full md:w-[38%] md:border-b-0 md:border-r border-border",
             animate &&
               "animate-in slide-in-from-right-8 fade-in duration-500 ease-out motion-reduce:animate-none"
           )}

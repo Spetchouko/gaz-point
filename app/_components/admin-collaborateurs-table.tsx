@@ -74,7 +74,7 @@ export function AdminCollaborateursTable({ collaborateurs }: { collaborateurs: C
         <div className="overflow-x-auto">
           <table className="w-full" role="table">
             <thead>
-              <tr className="border-b bg-muted/50">
+              <tr className="border-b border-border bg-muted/50">
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Nom
                 </th>
@@ -95,7 +95,7 @@ export function AdminCollaborateursTable({ collaborateurs }: { collaborateurs: C
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-border">
               {collaborateurs.map((c) => {
                 const config = roleConfig[c.role] ?? { label: c.role, color: "bg-muted text-foreground", Icon: User }
                 const isAdmin = c.role === "admin"

@@ -157,7 +157,7 @@ export function RechercheGaz() {
           </p>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="relative">
+            <div className="relative min-w-0">
               <label
                 htmlFor="recherche-marque"
                 className="text-xs font-medium text-muted-foreground"
@@ -174,7 +174,7 @@ export function RechercheGaz() {
               />
             </div>
 
-            <div className="relative">
+            <div className="relative min-w-0">
               <label
                 htmlFor="recherche-format"
                 className="text-xs font-medium text-muted-foreground"
@@ -205,7 +205,7 @@ export function RechercheGaz() {
             >
               Zone ou localisation
             </label>
-            <div className="mt-1.5 flex flex-col gap-2 sm:flex-row">
+            <div className="mt-1.5 flex flex-col gap-2 sm:flex-row sm:items-center flex-wrap">
               <input
                 id="recherche-zone"
                 type="text"
@@ -215,7 +215,7 @@ export function RechercheGaz() {
                   setLocationLabel(null)
                 }}
                 placeholder="Quartier, rue ou point de repère (ex: Akwa, Bonanjo)"
-                className="h-12 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/50"
+                className="h-12 w-full min-w-0 rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/50"
               />
               <Button
                 type="button"
@@ -256,7 +256,7 @@ export function RechercheGaz() {
 
       {results !== null && (
         <div className="mt-8">
-          <h3 className="text-center font-heading text-lg font-semibold text-foreground">
+          <h3 className="text-center font-heading text-base sm:text-lg font-semibold text-foreground">
             {results.length > 0
               ? `${results.length} point${results.length > 1 ? "s" : ""} trouvé${results.length > 1 ? "s" : ""}`
               : "Aucun point trouvé"}
@@ -266,7 +266,7 @@ export function RechercheGaz() {
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {results.map((point) => (
                 <Card key={point.id} className="p-4">
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between gap-2 flex-wrap">
                     <div className="min-w-0">
                       <p className="font-medium text-foreground">{point.name}</p>
                       <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">

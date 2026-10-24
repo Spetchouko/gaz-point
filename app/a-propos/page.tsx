@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Fragment } from "react"
+import { SoftSeparator } from "@/app/_components/soft-separator"
 import { AproposCta } from "@/app/_components/apropos-cta"
 import { AproposHero } from "@/app/_components/apropos-hero"
 import { Equipe } from "@/app/_components/equipe"
@@ -18,10 +19,15 @@ export default function APropos() {
     <div className="min-h-screen bg-[var(--section-green)] overflow-x-hidden">
       <Fragment>
         <AproposHero />
+        <SoftSeparator />
         <NotreDemarche />
+        <SoftSeparator />
         <NotrePromesse />
+        <SoftSeparator />
         <NotreMethode />
+        <SoftSeparator />
         <Equipe />
+        <SoftSeparator />
         <AproposCta />
       </Fragment>
     </div>

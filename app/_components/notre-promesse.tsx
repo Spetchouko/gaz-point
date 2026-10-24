@@ -31,7 +31,7 @@ const engagements = [
 
 export function NotrePromesse() {
   return (
-    <section className="w-full py-16 md:py-24 bg-muted/50 border-y">
+    <section className="w-full py-16 md:py-24 bg-muted/50 border-t border-border">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
           <Badge

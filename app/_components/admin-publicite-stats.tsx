@@ -367,7 +367,7 @@ export function AdminPubliciteStats({
                     <th className="px-3 py-2 text-right font-semibold">Taux conv.</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y">
+                <tbody className="divide-y divide-border">
                   {byAd.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">

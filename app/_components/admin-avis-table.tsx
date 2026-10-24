@@ -55,7 +55,7 @@ export function AdminAvisTable({
       <div className="overflow-x-auto">
         <table className="w-full" role="table">
           <thead>
-            <tr className="border-b bg-muted/50">
+            <tr className="border-b border-border bg-muted/50">
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Auteur
               </th>
@@ -78,7 +78,7 @@ export function AdminAvisTable({
           </thead>
           <tbody>
             {avis.map((row) => (
-              <tr key={row.id} className="border-b align-top last:border-0">
+              <tr key={row.id} className="border-b border-border align-top last:border-0">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <Avatar className="size-9 shrink-0">

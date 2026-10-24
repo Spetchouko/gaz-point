@@ -118,7 +118,7 @@ export function AdminRecentActivity({
         {filtered.length === 0 ? (
           <p className="py-8 text-center text-muted-foreground">Aucune activité récente</p>
         ) : (
-          <div className="divide-y">
+          <div className="divide-y divide-border">
             {filtered.map((activity) => {
               const config = typeConfig[activity.type]
               const Icon = config.icon

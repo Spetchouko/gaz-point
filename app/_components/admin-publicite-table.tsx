@@ -72,7 +72,7 @@ export function AdminPubliciteTable({
       <div className="overflow-x-auto">
         <table className="w-full" role="table">
           <thead>
-            <tr className="border-b bg-muted/50">
+            <tr className="border-b border-border bg-muted/50">
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Publicité
               </th>
@@ -90,7 +90,7 @@ export function AdminPubliciteTable({
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-border">
             {publicites.map((ad) => {
               const future = ad.future
               const past = ad.past

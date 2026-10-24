@@ -34,7 +34,7 @@ export function AdminTopBar({
     href === "/admin" ? pathname === "/admin" : pathname.startsWith(href)
 
   return (
-    <div className="sticky top-0 z-40 flex h-14 items-center gap-1 border-b bg-background/85 px-4 backdrop-blur-md supports-backdrop-filter:bg-background/65 lg:px-6">
+    <div className="sticky top-0 z-40 flex h-14 items-center gap-1 border-b border-border bg-background/85 px-4 backdrop-blur-md supports-backdrop-filter:bg-background/65 lg:px-6">
       <Button
         type="button"
         variant="ghost"
@@ -72,7 +72,7 @@ export function AdminTopBar({
             }
           />
           <SheetContent side="right" className="w-[85vw] max-w-sm p-0">
-            <SheetHeader className="border-b p-4">
+            <SheetHeader className="border-b border-border p-4">
               <SheetTitle className="flex items-center gap-2">
                 <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <Cylinder className="size-5" />

@@ -11,7 +11,7 @@ const points = [
 
 export function AproposHero() {
   return (
-    <section className="w-full border-b bg-muted/50 py-16 md:py-24">
+    <section className="w-full border-t border-border bg-muted/50 py-16 md:py-24">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-4xl text-center">
           <Badge

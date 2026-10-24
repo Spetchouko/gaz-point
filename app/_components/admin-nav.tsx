@@ -41,7 +41,7 @@ export function AdminNav({
       aria-label="Navigation administration"
       className="flex h-full flex-col"
     >
-      <div className="flex h-16 items-center justify-between border-b px-4">
+      <div className="flex h-16 items-center justify-between border-b border-border px-4">
         <Link
           href="/admin"
           className="flex items-center gap-2 font-bold text-lg"
@@ -77,7 +77,7 @@ export function AdminNav({
         })}
       </ul>
 
-      <div className="border-t p-4 space-y-2">
+      <div className="border-t border-border p-4 space-y-2">
         <div className="flex items-center gap-3 rounded-lg px-3 py-2">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
             {initial}

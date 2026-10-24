@@ -111,12 +111,12 @@ export function DashboardVendeur({
 
   if (points.length === 0) {
     return (
-      <div className="min-h-screen bg-background py-12">
+      <div className="min-h-screen bg-background py-6 sm:py-12">
         <div className="container mx-auto max-w-4xl px-4">
           <DashboardNav pro={true} isVendor={true} />
-          <header className="mb-8 flex flex-wrap items-center justify-between gap-3">
+          <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Espace vendeur</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Espace vendeur</h1>
               <p className="mt-2 text-muted-foreground">
                 Gère les disponibilités de gaz de tes dépôts
               </p>
@@ -142,13 +142,13 @@ export function DashboardVendeur({
   }
 
   return (
-    <div className="min-h-screen bg-background py-12">
+    <div className="min-h-screen bg-background py-6 sm:py-12">
       <div className="container mx-auto max-w-4xl px-4">
         <DashboardNav pro={true} isVendor={true} />
-        <header className="mb-8 flex flex-wrap items-center justify-between gap-3">
+        <header className="mb-6 sm:mb-8 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Espace vendeur</h1>
-            <p className="mt-2 text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight break-words">Espace vendeur</h1>
+            <p className="mt-2 text-sm sm:text-base text-muted-foreground">
               Bonjour {vendorName.split(" ")[0]}, gère tes disponibilités
             </p>
           </div>
@@ -156,7 +156,7 @@ export function DashboardVendeur({
         </header>
 
         {/* Statistiques globales */}
-        <div className="mb-6 grid gap-4 sm:grid-cols-4">
+        <div className="mb-6 grid gap-4 grid-cols-2 sm:grid-cols-4">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -311,7 +311,7 @@ export function DashboardVendeur({
         <div className="space-y-6">
           {points.map((point) => (
             <Card key={point.id}>
-              <CardHeader className="flex flex-row items-start justify-between pb-3">
+              <CardHeader className="flex flex-wrap items-start justify-between gap-2 pb-3">
                 <div>
                   <CardTitle className="flex items-center gap-2 text-base">
                     <Store className="size-4 text-primary" aria-hidden />

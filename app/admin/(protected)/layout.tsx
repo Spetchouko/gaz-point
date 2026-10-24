@@ -17,7 +17,7 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-background lg:flex">
-      <aside className="hidden w-64 flex-col border-r bg-card lg:flex">
+      <aside className="hidden w-64 flex-col border-r border-border bg-card lg:flex">
         <AdminNav role={staff.role} permissions={permissions} />
       </aside>
       <div className="min-w-0 flex-1 lg:max-w-[calc(100%-16rem)]">

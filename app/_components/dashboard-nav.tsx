@@ -52,7 +52,7 @@ export function DashboardNav({ pro = false, isVendor = false }: DashboardNavProp
       aria-label="Navigation du tableau de bord"
       className="-mx-4 mb-8 overflow-x-auto px-4 sm:mx-0 sm:px-0"
     >
-      <ul className="flex w-max gap-1 rounded-xl border bg-card p-1">
+      <ul className="flex w-max gap-1 rounded-xl border border-border bg-card p-1">
         {links.map((link) => {
           const active = isActive(link.href)
           const Icon = link.icon

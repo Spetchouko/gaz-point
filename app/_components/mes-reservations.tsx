@@ -118,7 +118,7 @@ export function MesReservations() {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
         <CardTitle className="flex items-center gap-2">
           <Calendar className="size-5" />
           Mes réservations
@@ -173,7 +173,7 @@ export function MesReservations() {
                   )}
                 </div>
 
-                <div className="flex flex-col items-end gap-2 text-right shrink-0">
+                <div className="flex flex-col sm:flex-row sm:items-end gap-2 text-right shrink-0">
                   <p className="font-semibold text-foreground">{formatPrice(res.amount)}</p>
                   <p className="text-xs text-muted-foreground">Frais de réservation</p>
                   <p className="text-xs text-muted-foreground">

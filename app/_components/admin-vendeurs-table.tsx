@@ -97,7 +97,7 @@ export function AdminVendeursTable({ vendors }: { vendors: VendorRow[] }) {
       <div className="overflow-x-auto">
         <table className="w-full" role="table">
           <thead>
-            <tr className="border-b bg-muted/50">
+            <tr className="border-b border-border bg-muted/50">
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Nom / Responsable
               </th>
@@ -127,7 +127,7 @@ export function AdminVendeursTable({ vendors }: { vendors: VendorRow[] }) {
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-border">
             {vendors.map((v) => {
               const mainPoint = v.points[0]
               const latestDispo = v.dispos.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]

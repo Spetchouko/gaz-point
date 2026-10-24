@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 
 export function AproposCta() {
   return (
-    <section className="w-full py-16 md:py-24 bg-linear-to-b from-muted/30 via-muted/60 to-muted/30 border-y">
+    <section className="w-full py-16 md:py-24 bg-linear-to-b from-muted/30 via-muted/60 to-muted/30 border-t border-border">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl rounded-3xl bg-primary px-6 py-12 text-center text-primary-foreground md:px-12 md:py-16">
           <p className="text-balance text-sm font-medium text-primary-foreground/70 sm:text-base">

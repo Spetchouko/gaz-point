@@ -25,7 +25,7 @@ const constats = [
 
 export function NotreDemarche() {
   return (
-    <section className="w-full py-16 md:py-24 bg-linear-to-b from-muted/30 via-muted/60 to-muted/30 border-y">
+    <section className="w-full py-16 md:py-24 bg-linear-to-b from-muted/30 via-muted/60 to-muted/30 border-t border-border">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
           <Badge

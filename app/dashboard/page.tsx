@@ -19,13 +19,13 @@ export default async function DashboardPage() {
   // They can still access /dashboard/vendeur for vendor-specific features
 
   return (
-    <div className="min-h-screen bg-background py-12">
+    <div className="min-h-screen bg-background py-6 sm:py-12">
       <div className="container mx-auto px-4 max-w-4xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight break-words">
             Bienvenue {user.name}
           </h1>
-          <p className="mt-2 text-muted-foreground">
+          <p className="mt-2 text-sm sm:text-base text-muted-foreground">
             Content de te voir de retour !
           </p>
         </div>
