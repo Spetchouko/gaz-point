@@ -105,7 +105,7 @@ export function Storytelling() {
         </div>
 
         {/* Bilan & Résolution */}
-        <Card className="mx-auto mt-8 max-w-4xl border-0 bg-white p-6 shadow-sm ring-1 ring-border sm:p-8">
+        <Card className="mx-auto mt-8 max-w-4xl border-0 bg-card p-6 shadow-sm ring-1 ring-border sm:p-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1.5">
               <Badge variant="destructive" className="h-5 w-fit font-semibold">

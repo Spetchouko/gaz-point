@@ -104,6 +104,8 @@
   "nav_favoris": "My favorites",
   "nav_reservations": "My reservations",
   "nav_profil": "My profile",
+  "nav_avis": "Reviews",
+  "nav_dashboard": "Dashboard",
   "nav_logout": "Log out",
   "profile_title": "Profile",
   "profile_subtitle": "Manage your personal information.",

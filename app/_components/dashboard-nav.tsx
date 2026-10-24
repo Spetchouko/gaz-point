@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { MessageSquarePlus, Store, User, Calendar, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useTranslation } from "@/lib/i18n"
 
 type DashboardNavProps = {
   pro?: boolean
@@ -11,34 +12,35 @@ type DashboardNavProps = {
 }
 
 export function DashboardNav({ pro = false, isVendor = false }: DashboardNavProps) {
+  const t = useTranslation()
   const pathname = usePathname()
 
-  const clientLinks = [
-    { href: "/dashboard", label: "Rechercher", icon: Search },
-    { href: "/dashboard/reservations", label: "Mes réservations", icon: Calendar },
-    { href: "/avis", label: "Donner mon avis", icon: MessageSquarePlus },
-    { href: "/profil", label: "Mon profil", icon: User },
+  const clientLinks: { href: string; label?: string; labelKey?: string; icon: typeof Search }[] = [
+    { href: "/dashboard", labelKey: "button_find_gas", icon: Search },
+    { href: "/dashboard/reservations", labelKey: "nav_reservations", icon: Calendar },
+    { href: "/avis", labelKey: "nav_avis", icon: MessageSquarePlus },
+    { href: "/profil", labelKey: "nav_profil", icon: User },
   ]
 
-  const vendorLinks = [
-    { href: "/dashboard/vendeur", label: "Espace vendeur", icon: Store },
-    { href: "/dashboard/vendeur/espace-pro", label: "Espace pro", icon: Store },
-    { href: "/avis", label: "Donner mon avis", icon: MessageSquarePlus },
-    { href: "/profil", label: "Mon profil", icon: User },
+  const vendorLinks: { href: string; label?: string; labelKey?: string; icon: typeof Search }[] = [
+    { href: "/dashboard/vendeur", labelKey: "dashboard_vendeur_title", icon: Store },
+    { href: "/dashboard/vendeur/espace-pro", labelKey: "label_permissions", icon: Store },
+    { href: "/avis", labelKey: "nav_avis", icon: MessageSquarePlus },
+    { href: "/profil", labelKey: "nav_profil", icon: User },
   ]
 
   // For vendors, combine both sets of links so they can switch between modes
-  const links = isVendor
+  const links: { href: string; label?: string; labelKey?: string; icon: typeof Search }[] = isVendor
     ? [
         // Vendor features
-        { href: "/dashboard/vendeur", label: "Espace vendeur", icon: Store },
-        { href: "/dashboard/vendeur/espace-pro", label: "Espace pro", icon: Store },
+        { href: "/dashboard/vendeur", labelKey: "dashboard_vendeur_title", icon: Store },
+        { href: "/dashboard/vendeur/espace-pro", labelKey: "label_permissions", icon: Store },
         // Client features
-        { href: "/dashboard", label: "Rechercher", icon: Search },
-        { href: "/dashboard/reservations", label: "Mes réservations", icon: Calendar },
+        { href: "/dashboard", labelKey: "button_find_gas", icon: Search },
+        { href: "/dashboard/reservations", labelKey: "nav_reservations", icon: Calendar },
         // Common
-        { href: "/avis", label: "Donner mon avis", icon: MessageSquarePlus },
-        { href: "/profil", label: "Mon profil", icon: User },
+        { href: "/avis", labelKey: "nav_avis", icon: MessageSquarePlus },
+        { href: "/profil", labelKey: "nav_profil", icon: User },
       ]
     : pro
     ? vendorLinks
@@ -49,7 +51,7 @@ export function DashboardNav({ pro = false, isVendor = false }: DashboardNavProp
 
   return (
     <nav
-      aria-label="Navigation du tableau de bord"
+      aria-label={t("nav_dashboard")}
       className="-mx-4 mb-8 overflow-x-auto px-4 sm:mx-0 sm:px-0"
     >
       <ul className="flex w-max gap-1 rounded-xl border border-border bg-card p-1">
@@ -69,7 +71,7 @@ export function DashboardNav({ pro = false, isVendor = false }: DashboardNavProp
                 )}
               >
                 <Icon className="size-4" aria-hidden />
-                {link.label}
+                {link.labelKey ? t(link.labelKey) : link.label}
               </Link>
             </li>
           )

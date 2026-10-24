@@ -8,10 +8,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { LogOut } from "lucide-react"
 import { DashboardNav } from "@/app/_components/dashboard-nav"
+import { useTranslation } from "@/lib/i18n"
 import { TrouverMonGaz } from "@/app/_components/trouver-mon-gaz"
 import { MesReservations } from "@/app/_components/mes-reservations"
 
 export function DashboardClient() {
+  const t = useTranslation()
   const router = useRouter()
   const { data: session } = authClient.useSession()
 
@@ -38,10 +40,10 @@ export function DashboardClient() {
 
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight break-words">
-            Trouver du gaz disponible
+            {t("button_find_gas")}
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Trouvez rapidement un point de vente où le gaz est disponible près de chez vous.
+            {t("hero_subtitle")}
           </p>
         </div>
 
@@ -50,9 +52,9 @@ export function DashboardClient() {
         <Separator className="my-8 bg-border" />
 
         <div className="mb-6 sm:mb-8">
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Mes réservations</h2>
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight">{t("nav_reservations")}</h2>
           <p className="mt-1 text-sm sm:text-base text-muted-foreground">
-            Consultez l&apos;historique de vos réservations et leurs statuts.
+            {t("description") || "Consultez l'historique de vos réservations et leurs statuts."}
           </p>
         </div>
 

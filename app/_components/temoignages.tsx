@@ -119,7 +119,7 @@ export function Temoignages({ avis }: { avis: AvisPublic[] }) {
               onClick={() => setPage(Math.max(current - 1, 0))}
               disabled={current === 0}
               aria-label="Avis précédents"
-              className="inline-flex size-10 items-center justify-center rounded-full border border-border bg-white text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+              className="inline-flex size-10 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
             >
               <ChevronLeft className="size-5" />
             </button>
@@ -133,7 +133,7 @@ export function Temoignages({ avis }: { avis: AvisPublic[] }) {
               onClick={() => setPage(Math.min(current + 1, pages - 1))}
               disabled={current >= pages - 1}
               aria-label="Avis suivants"
-              className="inline-flex size-10 items-center justify-center rounded-full border border-border bg-white text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+              className="inline-flex size-10 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
             >
               <ChevronRight className="size-5" />
             </button>

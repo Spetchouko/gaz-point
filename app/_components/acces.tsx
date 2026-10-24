@@ -62,7 +62,7 @@ export function Acces() {
         {/* 2 Profils de cartes : Usager & Vendeur */}
         <div className="mx-auto mt-12 grid max-w-4xl gap-6 sm:grid-cols-2">
           {/* Profil 1 : Usager / Client */}
-          <Card className="h-full border-0 bg-white shadow-sm transition-all hover:shadow-sm">
+          <Card className="h-full border-0 bg-card shadow-sm transition-all hover:shadow-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <span className="flex size-10 items-center justify-center rounded-lg bg-mint text-primary-strong">
@@ -131,7 +131,7 @@ export function Acces() {
               Professionnel
             </div>
 
-            <Card className="h-full overflow-visible border border-primary bg-white px-6 py-6 shadow-sm transition-all hover:shadow-sm sm:px-7 sm:py-7">
+            <Card className="h-full overflow-visible border border-primary bg-card px-6 py-6 shadow-sm transition-all hover:shadow-sm sm:px-7 sm:py-7">
               <div className="flex items-center justify-between">
                 <span className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-xs">
                   <Store className="size-5" />

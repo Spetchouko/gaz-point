@@ -64,7 +64,7 @@ export function Equipe() {
                       <AvatarImage
                         src={membre.image}
                         alt={membre.name}
-                        className={membre.role === "Fondation et direction" ? "bg-white" : ""}
+                        className={membre.role === "Fondation et direction" ? "bg-card" : ""}
                       />
                     ) : (
                       <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">

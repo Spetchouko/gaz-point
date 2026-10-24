@@ -83,7 +83,7 @@ export function Faq() {
         </div>
 
         <div className="mx-auto mt-12 grid max-w-4xl gap-4 lg:grid-cols-3">
-          <Accordion className="rounded-2xl border border-border bg-white px-5 shadow-sm lg:col-span-2 md:px-6">
+          <Accordion className="rounded-2xl border border-border bg-card px-5 shadow-sm lg:col-span-2 md:px-6">
             {questions.map((item) => (
               <AccordionItem key={item.question} value={item.question}>
                 <AccordionTrigger className="py-4 text-base font-medium text-left hover:no-underline">
