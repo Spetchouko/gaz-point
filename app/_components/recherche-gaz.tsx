@@ -303,12 +303,6 @@ export function RechercheGaz() {
                       </p>
                     )}
                     {point.brand && <p>Marque&nbsp;: {point.brand}</p>}
-                    <p>
-                      Quantité&nbsp;:{" "}
-                      {point.quantity !== null
-                        ? `${point.quantity} bouteille${point.quantity > 1 ? "s" : ""}`
-                        : "—"}
-                    </p>
                     {point.format && <p>Format&nbsp;: {point.format}</p>}
                     {point.phone && (
                       <p className="flex items-center gap-1">
@@ -331,9 +325,7 @@ export function RechercheGaz() {
                       className="h-9 flex-1 gap-1 text-xs cursor-pointer"
                       onClick={() => openReservationModal(point)}
                       disabled={
-                        point.status !== "disponible" ||
-                        !point.quantity ||
-                        point.quantity <= 0
+                        point.status !== "disponible"
                       }
                     >
                       <Shield className="size-3.5" />

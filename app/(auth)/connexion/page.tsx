@@ -5,11 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
 import { safeRedirect } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { LoaderButton } from "@/app/_components/loader-button"
+import { ActionFeedback } from "@/app/_components/action-feedback"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { Mail, Lock, Eye, EyeOff, Loader2, AlertCircle, ArrowLeft } from "lucide-react"
+import { useTranslation } from "@/lib/i18n"
 import Image from "next/image"
 import { useState } from "react"
 
@@ -26,6 +29,7 @@ function validatePassword(password: string): string | null {
 }
 
 function LoginPageContent() {
+  const t = useTranslation()
   const router = useRouter()
   const searchParams = useSearchParams()
   const explicitRedirect = searchParams.get("redirect")
@@ -48,6 +52,7 @@ function LoginPageContent() {
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [feedback, setFeedback] = useState<{ state: "idle" | "loading" | "success" | "error"; msg?: string }>({ state: "idle" })
 
   const validateForm = () => {
     const emailError = validateEmail(email)
@@ -69,6 +74,7 @@ function LoginPageContent() {
 
     setError("")
     setLoading(true)
+    setFeedback({ state: "loading", msg: "Connexion en cours…" })
 
     try {
       const { data: signInData, error: signInError } = await authClient.signIn.email({
@@ -85,6 +91,7 @@ function LoginPageContent() {
         } else {
           setError(errorMessage)
         }
+        setFeedback({ state: "error", msg: errorMessage })
         setLoading(false)
         return
       }
@@ -94,6 +101,7 @@ function LoginPageContent() {
       router.refresh()
     } catch {
       setError("Une erreur inattendue est survenue. Veuillez réessayer.")
+      setFeedback({ state: "error", msg: "Une erreur inattendue est survenue. Veuillez réessayer." })
       setLoading(false)
     }
   }
@@ -134,16 +142,16 @@ function LoginPageContent() {
                 className="h-7 w-7 object-contain"
               />
             </div>
-            <CardTitle className="text-xl font-bold">Connexion</CardTitle>
+            <CardTitle className="text-xl font-bold">{t("login_title")}</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Accédez à votre espace GazPoints
+              {t("login_subtitle")}
             </p>
           </CardHeader>
 
           <CardContent className="space-y-4">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("login_email")}</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
@@ -169,7 +177,7 @@ function LoginPageContent() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Mot de passe</Label>
+                <Label htmlFor="password">{t("login_password")}</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
@@ -213,9 +221,18 @@ function LoginPageContent() {
                 </div>
               )}
 
-              <Button type="submit" className="w-full h-11" disabled={loading}>
-                {loading ? <Loader2 className="size-4 mr-2 animate-spin" /> : "Se connecter"}
-              </Button>
+              <LoaderButton
+                type="submit"
+                className="w-full h-11"
+                loading={loading}
+                loadingText={t("loading")}
+                disabled={loading}
+              >
+                {t("login_button")}
+              </LoaderButton>
+              <div className="mt-2 min-h-[1.5em]">
+                <ActionFeedback state={feedback.state} loadingText={feedback.msg} errorText={feedback.msg} />
+              </div>
             </form>
 
             <div className="mt-8 space-y-6">
@@ -224,7 +241,7 @@ function LoginPageContent() {
                   <div className="w-full border-t border-border" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase tracking-wider">
-                  <span className="bg-background px-2 text-muted-foreground">Ou continuer avec</span>
+                  <span className="bg-background px-2 text-muted-foreground">{t("login_or_continue")}</span>
                 </div>
               </div>
 
@@ -241,17 +258,17 @@ function LoginPageContent() {
                   height={16}
                   className="size-4"
                 />
-                Continuer avec Google
+                {t("login_google")}
               </Button>
             </div>
 
             <p className="text-center text-sm text-muted-foreground">
-              Pas encore de compte ?{" "}
+              {t("login_no_account")}{" "}
               <Link
                 href={`/inscription?redirect=${encodeURIComponent(redirectTo)}`}
                 className="text-primary hover:underline font-medium"
               >
-                Créer un compte
+                {t("login_create_account")}
               </Link>
             </p>
           </CardContent>

@@ -56,7 +56,6 @@ type FormState = {
   pointId: string
   pointName: string
   status: AvailabilityStatus
-  quantity: string
   format: string
   brand: string
   expiresAt: string
@@ -71,7 +70,6 @@ function initialFormState(editing: DispoData): FormState {
     pointId: editing?.pointId ?? "",
     pointName: editing?.pointName ?? "",
     status: (editing?.status as AvailabilityStatus) ?? "disponible",
-    quantity: editing?.quantity?.toString() ?? "",
     format: editing?.format ?? "",
     brand: editing?.brand ?? "",
     expiresAt: toDateValue(editing?.expiresAt),
@@ -198,12 +196,6 @@ export function AdminDisponibiliteForm({
           <div className="flex justify-between">
             <dt>Vendeur du dépôt</dt>
             <dd className="font-medium text-foreground">{selectedPoint.vendorName}</dd>
-          </div>
-        )}
-        {formState.quantity && (
-          <div className="flex justify-between">
-            <dt>Quantité</dt>
-            <dd className="font-medium text-foreground">{formState.quantity}</dd>
           </div>
         )}
         {formState.expiresAt && (
@@ -367,19 +359,6 @@ export function AdminDisponibiliteForm({
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="quantity-input">Quantité (facultatif)</Label>
-                <Input
-                  id="quantity-input"
-                  name="quantity"
-                  type="number"
-                  min="0"
-                  value={formState.quantity}
-                  onChange={(e) => setFormState((s) => ({ ...s, quantity: e.target.value }))}
-                  placeholder="Ex : 25"
-                />
-              </div>
-
-              <div className="space-y-1.5">
                 <Label htmlFor="expires-input">Expire le (facultatif)</Label>
                 <Input
                   id="expires-input"
@@ -448,7 +427,6 @@ export function AdminDisponibiliteForm({
             <input type="hidden" name="brand" value={formState.brand} />
             <input type="hidden" name="note" value={formState.note} />
             <input type="hidden" name="vendorName" value={formState.vendorName} />
-            <input type="hidden" name="quantity" value={formState.quantity} />
             <input type="hidden" name="expiresAt" value={formState.expiresAt} />
             <input type="hidden" name="phone" value={formState.phone} />
             {confirmContent}

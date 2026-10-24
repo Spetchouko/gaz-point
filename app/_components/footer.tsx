@@ -1,39 +1,23 @@
+"use client"
+
 import Image from "next/image"
 import Link from "next/link"
 import { Separator } from "@/components/ui/separator"
-
-const navigation = [
-  { label: "Comment ça marche", href: "/#comment-ca-marche" },
-  { label: "Trouver du gaz", href: "/#trouver-du-gaz" },
-  { label: "FAQ", href: "/#faq" },
-]
-
-const gazpoint = [
-  { label: "À propos", href: "/a-propos" },
-  { label: "Services", href: "/services" },
-  { label: "Contact", href: "/contact" },
-  { label: "Accueil", href: "/" },
-]
-
-const legal = [
-  { label: "Mentions légales", href: "/mentions-legales" },
-  { label: "Conditions d'utilisation", href: "/cgu" },
-  { label: "Politique de confidentialité", href: "/politique-confidentialite" },
-  { label: "Politique cookies", href: "/politique-cookies" },
-  { label: "Conditions de vente", href: "/cgv" },
-]
+import { useTranslation } from "@/lib/i18n"
 
 function FooterNav({
   title,
   items,
+  t,
 }: {
   title: string
-  items: { label: string; href: string }[]
+  items: { label?: string; labelKey?: string; href: string }[]
+  t: (k: string) => string
 }) {
   return (
     <nav aria-label={title}>
       <h2 className="font-heading text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-        {title}
+        {t(title)}
       </h2>
       <ul className="mt-4 space-y-2.5">
         {items.map((item) => (
@@ -42,7 +26,7 @@ function FooterNav({
               href={item.href}
               className="text-sm text-foreground/70 transition-colors hover:text-foreground"
             >
-              {item.label}
+              {item.labelKey ? t(item.labelKey) : item.label}
             </Link>
           </li>
         ))}
@@ -52,6 +36,29 @@ function FooterNav({
 }
 
 export function Footer() {
+  const t = useTranslation()
+
+  const navigation = [
+    { labelKey: "nav_how", href: "/#comment-ca-marche" },
+    { labelKey: "button_find_gas", href: "/#trouver-du-gaz" },
+    { labelKey: "nav_faq", href: "/#faq" },
+  ]
+
+  const gazpoint = [
+    { labelKey: "nav_about", href: "/a-propos" },
+    { label: "Services", href: "/services" },
+    { labelKey: "nav_contact", href: "/contact" },
+    { labelKey: "nav_home", href: "/" },
+  ]
+
+  const legal = [
+    { label: "Mentions légales", href: "/mentions-legales" },
+    { label: "Conditions d'utilisation", href: "/cgu" },
+    { label: "Politique de confidentialité", href: "/politique-confidentialite" },
+    { label: "Politique cookies", href: "/politique-cookies" },
+    { label: "Conditions de vente", href: "/cgv" },
+  ]
+
   return (
     <footer className="w-full bg-mint">
       <div className="container mx-auto px-4 py-12 pb-20 md:py-14 md:pb-20">
@@ -74,21 +81,21 @@ export function Footer() {
             </Link>
 
             <p className="mt-4 max-w-xs text-pretty text-sm text-muted-foreground">
-              Vérifie où il y en a avant de te déplacer.
+              {t("footer_tagline")}
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:contents">
-            <FooterNav title="Navigation" items={navigation} />
-            <FooterNav title="GazPoints" items={gazpoint} />
-            <FooterNav title="Informations légales" items={legal} />
+            <FooterNav title="footer_navigation" items={navigation} t={t} />
+            <FooterNav title="footer_gazpoints" items={gazpoint} t={t} />
+            <FooterNav title="footer_legal" items={legal} t={t} />
           </div>
         </div>
 
         <div className="mt-10">
           <Separator className="bg-border" />
           <div className="flex flex-col gap-2 pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-            <p>© {new Date().getFullYear()} GazPoints. Tous droits réservés.</p>
+            <p>© {new Date().getFullYear()} {t("footer_company")}. {t("footer_rights")}.</p>
             <p>Fait à Douala, Cameroun.</p>
           </div>
         </div>

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
+import { useTranslation } from "@/lib/i18n"
 
 interface UserMenuProps {
   isMobile?: boolean
@@ -21,12 +22,13 @@ interface UserMenuProps {
 
 export function UserMenu({ isMobile = false }: UserMenuProps) {
   const router = useRouter()
+  const t = useTranslation()
   const { data: session } = authClient.useSession()
   const user = session?.user
   const role = (user as { role?: string } | undefined)?.role
   const isStaff = role === "admin" || role === "collaborateur"
   const espaceHref = isStaff ? "/admin" : role === "vendor" ? "/dashboard/pro" : "/dashboard"
-  const espaceLabel = isStaff ? "Administration" : "Mon espace"
+  const espaceLabel = isStaff ? t("dashboard_admin_title") : t("nav_account")
 
   const handleSignOut = async () => {
     await authClient.signOut()
@@ -77,7 +79,7 @@ export function UserMenu({ isMobile = false }: UserMenuProps) {
         <DropdownMenuItem asChild>
           <Link href={isStaff ? "/admin/profil" : "/profil"} className="flex items-center gap-2">
             <User className="size-4" />
-            Mon profil
+            {t("nav_profil")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -86,7 +88,7 @@ export function UserMenu({ isMobile = false }: UserMenuProps) {
           className="flex items-center gap-2 text-destructive focus:text-destructive"
         >
           <LogOut className="size-4" />
-          Se déconnecter
+          {t("nav_logout")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -5,6 +5,7 @@ import { count, eq, desc, sql, gte, and, inArray } from "drizzle-orm"
 import { getStaff } from "@/lib/session"
 import { AdminStatsCards } from "@/app/_components/admin-stats-cards"
 import { AdminRecentActivity, type Activity } from "@/app/_components/admin-recent-activity"
+import { AdminDashboardSections } from "@/app/_components/admin-dashboard-sections"
 
 export const metadata: Metadata = {
   title: { absolute: "Administration | GAZ POINT" },
@@ -226,22 +227,20 @@ export default async function AdminDashboardPage() {
     .slice(0, 24)
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <header>
-        <h1 className="text-3xl font-bold tracking-tight">Tableau de bord</h1>
-        <p className="mt-2 text-muted-foreground">
+        <h1 className="text-2xl font-bold tracking-tight">Tableau de bord</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Vue d&apos;ensemble de la plateforme GAZ POINT
         </p>
       </header>
 
-      <AdminStatsCards stats={stats} />
-
-      <section aria-labelledby="activity-heading">
-        <h2 id="activity-heading" className="text-xl font-semibold mb-4">
-          Activité récente
-        </h2>
-        <AdminRecentActivity activities={recentActivity} canDelete={canDelete} />
-      </section>
+      <AdminDashboardSections
+        stats={stats}
+        recentActivity={
+          <AdminRecentActivity activities={recentActivity} canDelete={canDelete} />
+        }
+      />
     </div>
   )
 }

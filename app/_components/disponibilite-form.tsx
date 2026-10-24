@@ -74,7 +74,6 @@ export function DisponibiliteForm({
     format: editingDispo?.dispo.format ?? "",
     status: (editingDispo?.dispo.status as AvailabilityStatus) ?? "disponible",
     phone: editingDispo?.dispo.phone ?? "",
-    quantity: editingDispo?.dispo.quantity ?? "",
     note: editingDispo?.dispo.note ?? "",
     brand: (editingDispo?.dispo as { brand?: string | null })?.brand ?? "",
     expiresAt: "",
@@ -256,20 +255,6 @@ export function DisponibiliteForm({
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="quantity-input">Quantité (facultatif)</Label>
-                <Input
-                  id="quantity-input"
-                  name="quantity"
-                  type="number"
-                  min="0"
-                  value={formState.quantity}
-                  onChange={(e) => setFormState((s) => ({ ...s, quantity: e.target.value }))}
-                  placeholder="Ex : 25"
-                  disabled={pending}
-                />
-              </div>
-
               <div className="space-y-1.5">
                 <Label htmlFor="expires-input">Expire le (facultatif)</Label>
                 <Input
