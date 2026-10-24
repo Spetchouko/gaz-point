@@ -49,15 +49,13 @@ export function Header() {
           onClick={closeMenu}
           className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
         >
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-mint ring-1 ring-primary/15 shadow-xs">
-            <Image
-              src="/brand/logo.png"
-              alt=""
-              width={28}
-              height={28}
-              className="h-8 w-8 object-contain"
-            />
-          </span>
+          <Image
+            src="/brand/logo.png"
+            alt="GazPoints"
+            width={26}
+            height={26}
+            className="h-7 w-7 object-contain shrink-0"
+          />
           <span className="font-heading text-lg font-bold tracking-tight text-foreground">
             GazPoints
           </span>

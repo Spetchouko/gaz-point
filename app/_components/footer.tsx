@@ -68,15 +68,13 @@ export function Footer() {
               href="/"
               className="inline-flex items-center gap-2 text-lg font-bold tracking-tight"
             >
-              <span className="flex size-8 items-center justify-center rounded-lg bg-primary">
-                <Image
-                  src="/brand/logo.png"
-                  alt=""
-                  width={28}
-                  height={28}
-                  className="h-7 w-7 object-contain"
-                />
-              </span>
+              <Image
+                src="/brand/logo.png"
+                alt="GazPoints"
+                width={24}
+                height={24}
+                className="h-6 w-6 object-contain shrink-0"
+              />
               GazPoints
             </Link>
 
