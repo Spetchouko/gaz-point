@@ -154,7 +154,7 @@ export function RechercheGaz() {
     <>
       <Card className="p-5 shadow-sm shadow-primary/5 ring-1 ring-border sm:p-7">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <p className="font-heading text-sm font-semibold text-foreground">
+          <p className="font-heading text-xl md:text-2xl lg:text-3xl font-extrabold tracking-tight text-foreground leading-snug">
             Quelle bouteille tu cherches&nbsp;?
           </p>
 
@@ -171,7 +171,7 @@ export function RechercheGaz() {
                 type="text"
                 value={brand}
                 onChange={(e) => setBrand(e.target.value)}
-                placeholder="Nom de la marque (ex: Total, Payo, Gazex...)"
+                placeholder="Exemple : Total, Bocom, Tradex"
                 className={selectClass}
               />
             </div>
