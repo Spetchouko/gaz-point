@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { ArrowRight, Check } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -12,30 +13,43 @@ const benefits = [
 
 export function Hero() {
   return (
-    <section id="accueil" className="w-full overflow-hidden bg-gradient-section">
-      <div className="container mx-auto px-4 pt-12 pb-16 md:pt-16 md:pb-20">
-        <div className="mx-auto max-w-3xl text-center">
+    <section id="accueil" className="relative w-full overflow-hidden min-h-[640px] md:min-h-[720px]">
+      {/* Image de fond */}
+      <Image
+        src="/brand/hero.webp"
+        alt="GazPoints"
+        fill
+        className="object-cover"
+        priority
+      />
+
+      {/* Dégradé sombre pour lisibilité */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/70" />
+
+      {/* Contenu centré au-dessus */}
+      <div className="relative z-10 container mx-auto px-4 pt-16 pb-20 md:py-24 flex flex-col items-center text-center">
+        <div className="mx-auto max-w-3xl">
           <Badge
             variant="secondary"
-            className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]"
+            className="h-7 px-4 text-xs font-semibold uppercase tracking-[0.15em] bg-white/10 text-white border-white/20 backdrop-blur-sm"
           >
             Avant de te déplacer, vérifie d&apos;abord
           </Badge>
 
-          <h1 className="mt-5 text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+          <h1 className="mt-6 text-balance text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight drop-shadow-lg">
             Ton gaz est fini&nbsp;?{" "}
-            <span className="text-primary">
+            <span className="text-emerald-300">
               Vérifie où il y en a avant de te déplacer.
             </span>
           </h1>
 
-          <p className="mt-4 text-pretty text-base text-muted-foreground sm:text-lg">
+          <p className="mt-5 text-lg sm:text-xl text-white/90 max-w-2xl mx-auto leading-relaxed drop-shadow">
             GazPoints te montre les points de vente de gaz près de chez toi, avec la
             disponibilité, la distance et le numéro du vendeur.
           </p>
         </div>
 
-        {/* Recherche — au premier plan, visible immédiatement */}
+        {/* Recherche */}
         <div
           id="trouver-du-gaz"
           className="mx-auto mt-10 max-w-3xl scroll-mt-24"
@@ -46,7 +60,7 @@ export function Hero() {
             <Button
               size="lg"
               variant="outline"
-              className="h-11 px-6 text-sm cursor-pointer"
+              className="h-11 px-6 text-sm bg-white/10 text-white border-white/30 hover:bg-white/20 hover:text-white cursor-pointer backdrop-blur-sm"
               render={<Link href="/#comment-ca-marche" />}
               nativeButton={false}
             >
@@ -57,16 +71,16 @@ export function Hero() {
         </div>
 
         {/* Preuves rapides */}
-        <ul className="mx-auto mt-10 grid max-w-3xl gap-3 sm:grid-cols-3 sm:gap-6">
+        <ul className="mx-auto mt-10 grid max-w-3xl gap-4 sm:grid-cols-3 sm:gap-8">
           {benefits.map((benefit) => (
             <li
               key={benefit}
-              className="flex items-start gap-2 text-left text-sm text-muted-foreground"
+              className="flex items-start gap-3 text-left text-sm text-white/90 bg-white/10 rounded-xl px-4 py-3 backdrop-blur-sm border border-white/10 shadow-sm"
             >
-              <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-400/20 text-emerald-300">
                 <Check className="size-3.5" />
               </span>
-              <span>{benefit}</span>
+              <span className="font-medium">{benefit}</span>
             </li>
           ))}
         </ul>

@@ -62,37 +62,22 @@ export function Footer() {
   return (
     <footer className="w-full bg-mint">
       <div className="container mx-auto px-4 py-12 pb-20 md:py-14 md:pb-20">
-        <div className="grid gap-8 md:grid-cols-[1.3fr_1fr_1fr_1fr] md:gap-8">
-          <div>
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-lg font-bold tracking-tight"
-            >
-              <Image
-                src="/brand/logo.png"
-                alt="GazPoints"
-                width={24}
-                height={24}
-                className="h-6 w-6 object-contain shrink-0"
-              />
-              GazPoints
-            </Link>
-
-            <p className="mt-4 max-w-xs text-pretty text-sm text-muted-foreground">
-              {t("footer_tagline")}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:contents">
+        <div className="mt-8 flex flex-row flex-wrap justify-center gap-6 lg:gap-10 max-w-6xl mx-auto items-start text-left">
+            <div className="text-center sm:text-left min-w-[160px]">
+              <Link href="/" className="inline-flex items-center gap-2 text-lg font-bold tracking-tight justify-center sm:justify-start">
+                <Image src="/brand/logo.png" alt="GazPoints" width={20} height={20} className="h-5 w-5 object-contain shrink-0" />
+                GazPoints
+              </Link>
+              <p className="mt-3 text-sm text-muted-foreground">{t("footer_tagline")}</p>
+            </div>
             <FooterNav title="footer_navigation" items={navigation} t={t} />
             <FooterNav title="footer_gazpoints" items={gazpoint} t={t} />
             <FooterNav title="footer_legal" items={legal} t={t} />
           </div>
-        </div>
 
-        <div className="mt-10">
-          <Separator className="bg-border" />
-          <div className="flex flex-col gap-2 pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-10 text-center">
+          <Separator className="bg-border mx-auto max-w-3xl" />
+          <div className="flex flex-col gap-2 pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-center">
             <p>© {new Date().getFullYear()} {t("footer_company")}. {t("footer_rights")}.</p>
             <p>Fait à Douala, Cameroun.</p>
           </div>

@@ -43,25 +43,25 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/90 backdrop-blur-md">
-      <div className="container mx-auto flex h-16 items-center justify-between gap-6 px-4 lg:px-32 lg:grid lg:grid-cols-[auto_1fr_auto] lg:gap-8">
+      <div className="container mx-auto flex h-16 items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
         <Link
           href="/"
           onClick={closeMenu}
-          className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
+          className="flex items-center gap-2.5 transition-opacity hover:opacity-80 ml-[60px]"
         >
           <Image
             src="/brand/logo.png"
             alt="GazPoints"
-            width={26}
-            height={26}
-            className="h-7 w-7 object-contain shrink-0"
+            width={22}
+            height={22}
+            className="h-6 w-6 object-contain shrink-0"
           />
           <span className="font-heading text-lg font-bold tracking-tight text-foreground">
             GazPoints
           </span>
         </Link>
 
-        <nav className="hidden items-center justify-center gap-6 lg:flex">
+        <nav className="hidden items-center justify-center gap-4 sm:gap-6 lg:flex">
           {navLinks.map((link) => (
             <NavLink
               key={link.href}
@@ -71,7 +71,7 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mr-[60px]">
           {isAuthenticated ? (
             <UserMenu />
           ) : (

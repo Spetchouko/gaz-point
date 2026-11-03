@@ -1,3 +1,4 @@
+import Image from "next/image"
 import {
   Compass,
   MapPinOff,
@@ -46,47 +47,63 @@ export function Benefices() {
   return (
     <section className="w-full bg-background py-16 md:py-24">
       <div className="container mx-auto px-4">
-        <div className="mx-auto max-w-3xl text-center">
-          <Badge
-            variant="secondary"
-            className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]"
-          >
-            Ce que ça t&apos;apporte
-          </Badge>
+        <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
+          {/* Contenu à gauche — centré et resserré */}
+          <div className="lg:pl-10 xl:pl-14 space-y-4">
+            <div className="space-y-2">
+              <Badge
+                variant="secondary"
+                className="h-6 px-2.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
+              >
+                Ce que ça t&apos;apporte
+              </Badge>
 
-          <h2 className="mt-6 text-balance font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            Avant de partir, <span className="text-primary">tu décides</span>
-          </h2>
+              <h2 className="text-balance font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+                Avant de partir, <span className="text-primary">tu décides</span>
+              </h2>
 
-          <p className="mt-5 text-pretty text-base text-muted-foreground sm:text-lg">
-            GazPoints ne te vend pas juste une information : il t&apos;aide à
-            choisir où aller, avant de te déplacer.
-          </p>
-        </div>
+              <p className="text-pretty text-base text-muted-foreground sm:text-lg leading-relaxed">
+                GazPoints ne te vend pas juste une information : il t&apos;aide à
+                choisir où aller, avant de te déplacer.
+              </p>
+            </div>
 
-        <div className="mx-auto mt-12 grid max-w-4xl gap-6 sm:grid-cols-3">
-          {benefits.map((benefit) => (
-            <Card
-              key={benefit.title}
-              className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-sm"
-            >
-              <CardHeader>
-                <span className="flex size-11 items-center justify-center rounded-xl bg-mint text-primary-strong ring-1 ring-primary/20">
-                  <benefit.icon className="size-5" />
-                </span>
-                <CardTitle className="mt-4 text-base">
-                  <span className="mt-1 block font-bold text-foreground">
-                    {benefit.title}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {benefit.description}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {benefits.map((benefit) => (
+                <Card
+                  key={benefit.title}
+                  className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-sm"
+                >
+                  <CardHeader>
+                    <span className="flex size-10 items-center justify-center rounded-xl bg-mint text-primary-strong ring-1 ring-primary/20">
+                      <benefit.icon className="size-4" />
+                    </span>
+                    <CardTitle className="mt-3 text-sm font-bold">
+                      <span className="mt-1 block font-bold text-foreground">
+                        {benefit.title}
+                      </span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {benefit.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* Image à droite — pleine section */}
+          <div className="relative w-full h-[420px] sm:h-[500px] lg:h-auto lg:min-h-[560px] overflow-hidden rounded-3xl shadow-2xl ring-4 ring-white/10 lg:sticky lg:top-24">
+            <Image
+              src="/brand/kill.png"
+              alt="Ce que ça t'apporte"
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
         </div>
       </div>
     </section>
