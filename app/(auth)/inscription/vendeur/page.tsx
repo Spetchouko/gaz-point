@@ -217,6 +217,11 @@ function InscriptionVendeurContent() {
     if (error) setError("")
   }
 
+  const handleGoogle = async () => {
+    document.cookie = `gazpoint_register_role=vendor; path=/; max-age=300`
+    await authClient.signIn.social({ provider: "google", callbackURL: "/dashboard/vendeur" })
+  }
+
   return (
     <div className="min-h-screen bg-background px-4 py-8 flex items-center justify-center">
       <div className="w-full max-w-md">
@@ -362,6 +367,14 @@ function InscriptionVendeurContent() {
                 {error}
               </div>
             )}
+
+            <button type="button" onClick={handleGoogle} className="my-4 flex w-full items-center gap-3 rounded-xl border border-primary/15 bg-white p-3 shadow-sm transition hover:border-blue-400 hover:shadow-md">
+              <span className="inline-flex size-8 items-center justify-center rounded-lg bg-blue-500 text-white shadow-sm ring-1 ring-white/30">G</span>
+              <div className="text-left">
+                <p className="font-medium text-sm text-foreground">Se connecter avec Google</p>
+                <p className="text-xs text-muted-foreground">Vendeur — rôle confirmé par email</p>
+              </div>
+            </button>
 
             <Button type="submit" className="w-full h-11" disabled={loading}>
               {loading
