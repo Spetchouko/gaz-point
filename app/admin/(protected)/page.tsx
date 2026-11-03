@@ -7,6 +7,8 @@ import { AdminStatsCards } from "@/app/_components/admin-stats-cards"
 import { AdminRecentActivity, type Activity } from "@/app/_components/admin-recent-activity"
 import { AdminDashboardSections } from "@/app/_components/admin-dashboard-sections"
 
+export const revalidate = 60
+
 export const metadata: Metadata = {
   title: { absolute: "Administration | GAZ POINT" },
 }
@@ -43,7 +45,7 @@ export default async function AdminDashboardPage() {
     recentDispos,
     recentActions,
   ] = await Promise.all([
-    db.select({ count: count() }).from(user).where(eq(user.role, "vendor")),
+    db.select({ count: count() }).from(user).where(eq(user.role, "client")),
     db.select({ count: count() }).from(user).where(eq(user.role, "vendor")),
     // Isolation : un collaborateur ne compte pas les comptes d'administration.
     isAdmin
