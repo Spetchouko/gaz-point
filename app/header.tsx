@@ -211,6 +211,7 @@ function NavLink({
   return (
     <Link
       href={href}
+      prefetch={!href.includes('#')}
       data-active={active || undefined}
       className="relative py-1 text-sm font-medium text-muted-foreground transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:origin-left after:scale-x-0 after:bg-primary after:transition-transform hover:text-foreground hover:after:scale-x-100 data-active:text-foreground data-active:after:scale-x-100"
     >
