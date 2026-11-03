@@ -265,93 +265,84 @@ export function RechercheGaz() {
           </h3>
 
           {results.length > 0 && (
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {results.map((point) => (
-                <Card key={point.id} className="p-4">
-                  <div className="flex items-start justify-between gap-2 flex-wrap">
+                <Card key={point.id} className="shadow-sm border-border rounded-xl overflow-hidden hover:shadow-md transition-shadow">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
-                      <p className="font-medium text-foreground">{point.name}</p>
-                      <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                        <MapPin className="size-3 shrink-0" />
-                        <span className="truncate">
+                      <CardHeader className="pb-2 px-4 pt-4">
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="truncate text-base font-semibold text-foreground">
+                            {point.name}
+                          </CardTitle>
+                          {point.status && (
+                            <Badge
+                              variant="outline"
+                              className={
+                                point.status === "disponible"
+                                  ? "border-primary/30 bg-mint text-primary-strong"
+                                  : point.status === "a_confirmer"
+                                    ? "border-warning/20 bg-warning/10 text-warning"
+                                    : "border-destructive/20 bg-destructive/10 text-destructive"
+                              }
+                            >
+                              {availabilityLabel[point.status]}
+                            </Badge>
+                          )}
+                        </div>
+                        <CardContent className="pt-0 text-xs text-muted-foreground">
+                          {point.brand && <p>Marque : {point.brand}</p>}
+                          {point.format && <p>Grammage : {point.format}</p>}
+                        </CardContent>
+                      </CardHeader>
+
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 pb-2 text-xs text-muted-foreground">
+                        <p className="truncate">
+                          <MapPin className="size-3 shrink-0" />
                           {point.district} — {point.address}
-                        </span>
-                      </p>
-                    </div>
-                    {point.status && (
-                      <Badge
-                        variant="outline"
-                        className={
-                          point.status === "disponible"
-                            ? "border-primary/30 bg-mint text-primary-strong"
-                            : point.status === "a_confirmer"
-                              ? "border-warning/20 bg-warning/10 text-warning"
-                              : "border-destructive/20 bg-destructive/10 text-destructive"
-                        }
-                      >
-                        {availabilityLabel[point.status]}
-                      </Badge>
-                    )}
-                  </div>
+                        </p>
+                        {point.expired && point.expiresAt && (
+                          <p className="text-destructive truncate">
+                            Signalé expiré{" "}
+                            {new Date(point.expiresAt).toLocaleDateString("fr-FR")}
+                          </p>
+                        )}
+                        {point.phone && (
+                          <p className="flex items-center gap-1 truncate">
+                            <Phone className="size-3 shrink-0" />
+                            {point.phone}
+                          </p>
+                        )}
+                      </div>
 
-                  <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-                    {point.expired && point.expiresAt && (
-                      <p className="flex items-center gap-1 text-destructive">
-                        <MapPin className="size-3" />
-                        Signalement expiré depuis le{" "}
-                        {new Date(point.expiresAt).toLocaleDateString("fr-FR")}
-                      </p>
-                    )}
-                    {point.brand && <p>Marque&nbsp;: {point.brand}</p>}
-                    {point.format && <p>Format&nbsp;: {point.format}</p>}
-                    {point.phone && (
-                      <p className="flex items-center gap-1">
-                        <Phone className="size-3" />
-                        {point.phone}
-                      </p>
-                    )}
-                    {point.updatedAt && (
-                      <p>
-                        Mis à jour&nbsp;:{" "}
-                        {new Date(point.updatedAt).toLocaleDateString("fr-FR")}
-                        {point.updatedBy ? ` par ${point.updatedBy}` : ""}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-3">
-                    <Button
-                      variant="outline"
-                      className="h-9 flex-1 gap-1 text-xs cursor-pointer"
-                      onClick={() => openReservationModal(point)}
-                      disabled={
-                        point.status !== "disponible"
-                      }
-                    >
-                      <Shield className="size-3.5" />
-                      Réserver
-                    </Button>
-                    {point.status === "disponible" && (
-                      <Button
-                        variant="default"
-                        className="h-9 flex-1 gap-1 text-xs cursor-pointer"
-                        onClick={() => openReservationModal(point, "consigne")}
-                      >
-                        Consigner cette bouteille
-                      </Button>
-                    )}
-                    {point.phone && (
-                      <Button
-                        variant="ghost"
-                        className="h-9 shrink-0 gap-1 text-xs cursor-pointer"
-                        render={
-                          <a href={`tel:${point.phone.replace(/\s/g, "")}`}>
+                      <div className="px-4 pb-3 flex flex-wrap gap-1.5 border-t border-border">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="flex-1 h-8 gap-1 text-xs shadow-sm border-primary/25 bg-primary text-primary-strong"
+                          onClick={() => openReservationModal(point)}
+                          disabled={point.status !== "disponible"}
+                        >
+                          <Shield className="size-3" />
+                          Réserver
+                        </Button>
+                        {point.status === "disponible" && (
+                          <Button size="sm" variant="outline" className="flex-1 h-8 gap-1 text-xs">
+                            Consigner
+                          </Button>
+                        )}
+                        {point.phone && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="shrink-0 h-8 gap-1 text-xs"
+                          >
                             <Phone className="size-3.5" />
                             Appeler
-                          </a>
-                        }
-                      />
-                    )}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </Card>
               ))}
