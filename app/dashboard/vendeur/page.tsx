@@ -6,6 +6,8 @@ import { DashboardVendeur } from "@/app/_components/dashboard-vendeur"
 import { requirePro } from "@/lib/session"
 import { effectiveStatus } from "@/lib/gaz"
 
+export const revalidate = 60
+
 export const metadata: Metadata = {
   title: { absolute: "Espace vendeur | GazPoints" },
 }
