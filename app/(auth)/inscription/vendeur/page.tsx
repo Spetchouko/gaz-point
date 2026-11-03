@@ -368,13 +368,20 @@ function InscriptionVendeurContent() {
               </div>
             )}
 
-            <button type="button" onClick={handleGoogle} className="my-4 flex w-full items-center gap-3 rounded-xl border border-primary/15 bg-white p-3 shadow-sm transition hover:border-blue-400 hover:shadow-md">
-              <span className="inline-flex size-8 items-center justify-center rounded-lg bg-blue-500 text-white shadow-sm ring-1 ring-white/30">G</span>
-              <div className="text-left">
-                <p className="font-medium text-sm text-foreground">Se connecter avec Google</p>
-                <p className="text-xs text-muted-foreground">Vendeur — rôle confirmé par email</p>
-              </div>
-            </button>
+            <Button
+              variant="outline"
+              className="w-full gap-2 h-11"
+              onClick={handleGoogle}
+            >
+              <Image
+                src="https://www.svgrepo.com/show/475656/google-color.svg"
+                alt="Google"
+                width={16}
+                height={16}
+                className="size-4"
+              />
+              Continuer avec Google
+            </Button>
 
             <Button type="submit" className="w-full h-11" disabled={loading}>
               {loading
