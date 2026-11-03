@@ -80,7 +80,7 @@ export const auth = betterAuth({
     emailVerification: {
         // Pas d'envoi automatique par le cœur de Better Auth : on garde la main
         // sur le déclenchement et la gestion des erreurs d'envoi.
-        sendOnSignUp: false,
+        sendOnSignUp: true,
         // Une session est créée dès que le code est validé (utilisateur connecté).
         autoSignInAfterVerification: true,
     },
