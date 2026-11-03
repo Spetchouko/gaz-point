@@ -91,7 +91,7 @@ Si vous n'avez pas créé de compte sur GazPoints, ignorez cet email.
   const info = await transporter.sendMail({
     from: `"GazPoints" <${GMAIL_USER}>`,
     to: email,
-    subject: `Votre code de validation GazPoints : ${code}`,
+    subject: `Vérification de votre adresse email – GazPoints`,
     text,
     html,
   })
