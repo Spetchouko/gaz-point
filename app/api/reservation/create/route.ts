@@ -10,7 +10,7 @@ import {
 } from "@/lib/publicite-attribution"
 
 const DEFAULT_RESERVATION_AMOUNT = 1000 // FCFA
-const RESERVATION_EXPIRY_MINUTES = 30
+const RESERVATION_EXPIRY_MINUTES = 1440 // 24 heures
 const MAX_RESERVATION_QUANTITY = 20
 
 function generateReservationCode(pointName: string): string {
@@ -145,12 +145,15 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      const available = (dispo.quantity ?? 0) - (dispo.reservedQuantity ?? 0)
-      if (available < quantity) {
-        return NextResponse.json(
-          { error: "Stock insuffisant pour cette réservation" },
-          { status: 400 }
-        )
+      // Vérifie le stock uniquement si le vendeur a renseigné une quantité.
+      if (dispo.quantity !== null && dispo.quantity !== undefined) {
+        const available = (dispo.quantity ?? 0) - (dispo.reservedQuantity ?? 0)
+        if (available < quantity) {
+          return NextResponse.json(
+            { error: "Stock insuffisant pour cette réservation" },
+            { status: 400 }
+          )
+        }
       }
     } else if (pointId) {
       const [dispo] = await db
@@ -181,12 +184,15 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      const available = (dispo.quantity ?? 0) - (dispo.reservedQuantity ?? 0)
-      if (available < quantity) {
-        return NextResponse.json(
-          { error: "Stock insuffisant pour cette réservation" },
-          { status: 400 }
-        )
+      // Vérifie le stock uniquement si renseigné.
+      if (dispo.quantity !== null && dispo.quantity !== undefined) {
+        const available = (dispo.quantity ?? 0) - (dispo.reservedQuantity ?? 0)
+        if (available < quantity) {
+          return NextResponse.json(
+            { error: "Stock insuffisant pour cette réservation" },
+            { status: 400 }
+          )
+        }
       }
 
       targetPointId = dispo.pointId

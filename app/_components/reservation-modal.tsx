@@ -156,12 +156,6 @@ export function ReservationModal({
               <p className="text-sm text-muted-foreground">
                 {point.address}, {point.district}
               </p>
-              <p className="text-sm text-muted-foreground">
-                Stock :{" "}
-                {point.quantity !== null
-                  ? `${point.quantity} bouteille${point.quantity > 1 ? "s" : ""}`
-                  : "—"}
-              </p>
             </div>
 
             <RadioGroup
@@ -185,21 +179,7 @@ export function ReservationModal({
                 </span>
               </div>
 
-              <div className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors">
-                <RadioGroupItem value="consigne" id="consigne" className="mt-1" />
-                <div className="flex-1">
-                  <Label htmlFor="consigne" className="font-medium cursor-pointer">
-                    Consigne de bouteille
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Vous versez {formatPrice(RESERVATION_AMOUNT)} de consigne (remboursable au
-                    retour de la bouteille vide). Le prix du gaz se paiera au dépôt.
-                  </p>
-                </div>
-                <span className="font-semibold text-success">
-                  {formatPrice(RESERVATION_AMOUNT)}
-                </span>
-              </div>
+
             </RadioGroup>
 
             <div className="rounded-lg bg-muted/50 p-3 text-sm">
@@ -212,7 +192,7 @@ export function ReservationModal({
                   Ce montant ne couvre <strong>pas</strong> le prix du gaz
                 </li>
                 <li>Le prix du gaz se règle directement au dépôt</li>
-                <li>La réservation expire dans 30 minutes</li>
+                <li>La réservation expire dans 24 heures</li>
                 <li>Annulation possible avant retrait (libération du stock)</li>
               </ul>
             </div>
@@ -228,7 +208,7 @@ export function ReservationModal({
               <Button variant="outline" onClick={handleClose} disabled={loading}>
                 Annuler
               </Button>
-              <Button onClick={handleConfirm} disabled={loading} className="flex-1 gap-2">
+              <Button size="lg" onClick={handleConfirm} disabled={loading} className="flex-1 gap-2 h-14 text-lg font-extrabold tracking-tight shadow-xl shadow-primary/20 transition hover:shadow-2xl hover:scale-[1.01]">
                 {loading ? (
                   <>
                     <Loader2 className="size-4 animate-spin" />
