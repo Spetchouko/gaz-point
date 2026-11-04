@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import { ModernCard } from "@/app/_components/card-modern"
 import { User, Store } from "lucide-react"
 import Link from "next/link"
 
@@ -48,7 +48,7 @@ export default function InscriptionPage() {
         <div className="grid max-w-140 mx-auto gap-4 md:grid-cols-2">
 
           {/* Carte Usager - Bleu clair */}
-          <Card
+          <ModernCard
             className={cn(
               CARD_HEIGHT,
               "flex flex-col items-center rounded-xl bg-info/5 border-info/20 hover:border-info/40 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 cursor-pointer p-4",
@@ -88,7 +88,7 @@ export default function InscriptionPage() {
           </Card>
 
           {/* Carte Vendeur - Vert/Émeraude clair */}
-          <Card
+          <ModernCard
             className={cn(
               CARD_HEIGHT,
               "flex flex-col items-center rounded-xl bg-success/5 border-success/20 hover:border-success/40 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 cursor-pointer p-4",

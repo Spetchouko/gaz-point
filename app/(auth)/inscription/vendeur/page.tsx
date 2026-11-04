@@ -4,7 +4,7 @@ import { Suspense, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ModernCard } from "@/app/_components/card-modern"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -239,18 +239,18 @@ function InscriptionVendeurContent() {
           </Button>
         </div>
 
-        <Card className="shadow-sm">
-          <CardHeader className="text-center pb-2">
+        <ModernCard className="shadow-sm">
+          <ModernCardHeader className="text-center pb-2">
             <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-success/10 text-success ring-1 ring-success/20">
               <Store className="size-6" />
             </div>
-            <CardTitle className="text-xl font-bold">Créer un compte vendeur</CardTitle>
+            <ModernCardTitle className="text-xl font-bold">Créer un compte vendeur</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
               Remplissez vos informations pour commencer
             </p>
           </CardHeader>
 
-          <CardContent className="space-y-4">
+          <ModernCardContent className="space-y-4">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="businessName">Nom du dépôt</Label>
@@ -480,18 +480,18 @@ function ConfigurationProfilVendeur() {
   return (
     <div className="min-h-screen bg-background px-4 py-8 flex items-center justify-center">
       <div className="w-full max-w-md">
-        <Card className="shadow-sm">
-          <CardHeader className="text-center pb-2">
+        <ModernCard className="shadow-sm">
+          <ModernCardHeader className="text-center pb-2">
             <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-success/10 text-success ring-1 ring-success/20">
               <Store className="size-6" />
             </div>
-            <CardTitle className="text-xl font-bold">Configuration du profil vendeur</CardTitle>
+            <ModernCardTitle className="text-xl font-bold">Configuration du profil vendeur</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
               Complétez vos informations de boutique
             </p>
           </CardHeader>
 
-          <CardContent className="p-6 space-y-4">
+          <ModernCardContent className="p-6 space-y-4">
             <form onSubmit={handleConfigSubmit} className="space-y-4">
               <div className="space-y-3">
                 <Label htmlFor="businessAddress">Adresse du dépôt</Label>

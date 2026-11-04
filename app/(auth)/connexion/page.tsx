@@ -7,7 +7,7 @@ import { safeRedirect } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { LoaderButton } from "@/app/_components/loader-button"
 import { ActionFeedback } from "@/app/_components/action-feedback"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ModernCard } from "@/app/_components/card-modern"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
@@ -131,7 +131,7 @@ function LoginPageContent() {
           </Button>
         </div>
 
-        <Card className="shadow-sm">
+        <ModernCard className="shadow-sm">
           <CardHeader className="text-center pb-2">
             <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
               <Image

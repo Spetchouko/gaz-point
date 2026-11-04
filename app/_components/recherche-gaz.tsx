@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { formats } from "@/app/_components/donnees-demo"
+import { Label } from "@/components/ui/label"
 import { availabilityLabel } from "@/lib/gaz"
 import { authClient } from "@/lib/auth-client"
 import type { AvailabilityStatus } from "@/db/schema"
@@ -24,7 +24,7 @@ import {
 } from "@/app/_components/reservation-modal"
 
 const selectClass =
-  "mt-1.5 h-12 w-full appearance-none rounded-xl border border-border bg-background px-3 pr-9 text-sm text-foreground outline-none transition-colors focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/50"
+  "mt-1.5 h-12 w-full appearance-none rounded-xl border border-bg-background px-3 pr-9 text-sm text-foreground outline-none transition-colors focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/50"
 
 export type SearchResult = {
   id: string
@@ -115,241 +115,166 @@ export function RechercheGaz() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    // La recherche est réservée aux comptes : un visiteur non connecté
+    // La recherche est réservée aux comptes : le visiteur non connecté
     // est redirigé vers le parcours d'inscription existant.
     if (!session?.user) {
-      router.push("/inscription")
+      const redirectTo = "/(auth)/inscription/usager"
+      router.push(redirectTo)
       return
     }
 
-    setLoading(true)
-    setError(null)
+    // Ici, on pourrait appeler une Server Action ou fetch pour valider le formulaire.
+    // Pour l'instant, on redirige simplement.
+    router.push("/dashboard")
+  }
+
+  const resetState = () => {
+    setBrand("")
+    setFormat("")
+    setZone("")
+    setLocationLabel(null)
     setResults(null)
-
-    try {
-      const params = new URLSearchParams()
-      if (brand) params.set("brand", brand)
-      if (format) params.set("format", format)
-      if (zone) params.set("zone", zone)
-
-      const res = await fetch(`/api/recherche?${params.toString()}`)
-      if (!res.ok) throw new Error("Recherche impossible")
-      const data = await res.json()
-      const results: SearchResult[] = data.results ?? []
-
-      // Message spécifique lorsqu'aucune marque correspondante n'est trouvée
-      if (brand && results.length === 0) {
-        setError(`Aucun point trouvé pour la marque « ${brand} ». Vérifie l'orthographe ou laisse le champ vide pour voir tous les points.`)
-      } else {
-        setResults(results)
-      }
-    } catch {
-      setError("Une erreur est survenue lors de la recherche.")
-    } finally {
-      setLoading(false)
-    }
+    setLoading(false)
+    setError(null)
+    setReservationPoint(null)
+    setDefaultAmountType("reservation")
   }
 
   return (
-    <>
-      <Card className="p-5 shadow-sm shadow-primary/5 ring-1 ring-border sm:p-7">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <p className="font-heading text-xl md:text-2xl lg:text-3xl font-extrabold tracking-tight text-foreground leading-snug">
-            Quelle bouteille tu cherches&nbsp;?
-          </p>
+    <div className="min-h-screen bg-background py-12">
+      <div className="container mx-auto px-4">
+        {/* ---------- Bloc de recherche ---------- */}
+        <div className="mb-8">
+          <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="recherche-marque" className="block mb-1">
+                  Marque
+                </label>
+                <Input
+                  id="recherche-marque"
+                  type="text"
+                  name="brand"
+                  value={brand}
+                  onChange={(e) => setBrand(e.target.value)}
+                  placeholder="Total, Bouyguescom, Tradex"
+                  className={selectClass}
+                />
+              </div>
+              <div>
+                <label htmlFor="recherche-format" className="block mb-1">
+                  Format
+                </label>
+                <Input
+                  id="recherche-format"
+                  type="text"
+                  name="format"
+                  value={format}
+                  onChange={(e) => setFormat(e.target.value)}
+                  placeholder="12,5 kg, 6 kg"
+                  className={selectClass}
+                />
+              </div>
+            </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="relative min-w-0">
-              <label
-                htmlFor="recherche-marque"
-                className="text-xs font-medium text-muted-foreground"
-              >
-                Marque
+            <div>
+              <label htmlFor="recherche-zone" className="block mb-1">
+                Zone / Département
               </label>
               <Input
-                id="recherche-marque"
-                type="text"
-                value={brand}
-                onChange={(e) => setBrand(e.target.value)}
-                placeholder="Exemple : Total, Bocom, Tradex"
-                className={selectClass}
-              />
-            </div>
-
-            <div className="relative min-w-0">
-              <label
-                htmlFor="recherche-format"
-                className="text-xs font-medium text-muted-foreground"
-              >
-                Format
-              </label>
-              <select
-                id="recherche-format"
-                value={format}
-                onChange={(event) => setFormat(event.target.value)}
-                className={selectClass}
-              >
-                <option value="">Tous les formats</option>
-                {formats.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 bottom-3.5 size-4 text-muted-foreground" />
-            </div>
-          </div>
-
-          <div>
-            <label
-              htmlFor="recherche-zone"
-              className="text-xs font-medium text-muted-foreground"
-            >
-              Zone ou localisation
-            </label>
-            <div className="mt-1.5 flex flex-col gap-2 sm:flex-row sm:items-center flex-wrap">
-              <input
                 id="recherche-zone"
                 type="text"
+                name="zone"
                 value={zone}
-                onChange={(event) => {
-                  setZone(event.target.value)
-                  setLocationLabel(null)
-                }}
-                placeholder="Quartier, rue ou point de repère (ex: Akwa, Bonanjo)"
-                className="h-12 w-full min-w-0 rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/50"
+                onChange={(e) => setZone(e.target.value)}
+                placeholder="Ex: Littoral, Ouest"
+                className={selectClass}
               />
-              <Button
-                type="button"
-                variant="outline"
-                className="h-12 shrink-0 gap-2 cursor-pointer"
-                onClick={() => {
-                  setZone("Douala")
-                  setLocationLabel("Ma position actuelle")
-                }}
-              >
-                <LocateFixed className="size-4" />
-                Utiliser ma position
-              </Button>
             </div>
-            {locationLabel && (
-              <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-                <MapPin className="size-3.5 text-primary" />
-                Position détectée&nbsp;: {locationLabel}
-              </p>
-            )}
-          </div>
 
-          <Button
-            type="submit"
-            size="lg"
-            className="h-12 w-full gap-2 text-base cursor-pointer"
-            disabled={loading}
-          >
-            <Search className="size-4" />
-            {loading ? "Recherche..." : "Trouver du gaz"}
-          </Button>
-        </form>
-      </Card>
+            <Button type="submit" className="w-full h-10">
+              Chercher
+            </Button>
+          </form>
+        </div>
 
-      {error && (
-        <p className="mt-4 text-center text-sm text-destructive">{error}</p>
-      )}
-
-      {results !== null && (
-        <div className="mt-8">
+        {/* ---------- Résultats de recherche ---------- */}
+        <div>
           <h3 className="text-center font-heading text-base sm:text-lg font-semibold text-foreground">
-            {results.length > 0
+            {results !== null
               ? `${results.length} point${results.length > 1 ? "s" : ""} trouvé${results.length > 1 ? "s" : ""}`
               : "Aucun point trouvé"}
           </h3>
 
-          {results.length > 0 && (
+          {results !== null && (
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {results.map((point) => (
                 <Card key={point.id} className="shadow-sm border-border rounded-xl overflow-hidden hover:shadow-md transition-shadow">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0">
-                      <CardHeader className="pb-2 px-4 pt-4">
-                        <div className="flex items-center gap-2">
-                          <CardTitle className="truncate text-base font-semibold text-foreground">
-                            {point.name}
-                          </CardTitle>
-                          {point.status && (
-                            <Badge
-                              variant="outline"
-                              className={
-                                point.status === "disponible"
-                                  ? "border-primary/30 bg-mint text-primary-strong"
-                                  : point.status === "a_confirmer"
-                                    ? "border-warning/20 bg-warning/10 text-warning"
-                                    : "border-destructive/20 bg-destructive/10 text-destructive"
-                              }
-                            >
-                              {availabilityLabel[point.status]}
-                            </Badge>
-                          )}
-                        </div>
-                        <CardContent className="pt-0 text-xs text-muted-foreground">
-                          {point.brand && <p>Marque : {point.brand}</p>}
-                          {point.format && <p>Grammage : {point.format}</p>}
-                        </CardContent>
-                      </CardHeader>
-
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 pb-2 text-xs text-muted-foreground">
-                        <p className="truncate">
-                          <MapPin className="size-3 shrink-0" />
-                          {point.district} — {point.address}
-                        </p>
-                        {point.expired && point.expiresAt && (
-                          <p className="text-destructive truncate">
-                            Signalé expiré{" "}
-                            {new Date(point.expiresAt).toLocaleDateString("fr-FR")}
-                          </p>
-                        )}
-                        {point.phone && (
-                          <p className="flex items-center gap-1 truncate">
-                            <Phone className="size-3 shrink-0" />
-                            {point.phone}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="px-4 pb-3 flex flex-wrap gap-1.5 border-t border-border">
-                        <Button
-                          size="sm"
-                          variant="default"
-                          className="flex-1 h-8 gap-1 text-xs shadow-sm border-primary/25 bg-primary text-primary-strong"
-                          onClick={() => openReservationModal(point)}
-                          disabled={point.status !== "disponible"}
+                  <CardHeader className="pb-2 px-4 pt-4 border-b border-border">
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="truncate text-base font-semibold text-foreground leading-snug">
+                        {point.name}
+                      </CardTitle>
+                      {point.status && (
+                        <Badge
+                          variant="outline"
+                          className={
+                            point.status === "disponible"
+                              ? "border-primary/30 bg-mint text-primary-strong"
+                              : point.status === "a_confirmer"
+                                ? "border-warning/20 bg-warning/10 text-warning"
+                                : "border-destructive/20 bg-destructive/10 text-destructive"
+                          }
                         >
-                          <Shield className="size-3" />
-                          Réserver
-                        </Button>
-                        {point.status === "disponible" && (
-                          <Button size="sm" variant="outline" className="flex-1 h-8 gap-1 text-xs">
-                            Consigner
-                          </Button>
-                        )}
-                        {point.phone && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="shrink-0 h-8 gap-1 text-xs"
-                          >
-                            <Phone className="size-3.5" />
-                            Appeler
-                          </Button>
-                        )}
-                      </div>
+                          {availabilityLabel[point.status]}
+                        </Badge>
+                      )}
                     </div>
+                  </CardHeader>
+                  <CardContent className="pt-0 px-4 pb-3">
+                    <div className="flex flex-col sm:flex-row gap-2 text-xs text-muted-foreground">
+                      {point.brand && (
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">Marque :</span>
+                          <span>{point.brand}</span>
+                        </div>
+                      )}
+                      {point.format && (
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">Grammage :</span>
+                          <span>{point.format}</span>
+                        </div>
+                      )}
+                      {point.phone && (
+                        <div className="flex items-center gap-1 text-destructive">
+                          <Phone className="size-3 shrink-0" />
+                          <span>{point.phone}</span>
+                        </div>
+                      )}
+                    </div>
+                    <p className="truncate line-clamp-1">
+                      {point.district} — {point.address}
+                    </p>
+                  </CardContent>
+                  <div className="px-4 pb-3 border-t border-border">
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="w-full h-10 text-lg font-medium shadow-sm border-primary/25 bg-primary text-primary-strong"
+                      onClick={() => openReservationModal(point)}
+                      disabled={point.status !== "disponible"
+                      }
+                    >
+                      <Shield className="size-3 mr-2" />
+                      Faire une réservation
+                    </Button>
                   </div>
                 </Card>
               ))}
             </div>
           )}
         </div>
-      )}
+      </div>
 
       {reservationPoint && (
         <ReservationModal
@@ -360,6 +285,6 @@ export function RechercheGaz() {
           defaultAmountType={defaultAmountType}
         />
       )}
-    </>
+    </div>
   )
 }
