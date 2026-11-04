@@ -244,11 +244,13 @@ function InscriptionVendeurContent() {
             <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-success/10 text-success ring-1 ring-success/20">
               <Store className="size-6" />
             </div>
-            <ModernCardTitle className="text-xl font-bold">Créer un compte vendeur</CardTitle>
+            <ModernCardTitle className="text-xl font-bold">
+              Créer un compte vendeur
+            </ModernCardTitle>
             <p className="text-sm text-muted-foreground mt-1">
               Remplissez vos informations pour commencer
             </p>
-          </CardHeader>
+          </ModernCardHeader>
 
           <ModernCardContent className="space-y-4">
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -403,7 +405,7 @@ function InscriptionVendeurContent() {
             </Button>
           </form>
         </CardContent>
-        </Card>
+        </ModernCard>
       </div>
     </div>
   )
@@ -485,11 +487,13 @@ function ConfigurationProfilVendeur() {
             <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-success/10 text-success ring-1 ring-success/20">
               <Store className="size-6" />
             </div>
-            <ModernCardTitle className="text-xl font-bold">Configuration du profil vendeur</CardTitle>
+            <ModernCardTitle className="text-xl font-bold">
+              Configuration du profil vendeur
+            </ModernCardTitle>
             <p className="text-sm text-muted-foreground mt-1">
               Complétez vos informations de boutique
             </p>
-          </CardHeader>
+          </ModernCardHeader>
 
           <ModernCardContent className="p-6 space-y-4">
             <form onSubmit={handleConfigSubmit} className="space-y-4">
@@ -555,7 +559,7 @@ function ConfigurationProfilVendeur() {
               </Button>
             </form>
           </CardContent>
-        </Card>
+        </ModernCard>
       </div>
     </div>
   )
