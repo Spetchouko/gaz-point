@@ -235,7 +235,7 @@ export async function POST(req: NextRequest) {
       .where(
         and(
           eq(disponibilite.id, targetDisponibiliteId),
-          sql`COALESCE(${disponibilite.quantity}, 0) - ${disponibilite.reservedQuantity} >= ${quantity}`
+          sql`(${disponibilite.quantity} IS NULL) OR (COALESCE(${disponibilite.quantity}, 0) - ${disponibilite.reservedQuantity} >= ${quantity})`
         )
       )
       .returning({ id: disponibilite.id })
