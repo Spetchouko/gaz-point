@@ -286,7 +286,7 @@ export function RechercheGaz() {
                                     : "border-destructive/20 bg-destructive/10 text-destructive"
                               }
                             >
-                              {availabilityLabel[point.status]}
+                              {point.status ? availabilityLabel[point.status] : "—"}
                             </Badge>
                             <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
                               {point.brand && <span className="font-medium">{point.brand}</span>}

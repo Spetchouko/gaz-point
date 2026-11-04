@@ -4,6 +4,7 @@ import { Suspense, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ModernCard } from "@/app/_components/card-modern"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -240,19 +241,19 @@ function InscriptionVendeurContent() {
         </div>
 
         <ModernCard className="shadow-sm">
-          <ModernCardHeader className="text-center pb-2">
+          <CardHeader className="text-center pb-2">
             <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-success/10 text-success ring-1 ring-success/20">
               <Store className="size-6" />
             </div>
-            <ModernCardTitle className="text-xl font-bold">
+            <CardTitle className="text-xl font-bold">
               Créer un compte vendeur
-            </ModernCardTitle>
+            </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
               Remplissez vos informations pour commencer
             </p>
-          </ModernCardHeader>
+          </CardHeader>
 
-          <ModernCardContent className="space-y-4">
+          <CardContent className="space-y-4">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="businessName">Nom du dépôt</Label>
@@ -404,7 +405,7 @@ function InscriptionVendeurContent() {
                 : "Créer un compte vendeur"}
             </Button>
           </form>
-          </ModernCardContent>
+          </CardContent>
         </ModernCard>
       </div>
     </div>
@@ -483,19 +484,19 @@ function ConfigurationProfilVendeur() {
     <div className="min-h-screen bg-background px-4 py-8 flex items-center justify-center">
       <div className="w-full max-w-md">
         <ModernCard className="shadow-sm">
-          <ModernCardHeader className="text-center pb-2">
+          <CardHeader className="text-center pb-2">
             <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-success/10 text-success ring-1 ring-success/20">
               <Store className="size-6" />
             </div>
-            <ModernCardTitle className="text-xl font-bold">
+            <CardTitle className="text-xl font-bold">
               Configuration du profil vendeur
-            </ModernCardTitle>
+            </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
               Complétez vos informations de boutique
             </p>
-          </ModernCardHeader>
+          </CardHeader>
 
-          <ModernCardContent className="p-6 space-y-4">
+          <CardContent className="p-6 space-y-4">
             <form onSubmit={handleConfigSubmit} className="space-y-4">
               <div className="space-y-3">
                 <Label htmlFor="businessAddress">Adresse du dépôt</Label>
@@ -558,7 +559,7 @@ function ConfigurationProfilVendeur() {
                 {loading ? "Enregistrement en cours..." : "Enregistrer la configuration"}
               </Button>
             </form>
-            </ModernCardContent>
+            </CardContent>
         </ModernCard>
       </div>
     </div>
