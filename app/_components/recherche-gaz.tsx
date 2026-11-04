@@ -270,12 +270,12 @@ export function RechercheGaz() {
                 <Card key={point.id} className="shadow-sm border-border rounded-xl overflow-hidden hover:shadow-md transition-shadow">
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
-                      <CardHeader className="pb-2 px-4 pt-4">
-                        <div className="flex items-center gap-2">
-                          <CardTitle className="truncate text-base font-semibold text-foreground">
-                            {point.name}
-                          </CardTitle>
-                          {point.status && (
+                      <CardHeader className="pb-1 pt-2 px-3">
+                        <div className="flex items-start justify-between gap-1">
+                          <div className="min-w-0">
+                            <CardTitle className="truncate text-base font-semibold leading-snug text-foreground">
+                              {point.name}
+                            </CardTitle>
                             <Badge
                               variant="outline"
                               className={
@@ -288,59 +288,38 @@ export function RechercheGaz() {
                             >
                               {availabilityLabel[point.status]}
                             </Badge>
+                            <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+                              {point.brand && <span className="font-medium">{point.brand}</span>}
+                              {point.format && <span className="font-medium">{point.format}</span>}
+                            </div>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="px-3 pb-3 pt-0">
+                        <div className="flex flex-col gap-y-1 text-xs text-muted-foreground">
+                          <p className="flex items-center gap-1">
+                            <MapPin className="size-3 shrink-0" />
+                            {point.district} — {point.address}
+                          </p>
+                          {point.phone && (
+                            <p className="flex items-center gap-1 text-destructive">
+                              <Phone className="size-3 shrink-0" />
+                              {point.phone}
+                            </p>
                           )}
                         </div>
-                        <CardContent className="pt-0 text-xs text-muted-foreground">
-                          {point.brand && <p>Marque : {point.brand}</p>}
-                          {point.format && <p>Grammage : {point.format}</p>}
-                        </CardContent>
-                      </CardHeader>
-
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 pb-2 text-xs text-muted-foreground">
-                        <p className="truncate">
-                          <MapPin className="size-3 shrink-0" />
-                          {point.district} — {point.address}
-                        </p>
-                        {point.expired && point.expiresAt && (
-                          <p className="text-destructive truncate">
-                            Signalé expiré{" "}
-                            {new Date(point.expiresAt).toLocaleDateString("fr-FR")}
-                          </p>
-                        )}
-                        {point.phone && (
-                          <p className="flex items-center gap-1 truncate">
-                            <Phone className="size-3 shrink-0" />
-                            {point.phone}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="px-4 pb-3 flex flex-wrap gap-1.5 border-t border-border">
+                      </CardContent>
+                      <div className="px-3 pb-3 border-t border-border">
                         <Button
                           size="sm"
                           variant="default"
-                          className="flex-1 h-8 gap-1 text-xs shadow-sm border-primary/25 bg-primary text-primary-strong"
+                          className="h-10 w-full text-base font-medium shadow-sm border-primary/25 bg-primary text-primary-strong"
                           onClick={() => openReservationModal(point)}
                           disabled={point.status !== "disponible"}
                         >
-                          <Shield className="size-3" />
-                          Réserver
+                          <Shield className="size-3 mr-2" />
+                          Faire une réservation
                         </Button>
-                        {point.status === "disponible" && (
-                          <Button size="sm" variant="outline" className="flex-1 h-8 gap-1 text-xs">
-                            Consigner
-                          </Button>
-                        )}
-                        {point.phone && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="shrink-0 h-8 gap-1 text-xs"
-                          >
-                            <Phone className="size-3.5" />
-                            Appeler
-                          </Button>
-                        )}
                       </div>
                     </div>
                   </div>
