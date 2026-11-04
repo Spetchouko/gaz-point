@@ -7,6 +7,7 @@ import { safeRedirect } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { LoaderButton } from "@/app/_components/loader-button"
 import { ActionFeedback } from "@/app/_components/action-feedback"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ModernCard } from "@/app/_components/card-modern"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -272,7 +273,7 @@ function LoginPageContent() {
               </Link>
             </p>
           </CardContent>
-        </Card>
+        </ModernCard>
       </div>
     </div>
   )

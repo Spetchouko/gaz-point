@@ -85,7 +85,7 @@ export default function InscriptionPage() {
             >
               Continuer
             </Button>
-          </Card>
+          </ModernCard>
 
           {/* Carte Vendeur - Vert/Émeraude clair */}
           <ModernCard
@@ -125,7 +125,7 @@ export default function InscriptionPage() {
             >
               Continuer
             </Button>
-          </Card>
+          </ModernCard>
 
         </div>
 
