@@ -313,7 +313,7 @@ export function RechercheGaz() {
                         <Button
                           size="sm"
                           variant="default"
-                          className="h-10 w-full text-base font-medium shadow-sm border-primary/25 bg-primary text-primary-strong"
+                          className="h-10 w-full text-lg font-medium shadow-sm border-primary/25 bg-primary text-primary-strong"
                           onClick={() => openReservationModal(point)}
                           disabled={point.status !== "disponible"}
                         >
