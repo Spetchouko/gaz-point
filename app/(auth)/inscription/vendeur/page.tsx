@@ -404,7 +404,7 @@ function InscriptionVendeurContent() {
                 : "Créer un compte vendeur"}
             </Button>
           </form>
-        </CardContent>
+          </ModernCardContent>
         </ModernCard>
       </div>
     </div>
@@ -558,7 +558,7 @@ function ConfigurationProfilVendeur() {
                 {loading ? "Enregistrement en cours..." : "Enregistrer la configuration"}
               </Button>
             </form>
-          </CardContent>
+            </ModernCardContent>
         </ModernCard>
       </div>
     </div>
