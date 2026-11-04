@@ -22,6 +22,7 @@ import {
   ReservationModal,
   type ReservationResult,
 } from "@/app/_components/reservation-modal"
+import { getCachedSearch, setCachedSearch } from "@/lib/cache-service"
 
 const selectClass =
   "mt-1.5 h-12 w-full appearance-none rounded-xl border border-border bg-background px-3 pr-9 text-sm text-foreground outline-none transition-colors focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/50"
@@ -122,9 +123,22 @@ export function RechercheGaz() {
       return
     }
 
+    const queryKey = [brand, format, zone].filter(Boolean).join("|")
+    let hasCache = false
+
+    try {
+      const cached = await getCachedSearch(queryKey)
+      if (cached && cached.length > 0) {
+        setResults(cached as SearchResult[])
+        hasCache = true
+      }
+    } catch {
+      // cache indisponible -> aller au backend
+    }
+
     setLoading(true)
     setError(null)
-    setResults(null)
+    if (!hasCache) setResults(null)
 
     try {
       const params = new URLSearchParams()
@@ -142,6 +156,7 @@ export function RechercheGaz() {
         setError(`Aucun point trouvé pour la marque « ${brand} ». Vérifie l'orthographe ou laisse le champ vide pour voir tous les points.`)
       } else {
         setResults(results)
+        await setCachedSearch(queryKey, results)
       }
     } catch {
       setError("Une erreur est survenue lors de la recherche.")
