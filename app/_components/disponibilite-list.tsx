@@ -1,11 +1,9 @@
 "use client"
 
-import { MapPin, PencilLine, Phone, RotateCcw, Trash2, Plus } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { availabilityLabel, availabilityBadgeClass } from "@/lib/gaz"
-import { formatDate } from "@/lib/gaz"
-import type { AvailabilityStatus } from "@/db/schema"
+import { cn } from "@/lib/utils"
+import { DisponibiliteCard } from "@/app/_components/cards"
 
 type PointWithDispos = {
   id: string
@@ -52,86 +50,39 @@ export function DisponibiliteList({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {point.disponibilites.map((dispo) => (
-        <div
+        <DisponibiliteCard
           key={dispo.id}
-          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 rounded-lg border bg-card"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <span className="text-sm font-medium">{dispo.format ?? "—"}</span>
-              </div>
-              <div>
-                <p className="font-medium text-foreground">
-                  {dispo.format ?? "Format non défini"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {formatDate(dispo.createdAt)}
-                  {dispo.quantity !== null && (
-                    <> · {dispo.quantity} bouteille{dispo.quantity > 1 ? "s" : ""}</>
-                  )}
-                </p>
-              </div>
-            </div>
-
-            <Badge
-              variant="outline"
-              className={`${availabilityBadgeClass[dispo.status as AvailabilityStatus]} shrink-0`}
-            >
-              {availabilityLabel[dispo.status as AvailabilityStatus]}
-            </Badge>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-            {dispo.note && (
-              <span className="text-xs text-muted-foreground flex items-center gap-1 flex-1 sm:flex-none">
-                <MapPin className="size-3" />
-                {dispo.note}
-              </span>
-            )}
-            {dispo.phone && (
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Phone className="size-3" />
-                {dispo.phone}
-              </span>
-            )}
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => onEdit(dispo, point.id, point.name)}
-            >
-              <PencilLine className="size-3.5" />
-              Modifier
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => onEdit(
-                { ...dispo, status: dispo.status === "disponible" ? "indisponible" : "disponible" },
-                point.id,
-                point.name
-              )}
-            >
-              <RotateCcw className="size-3.5" />
-              {dispo.status === "disponible" ? "Indisponible" : "Disponible"}
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => onEdit(dispo, point.id, point.name)}
-            >
-              <Trash2 className="size-3.5" />
-            </Button>
-          </div>
-        </div>
+          variant="vendor"
+          id={dispo.id}
+          pointId={point.id}
+          pointName={point.name}
+          format={dispo.format}
+          brand={null}
+          status={dispo.status}
+          phone={dispo.phone}
+          quantity={dispo.quantity}
+          note={dispo.note}
+          createdAt={dispo.createdAt}
+          onEdit={() =>
+            onEdit(dispo, point.id, point.name)
+          }
+          onToggleStatus={() =>
+            onEdit(
+              {
+                ...dispo,
+                status:
+                  dispo.status === "disponible" ? "indisponible" : "disponible",
+              },
+              point.id,
+              point.name
+            )
+          }
+          onDelete={() =>
+            onEdit(dispo, point.id, point.name)
+          }
+        />
       ))}
     </div>
   )

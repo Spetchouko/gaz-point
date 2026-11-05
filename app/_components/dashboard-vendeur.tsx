@@ -6,7 +6,6 @@ import {
   Store,
   RefreshCw,
   Cylinder,
-  MapPin,
   Shield,
   CheckCircle2,
   AlertCircle,
@@ -16,14 +15,10 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { DisponibiliteForm } from "@/app/_components/disponibilite-form"
-import { availabilityLabel, availabilityBadgeClass } from "@/lib/gaz"
 import { cn } from "@/lib/utils"
-import { formatDate } from "@/lib/gaz"
 import type { AvailabilityStatus } from "@/db/schema"
 import {
   createPointDeVenteVendor,
@@ -32,6 +27,8 @@ import {
   type ActionResult,
 } from "@/app/dashboard/pro/actions"
 import { useRouter } from "next/navigation"
+import { PointDeVenteCard } from "@/app/_components/cards"
+import { DisponibiliteCard } from "@/app/_components/cards"
 
 type DispoRow = {
   id: string
@@ -444,71 +441,51 @@ export function DashboardVendeur({
           <h2 className="text-lg font-bold tracking-tight mb-4">
             Mes points de vente
           </h2>
-          <div className="space-y-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {points.map((point) => (
-              <Card key={point.id} className="hover:shadow-sm transition-shadow border-b border-border">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        <Store className="size-4 text-primary" aria-hidden />
-                        {point.name}
-                      </CardTitle>
-                      <CardDescription className="mt-1 flex items-center gap-1.5">
-                        <MapPin className="size-3.5 shrink-0" aria-hidden />
-                        {point.address} — {point.district}
-                      </CardDescription>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {point.effectiveStatus && (
-                        <Badge
-                          variant="outline"
-                          className={availabilityBadgeClass[point.effectiveStatus]}
-                        >
-                          {availabilityLabel[point.effectiveStatus]}
-                        </Badge>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1"
-                        onClick={() => handleAddDispo(point)}
-                      >
-                        <Plus className="size-4" />
-                        Disponibilité
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Quartier</p>
-                      <p className="font-medium truncate">{point.district}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Adresse</p>
-                      <p className="font-medium truncate">{point.address}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Statut</p>
-                      <p className="font-medium">
-                        {point.effectiveStatus
-                          ? availabilityLabel[point.effectiveStatus]
-                          : "—"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Mis à jour</p>
-                      <p className="font-medium">
-                        {point.lastUpdate
-                          ? formatDate(point.lastUpdate)
-                          : "—"}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <PointDeVenteCard
+                key={point.id}
+                variant="vendor"
+                id={point.id}
+                name={point.name}
+                district={point.district}
+                address={point.address}
+                phone={point.phone}
+                status={point.effectiveStatus}
+                disposCount={point.disponibilites.length}
+                isActive={point.isAvailable}
+                onView={() => {}}
+                onEdit={() => {
+                  // Navigation to point details handled by points-de-vente page
+                }}
+                onManageDispos={() => {
+                  setEditingDispo({
+                    dispo: {
+                      id: "",
+                      format: null,
+                      status: "disponible",
+                      phone: null,
+                      quantity: null,
+                      note: null,
+                      createdAt: new Date().toISOString(),
+                    },
+                    pointId: point.id,
+                    pointName: point.name,
+                  })
+                  setIsFormOpen(true)
+                }}
+                onDelete={() => {
+                  if (
+                    window.confirm(
+                      "Êtes-vous sûr de vouloir supprimer ce point de vente ?"
+                    )
+                  ) {
+                    deletePointDeVenteVendor(null, {
+                      pointId: point.id,
+                    } as unknown as FormData)
+                  }
+                }}
+              />
             ))}
           </div>
         </div>

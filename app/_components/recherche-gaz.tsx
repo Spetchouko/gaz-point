@@ -8,11 +8,10 @@ import {
   MapPin,
   Phone,
   Search,
-  Shield,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { formats } from "@/app/_components/donnees-demo"
 import { availabilityLabel } from "@/lib/gaz"
@@ -23,6 +22,7 @@ import {
   type ReservationResult,
 } from "@/app/_components/reservation-modal"
 import { getCachedSearch, setCachedSearch } from "@/lib/cache-service"
+import { ResultatRechercheCard } from "@/app/_components/cards"
 
 const selectClass =
   "mt-1.5 h-12 w-full appearance-none rounded-xl border border-border bg-background px-3 pr-9 text-sm text-foreground outline-none transition-colors focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/50"
@@ -279,65 +279,21 @@ export function RechercheGaz() {
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {results.map((point) => (
-                <Card key={point.id} className="shadow-sm border-border rounded-xl overflow-hidden hover:shadow-md transition-shadow">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0">
-                      <CardHeader className="pb-1 pt-2 px-3">
-                        <div className="flex items-start justify-between gap-1">
-                          <div className="min-w-0">
-                            <CardTitle className="truncate text-base font-semibold leading-snug text-foreground">
-                              {point.name}
-                            </CardTitle>
-                            <Badge
-                              variant="outline"
-                              className={
-                                point.status === "disponible"
-                                  ? "border-primary/30 bg-mint text-primary-strong"
-                                  : point.status === "a_confirmer"
-                                    ? "border-warning/20 bg-warning/10 text-warning"
-                                    : "border-destructive/20 bg-destructive/10 text-destructive"
-                              }
-                            >
-                              {point.status ? availabilityLabel[point.status] : "—"}
-                            </Badge>
-                            <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
-                              {point.brand && <span className="font-medium">{point.brand}</span>}
-                              {point.format && <span className="font-medium">{point.format}</span>}
-                            </div>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="px-3 pb-3 pt-0">
-                        <div className="flex flex-col gap-y-1 text-xs text-muted-foreground">
-                          <p className="flex items-center gap-1">
-                            <MapPin className="size-3 shrink-0" />
-                            {point.district} — {point.address}
-                          </p>
-                          {point.phone && (
-                            <p className="flex items-center gap-1 text-destructive">
-                              <Phone className="size-3 shrink-0" />
-                              {point.phone}
-                            </p>
-                          )}
-                        </div>
-                      </CardContent>
-                      <div className="px-3 pb-3 border-t border-border">
-                        <Button
-                          size="sm"
-                          variant="default"
-                          className="h-10 w-full text-base font-bold shadow-sm border-primary/25 bg-primary text-white justify-center items-center hover:text-white active:text-white disabled:text-white/70"
-                          onClick={() => openReservationModal(point)}
-                          disabled={point.status !== "disponible"}
-                        >
-                          <Shield className="size-3 mr-2" />
-                          Consigner cette bouteille
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
+              <ResultatRechercheCard
+                key={point.id}
+                id={point.id}
+                name={point.name}
+                district={point.district}
+                address={point.address}
+                phone={point.phone}
+                brand={point.brand}
+                format={point.format}
+                status={point.status}
+                disponibiliteId={point.disponibiliteId}
+                onConsigner={() => openReservationModal(point)}
+              />
+            ))}
+          </div>
         </div>
       )}
 
