@@ -29,8 +29,8 @@ export function ClientLayout({
       <aside
         className={cn(
           "hidden w-64 flex-col border-r border-border bg-card lg:flex transition-all duration-300",
-          !isOpen && "lg:hidden",
           isOpen && "lg:flex",
+          !isOpen && "lg:hidden",
         )}
       >
         <ClientSidebar

@@ -73,7 +73,7 @@ export function VendorSidebar({
 
   const handleSignOut = async () => {
     await authClient.signOut()
-    router.push("/auth/connexion")
+    router.push("/")
     router.refresh()
   }
 

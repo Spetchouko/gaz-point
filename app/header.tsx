@@ -117,17 +117,15 @@ export function Header() {
 
           <SettingsPopover />
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-            <SheetTrigger
-              render={
-                <button
-                  type="button"
-                  className="inline-flex size-9 items-center justify-center rounded-lg text-foreground transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 lg:hidden cursor-pointer"
-                >
-                  <Menu className="size-5" />
-                  <span className="sr-only">{t("nav_account")}</span>
-                </button>
-              }
-            />
+            <SheetTrigger>
+              <button
+                type="button"
+                className="inline-flex size-9 items-center justify-center rounded-lg text-foreground transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 lg:hidden cursor-pointer"
+              >
+                <Menu className="size-5" />
+                <span className="sr-only">{t("nav_account")}</span>
+              </button>
+            </SheetTrigger>
             <SheetContent
               side="right"
               className="flex w-[85vw] max-w-sm flex-col justify-between p-0"

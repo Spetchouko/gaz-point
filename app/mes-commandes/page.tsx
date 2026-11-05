@@ -32,11 +32,7 @@ export default async function MesCommandesPage() {
       clientName={user.name ?? "Usager"}
       clientEmail={user.email}
     >
-      <div className="min-h-screen bg-gray-50 py-6 sm:py-8">
-        <div className="container mx-auto max-w-4xl px-4">
-          <MesCommandes recharges={rows} points={points} pro={false} />
-        </div>
-      </div>
+      <MesCommandes recharges={rows} points={points} pro={false} />
     </ClientLayout>
   )
 }

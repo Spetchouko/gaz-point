@@ -60,17 +60,15 @@ export function AdminTopBar({
 
       <div className="ml-auto lg:hidden">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetTrigger
-            render={
-              <button
-                type="button"
-                className="inline-flex size-9 items-center justify-center rounded-lg text-foreground transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
-                aria-label="Ouvrir le menu d'administration"
-              >
-                <Menu className="size-5" />
-              </button>
-            }
-          />
+          <SheetTrigger>
+            <button
+              type="button"
+              className="inline-flex size-9 items-center justify-center rounded-lg text-foreground transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
+              aria-label="Ouvrir le menu d'administration"
+            >
+              <Menu className="size-5" />
+            </button>
+          </SheetTrigger>
           <SheetContent side="right" className="w-[85vw] max-w-sm p-0">
             <SheetHeader className="border-b border-border p-4">
               <SheetTitle className="flex items-center gap-2">

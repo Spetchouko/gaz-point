@@ -28,21 +28,17 @@ export default async function ProfilPage() {
       clientName={profile.name ?? "Usager"}
       clientEmail={profile.email}
     >
-      <div className="min-h-screen bg-gray-50 py-6 sm:py-8">
-        <div className="container mx-auto max-w-4xl px-4">
-          <Profil
-            pro={profile.role === "vendor" || profile.role === "admin" || profile.role === "collaborateur"}
-            profile={{
-              name: profile.name,
-              email: profile.email,
-              phoneNumber: profile.phoneNumber,
-              role: profile.role,
-              image: profile.image,
-              createdAt: profile.createdAt.toISOString(),
-            }}
-          />
-        </div>
-      </div>
+      <Profil
+        pro={profile.role === "vendor" || profile.role === "admin" || profile.role === "collaborateur"}
+        profile={{
+          name: profile.name,
+          email: profile.email,
+          phoneNumber: profile.phoneNumber,
+          role: profile.role,
+          image: profile.image,
+          createdAt: profile.createdAt.toISOString(),
+        }}
+      />
     </ClientLayout>
   )
 }

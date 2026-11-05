@@ -51,7 +51,7 @@ export function DashboardClient({
   const firstName = clientName.split(" ")[0]
 
   return (
-    <div className="min-h-screen bg-gray-50 py-6 sm:py-6">
+    <div className="min-h-screen bg-background py-6 sm:py-6">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <header className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

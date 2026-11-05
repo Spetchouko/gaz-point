@@ -93,7 +93,7 @@ export function EspaceVendeur({
 
   if (points.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 py-6 sm:py-12">
+      <div className="min-h-screen bg-background py-6 sm:py-12">
         <div className="container mx-auto max-w-4xl px-4">
           <header className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -125,7 +125,7 @@ export function EspaceVendeur({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-6 sm:py-8">
+    <div className="min-h-screen bg-background py-6 sm:py-8">
       <div className="container mx-auto max-w-7xl px-4">
         <header className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>

@@ -60,24 +60,33 @@ export function UserMenu({ isMobile = false }: UserMenuProps) {
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href={espaceHref} className="flex items-center gap-2">
+          <Link
+            href={espaceHref}
+            className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-foreground hover:bg-muted transition-colors"
+          >
             <LayoutDashboard className="size-4" />
             {espaceLabel}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href={isStaff ? "/admin/profil" : "/profil"} className="flex items-center gap-2">
+          <Link
+            href={isStaff ? "/admin/profil" : "/profil"}
+            className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-foreground hover:bg-muted transition-colors"
+          >
             <User className="size-4" />
             {t("nav_profil")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={handleSignOut}
-          className="flex items-center gap-2 text-destructive focus:text-destructive"
-        >
-          <LogOut className="size-4" />
-          {t("nav_logout")}
+        <DropdownMenuItem asChild>
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 text-left text-destructive focus:text-destructive"
+            onClick={handleSignOut}
+          >
+            <LogOut className="size-4" />
+            {t("nav_logout")}
+          </button>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

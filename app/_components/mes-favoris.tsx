@@ -45,16 +45,15 @@ export function MesFavoris({
   const others = points.filter((point) => !point.isFavorite)
 
   return (
-    <div className="min-h-screen bg-background py-12">
-      <div className="container mx-auto max-w-4xl px-4">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">
-            Points de vente favoris
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            Tes dépôts préférés, avec la disponibilité datée du gaz.
-          </p>
-        </header>
+    <>
+      <header className="mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">
+          Points de vente favoris
+        </h1>
+        <p className="mt-2 text-muted-foreground">
+          Tes dépôts préférés, avec la disponibilité datée du gaz.
+        </p>
+      </header>
 
         <section aria-labelledby="favoris-title">
           <h2 id="favoris-title" className="text-xl font-semibold tracking-tight">
@@ -98,8 +97,7 @@ export function MesFavoris({
             </div>
           </section>
         )}
-      </div>
-    </div>
+    </>
   )
 }
 

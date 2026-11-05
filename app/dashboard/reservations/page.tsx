@@ -20,20 +20,16 @@ export default async function ReservationsPage() {
       clientName={user.name ?? "Usager"}
       clientEmail={user.email}
     >
-      <div className="min-h-screen bg-gray-50 py-6 sm:py-8">
-        <div className="container mx-auto max-w-4xl px-4">
-          <div className="mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              Mes réservations
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Consultez l'historique de vos réservations et leurs statuts.
-            </p>
-          </div>
-
-          <MesReservations />
-        </div>
+      <div className="mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          Mes réservations
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Consultez l'historique de vos réservations et leurs statuts.
+        </p>
       </div>
+
+      <MesReservations />
     </ClientLayout>
   )
 }

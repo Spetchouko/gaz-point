@@ -47,60 +47,69 @@ export function MesCommandes({
   const total = recharges.reduce((sum, row) => sum + row.price, 0)
 
   return (
-    <div className="min-h-screen bg-background py-12">
-      <div className="container mx-auto max-w-4xl px-4">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Mes commandes</h1>
-          <p className="mt-2 text-muted-foreground">
-            L&apos;historique de tes recharges de gaz, dépôt par dépôt.
-          </p>
-        </header>
-
-        <div className="mb-8 grid gap-4 sm:grid-cols-2">
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">Recharges enregistrées</p>
-              <p className="mt-1 text-2xl font-bold tabular-nums">
-                {recharges.length}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">Total dépensé</p>
-              <p className="mt-1 text-2xl font-bold tabular-nums">
-                {formatPrice(total)}
-              </p>
-            </CardContent>
-          </Card>
+    <>
+      {pro && (
+        <div className="mb-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {}}
+          >
+            Retour au dashboard
+          </Button>
         </div>
+      )}
+      <header className="mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">Mes commandes</h1>
+        <p className="mt-2 text-muted-foreground">
+          L&apos;historique de tes recharges de gaz, dépôt par dépôt.
+        </p>
+      </header>
 
-        <div className="space-y-8">
-          <FormulaireRecharge points={points} />
-
-          {recharges.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-                <span className="flex size-12 items-center justify-center rounded-full bg-primary/10">
-                  <Package className="size-6 text-primary" aria-hidden />
-                </span>
-                <p className="font-medium">Aucune recharge pour l&apos;instant</p>
-                <p className="max-w-sm text-sm text-muted-foreground">
-                  Ajoute ta première recharge ci-dessus pour garder l&apos;historique
-                  de tes achats de gaz.
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <ul className="space-y-3">
-              {recharges.map((row) => (
-                <LigneRecharge key={row.id} row={row} />
-              ))}
-            </ul>
-          )}
-        </div>
+      <div className="mb-8 grid gap-4 sm:grid-cols-2">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-sm text-muted-foreground">Recharges enregistrées</p>
+            <p className="mt-1 text-2xl font-bold tabular-nums">
+              {recharges.length}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-sm text-muted-foreground">Total dépensé</p>
+            <p className="mt-1 text-2xl font-bold tabular-nums">
+              {formatPrice(total)}
+            </p>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+
+      <div className="space-y-8">
+        <FormulaireRecharge points={points} />
+
+        {recharges.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+              <span className="flex size-12 items-center justify-center rounded-full bg-primary/10">
+                <Package className="size-6 text-primary" aria-hidden />
+              </span>
+              <p className="font-medium">Aucune recharge pour l&apos;instant</p>
+              <p className="max-w-sm text-sm text-muted-foreground">
+                Ajoute ta première recharge ci-dessus pour garder l&apos;historique
+                de tes achats de gaz.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <ul className="space-y-3">
+            {recharges.map((row) => (
+              <LigneRecharge key={row.id} row={row} />
+            ))}
+          </ul>
+        )}
+      </div>
+    </>
   )
 }
 
