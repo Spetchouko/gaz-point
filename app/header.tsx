@@ -61,7 +61,7 @@ export function Header() {
           </span>
         </Link>
 
-        <nav className="hidden items-center justify-center gap-4 sm:gap-6 lg:flex">
+        <nav aria-label="Navigation" className="hidden items-center justify-center gap-4 sm:gap-6 lg:flex">
           {navLinks.map((link) => (
             <NavLink
               key={link.href}

@@ -12,7 +12,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar } from "@/components/ui/avatar"
+import { UserRound } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/lib/i18n"
 
@@ -38,13 +39,6 @@ export function UserMenu({ isMobile = false }: UserMenuProps) {
 
   if (!user) return null
 
-  const initials = user.name
-    ?.split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2)
-
   const avatarSize = isMobile ? "lg" : "default"
 
   return (
@@ -55,13 +49,8 @@ export function UserMenu({ isMobile = false }: UserMenuProps) {
           className={cn("gap-2 h-9 px-3", isMobile && "w-full justify-start py-2.5 text-left")}
         >
           <Avatar className="size-8" data-size={avatarSize}>
-            {user.image ? (
-              <AvatarImage src={user.image} alt={user.name ?? "Avatar"} />
-            ) : (
-              <AvatarFallback>{initials ?? "?"}</AvatarFallback>
-            )}
+            <UserRound className="size-4" />
           </Avatar>
-          {!isMobile && <span className="hidden sm:inline">{user.name}</span>}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
