@@ -3,7 +3,6 @@ import { db } from "@/db"
 import { publicite } from "@/db/schema"
 import { desc } from "drizzle-orm"
 import { AdminPubliciteBoard } from "@/app/_components/admin-publicite-board"
-import { AdminPubliciteStats } from "@/app/_components/admin-charts"
 import { requireStaffModule } from "@/lib/session"
 import { getPubliciteStats } from "@/lib/publicite-stats"
 import { resolveAnalyticsRange } from "@/lib/publicite-analytics"
@@ -66,12 +65,6 @@ export default async function AdminMarketingPage({
 
       <AdminPubliciteBoard publicites={toRows(publicites)} />
 
-      <AdminPubliciteStats
-        periodKey={range.key}
-        fromInput={range.fromInput}
-        toInput={range.toInput}
-        stats={stats}
-      />
     </div>
   )
 }

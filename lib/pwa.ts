@@ -37,7 +37,6 @@ export interface ServiceWorker extends EventTarget {
 
 declare global {
   interface Navigator {
-    serviceWorker: ServiceWorker | undefined
     readonly devMenu: boolean
   }
 }
@@ -62,7 +61,7 @@ export async function registerServiceWorker(
 export function promptInstall(): boolean {
   const w = typeof navigator !== "undefined" ? navigator.serviceWorker : undefined
   if (!w?.controller) return false
-  if (w.state === "active") {
+  if (String(w.controller?.state) === "active") {
     if ("onLine" in navigator) return true
     return typeof Notification !== "undefined" && Notification.permission === "granted"
   }

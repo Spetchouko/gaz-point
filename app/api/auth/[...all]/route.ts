@@ -14,7 +14,7 @@ export const GET = (req: Request): Promise<Response> => {
   return handler.GET(req);
 };
 
-function handleAuthPost(req: Request): Response {
+async function handleAuthPost(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const path = url.pathname;
 
@@ -25,7 +25,7 @@ function handleAuthPost(req: Request): Response {
   ) {
     const check = authRateLimiter.checkRateLimit(req);
     if (!check.allowed) {
-      return NextResponse.json(
+      return Response.json(
         { error: "Too many requests" },
         { status: 429 }
       );

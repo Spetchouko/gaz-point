@@ -2,10 +2,9 @@
 
 import { Component, type ReactNode } from "react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
 
 interface NotFoundBoundaryProps {
-  children: ReactNode
+  children?: ReactNode
 }
 
 interface NotFoundBoundaryState {
@@ -39,9 +38,12 @@ class NotFoundBoundary extends Component<NotFoundBoundaryProps, NotFoundBoundary
               Cette page n&apos;existe plus ou a été déplacée.
             </p>
             <div className="mt-6">
-              <Button asChild>
-                <Link href="/">Revenir à l&apos;accueil</Link>
-              </Button>
+              <Link
+                href="/"
+                className="flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-primary hover:text-primary-foreground transition-colors shadow-sm"
+              >
+                Revenir à l&apos;accueil
+              </Link>
             </div>
           </div>
         </div>

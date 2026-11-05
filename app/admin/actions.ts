@@ -1051,8 +1051,8 @@ export async function updateUser(
       .where(eq(userTable.email, email))
       .limit(1),
   ])
-  let [target, duplicate] = targetResult[0] ?? null
-  duplicate = duplicateResult[0] ?? null
+  let target = targetResult[0] ?? null
+  let duplicate = duplicateResult[0] ?? null
 
   const cleanPhoneNumber = phoneNumber?.replace(/[^\d+]/g, "") || null
   await db

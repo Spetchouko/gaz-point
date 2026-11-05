@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import nodemailer from "nodemailer"
-import { defaultRateLimiter } from "@/lib/rate-limit"
+import { defaultRateLimiter, contactRateLimiter } from "@/lib/rate-limit"
 
 const CONTACT_EMAIL = process.env.CONTACT_EMAIL ?? "gazpoints@gmail.com"
 const GMAIL_USER = process.env.GMAIL_USER ?? "gazpoints@gmail.com"
@@ -115,16 +115,17 @@ export async function POST(request: Request) {
 /**
  * Sanitizes the replyTo field to prevent self-DoS attacks.
  * Strips any user-provided email that matches the sender's own address.
+ * Returns a formatted string like "Name <address>" or null.
  */
-function sanitizeReplyTo(replyTo: unknown, senderEmail: string): string | null {
-  if (!replyTo || typeof replyTo !== "object") return null
+function sanitizeReplyTo(replyTo: unknown, senderEmail: string): string | undefined {
+  if (!replyTo || typeof replyTo !== "object") return undefined
   const r = replyTo as Record<string, unknown>
   const name = typeof r.name === "string" ? singleLine(r.name) : ""
   const address = typeof r.address === "string" ? r.address.trim() : ""
   // Strip if replyTo email matches the sender's own email (self-DoS protection)
   if (address && address.toLowerCase() === senderEmail.toLowerCase()) {
-    return null
+    return undefined
   }
-  if (!name && !address) return null
-  return { name, address: address || senderEmail }
+  if (!name && !address) return undefined
+  return name ? `${name} <${address || senderEmail}>` : (address || senderEmail)
 }
