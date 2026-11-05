@@ -359,3 +359,185 @@ L'equipe GazPoints
     html,
   })
 }
+
+export interface NewConsignationEmailParams {
+  vendorEmail: string
+  reservationCode: string
+  pointName: string
+  brand: string | null
+  format: string | null
+  reservedAt: Date
+}
+
+interface ConsignationEmailContent {
+  reservationCode: string
+  pointName: string
+  brand: string | null
+  format: string | null
+  reservedAt: Date
+}
+
+function buildNewConsignationHtml({
+  reservationCode,
+  pointName,
+  brand,
+  format,
+  reservedAt,
+}: ConsignationEmailContent): string {
+  const dateStr = new Intl.DateTimeFormat("fr-FR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(reservedAt)
+  return `
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nouvelle consignation reçue – GazPoints</title>
+</head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;">
+          <tr>
+            <td align="center" style="background:#16a34a;padding:32px 24px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td style="font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">GazPoints</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px 24px;color:#1f2937;">
+              <h1 style="margin:0 0 12px;font-size:22px;font-weight:700;color:#111827;text-align:center;">Nouvelle consignation reçue</h1>
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;text-align:center;">
+                Une nouvelle consignation vient d&apos;être effectuée sur votre point de vente GazPoints.
+              </p>
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin:24px 0;">
+                <tr>
+                  <td style="padding:16px 24px;">
+                    <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#111827;">Code de consignation</p>
+                    <p style="margin:0;font-size:18px;font-weight:700;color:#16a34a;letter-spacing:2px;font-family:monospace;">${reservationCode}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 16px 24px;">
+                    <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#111827;">Point de vente</p>
+                    <p style="margin:0;font-size:14px;color:#4b5563;">${pointName}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 16px 24px;">
+                    <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#111827;">Bouteille</p>
+                    <p style="margin:0;font-size:14px;color:#4b5563;">${format ?? "—"}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 16px 24px;">
+                    <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#111827;">Marque</p>
+                    <p style="margin:0;font-size:14px;color:#4b5563;">${brand ?? "—"}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 16px 24px;">
+                    <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#111827;">Date et heure</p>
+                    <p style="margin:0;font-size:14px;color:#4b5563;">${dateStr}</p>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;text-align:center;">
+                Connectez-vous à votre espace vendeur pour consulter les détails de cette consignation.
+              </p>
+              <div style="text-align:center;margin:24px 0;">
+                <a href="${process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.gazpoints.com"}/dashboard/vendeur/consignations" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 24px;border-radius:8px;font-size:14px;">Voir mes consignations</a>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f9fafb;padding:24px;border-top:1px solid #e5e7eb;">
+              <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#111827;text-align:center;">L&apos;équipe GazPoints</p>
+              <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">Trouvez votre bouteille de gaz avant de vous déplacer.</p>
+              <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">Contact : gazpoints@gmail.com</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `
+}
+
+function buildNewConsignationText({
+  reservationCode,
+  pointName,
+  brand,
+  format,
+  reservedAt,
+}: ConsignationEmailContent): string {
+  const dateStr = new Intl.DateTimeFormat("fr-FR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(reservedAt)
+  return `
+GazPoints — Nouvelle consignation reçue
+
+Bonjour,
+
+Une nouvelle consignation vient d'être effectuée sur votre point de vente GazPoints.
+
+Informations de la consignation :
+- Code de consignation : ${reservationCode}
+- Point de vente : ${pointName}
+- Bouteille : ${format ?? "—"}
+- Marque : ${brand ?? "—"}
+- Date : ${dateStr}
+
+Connectez-vous à votre espace vendeur pour consulter les détails de cette consignation.
+
+---
+L'équipe GazPoints
+Trouvez votre bouteille de gaz avant de vous déplacer.
+Contact : gazpoints@gmail.com
+  `
+}
+
+export async function sendNewConsignationEmail({
+  vendorEmail,
+  vendorName,
+  reservationCode,
+  pointName,
+  brand,
+  format,
+  reservedAt,
+}: NewConsignationEmailParams) {
+  const transporter = getTransporter()
+  const html = buildNewConsignationHtml({
+    reservationCode,
+    pointName,
+    brand,
+    format,
+    reservedAt,
+  })
+  const text = buildNewConsignationText({
+    reservationCode,
+    pointName,
+    brand,
+    format,
+    reservedAt,
+  })
+
+  const info = await transporter.sendMail({
+    from: `"GazPoints" <${GMAIL_USER}>`,
+    to: vendorEmail,
+    subject: "Nouvelle consignation reçue sur votre point de vente — GazPoints",
+    text,
+    html,
+  })
+  assertMailAccepted(info, vendorEmail)
+  return info
+}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
-import { reservation, disponibilite, pointDeVente } from "@/db/schema"
+import { reservation, disponibilite, pointDeVente, user } from "@/db/schema"
 import { eq, and, sql } from "drizzle-orm"
 import { randomUUID } from "node:crypto"
 import { getCurrentUser } from "@/lib/session"
@@ -8,25 +8,37 @@ import {
   AD_ATTRIBUTION_COOKIE,
   recordConversionFromRequest,
 } from "@/lib/publicite-attribution"
+import { sendNewConsignationEmail } from "@/lib/email"
 
 const DEFAULT_RESERVATION_AMOUNT = 1000 // FCFA
 const RESERVATION_EXPIRY_MINUTES = 1440 // 24 heures
 const MAX_RESERVATION_QUANTITY = 20
 
-function generateReservationCode(pointName: string): string {
-  const now = new Date()
-  const datePart = now.toISOString().slice(2, 10).replace(/-/g, "") // YYYYMMDD
-  const namePart = pointName
-    .toUpperCase()
-    .replace(/[^A-Z]/g, "")
-    .slice(0, 6)
-    .padEnd(6, "X")
-  const hex = Math.floor(Math.random() * 0x10000).toString(16).toUpperCase().padStart(4, "0")
-  return `${datePart}${namePart}${hex}`
+const CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789" // sans 0,1,O,I,L,S pour éviter les confusions
+
+function generateReservationCode(): string {
+  let code = ""
+  for (let i = 0; i < 12; i++) {
+    code += CHARS.charAt(Math.floor(Math.random() * CHARS.length))
+  }
+  return code
 }
 
 async function ensureUniqueCode(baseCode: string): Promise<string> {
-  return baseCode
+  let code = baseCode
+  let attempts = 0
+  while (attempts < 10) {
+    const existing = await db
+      .select({ id: reservation.id })
+      .from(reservation)
+      .where(eq(reservation.reservationCode, code))
+      .limit(1)
+    if (!existing || existing.length === 0) return code
+    code = generateReservationCode()
+    attempts++
+  }
+  // Dernière tentative : si toujours collision, on lève une erreur gérée par le catch
+  throw new Error("Impossible de générer un code de consignation unique")
 }
 
 function cleanText(value: unknown, max: number): string | null {
@@ -191,8 +203,14 @@ export async function POST(req: NextRequest) {
     }
 
     const [point] = await db
-      .select({ name: pointDeVente.name, vendorId: pointDeVente.vendorId })
+      .select({
+        name: pointDeVente.name,
+        district: pointDeVente.district,
+        vendorId: pointDeVente.vendorId,
+        vendorEmail: user.email,
+      })
       .from(pointDeVente)
+      .leftJoin(user, eq(pointDeVente.vendorId, user.id))
       .where(eq(pointDeVente.id, targetPointId))
       .limit(1)
 
@@ -203,7 +221,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const baseCode = generateReservationCode(point.name)
+    const baseCode = generateReservationCode()
     const reservationCode = await ensureUniqueCode(baseCode)
     const expiresAt = new Date(Date.now() + RESERVATION_EXPIRY_MINUTES * 60 * 1000)
     const reservationId = randomUUID()
@@ -271,6 +289,21 @@ export async function POST(req: NextRequest) {
       await recordConversionFromRequest(req, "reservation", { userId: currentUser.id })
     }
 
+    // Notification par e-mail au vendeur propriétaire du point de vente.
+    // L'échec d'envoi ne doit pas annuler la consignation déjà enregistrée.
+    if (point.vendorEmail) {
+      await sendNewConsignationEmail({
+        vendorEmail: point.vendorEmail,
+        reservationCode,
+        pointName: point.name,
+        brand,
+        format,
+        reservedAt: new Date(),
+      }).catch((err) => {
+        console.error("[reservation/create] email notification failed:", err)
+      })
+    }
+
     return NextResponse.json({
       ok: true,
       reservation: {
@@ -282,6 +315,9 @@ export async function POST(req: NextRequest) {
         brand,
         format,
         quantity,
+        pointName: point.name,
+        pointDistrict: point.district ?? "",
+        reservedAt: new Date().toISOString(),
       },
     })
   } catch (err) {

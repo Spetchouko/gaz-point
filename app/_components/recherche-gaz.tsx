@@ -101,6 +101,9 @@ export function RechercheGaz() {
       brand: data.reservation.brand,
       format: data.reservation.format,
       quantity: data.reservation.quantity,
+      pointName: data.reservation.pointName,
+      pointDistrict: data.reservation.pointDistrict,
+      reservedAt: data.reservation.reservedAt,
     }
   }
 
@@ -327,7 +330,7 @@ export function RechercheGaz() {
                           disabled={point.status !== "disponible"}
                         >
                           <Shield className="size-3 mr-2" />
-                          Faire une réservation
+                          Consigner cette bouteille
                         </Button>
                       </div>
                     </div>

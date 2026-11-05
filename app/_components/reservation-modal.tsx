@@ -23,6 +23,9 @@ export type ReservationResult = {
   brand: string
   format: string
   quantity: number
+  pointName: string
+  pointDistrict: string
+  reservedAt: string
 }
 
 type PointData = {
@@ -94,16 +97,16 @@ export function ReservationModal({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-success">
               <CheckCircle className="size-5" />
-              Réservation confirmée
+              Consignation confirmée
             </DialogTitle>
             <DialogDescription>
-              Votre réservation a été enregistrée avec succès.
+              Votre consignation a été enregistrée avec succès.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="rounded-lg bg-success/5 border border-success/20 p-4">
               <p className="text-center text-xs font-medium uppercase tracking-wide text-success">
-                Code de retrait
+                Code de consignation
               </p>
               <p className="mt-1 text-center font-mono text-lg font-bold tracking-wider text-success">
                 {success.code}
@@ -113,17 +116,53 @@ export function ReservationModal({
               </p>
               <p className="mt-2 text-center text-xs text-success-foreground0">
                 Expire le{" "}
-                {new Date(success.expiresAt).toLocaleTimeString("fr-FR", {
+                {new Date(success.expiresAt).toLocaleString("fr-FR", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
               </p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              {success.brand} {success.format} · {success.quantity} bouteille
-              {success.quantity > 1 ? "s" : ""} · {formatPrice(success.amount)}{" "}
-              {success.amountType === "consigne" ? "de consigne" : "de frais de réservation"}
-            </p>
+            <div className="grid gap-2 sm:grid-cols-2 text-sm text-muted-foreground">
+              <div>
+                <p className="text-xs font-semibold text-foreground">Point de vente</p>
+                <p className="text-sm">{success.pointName}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-foreground">Quartier</p>
+                <p className="text-sm">{success.pointDistrict}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-foreground">Bouteille</p>
+                <p className="text-sm">
+                  {success.brand} {success.format}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-foreground">Date</p>
+                <p className="text-sm">
+                  {new Date(success.reservedAt).toLocaleString("fr-FR", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-foreground">Statut</p>
+                <p className="text-sm text-success">Confirmée</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-foreground">Type</p>
+                <p className="text-sm">
+                  {success.amountType === "consigne" ? "Consigne" : "Réservation"}
+                </p>
+              </div>
+            </div>
             <Button onClick={handleClose} className="w-full" variant="default">
               Fermer
             </Button>
