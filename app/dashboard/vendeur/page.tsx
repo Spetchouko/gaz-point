@@ -43,7 +43,6 @@ export default async function DashboardVendeurPage() {
       existing.push(report)
       dispoByPoint.set(report.pointId, existing)
 
-      // Stats globales
       if (report.status === "disponible" && report.quantity && report.quantity > 0) {
         totalQuantity += report.quantity
       }

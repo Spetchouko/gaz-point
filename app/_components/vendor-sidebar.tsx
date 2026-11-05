@@ -9,12 +9,10 @@ import {
   User,
   Globe,
   LogOut,
-  ChevronLeft,
   Store,
 } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
-import type { Dispatch, SetStateAction } from "react"
 
 type VendorNavItem = {
   href: string
@@ -25,18 +23,18 @@ type VendorNavItem = {
 const VENDOR_NAV_ITEMS: VendorNavItem[] = [
   {
     href: "/dashboard/vendeur",
-    label: "Tableau de bord",
+    label: "Vue d'ensemble",
     icon: LayoutDashboard,
   },
   {
-    href: "/dashboard/vendeur/points-de-vente",
-    label: "Mes points de vente",
-    icon: Store,
-  },
-  {
-    href: "/dashboard/vendeur/disponibilites",
+    href: "/dashboard/vendeur/espace-pro",
     label: "Disponibilités",
     icon: Cylinder,
+  },
+  {
+    href: "/dashboard/reservations",
+    label: "Mes réservations",
+    icon: Calendar,
   },
   {
     href: "/profil",
@@ -44,9 +42,9 @@ const VENDOR_NAV_ITEMS: VendorNavItem[] = [
     icon: User,
   },
   {
-    href: "/auth/deconnexion",
-    label: "Déconnexion",
-    icon: LogOut,
+    href: "/",
+    label: "Voir le site public",
+    icon: Globe,
   },
 ]
 
@@ -63,9 +61,9 @@ export function VendorSidebar({
   vendorName: string
   vendorEmail: string | null | undefined
   collapsed: boolean
-  setCollapsed: Dispatch<SetStateAction<boolean>>
+  setCollapsed: (collapsed: boolean) => void
   sidebarOpen: boolean
-  setSidebarOpen: Dispatch<SetStateAction<boolean>>
+  setSidebarOpen: (open: boolean) => void
 }) {
   const pathname = usePathname()
   const router = useRouter()
@@ -86,40 +84,22 @@ export function VendorSidebar({
   return (
     <nav
       aria-label="Navigation vendeur"
-      className={cn(
-        "fixed left-0 top-0 h-full z-49 flex flex-col border-r border-border bg-white shadow-lg transition-all duration-300",
-        collapsed ? "w-16 md:w-16" : "w-64 md:w-64",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
-      )}
+      className="flex h-full flex-col"
     >
       <div className="flex h-16 items-center justify-between border-b border-border px-4">
         <Link
           href="/dashboard/vendeur"
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 font-bold text-lg"
           onClick={handleNavClick}
         >
-          <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Store className="size-4" />
+          <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Store className="size-5" />
           </span>
-          {!collapsed && (
-            <span className="font-bold text-sm tracking-tight text-primary">
-              GazPoints
-            </span>
-          )}
+          <span>GazPoints</span>
         </Link>
-        {!collapsed && (
-          <button
-            type="button"
-            className="size-8 rounded-lg hover:bg-muted transition-colors"
-            onClick={() => setCollapsed((prev) => !prev)}
-            aria-label="Réduire la sidebar"
-          >
-            <ChevronLeft className="size-4" />
-          </button>
-        )}
       </div>
 
-      <ul className="flex-1 overflow-y-auto p-3 space-y-1">
+      <ul className="flex-1 overflow-y-auto p-4 space-y-1">
         {VENDOR_NAV_ITEMS.map((item) => {
           const active = isActive(item.href)
           const Icon = item.icon
@@ -136,43 +116,36 @@ export function VendorSidebar({
                     : "text-muted-foreground hover:bg-muted hover:text-foreground",
                 )}
               >
-                <Icon className={cn("size-4 shrink-0", active && "text-primary-foreground")} aria-hidden />
-                {!collapsed && <span className="truncate">{item.label}</span>}
+                <Icon className="size-4" aria-hidden />
+                {item.label}
               </Link>
             </li>
           )
         })}
       </ul>
 
-      <div className="border-t border-border p-3 space-y-2">
+      <div className="border-t border-border p-4 space-y-2">
         <div className="flex items-center gap-3 rounded-lg px-3 py-2">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
             {vendorName.charAt(0).toUpperCase()}
           </span>
           <div className="min-w-0">
-            {!collapsed && (
-              <>
-                <p className="truncate text-sm font-medium text-foreground">
-                  {vendorName}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {vendorEmail ?? "Vendeur"}
-                </p>
-              </>
-            )}
+            <p className="truncate text-sm font-medium text-foreground">
+              {vendorName}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">
+              {vendorEmail ?? "Vendeur"}
+            </p>
           </div>
         </div>
         <button
           type="button"
           onClick={handleSignOut}
-          className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-            collapsed && "justify-center",
-          )}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           aria-label="Se déconnecter"
         >
           <LogOut className="size-4" aria-hidden />
-          {!collapsed && <span>Déconnexion</span>}
+          Déconnexion
         </button>
       </div>
     </nav>
