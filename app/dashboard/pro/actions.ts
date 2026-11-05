@@ -388,3 +388,123 @@ export async function upsertDisponibilite(
     }
   }
 }
+
+/**
+ * Crée un point de vente rattaché au compte du vendeur connecté.
+ * Aucun validation administrative supplémentaire n'est requise : le vendeur
+ * vérifié est autonome dès la création de son compte.
+ */
+export async function createPointDeVenteVendor(
+  _prev: ActionResult | null,
+  formData: FormData
+): Promise<ActionResult> {
+  const { user, role } = await requirePro()
+  if (role !== "vendor") {
+    return { ok: false, message: "Action réservée aux vendeurs." }
+  }
+
+  const name = String(formData.get("name") ?? "").trim()
+  const district = String(formData.get("district") ?? "").trim()
+  const address = String(formData.get("address") ?? "").trim()
+  const phone = String(formData.get("phone") ?? "").trim() || null
+
+  if (!name || !district || !address) {
+    return {
+      ok: false,
+      message: "Renseigne le nom, le quartier et l'adresse du point de vente.",
+    }
+  }
+
+  if (phone && !/^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{1,9}$/.test(phone)) {
+    return { ok: false, message: "Format de téléphone invalide." }
+  }
+
+  await db.insert(pointDeVente).values({
+    id: randomUUID(),
+    name,
+    district,
+    address,
+    phone,
+    vendorId: user.id,
+    isActive: true,
+    createdAt: new Date(),
+  })
+
+  revalidatePath("/dashboard/vendeur")
+  revalidatePath("/dashboard/vendeur/points-de-vente")
+  return { ok: true, message: `Le point de vente « ${name} » a été créé.` }
+}
+
+export async function togglePointDeVente(
+  _prev: ActionResult | null,
+  formData: FormData
+): Promise<ActionResult> {
+  const { user, role } = await requirePro()
+  if (role !== "vendor") {
+    return { ok: false, message: "Action réservée aux vendeurs." }
+  }
+
+  const pointId = String(formData.get("pointId") ?? "")
+  if (!pointId) {
+    return { ok: false, message: "Point de vente introuvable." }
+  }
+
+  const [point] = await db
+    .select({ id: pointDeVente.id, vendorId: pointDeVente.vendorId, isActive: pointDeVente.isActive })
+    .from(pointDeVente)
+    .where(eq(pointDeVente.id, pointId))
+    .limit(1)
+
+  if (!point) {
+    return { ok: false, message: "Point de vente introuvable." }
+  }
+  if (point.vendorId !== user.id) {
+    return { ok: false, message: "Ce point de vente ne t'appartient pas." }
+  }
+
+  await db
+    .update(pointDeVente)
+    .set({ isActive: !point.isActive })
+    .where(eq(pointDeVente.id, pointId))
+
+  revalidatePath("/dashboard/vendeur")
+  revalidatePath("/dashboard/vendeur/points-de-vente")
+  return {
+    ok: true,
+    message: `Point de vente ${!point.isActive ? "activé" : "désactivé"}.`,
+  }
+}
+
+export async function deletePointDeVenteVendor(
+  _prev: ActionResult | null,
+  formData: FormData
+): Promise<ActionResult> {
+  const { user, role } = await requirePro()
+  if (role !== "vendor") {
+    return { ok: false, message: "Action réservée aux vendeurs." }
+  }
+
+  const pointId = String(formData.get("pointId") ?? "")
+  if (!pointId) {
+    return { ok: false, message: "Point de vente introuvable." }
+  }
+
+  const [point] = await db
+    .select({ id: pointDeVente.id, vendorId: pointDeVente.vendorId })
+    .from(pointDeVente)
+    .where(eq(pointDeVente.id, pointId))
+    .limit(1)
+
+  if (!point) {
+    return { ok: false, message: "Point de vente introuvable." }
+  }
+  if (point.vendorId !== user.id) {
+    return { ok: false, message: "Ce point de vente ne t'appartient pas." }
+  }
+
+  await db.delete(pointDeVente).where(eq(pointDeVente.id, pointId))
+
+  revalidatePath("/dashboard/vendeur")
+  revalidatePath("/dashboard/vendeur/points-de-vente")
+  return { ok: true, message: "Point de vente supprimé." }
+}

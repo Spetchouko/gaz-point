@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import {
   Plus,
   Store,
@@ -10,6 +10,8 @@ import {
   TrendingUp,
   Activity,
   CheckCircle2,
+  ArrowRight,
+  AlertCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -27,6 +29,13 @@ import { availabilityLabel, availabilityBadgeClass } from "@/lib/gaz"
 import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/gaz"
 import type { AvailabilityStatus } from "@/db/schema"
+import {
+  createPointDeVenteVendor,
+  togglePointDeVente,
+  deletePointDeVenteVendor,
+  type ActionResult,
+} from "@/app/dashboard/pro/actions"
+import { useRouter } from "next/navigation"
 
 type DispoRow = {
   id: string
@@ -69,6 +78,7 @@ export function DashboardVendeur({
   points: PointWithStats[]
   globalStats: GlobalStats
 }) {
+  const router = useRouter()
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingDispo, setEditingDispo] = useState<{
     dispo: PointWithStats["disponibilites"][0]
@@ -76,10 +86,60 @@ export function DashboardVendeur({
     pointName: string
   } | null>(null)
 
+  const [pointAction, setPointAction] = useState<ActionResult | null>(null)
+  const [pointPending, setPointPending] = useState(false)
+
   const pointMap = useMemo(
     () => new Map(points.map((p) => [p.id, p])),
     [points],
   )
+
+  const handleCreatePoint = async (values: {
+    name: string
+    district: string
+    address: string
+    phone: string | null
+  }) => {
+    setPointPending(true)
+    setPointAction(null)
+    const result = await createPointDeVenteVendor(null, {
+      name: values.name,
+      district: values.district,
+      address: values.address,
+      phone: values.phone,
+    } as unknown as FormData)
+    setPointAction(result)
+    setPointPending(false)
+    if (result.ok) {
+      router.push("/dashboard/vendeur/points-de-vente")
+    }
+  }
+
+  const handleTogglePoint = async (pointId: string, isActive: boolean) => {
+    setPointPending(true)
+    setPointAction(null)
+    const result = await togglePointDeVente(null, {
+      pointId,
+    } as unknown as FormData)
+    setPointAction(result)
+    setPointPending(false)
+    if (result.ok) {
+      router.push("/dashboard/vendeur")
+    }
+  }
+
+  const handleDeletePoint = async (pointId: string) => {
+    setPointPending(true)
+    setPointAction(null)
+    const result = await deletePointDeVenteVendor(null, {
+      pointId,
+    } as unknown as FormData)
+    setPointAction(result)
+    setPointPending(false)
+    if (result.ok) {
+      router.push("/dashboard/vendeur")
+    }
+  }
 
   const handleAddDispo = (point?: PointWithStats) => {
     if (point) {
@@ -145,16 +205,111 @@ export function DashboardVendeur({
             <Badge variant="secondary">Vendeur</Badge>
           </header>
 
-          <Card className="max-w-2xl mx-auto">
-            <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-              <span className="flex size-12 items-center justify-center rounded-full bg-primary/10">
-                <Store className="size-6 text-primary" aria-hidden />
+          <Card className="max-w-2xl mx-auto border-2 border-dashed border-primary/20 rounded-2xl bg-primary/5">
+            <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
+              <span className="flex size-16 items-center justify-center rounded-full bg-primary/20 text-primary">
+                <Store className="size-8" aria-hidden />
               </span>
-              <p className="font-medium">Aucun dépôt rattaché à ton compte</p>
-              <p className="max-w-md text-sm text-muted-foreground">
-                Contacte l'administration pour faire rattacher ton dépôt, puis tu
-                pourras y signaler la disponibilité du gaz.
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                Créez votre premier point de vente
+              </h2>
+              <p className="text-sm text-muted-foreground max-w-md">
+                Enregistrez votre point de vente pour permettre aux clients de
+                vous trouver et de consulter vos disponibilités en gaz.
               </p>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  const formData = new FormData(e.currentTarget)
+                  handleCreatePoint({
+                    name: formData.get("name") as string,
+                    district: formData.get("district") as string,
+                    address: formData.get("address") as string,
+                    phone: (formData.get("phone") as string) || null,
+                  })
+                }}
+                className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:max-w-md"
+              >
+                <div className="flex-1 sm:w-auto space-y-2">
+                  <label className="block text-xs font-medium text-muted-foreground">
+                    Nom du point de vente
+                  </label>
+                  <input
+                    name="name"
+                    type="text"
+                    required
+                    placeholder="Ex: Dépôt Akwa"
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                  />
+                </div>
+                <div className="flex-1 sm:w-auto space-y-2">
+                  <label className="block text-xs font-medium text-muted-foreground">
+                    Quartier
+                  </label>
+                  <input
+                    name="district"
+                    type="text"
+                    required
+                    placeholder="Ex: Akwa"
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                  />
+                </div>
+                <div className="flex-1 sm:w-auto space-y-2">
+                  <label className="block text-xs font-medium text-muted-foreground">
+                    Adresse
+                  </label>
+                  <input
+                    name="address"
+                    type="text"
+                    required
+                    placeholder="Ex: Rue de la Paix, 123"
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                  />
+                </div>
+                <div className="flex-1 sm:w-auto space-y-2">
+                  <label className="block text-xs font-medium text-muted-foreground">
+                    Téléphone (facultatif)
+                  </label>
+                  <input
+                    name="phone"
+                    type="tel"
+                    placeholder="Ex: +237 6 99 00 00 00"
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  variant="default"
+                  size="lg"
+                  disabled={pointPending}
+                  className="whitespace-nowrap flex-1 sm:flex-none"
+                >
+                  {pointPending ? (
+                    <>
+                      <Store className="size-4 mr-2 animate-spin" /> Création en cours…
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="size-4 mr-2" />
+                      Créer mon point de vente
+                    </>
+                  )}
+                </Button>
+              </form>
+
+              {pointAction && (
+                <div
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-3 rounded-lg text-sm",
+                    pointAction.ok
+                      ? "bg-success/10 border border-success/20 text-success"
+                      : "bg-destructive/10 border border-destructive/20 text-destructive"
+                  )}
+                >
+                  {pointAction.ok ? <CheckCircle2 className="size-4" /> : <AlertCircle className="size-4" />}
+                  {pointAction.message}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

@@ -13,7 +13,7 @@ const equipe = [
     name: "PETCHOUKO Solomon",
     image: petchImage,
     description:
-      "A lancé GazPoints après avoir constat le problème sur le terrain, quartier par quartier.",
+      "A lancer GazPoints après avoir constaté le problème sur le terrain et dans les menages.",
   },
   {
     role: "Produit et développement",

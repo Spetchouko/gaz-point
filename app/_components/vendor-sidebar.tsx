@@ -28,12 +28,12 @@ const VENDOR_NAV_ITEMS: VendorNavItem[] = [
   },
   {
     href: "/dashboard/vendeur/points-de-vente",
-    label: "Mon point de livraison",
+    label: "Point de vente",
     icon: MapPin,
   },
   {
     href: "/dashboard/vendeur/disponibilites",
-    label: "Mes bouteilles et disponibilités",
+    label: "Gaz disponible",
     icon: Cylinder,
   },
   {
@@ -43,7 +43,7 @@ const VENDOR_NAV_ITEMS: VendorNavItem[] = [
   },
   {
     href: "/dashboard/vendeur/autour-de-moi",
-    label: "Points autour de moi",
+    label: "Point autour de moi",
     icon: Map,
   },
   {
@@ -90,8 +90,6 @@ export function VendorSidebar({
     .map((part) => part.charAt(0).toUpperCase())
     .join("")
     .slice(0, 2)
-
-  const isVendor = role === "vendor"
 
   return (
     <nav aria-label="Navigation vendeur" className="flex h-full flex-col">
@@ -146,28 +144,6 @@ export function VendorSidebar({
             </li>
           )
         })}
-
-        {/* Rubrique réservée aux vendeurs : gérer les disponibilités (espace pro) */}
-        {isVendor && (
-          <li key="espace-pro">
-            <Link
-              href="/dashboard/vendeur/espace-pro"
-              onClick={() => {
-                setSidebarOpen(false)
-                router.push("/dashboard/vendeur/espace-pro")
-              }}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                pathname === "/dashboard/vendeur/espace-pro"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              <Cylinder className="size-4 shrink-0" aria-hidden />
-              <span className={sidebarOpen ? "" : "hidden"}>Espace pro</span>
-            </Link>
-          </li>
-        )}
       </ul>
 
       {/* Pied de sidebar : compte utilisateur + déconnexion */}
