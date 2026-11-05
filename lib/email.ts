@@ -7,16 +7,30 @@ if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
   console.warn("[email] GMAIL_USER or GMAIL_APP_PASSWORD not configured. Email sending will fail.")
 }
 
-function createTransporter() {
+interface MailInfo {
+  accepted?: unknown[]
+  rejected?: unknown[]
+  response?: string
+}
+
+interface Transporter {
+  sendMail(options: unknown): Promise<MailInfo>
+}
+
+let cachedTransporter: Transporter | null = null
+
+function getTransporter(): Transporter {
+  if (cachedTransporter) return cachedTransporter
   if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
     throw new Error("Email not configured: GMAIL_USER and GMAIL_APP_PASSWORD must be set")
   }
-  return nodemailer.createTransport({
+  cachedTransporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
     secure: true,
     auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
   })
+  return cachedTransporter
 }
 
 /**
@@ -52,7 +66,7 @@ export interface VendorApprovalResultEmailParams {
 }
 
 export async function sendVerificationEmail({ email, code, expiresInMinutes }: VerificationEmailParams) {
-  const transporter = createTransporter()
+  const transporter = getTransporter()
 
   const html = `
     <div style="font-family:sans-serif;font-size:14px;line-height:1.6;max-width:600px;margin:0 auto;padding:20px">
@@ -100,7 +114,7 @@ Si vous n'avez pas créé de compte sur GazPoints, ignorez cet email.
 }
 
 export async function sendVerificationEmailResend({ email, code, expiresInMinutes }: VerificationEmailParams) {
-  const transporter = createTransporter()
+  const transporter = getTransporter()
 
   const html = `
     <div style="font-family:sans-serif;font-size:14px;line-height:1.6;max-width:600px;margin:0 auto;padding:20px">
@@ -154,7 +168,7 @@ export async function sendVendorApprovalResultEmail({
   rejectionReason,
   adminDashboardUrl,
 }: VendorApprovalResultEmailParams) {
-  const transporter = createTransporter()
+  const transporter = getTransporter()
 
   const recipient = vendorName?.trim() || "vendeur"
   const title = approved ? "GazPoints — Compte vendeur approuvé" : "GazPoints — Compte vendeur refusé"

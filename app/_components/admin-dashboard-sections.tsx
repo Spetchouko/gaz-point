@@ -62,7 +62,7 @@ export function AdminDashboardSections({
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
+    queueMicrotask(() => setMounted(true))
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
       if (raw) {

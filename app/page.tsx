@@ -15,20 +15,21 @@ export default async function Home() {
   // Les bannières sont décoratives : une panne du marketing ne doit jamais
   // bloquer la landing. En cas d'erreur, elles sont simplement masquées.
   // Deux emplacements seulement : sous la recherche et au-dessus de la FAQ.
+  const results = await Promise.allSettled([
+    getPublicitesForSlot("home_search"),
+    getApprovedAvis(),
+  ])
   let searchPublicites: PubliciteBannerData[] = []
-  try {
-    searchPublicites = await getPublicitesForSlot("home_search")
-  } catch (error) {
-    console.error("Impossible de charger les publicités home_search :", error)
-  }
-
-  // Même principe pour les avis : seuls les avis approuvés sont publics,
-  // et une erreur de chargement masque simplement la section.
   let avis: AvisPublic[] = []
-  try {
-    avis = await getApprovedAvis()
-  } catch (error) {
-    console.error("Impossible de charger les avis :", error)
+  if (results[0].status === "fulfilled") {
+    searchPublicites = results[0].value
+  } else {
+    console.error("Impossible de charger les publicités home_search:", results[0].reason)
+  }
+  if (results[1].status === "fulfilled") {
+    avis = results[1].value
+  } else {
+    console.error("Impossible de charger les avis :", results[1].reason)
   }
 
   return (
@@ -37,14 +38,21 @@ export default async function Home() {
       <Storytelling />
       <Benefices />
       <Solution />
+      {/* Skeleton placeholders for slower-rendering sections */}
+      <div className="skeleton min-h-[120px] w-full max-w-3xl rounded-lg bg-muted" />
       <PubliciteCarousel
         publicites={searchPublicites}
         className="py-8 md:py-12"
       />
+      {/* Skeleton for potentially slow sections */}
+      <div className="skeleton min-h-[120px] w-full max-w-3xl rounded-lg bg-muted" />
       <Fiabilite />
       <Faq />
+      <div className="skeleton min-h-[120px] w-full max-w-3xl rounded-lg bg-muted" />
       <Temoignages avis={avis} />
+      <div className="skeleton min-h-[120px] w-full max-w-3xl rounded-lg bg-muted" />
       <Acces />
+      <div className="skeleton min-h-[120px] w-full max-w-3xl rounded-lg bg-muted" />
       <CtaFinal />
     </>
   )

@@ -9,6 +9,7 @@ export type ProRole = "vendor" | "admin" | "collaborateur"
 
 export const ADMIN_MODULES = [
   "utilisateurs",
+  "clients",
   "vendeurs",
   "disponibilites",
   "marketing",

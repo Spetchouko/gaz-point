@@ -150,22 +150,28 @@ export async function assignVendor(
   const pointId = String(formData.get("pointId") ?? "")
   const vendorId = String(formData.get("vendorId") ?? "")
 
-  const [point] = await db
+  const pointQuery = db
     .select({ id: pointDeVente.id })
     .from(pointDeVente)
     .where(eq(pointDeVente.id, pointId))
     .limit(1)
+
+  const vendorCheckPromise = (vendorId && vendorId !== "__none__")
+    ? db
+        .select({ id: userTable.id, role: userTable.role })
+        .from(userTable)
+        .where(eq(userTable.id, vendorId))
+        .limit(1)
+    : Promise.resolve([] as Array<{ id: string; role: string }>)
+
+  const [point] = await pointQuery
   if (!point) {
     return { ok: false, message: "Point de vente introuvable." }
   }
 
+  const [vendor] = await vendorCheckPromise
   let assignedVendor: string | null = null
   if (vendorId && vendorId !== "__none__") {
-    const [vendor] = await db
-      .select({ id: userTable.id, role: userTable.role })
-      .from(userTable)
-      .where(eq(userTable.id, vendorId))
-      .limit(1)
     if (!vendor || vendor.role !== "vendor") {
       return { ok: false, message: "Le vendeur sélectionné est introuvable." }
     }
@@ -199,25 +205,25 @@ export async function deleteDisponibilite(
     return { ok: false, message: "Disponibilité introuvable." }
   }
 
-  const [dispo] = await db
+  // Single JOIN query replaces two sequential SELECTs — dispo + its point lookup.
+  const rows = await db
     .select({
       id: disponibilite.id,
       pointId: disponibilite.pointId,
+      pointName: pointDeVente.name,
+      vendorId: pointDeVente.vendorId,
     })
     .from(disponibilite)
+    .leftJoin(pointDeVente, eq(disponibilite.pointId, pointDeVente.id))
     .where(eq(disponibilite.id, disponibiliteId))
     .limit(1)
+
+  const dispo = rows[0] as { id: string; pointId: string; pointName: string | null; vendorId: string | null } | undefined
+  const point = dispo ? { id: dispo.pointId, vendorId: dispo.vendorId } : null
 
   if (!dispo) {
     return { ok: false, message: "Disponibilité introuvable." }
   }
-
-  const [point] = await db
-    .select({ id: pointDeVente.id, vendorId: pointDeVente.vendorId })
-    .from(pointDeVente)
-    .where(eq(pointDeVente.id, dispo.pointId))
-    .limit(1)
-
   if (!point) {
     return { ok: false, message: "Point de vente associé introuvable." }
   }

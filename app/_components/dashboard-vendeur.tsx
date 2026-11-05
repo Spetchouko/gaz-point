@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Plus, Store, RefreshCw, Cylinder, MapPin, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -67,6 +67,11 @@ export function DashboardVendeur({
     pointName: string
   } | null>(null)
 
+  const pointMap = useMemo(
+    () => new Map(points.map((p) => [p.id, p])),
+    [points],
+  )
+
   const handleAddDispo = (point?: PointWithStats) => {
     if (point) {
       setEditingDispo({
@@ -100,13 +105,17 @@ export function DashboardVendeur({
     setEditingDispo(null)
   }
 
-  // Collecter toutes les disponibilités de tous les points
-  const allDispos = points.flatMap((point) =>
-    point.disponibilites.map((dispo) => ({
-      ...dispo,
-      pointId: point.id,
-      pointName: point.name,
-    }))
+  // Collecter toutes les disponibilités de tous les points — wrapped in useMemo
+  const allDispos = useMemo(
+    () =>
+      points.flatMap((point) =>
+        point.disponibilites.map((dispo) => ({
+          ...dispo,
+          pointId: point.id,
+          pointName: point.name,
+        }))
+      ),
+    [points],
   )
 
   if (points.length === 0) {
@@ -249,7 +258,7 @@ export function DashboardVendeur({
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {allDispos.map((dispo) => {
-                const point = points.find((p) => p.id === dispo.pointId)
+                const point = pointMap.get(dispo.pointId)
                 return (
                   <Card
                     key={dispo.id}

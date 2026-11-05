@@ -4,6 +4,16 @@ import { useState, useEffect, useCallback } from "react";
 import { X, Download, Share2 } from "lucide-react";
 import Image from "next/image";
 
+type StandaloneNavigator = {
+  standalone: boolean
+};
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>
+}
+
+
 export function PwaInstallPrompt() {
   const [show, setShow] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -14,8 +24,9 @@ export function PwaInstallPrompt() {
     // Détecter installation existante
     const standalone =
       window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as any).standalone === true;
-    setIsStandalone(standalone);
+      (window.navigator as unknown as StandaloneNavigator)
+.standalone === true;
+    queueMicrotask(() => setIsStandalone(standalone));
 
     // Détecter iOS
     const ua = navigator.userAgent;
@@ -38,7 +49,7 @@ export function PwaInstallPrompt() {
     // Événement beforeinstallprompt
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e as any);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
       setShow(true);
     };
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect } from "react"
+import { useCallback, Suspense, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
 import { safeRedirect } from "@/lib/utils"
@@ -54,6 +54,10 @@ function LoginPageContent() {
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [feedback, setFeedback] = useState<{ state: "idle" | "loading" | "success" | "error"; msg?: string }>({ state: "idle" })
+
+  const handleGoogleLogin = useCallback(() => {
+    authClient.signIn.social({ provider: "google", callbackURL: redirectTo })
+  }, [redirectTo])
 
   const validateForm = () => {
     const emailError = validateEmail(email)
@@ -250,7 +254,7 @@ function LoginPageContent() {
                 variant="outline"
                 className="w-full gap-2 h-11"
                 disabled={loading}
-                onClick={() => authClient.signIn.social({ provider: "google", callbackURL: redirectTo })}
+                onClick={handleGoogleLogin}
               >
                 <Image
                   src="https://www.svgrepo.com/show/475656/google-color.svg"

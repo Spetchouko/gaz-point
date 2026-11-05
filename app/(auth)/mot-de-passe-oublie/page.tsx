@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { Lock, Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
-import { useState } from "react"
+import { useCallback, useState } from "react"
 import Image from "next/image"
 
 function validatePassword(password: string): string | null {
@@ -39,6 +39,10 @@ function ResetPasswordPageContent() {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+
+  const handleShowPasswordToggle = useCallback(() => {
+    setShowPassword((prev) => !prev)
+  }, [])
 
   const validateForm = () => {
     const passwordError = validatePassword(password)
@@ -174,7 +178,7 @@ function ResetPasswordPageContent() {
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={handleShowPasswordToggle}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   disabled={loading || !token}
                   aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
@@ -210,7 +214,7 @@ function ResetPasswordPageContent() {
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={handleShowPasswordToggle}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   disabled={loading || !token}
                   aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}

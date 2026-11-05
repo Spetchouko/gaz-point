@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect } from "react"
+import { useCallback, Suspense, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
@@ -82,6 +82,9 @@ function InscriptionUsagerContent() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const handleShowPasswordToggle = useCallback(() => {
+    setShowPassword((prev) => !prev)
+  }, [])
   const [error, setError] = useState("")
   const [fieldErrors, setFieldErrors] = useState<{
     name?: string
@@ -207,6 +210,10 @@ function InscriptionUsagerContent() {
     }
     if (error) setError("")
   }
+
+  const handleGoogleLogin = useCallback(() => {
+    authClient.signIn.social({ provider: "google", callbackURL: redirectTo })
+  }, [redirectTo])
 
   return (
     <div className="min-h-screen bg-background px-4 py-8 flex items-center justify-center">
@@ -375,7 +382,7 @@ function InscriptionUsagerContent() {
                 variant="outline"
                 className="w-full gap-2 h-11"
                 disabled={loading}
-                onClick={() => authClient.signIn.social({ provider: "google", callbackURL: redirectTo })}
+                onClick={handleGoogleLogin}
               >
                 <Image
                   src="https://www.svgrepo.com/show/475656/google-color.svg"

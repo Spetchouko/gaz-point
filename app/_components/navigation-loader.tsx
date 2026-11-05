@@ -9,7 +9,7 @@ export function NavigationLoader() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    setLoading(true)
+    queueMicrotask(() => setLoading(true))
     const timer = setTimeout(() => setLoading(false), 300)
     return () => clearTimeout(timer)
   }, [pathname])

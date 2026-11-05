@@ -17,7 +17,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     try {
       const raw = localStorage.getItem("gaz-theme")
       if (raw === "light" || raw === "dark" || raw === "system") {
-        setThemeState(raw)
+        queueMicrotask(() => setThemeState(raw))
       }
     } catch {}
     initTheme()

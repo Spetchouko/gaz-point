@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
 import { reservation, pointDeVente } from "@/db/schema"
-import { eq, desc, and, inArray } from "drizzle-orm"
+import { eq, desc, and, inArray, count } from "drizzle-orm"
 import { getProUser } from "@/lib/session"
 import { formatDateTime } from "@/lib/gaz"
 
@@ -19,6 +19,8 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const status = searchParams.get("status")
     const pointId = searchParams.get("pointId")
+    const page = parseInt(searchParams.get("page") ?? "1", 10) || 1
+    const pageSize = parseInt(searchParams.get("pageSize") ?? "50", 10) || 50
 
     // Get vendor's points
     const points = await db
@@ -28,7 +30,10 @@ export async function GET(req: NextRequest) {
 
     const pointIds = points.map((p) => p.id)
     if (pointIds.length === 0) {
-      return NextResponse.json({ reservations: [] })
+      return NextResponse.json({
+        reservations: [],
+        pagination: { total: 0, page, pageSize, totalPages: 0 },
+      })
     }
 
     const conditions = [inArray(reservation.pointId, pointIds)]
@@ -38,6 +43,15 @@ export async function GET(req: NextRequest) {
     if (pointId) {
       conditions.push(eq(reservation.pointId, pointId))
     }
+
+    const totalResult = await db
+      .select({ count: count() })
+      .from(reservation)
+      .leftJoin(pointDeVente, eq(reservation.pointId, pointDeVente.id))
+      .where(and(...conditions))
+      .catch(() => [{ count: 0 }])
+
+    const total = totalResult[0]?.count ?? 0
 
     const reservations = await db
       .select({
@@ -64,6 +78,8 @@ export async function GET(req: NextRequest) {
       .from(reservation)
       .leftJoin(pointDeVente, eq(reservation.pointId, pointDeVente.id))
       .where(and(...conditions))
+      .limit(Math.max(pageSize, 1))
+      .offset((page - 1) * pageSize)
       .orderBy(desc(reservation.reservedAt))
 
     // Add computed status
@@ -81,7 +97,10 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    return NextResponse.json({ reservations: reservationsWithStatus })
+    return NextResponse.json({
+      reservations: reservationsWithStatus,
+      pagination: { total, page, pageSize, totalPages: Math.ceil(total / pageSize) },
+    })
   } catch (err) {
     console.error("[reservation/vendor] error:", err)
     return NextResponse.json(

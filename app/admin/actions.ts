@@ -1039,25 +1039,20 @@ export async function updateUser(
   }
   if (role !== "client" && role !== "vendor") return { ok: false, message: "Rôle invalide." }
 
-  const [target] = await db
-    .select({ id: userTable.id, role: userTable.role, email: userTable.email })
-    .from(userTable)
-    .where(eq(userTable.id, userId))
-    .limit(1)
-  if (!target) return { ok: false, message: "Utilisateur introuvable." }
-  if (target.role === "admin" || target.role === "collaborateur") {
-    return { ok: false, message: "Impossible de modifier un compte d'administration." }
-  }
-  if (userId === admin.id) return { ok: false, message: "Vous ne pouvez pas modifier votre propre compte ici." }
-
-  const duplicate = await db
-    .select({ id: userTable.id })
-    .from(userTable)
-    .where(eq(userTable.email, email))
-    .limit(1)
-  if (duplicate[0] && duplicate[0].id !== userId) {
-    return { ok: false, message: "Cette adresse email est déjà utilisée." }
-  }
+  const [targetResult, duplicateResult] = await Promise.all([
+    db
+      .select({ id: userTable.id, role: userTable.role, email: userTable.email })
+      .from(userTable)
+      .where(eq(userTable.id, userId))
+      .limit(1),
+    db
+      .select({ id: userTable.id })
+      .from(userTable)
+      .where(eq(userTable.email, email))
+      .limit(1),
+  ])
+  let target = targetResult[0] ?? null
+  const duplicate = duplicateResult[0] ?? null
 
   const cleanPhoneNumber = phoneNumber?.replace(/[^\d+]/g, "") || null
   await db

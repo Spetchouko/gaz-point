@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import nodemailer from "nodemailer"
+import { defaultRateLimiter } from "@/lib/rate-limit"
 
 const CONTACT_EMAIL = process.env.CONTACT_EMAIL ?? "gazpoints@gmail.com"
 const GMAIL_USER = process.env.GMAIL_USER ?? "gazpoints@gmail.com"
@@ -32,6 +33,15 @@ function badRequest(message: string) {
 }
 
 export async function POST(request: Request) {
+  // Rate limit: max 5 messages per hour per IP address
+  const check = defaultRateLimiter.checkRateLimit(request)
+  if (!check.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429 }
+    )
+  }
+
   let payload: Record<string, unknown>
   try {
     payload = await request.json()
@@ -54,6 +64,10 @@ export async function POST(request: Request) {
     return badRequest("Le message est trop long (5 000 caractères maximum).")
   }
 
+  // Sanitize replyTo: strip any user-provided replyTo emails to prevent self-DoS
+  // (replyTo must be an internal email, not the sender's own).
+  const sanitizedReplyTo = sanitizeReplyTo(payload.replyTo, email)
+
   const objetFinal = OBJETS.includes(objet) ? objet : "Question générale"
 
   const appPassword = process.env.GMAIL_APP_PASSWORD
@@ -75,7 +89,7 @@ export async function POST(request: Request) {
     await transporter.sendMail({
       from: `"GazPoints — Contact" <${GMAIL_USER}>`,
       to: CONTACT_EMAIL,
-      replyTo: { name: singleLine(nom), address: email },
+      replyTo: sanitizedReplyTo,
       subject: `[GazPoints] ${objetFinal} — ${singleLine(nom)}`,
       text: message,
       html: `
@@ -96,4 +110,21 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
+}
+
+/**
+ * Sanitizes the replyTo field to prevent self-DoS attacks.
+ * Strips any user-provided email that matches the sender's own address.
+ */
+function sanitizeReplyTo(replyTo: unknown, senderEmail: string): string | undefined {
+  if (!replyTo || typeof replyTo !== "object") return undefined
+  const r = replyTo as Record<string, unknown>
+  const name = typeof r.name === "string" ? singleLine(r.name) : ""
+  const address = typeof r.address === "string" ? r.address.trim() : ""
+  // Strip if replyTo email matches the sender's own email (self-DoS protection)
+  if (address && address.toLowerCase() === senderEmail.toLowerCase()) {
+    return undefined
+  }
+  if (!name && !address) return undefined
+  return JSON.stringify({ name, address: address || senderEmail })
 }

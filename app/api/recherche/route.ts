@@ -4,6 +4,7 @@ import { db } from "@/db"
 import { disponibilite, pointDeVente } from "@/db/schema"
 import { effectiveStatus, isStale } from "@/lib/gaz"
 import { getCurrentUser } from "@/lib/session"
+import { getCachedSearch, setCachedSearch } from "@/lib/cache-service"
 import {
   AD_ATTRIBUTION_COOKIE,
   recordConversionFromRequest,
@@ -21,6 +22,12 @@ export async function GET(request: NextRequest) {
   const brand = searchParams.get("brand")?.trim() || null
   const format = searchParams.get("format")?.trim() || null
   const zone = searchParams.get("zone")?.trim() || null
+
+  const queryKey = `${brand ?? ""}|${format ?? ""}|${zone ?? ""}`
+  const cached = await getCachedSearch(queryKey).catch(() => null)
+  if (cached !== null) {
+    return NextResponse.json({ results: cached })
+  }
 
   const conditions = []
 
@@ -145,6 +152,8 @@ export async function GET(request: NextRequest) {
   if (request.cookies.get(AD_ATTRIBUTION_COOKIE)) {
     await recordConversionFromRequest(request, "search", { userId: currentUser.id })
   }
+
+  await setCachedSearch(queryKey, results).catch(() => undefined)
 
   return NextResponse.json({ results })
 }

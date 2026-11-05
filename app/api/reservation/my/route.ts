@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
 import { reservation, pointDeVente } from "@/db/schema"
-import { eq, desc, and } from "drizzle-orm"
+import { eq, desc, and, count } from "drizzle-orm"
 import { getCurrentUser } from "@/lib/session"
 import { formatDateTime } from "@/lib/gaz"
 
@@ -13,11 +13,22 @@ export async function GET(req: NextRequest) {
     }
     const { searchParams } = new URL(req.url)
     const status = searchParams.get("status")
+    const page = parseInt(searchParams.get("page") ?? "1", 10) || 1
+    const pageSize = parseInt(searchParams.get("pageSize") ?? "50", 10) || 50
 
     const conditions = [eq(reservation.userId, currentUser.id)]
     if (status) {
       conditions.push(eq(reservation.status, status))
     }
+
+    const totalResult = await db
+      .select({ count: count() })
+      .from(reservation)
+      .leftJoin(pointDeVente, eq(reservation.pointId, pointDeVente.id))
+      .where(conditions.length > 1 ? and(...conditions) : conditions[0])
+      .catch(() => [{ count: 0 }])
+
+    const total = totalResult[0]?.count ?? 0
 
     const reservations = await db
       .select({
@@ -45,6 +56,8 @@ export async function GET(req: NextRequest) {
       .from(reservation)
       .leftJoin(pointDeVente, eq(reservation.pointId, pointDeVente.id))
       .where(conditions.length > 1 ? and(...conditions) : conditions[0])
+      .limit(Math.max(pageSize, 1))
+      .offset((page - 1) * pageSize)
       .orderBy(desc(reservation.reservedAt))
 
     // Add computed status (check expiry)
@@ -62,7 +75,15 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    return NextResponse.json({ reservations: reservationsWithStatus })
+    return NextResponse.json({
+      reservations: reservationsWithStatus,
+      pagination: {
+        total,
+        page,
+        pageSize,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    })
   } catch (err) {
     console.error("[reservation/my] error:", err)
     return NextResponse.json(

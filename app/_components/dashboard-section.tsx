@@ -27,7 +27,7 @@ export function DashboardSection({
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
+    queueMicrotask(() => setMounted(true))
     try {
       const raw = localStorage.getItem(storageKey)
       if (raw) {

@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/db"
 import { user, verification } from "@/db/schema"
 import { sendVerificationEmail, sendVerificationEmailResend } from "@/lib/email"
+import { verificationSendRateLimiter } from "@/lib/rate-limit"
 
 // Doit rester cohérent avec le décompte affiché dans l'interface (60 s).
 const RESEND_COOLDOWN_SECONDS = 60
@@ -29,6 +30,14 @@ function otpIdentifier(email: string) {
  * que si le fournisseur d'email a accepté le message.
  */
 export async function POST(req: NextRequest) {
+  const check = verificationSendRateLimiter.checkRateLimit(req)
+  if (!check.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429 }
+    )
+  }
+
   try {
     const body = (await req.json().catch(() => null)) as
       | { email?: string; resend?: boolean }

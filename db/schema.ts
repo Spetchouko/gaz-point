@@ -35,7 +35,9 @@ export const user = pgTable("user", {
     .defaultNow()
     .$onUpdate(() => /* @__PURE */ new Date())
     .notNull(),
-});
+  },
+  (table) => [index("user_role_created_at_idx").on(table.role, table.createdAt)],
+);
 
 export const session = pgTable(
   "session",
@@ -114,7 +116,10 @@ export const pointDeVente = pgTable(
       .$onUpdate(() => /* @__PURE */ new Date())
       .notNull(),
   },
-  (table) => [index("point_de_vente_vendor_id_idx").on(table.vendorId)],
+  (table) => [
+    index("point_de_vente_vendor_id_idx").on(table.vendorId),
+    index("point_de_vente_is_active_idx").on(table.isActive),
+  ],
 );
 
 export const disponibilite = pgTable(
@@ -144,7 +149,13 @@ export const disponibilite = pgTable(
       .$onUpdate(() => /* @__PURE */ new Date())
       .notNull(),
   },
-  (table) => [index("disponibilite_point_id_idx").on(table.pointId), index("disponibilite_vendor_id_idx").on(table.vendorId)]
+  (table) => [
+    index("disponibilite_point_id_idx").on(table.pointId),
+    index("disponibilite_vendor_id_idx").on(table.vendorId),
+    index("disponibilite_status_created_idx").on(table.status, table.createdAt),
+    index("disponibilite_brand_format_idx").on(table.brand, table.format),
+    index("disponibilite_point_id_created_at_idx").on(table.pointId, table.createdAt),
+  ]
 )
 
 export const brand = pgTable(
@@ -287,6 +298,8 @@ export const publiciteEvent = pgTable(
     index("publicite_event_publicite_id_idx").on(table.publiciteId),
     index("publicite_event_created_at_idx").on(table.createdAt),
     index("publicite_event_type_created_idx").on(table.eventType, table.createdAt),
+    index("publicite_event_conversion_type_idx").on(table.conversionType),
+    index("publicite_event_source_category_idx").on(table.sourceCategory),
   ]
 )
 
@@ -313,6 +326,9 @@ export const trafficEvent = pgTable(
   (table) => [
     index("traffic_event_created_at_idx").on(table.createdAt),
     index("traffic_event_user_agent_idx").on(table.userAgent),
+    index("traffic_event_path_type_idx").on(table.path, table.eventType),
+    index("traffic_event_user_id_idx").on(table.userId),
+    index("traffic_event_created_at_path_idx").on(table.createdAt, table.path),
   ]
 )
 

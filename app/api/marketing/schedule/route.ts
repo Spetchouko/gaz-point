@@ -31,29 +31,30 @@ export async function GET(req: NextRequest) {
   try {
     const now = new Date()
 
-    const activated = await db
-      .update(publicite)
-      .set({ status: "active", updatedAt: new Date() })
-      .where(
-        and(
-          eq(publicite.status, "scheduled"),
-          isNotNull(publicite.startAt),
-          lte(publicite.startAt, now)
+    const [activated, expired] = await Promise.all([
+      db
+        .update(publicite)
+        .set({ status: "active", updatedAt: new Date() })
+        .where(
+          and(
+            eq(publicite.status, "scheduled"),
+            isNotNull(publicite.startAt),
+            lte(publicite.startAt, now)
+          )
         )
-      )
-      .returning({ id: publicite.id })
-
-    const expired = await db
-      .update(publicite)
-      .set({ status: "expired", updatedAt: new Date() })
-      .where(
-        and(
-          eq(publicite.status, "active"),
-          isNotNull(publicite.endAt),
-          lt(publicite.endAt, now)
+        .returning({ id: publicite.id }),
+      db
+        .update(publicite)
+        .set({ status: "expired", updatedAt: new Date() })
+        .where(
+          and(
+            eq(publicite.status, "active"),
+            isNotNull(publicite.endAt),
+            lt(publicite.endAt, now)
+          )
         )
-      )
-      .returning({ id: publicite.id })
+        .returning({ id: publicite.id }),
+    ])
 
     return NextResponse.json({
       ok: true,

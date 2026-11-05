@@ -15,32 +15,18 @@ const MAX_RESERVATION_QUANTITY = 20
 
 function generateReservationCode(pointName: string): string {
   const now = new Date()
-  const datePart = now.toISOString().slice(2, 10).replace(/-/g, "") // AAMMJJ
+  const datePart = now.toISOString().slice(2, 10).replace(/-/g, "") // YYYYMMDD
   const namePart = pointName
     .toUpperCase()
     .replace(/[^A-Z]/g, "")
     .slice(0, 6)
     .padEnd(6, "X")
-  return `${datePart}${namePart}`
+  const hex = Math.floor(Math.random() * 0x10000).toString(16).toUpperCase().padStart(4, "0")
+  return `${datePart}${namePart}${hex}`
 }
 
 async function ensureUniqueCode(baseCode: string): Promise<string> {
-  let code = baseCode
-  let attempt = 0
-  while (true) {
-    const existing = await db
-      .select({ id: reservation.id })
-      .from(reservation)
-      .where(eq(reservation.reservationCode, code))
-      .limit(1)
-    if (existing.length === 0) return code
-    attempt++
-    if (attempt > 99) {
-      throw new Error("Impossible de générer un code de réservation unique")
-    }
-    const suffix = attempt.toString().padStart(2, "0")
-    code = baseCode.slice(0, 10) + suffix
-  }
+  return baseCode
 }
 
 function cleanText(value: unknown, max: number): string | null {

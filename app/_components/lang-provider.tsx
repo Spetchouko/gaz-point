@@ -18,7 +18,7 @@ export function LangProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem("gaz-lang")
-      if (raw === "fr" || raw === "en") setLangState(raw)
+      if (raw === "fr" || raw === "en") queueMicrotask(() => setLangState(raw))
     } catch {}
   }, [])
 

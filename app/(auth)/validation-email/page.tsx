@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect, useState } from "react"
+import { Suspense, useCallback, useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
@@ -59,7 +59,7 @@ function ValidationEmailContent() {
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
   }
 
-  const verifier = async (value: string) => {
+  const verifier = useCallback(async (value: string) => {
     const otp = value.trim()
     if (loading || success) return
     if (!email) {
@@ -97,7 +97,7 @@ function ValidationEmailContent() {
       setError("Une erreur inattendue est survenue. Veuillez réessayer.")
       setLoading(false)
     }
-  }
+  }, [loading, success, email, redirectParam, router])
 
   const renvoyerCode = async () => {
     if (resending || resendCooldown > 0) return
