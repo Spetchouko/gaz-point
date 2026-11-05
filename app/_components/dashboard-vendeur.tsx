@@ -1,7 +1,16 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Plus, Store, RefreshCw, Cylinder, MapPin, TrendingUp } from "lucide-react"
+import {
+  Plus,
+  Store,
+  RefreshCw,
+  Cylinder,
+  MapPin,
+  TrendingUp,
+  Activity,
+  CheckCircle2,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -11,11 +20,11 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { DashboardNav } from "@/app/_components/dashboard-nav"
 import { DisponibiliteForm } from "@/app/_components/disponibilite-form"
 import { DisponibiliteList } from "@/app/_components/disponibilite-list"
 import { VerifierReservation } from "@/app/_components/verifier-reservation"
 import { availabilityLabel, availabilityBadgeClass } from "@/lib/gaz"
+import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/gaz"
 import type { AvailabilityStatus } from "@/db/schema"
 
@@ -118,30 +127,33 @@ export function DashboardVendeur({
     [points],
   )
 
+  const firstName = vendorName.split(" ")[0]
+
   if (points.length === 0) {
     return (
-      <div className="min-h-screen bg-background py-6 sm:py-12">
+      <div className="min-h-screen bg-gray-50 py-6 sm:py-12">
         <div className="container mx-auto max-w-4xl px-4">
-          <DashboardNav pro={true} isVendor={true} />
-          <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <header className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Espace vendeur</h1>
-              <p className="mt-2 text-muted-foreground">
-                Gère les disponibilités de gaz de tes dépôts
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                Tableau de bord vendeur
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Bonjour {firstName}, voici ton espace de gestion
               </p>
             </div>
             <Badge variant="secondary">Vendeur</Badge>
           </header>
+
           <Card className="max-w-2xl mx-auto">
-            <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+            <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
               <span className="flex size-12 items-center justify-center rounded-full bg-primary/10">
                 <Store className="size-6 text-primary" aria-hidden />
               </span>
               <p className="font-medium">Aucun dépôt rattaché à ton compte</p>
               <p className="max-w-md text-sm text-muted-foreground">
-                Contacte l&apos;administration (gazpoints@gmail.com) pour faire
-                rattacher ton dépôt, puis tu pourras y signaler la disponibilité
-                du gaz.
+                Contacte l'administration pour faire rattacher ton dépôt, puis tu
+                pourras y signaler la disponibilité du gaz.
               </p>
             </CardContent>
           </Card>
@@ -151,264 +163,345 @@ export function DashboardVendeur({
   }
 
   return (
-    <div className="min-h-screen bg-background py-6 sm:py-12">
-      <div className="container mx-auto max-w-4xl px-4">
-        <DashboardNav pro={true} isVendor={true} />
-        <header className="mb-6 sm:mb-8 flex flex-wrap items-center justify-between gap-3">
+    <div className="min-h-screen bg-gray-50 py-6 sm:py-8">
+      <div className="container mx-auto max-w-7xl px-4">
+        {/* Header */}
+        <header className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight break-words">Espace vendeur</h1>
-            <p className="mt-2 text-sm sm:text-base text-muted-foreground">
-              Bonjour {vendorName.split(" ")[0]}, gère tes disponibilités
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              Tableau de bord
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Bonjour {firstName}, gère tes disponibilités de gaz
             </p>
           </div>
-          <Badge variant="secondary">Vendeur</Badge>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="text-xs px-2 py-1.5">
+              Compte vendeur
+            </Badge>
+          </div>
         </header>
 
-        {/* Statistiques globales */}
-        <div className="mb-6 grid gap-4 grid-cols-2 sm:grid-cols-4">
-          <Card>
-            <CardContent className="pt-6">
+        {/* Cartes statistiques */}
+        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card className="hover:shadow-sm transition-shadow">
+            <CardContent className="pt-5 pb-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Dépôts rattachés</p>
-                  <p className="text-3xl font-bold">{globalStats.totalPoints}</p>
-                </div>
-                <span className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <Store className="size-6" />
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Bouteilles totales</p>
-                  <p className="text-3xl font-bold">{globalStats.totalQuantity}</p>
-                </div>
-                <span className="flex size-12 items-center justify-center rounded-full bg-success/10 text-success">
-                  <Cylinder className="size-6" />
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Dépôts avec stock</p>
-                  <p className="text-3xl font-bold text-success">{globalStats.availablePoints}</p>
-                </div>
-                <span className="flex size-12 items-center justify-center rounded-full bg-success/10 text-success">
-                  <TrendingUp className="size-6" />
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Dernière mise à jour</p>
-                  <p className="text-sm font-bold">
-                    {globalStats.lastUpdate
-                      ? formatDate(globalStats.lastUpdate)
-                      : "—"}
+                  <p className="text-sm text-muted-foreground">
+                    Dépôts rattachés
+                  </p>
+                  <p className="text-2xl font-bold tracking-tight">
+                    {globalStats.totalPoints}
                   </p>
                 </div>
-                <span className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <RefreshCw className="size-6" />
-                </span>
+                <div className="flex size-10 items-center justify-center rounded-xl bg-primary/50 text-primary border border-primary/100">
+                  <Store className="size-5" />
+                </div>
               </div>
+              <CardDescription className="mt-2 text-xs text-muted-foreground">
+                Points de vente actifs
+              </CardDescription>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-sm transition-shadow">
+            <CardContent className="pt-5 pb-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Bouteilles disponibles
+                  </p>
+                  <p className="text-2xl font-bold tracking-tight text-success">
+                    {globalStats.totalQuantity}
+                  </p>
+                </div>
+                <div className="flex size-10 items-center justify-center rounded-xl bg-success/50 text-success border border-success/100">
+                  <Cylinder className="size-5" />
+                </div>
+              </div>
+              <CardDescription className="mt-2 text-xs text-muted-foreground">
+                Quantité totale en stock
+              </CardDescription>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-sm transition-shadow">
+            <CardContent className="pt-5 pb-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Dépôts avec stock
+                  </p>
+                  <p className="text-2xl font-bold tracking-tight text-success">
+                    {globalStats.availablePoints}
+                  </p>
+                </div>
+                <div className="flex size-10 items-center justify-center rounded-xl bg-success/50 text-success border border-success/100">
+                  <CheckCircle2 className="size-5" />
+                </div>
+              </div>
+              <CardDescription className="mt-2 text-xs text-muted-foreground">
+                Points actuellement approvisionnés
+              </CardDescription>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-sm transition-shadow">
+            <CardContent className="pt-5 pb-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Disponibilités publiées
+                  </p>
+                  <p className="text-2xl font-bold tracking-tight text-primary">
+                    {globalStats.totalDispos}
+                  </p>
+                </div>
+                <div className="flex size-10 items-center justify-center rounded-xl bg-primary/50 text-primary border border-primary/100">
+                  <Activity className="size-5" />
+                </div>
+              </div>
+              <CardDescription className="mt-2 text-xs text-muted-foreground">
+                Annonces de disponibilité actives
+              </CardDescription>
             </CardContent>
           </Card>
         </div>
 
-        {/* Section Vérifier une réservation */}
+        {/* Vérifier une réservation */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold tracking-tight mb-4">Vérifier une réservation</h2>
-          <p className="text-muted-foreground mb-4">
-            Saisissez le code présenté par le client pour vérifier sa validité et confirmer le retrait.
+          <h2 className="text-lg font-bold tracking-tight mb-3">
+            Vérifier une réservation
+          </h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Saisissez le code présenté par le client pour vérifier sa validité
+            et confirmer le retrait.
           </p>
           <VerifierReservation />
         </div>
 
-        {/* Grille visuelle des disponibilités */}
-        <div className="mt-8 space-y-6">
-          {allDispos.length === 0 ? (
-            <Card className="max-w-2xl mx-auto p-6 text-center">
-              <CardContent className="flex flex-col items-center gap-4">
-                <span className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <Store className="size-6" />
-                </span>
-                <p className="font-medium">Aucune disponibilité pour l&apos;instant</p>
-                <p className="text-sm text-muted-foreground">
-                  Publiez votre première disponibilité depuis l&apos;espace Pro pour
-                  montrer aux clients où trouver votre gaz.
-                </p>
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => handleAddDispo()}
-                >
-                  <Plus className="size-4" /> Première disponibilité
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {allDispos.map((dispo) => {
-                const point = pointMap.get(dispo.pointId)
-                return (
-                  <Card
-                    key={dispo.id}
-                    className="p-4 hover:bg-card transition-colors"
-                  >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                          <span className="text-sm font-medium">{dispo.format ?? "—"}</span>
-                        </div>
-                        <Badge
-                          variant="outline"
-                          className={`${availabilityBadgeClass[dispo.status as AvailabilityStatus]} shrink-0`}
-                        >
-                          {availabilityLabel[dispo.status as AvailabilityStatus]}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-2">
-                      <div className="grid gap-2 text-sm">
-                        <div>
-                          <p className="text-muted-foreground">Quantité</p>
-                          <p className="font-medium">
-                            {dispo.quantity !== null
-                              ? `${dispo.quantity} bouteille{dispo.quantity > 1 ? "s" : ""}`
-                              : "—"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Dépôt</p>
-                          <p className="font-medium">{point?.name ?? "—"}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Mis à jour</p>
-                          <p className="font-medium">
-                            {formatDate(new Date(dispo.createdAt))}
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                    <div className="pt-3 border-t border-muted/20">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full gap-1 text-xs font-semibold"
-                        onClick={() => handleEditDispo(dispo, dispo.pointId, point?.name ?? "—")}
-                      >
-                        Voir les détails
-                      </Button>
-                    </div>
-                  </Card>
-                )
-              })}
-            </div>
-          )}
+        {/* Bouton principal + disponibilités récentes */}
+        <div className="mb-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold tracking-tight">
+              Disponibilités récentes
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              État actuel de tes dépôts de gaz
+            </p>
+          </div>
+          <Button
+            variant="default"
+            className="flex items-center gap-2"
+            onClick={() => handleAddDispo()}
+          >
+            <Plus className="size-4" />
+            Ajouter une disponibilité
+          </Button>
         </div>
 
-        {/* Points de vente avec disponibilités */}
-        <div className="space-y-6">
-          {points.map((point) => (
-            <Card key={point.id}>
-              <CardHeader className="flex flex-wrap items-start justify-between gap-2 pb-3">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Store className="size-4 text-primary" aria-hidden />
-                    {point.name}
-                  </CardTitle>
-                  <CardDescription className="mt-1 flex items-center gap-1.5">
-                    <MapPin className="size-3.5 shrink-0" aria-hidden />
-                    {point.address} — {point.district}
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  {point.effectiveStatus && (
-                    <Badge
-                      variant="outline"
-                      className={availabilityBadgeClass[point.effectiveStatus]}
-                    >
-                      {availabilityLabel[point.effectiveStatus]}
-                    </Badge>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1"
-                    onClick={() => handleAddDispo(point)}
-                  >
-                    <Plus className="size-4" />
-                    Disponibilité
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                {/* Disponibilité actuelle du point */}
-                {point.latestDispo && (
-                  <div className="mb-4 p-4 rounded-lg border bg-muted/30">
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                      <p className="text-sm font-medium">Disponibilité actuelle</p>
+        {allDispos.length === 0 ? (
+          <Card className="max-w-2xl mx-auto p-8 text-center">
+            <CardContent className="flex flex-col items-center gap-4">
+              <span className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <Store className="size-6" />
+              </span>
+              <p className="font-medium">Aucune disponibilité pour l'instant</p>
+              <p className="text-sm text-muted-foreground max-w-md">
+                Publiez votre première disponibilité pour montrer aux clients où
+                trouver votre gaz.
+              </p>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => handleAddDispo()}
+              >
+                <Plus className="size-4" /> Première disponibilité
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {allDispos.map((dispo) => {
+              const point = pointMap.get(dispo.pointId)
+              return (
+                <Card
+                  key={dispo.id}
+                  className="p-4 hover:bg-card transition-colors"
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <span className="text-sm font-medium">
+                          {dispo.format ?? "—"}
+                        </span>
+                      </div>
                       <Badge
                         variant="outline"
-                        className={availabilityBadgeClass[point.effectiveStatus!]}
+                        className={`${availabilityBadgeClass[dispo.status as AvailabilityStatus]} shrink-0`}
                       >
-                        {availabilityLabel[point.effectiveStatus!]}
+                        {availabilityLabel[dispo.status as AvailabilityStatus]}
                       </Badge>
                     </div>
-                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 text-sm">
-                      <div>
-                        <p className="text-muted-foreground">Type</p>
-                        <p className="font-medium">{point.latestDispo.format ?? "—"}</p>
-                      </div>
+                  </CardHeader>
+                  <CardContent className="pt-2">
+                    <div className="grid gap-2 text-sm">
                       <div>
                         <p className="text-muted-foreground">Quantité</p>
                         <p className="font-medium">
-                          {point.latestDispo.quantity !== null
-                            ? `${point.latestDispo.quantity} bouteille{point.latestDispo.quantity > 1 ? "s" : ""}`
+                          {dispo.quantity !== null
+                            ? `${dispo.quantity} bouteille${
+                                dispo.quantity > 1 ? "s" : ""
+                              }`
                             : "—"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground">Localisation</p>
-                        <p className="font-medium">{point.address} — {point.district}</p>
+                        <p className="text-muted-foreground">Dépôt</p>
+                        <p className="font-medium truncate">
+                          {point?.name ?? "—"}
+                        </p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Mis à jour</p>
-                        <p className="font-medium">{formatDate(point.lastUpdate!)}</p>
+                        <p className="font-medium">
+                          {formatDate(new Date(dispo.createdAt))}
+                        </p>
                       </div>
-                      {point.latestDispo.note && (
-                        <div className="sm:col-span-2">
-                          <p className="text-muted-foreground">Indication</p>
-                          <p className="font-medium">{point.latestDispo.note}</p>
-                        </div>
-                      )}
-                      {point.latestDispo.phone && (
-                        <div>
-                          <p className="text-muted-foreground">Téléphone</p>
-                          <p className="font-medium">{point.latestDispo.phone}</p>
-                        </div>
-                      )}
                     </div>
+                  </CardContent>
+                  <div className="pt-3 border-t border-muted/20">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-1 text-xs font-semibold"
+                      onClick={() =>
+                        handleEditDispo(dispo, dispo.pointId, point?.name ?? "—")
+                      }
+                    >
+                      Voir les détails
+                    </Button>
                   </div>
-                )}
+                </Card>
+              )
+            })}
+          </div>
+        )}
 
-                <DisponibiliteList
-                  point={point}
-                  onEdit={handleEditDispo}
-                  onAdd={() => handleAddDispo(point)}
-                />
-              </CardContent>
-            </Card>
-          ))}
+        {/* Points de vente */}
+        <div className="mt-12">
+          <h2 className="text-xl font-bold tracking-tight mb-6">
+            Mes points de vente
+          </h2>
+          <div className="space-y-3">
+            {points.map((point) => (
+              <Card key={point.id} className="hover:shadow-sm transition-shadow">
+                <CardHeader
+                  className="flex flex-wrap items-start justify-between gap-2 pb-3"
+                >
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Store className="size-4 text-primary" aria-hidden />
+                      {point.name}
+                    </CardTitle>
+                    <CardDescription className="mt-1 flex items-center gap-1.5">
+                      <MapPin className="size-3.5 shrink-0" aria-hidden />
+                      {point.address} — {point.district}
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {point.effectiveStatus && (
+                      <Badge
+                        variant="outline"
+                        className={availabilityBadgeClass[point.effectiveStatus]}
+                      >
+                        {availabilityLabel[point.effectiveStatus]}
+                      </Badge>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1"
+                      onClick={() => handleAddDispo(point)}
+                    >
+                      <Plus className="size-4" />
+                      Disponibilité
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  {point.latestDispo && (
+                    <div className="mb-4 p-4 rounded-lg border bg-muted/30">
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <p className="text-sm font-medium">
+                          Disponibilité actuelle
+                        </p>
+                        <Badge
+                          variant="outline"
+                          className={availabilityBadgeClass[point.effectiveStatus!]}
+                        >
+                          {availabilityLabel[point.effectiveStatus!]}
+                        </Badge>
+                      </div>
+                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Type</p>
+                          <p className="font-medium">
+                            {point.latestDispo.format ?? "—"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Quantité</p>
+                          <p className="font-medium">
+                            {point.latestDispo.quantity !== null
+                              ? `${point.latestDispo.quantity} bouteille${
+                                  point.latestDispo.quantity > 1 ? "s" : ""
+                                }`
+                              : "—"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Localisation</p>
+                          <p className="font-medium truncate">
+                            {point.address} — {point.district}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Mis à jour</p>
+                          <p className="font-medium">
+                            {formatDate(point.lastUpdate!)}
+                          </p>
+                        </div>
+                        {point.latestDispo.note && (
+                          <div className="sm:col-span-2">
+                            <p className="text-muted-foreground">Indication</p>
+                            <p className="font-medium">
+                              {point.latestDispo.note}
+                            </p>
+                          </div>
+                        )}
+                        {point.latestDispo.phone && (
+                          <div>
+                            <p className="text-muted-foreground">Téléphone</p>
+                            <p className="font-medium">
+                              {point.latestDispo.phone}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <DisponibiliteList
+                    point={point}
+                    onEdit={handleEditDispo}
+                    onAdd={() => handleAddDispo(point)}
+                  />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
 
         <DisponibiliteForm

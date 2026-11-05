@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { db } from "@/db"
 import { disponibilite, pointDeVente } from "@/db/schema"
 import { DashboardVendeur } from "@/app/_components/dashboard-vendeur"
+import { VendorLayout } from "@/app/_components/vendor-layout"
 import { requirePro } from "@/lib/session"
 import { effectiveStatus } from "@/lib/gaz"
 
@@ -83,10 +84,16 @@ export default async function DashboardVendeurPage() {
   }
 
   return (
-    <DashboardVendeur
-      vendorName={user.name}
-      points={pointsWithStats}
-      globalStats={globalStats}
-    />
+    <VendorLayout
+      role={role}
+      vendorName={user.name ?? "Vendeur"}
+      vendorEmail={user.email}
+    >
+      <DashboardVendeur
+        vendorName={user.name}
+        points={pointsWithStats}
+        globalStats={globalStats}
+      />
+    </VendorLayout>
   )
 }

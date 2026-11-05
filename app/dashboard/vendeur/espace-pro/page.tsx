@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { db } from "@/db"
 import { disponibilite, pointDeVente } from "@/db/schema"
 import { EspaceVendeur } from "@/app/_components/espace-vendeur"
+import { VendorLayout } from "@/app/_components/vendor-layout"
 import { requirePro } from "@/lib/session"
 
 export const metadata: Metadata = {
@@ -39,16 +40,22 @@ export default async function EspaceVendeurPage() {
   }
 
   return (
-    <EspaceVendeur
-      vendorPhone={user.phoneNumber ?? null}
-      points={points.map((point) => ({
-        id: point.id,
-        name: point.name,
-        district: point.district,
-        address: point.address,
-        phone: point.phone,
-        disponibilites: dispoByPoint.get(point.id) ?? [],
-      }))}
-    />
+    <VendorLayout
+      role={role}
+      vendorName={user.name ?? "Vendeur"}
+      vendorEmail={user.email}
+    >
+      <EspaceVendeur
+        vendorPhone={user.phoneNumber ?? null}
+        points={points.map((point) => ({
+          id: point.id,
+          name: point.name,
+          district: point.district,
+          address: point.address,
+          phone: point.phone,
+          disponibilites: dispoByPoint.get(point.id) ?? [],
+        }))}
+      />
+    </VendorLayout>
   )
 }

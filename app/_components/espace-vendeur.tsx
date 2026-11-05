@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { upsertDisponibilite, type ActionResult } from "@/app/dashboard/pro/actions"
-import { DashboardNav } from "@/app/_components/dashboard-nav"
 import { availabilityLabel } from "@/lib/gaz"
 import type { AvailabilityStatus } from "@/db/schema"
 
@@ -94,23 +93,27 @@ export function EspaceVendeur({
 
   if (points.length === 0) {
     return (
-      <div className="min-h-screen bg-background py-12">
-        <div className="container mx-auto max-w-2xl px-4">
-          <DashboardNav pro={true} />
-          <header className="mb-8">
-            <h1 className="text-3xl font-bold tracking-tight">Espace professionnel</h1>
-            <p className="mt-2 text-muted-foreground">
-              Renseigne la disponibilité du gaz de tes dépôts
-            </p>
+      <div className="min-h-screen bg-gray-50 py-6 sm:py-12">
+        <div className="container mx-auto max-w-4xl px-4">
+          <header className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                Disponibilités
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Renseigne la disponibilité du gaz de tes dépôts
+              </p>
+            </div>
           </header>
+
           <Card className="max-w-2xl mx-auto">
-            <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+            <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
               <span className="flex size-12 items-center justify-center rounded-full bg-primary/10">
                 <Store className="size-6 text-primary" aria-hidden />
               </span>
               <p className="font-medium">Aucun dépôt rattaché à ton compte</p>
               <p className="max-w-md text-sm text-muted-foreground">
-                Contacte l&apos;administration (gazpoints@gmail.com) pour faire
+                Contacte l'administration (gazpoints@gmail.com) pour faire
                 rattacher ton dépôt, puis tu pourras y signaler la disponibilité
                 du gaz.
               </p>
@@ -122,39 +125,51 @@ export function EspaceVendeur({
   }
 
   return (
-    <div className="min-h-screen bg-background py-12">
-      <div className="container mx-auto max-w-2xl px-4">
-        <DashboardNav pro={true} />
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Espace professionnel</h1>
-          <p className="mt-2 text-muted-foreground">
-            Renseigne la disponibilité du gaz de tes dépôts
-          </p>
+    <div className="min-h-screen bg-gray-50 py-6 sm:py-8">
+      <div className="container mx-auto max-w-7xl px-4">
+        <header className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              Disponibilités
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Publie et gère le stock de gaz de tes dépôts
+            </p>
+          </div>
+          <Button
+            variant="default"
+            className="flex items-center gap-2"
+            onClick={() => handleAddDispo()}
+          >
+            <Plus className="size-4" />
+            Publier une disponibilité
+          </Button>
         </header>
 
-        {/* Formulaire de disponibilité */}
+        {/* Formulaire de disponibilité (carte compacte) */}
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Store className="size-5 text-primary" aria-hidden />
-              Publier une disponibilité
+              Déclarer une disponibilité
             </CardTitle>
             <CardDescription>
-              Déclare le stock disponible dans ton point de vente. Cette information sera visible par les usagers.
+              Déclare le stock disponible dans ton point de vente. Cette
+              information sera visible par les usagers.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Button className="w-full gap-2 sm:w-auto" onClick={() => handleAddDispo()}>
               <Plus className="size-4" />
-              Publier une disponibilité
+              Ajouter une disponibilité
             </Button>
           </CardContent>
         </Card>
 
-        {/* Disponibilités actuelles */}
+        {/* Disponibilités actuelles par point */}
         <div className="space-y-4">
           {points.map((point) => (
-            <Card key={point.id}>
+            <Card key={point.id} className="hover:shadow-sm transition-shadow">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Store className="size-4 text-primary" aria-hidden />
@@ -270,7 +285,7 @@ function DisponibiliteVendeurForm({
           </div>
         )}
         <dd className="text-xs">
-          La date et l&apos;heure de publication seront enregistrées automatiquement.
+          La date et l'heure de publication seront enregistrées automatiquement.
         </dd>
       </dl>
     </div>
@@ -500,7 +515,7 @@ function DisponibiliteList({
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {dispo.quantity !== null
-                    ? `${dispo.quantity} bouteille{dispo.quantity > 1 ? "s" : ""}`
+                    ? `${dispo.quantity} bouteille${dispo.quantity > 1 ? "s" : ""}`
                     : "Quantité non définie"}
                   {' '}· {dispo.createdAt ? new Date(dispo.createdAt).toLocaleDateString("fr-FR") : ""}
                 </p>
