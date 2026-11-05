@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { db } from "@/db"
 import { user, pointDeVente } from "@/db/schema"
-import { eq, inArray, desc, count } from "drizzle-orm"
+import { eq, inArray, desc } from "drizzle-orm"
 import { getAdminUser } from "@/lib/session"
 
 export async function GET(req: Request) {
@@ -17,11 +17,11 @@ export async function GET(req: Request) {
 
     // Get all vendors with their approval status
     const totalResult = await db
-      .select({ count: count() })
+      .count()
       .from(user)
       .where(eq(user.role, "vendor"))
-      .catch(() => [{ count: 0 }])
-    const total = totalResult[0]?.count ?? 0
+      .catch(() => ({ count: 0 }))
+    const total = totalResult.count ?? 0
 
     const vendors = await db
       .select({

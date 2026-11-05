@@ -78,9 +78,10 @@ export const auth = betterAuth({
     // n'empêche pas la création du compte et soit signalé clairement à l'utilisateur.
     // Le renvoi emprunte la même route (cooldown serveur de 60 s).
     emailVerification: {
-        // Pas d'envoi automatique par le cœur de Better Auth : on garde la main
-        // sur le déclenchement et la gestion des erreurs d'envoi.
-        sendOnSignUp: true,
+        // L'envoi est geré explicitement par la route POST /api/auth/email-otp/send-verification
+        // appelee apres l'inscription. sendOnSignUp desactive pour eviter un double envoi
+        // (Better Auth + route explicite) qui invaliderait le premier code (strategie rotate).
+        sendOnSignUp: false,
         // Une session est créée dès que le code est validé (utilisateur connecté).
         autoSignInAfterVerification: true,
     },

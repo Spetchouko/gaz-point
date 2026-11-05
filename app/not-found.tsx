@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
 interface NotFoundBoundaryProps {
-  children?: ReactNode
+  children: ReactNode
 }
 
 interface NotFoundBoundaryState {
@@ -39,7 +39,7 @@ class NotFoundBoundary extends Component<NotFoundBoundaryProps, NotFoundBoundary
               Cette page n&apos;existe plus ou a été déplacée.
             </p>
             <div className="mt-6">
-              <Button>
+              <Button asChild>
                 <Link href="/">Revenir à l&apos;accueil</Link>
               </Button>
             </div>
@@ -48,7 +48,7 @@ class NotFoundBoundary extends Component<NotFoundBoundaryProps, NotFoundBoundary
       )
     }
 
-    return this.props.children ?? null
+    return this.props.children
   }
 }
 

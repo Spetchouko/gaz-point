@@ -14,7 +14,7 @@ export const GET = (req: Request): Promise<Response> => {
   return handler.GET(req);
 };
 
-async function handleAuthPost(req: Request): Promise<Response> {
+function handleAuthPost(req: Request): Response {
   const url = new URL(req.url);
   const path = url.pathname;
 

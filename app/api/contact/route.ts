@@ -34,7 +34,7 @@ function badRequest(message: string) {
 
 export async function POST(request: Request) {
   // Rate limit: max 5 messages per hour per IP address
-  const check = defaultRateLimiter.checkRateLimit(request)
+  const check = contactRateLimiter.checkRateLimit(request)
   if (!check.allowed) {
     return NextResponse.json(
       { error: "Too many requests" },
@@ -116,15 +116,15 @@ export async function POST(request: Request) {
  * Sanitizes the replyTo field to prevent self-DoS attacks.
  * Strips any user-provided email that matches the sender's own address.
  */
-function sanitizeReplyTo(replyTo: unknown, senderEmail: string): string | undefined {
-  if (!replyTo || typeof replyTo !== "object") return undefined
+function sanitizeReplyTo(replyTo: unknown, senderEmail: string): string | null {
+  if (!replyTo || typeof replyTo !== "object") return null
   const r = replyTo as Record<string, unknown>
   const name = typeof r.name === "string" ? singleLine(r.name) : ""
   const address = typeof r.address === "string" ? r.address.trim() : ""
   // Strip if replyTo email matches the sender's own email (self-DoS protection)
   if (address && address.toLowerCase() === senderEmail.toLowerCase()) {
-    return undefined
+    return null
   }
-  if (!name && !address) return undefined
-  return JSON.stringify({ name, address: address || senderEmail })
+  if (!name && !address) return null
+  return { name, address: address || senderEmail }
 }

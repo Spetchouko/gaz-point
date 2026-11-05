@@ -26,13 +26,9 @@ import {
   Tablet,
   Users,
   List,
-  TrendingUp,
-  MousePointerClick,
-  Eye,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
-import type { PubliciteStats } from "@/lib/publicite-analytics"
 
 type TrafficDay = {
   date: string
@@ -362,7 +358,8 @@ export function EntryExitChart({ data }: { data: EntryExitData[] }) {
 // AdminTrafficCharts — moved from admin-traffic-charts.tsx
 // ------------------------------------------------------------------
 
-function SmartphoneLaptopTablet({ className }: { className?: string }) {  return (
+function SmartphoneLaptopTablet({ className }: { className?: string }) {
+  return (
     <g className={className}>
       <Smartphone className="size-3 mr-1" />
       <Laptop className="size-3 mr-1" />
@@ -539,89 +536,6 @@ export function AdminTrafficCharts({ trafficData, evolutionData }: {
           </CardContent>
         </Card>
       </div>
-    </div>
-  )
-}
-
-
-// ------------------------------------------------------------------
-// AdminPubliciteStats — statistiques marketing/publicité
-// ------------------------------------------------------------------
-
-export function AdminPubliciteStats({
-  periodKey: _periodKey,
-  fromInput: _fromInput,
-  toInput: _toInput,
-  stats,
-}: {
-  periodKey?: string
-  fromInput?: string
-  toInput?: string
-  stats: PubliciteStats
-}) {
-  const kpis = stats.totals
-  return (
-    <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Impressions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{kpis.impressions.toLocaleString("fr-FR")}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Clics
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{kpis.clicks.toLocaleString("fr-FR")}</p>
-            <p className="text-xs text-muted-foreground mt-1">CTR : {(kpis.ctr * 100).toFixed(2)} %</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Conversions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{kpis.conversions.toLocaleString("fr-FR")}</p>
-            <p className="text-xs text-muted-foreground mt-1">Taux : {(kpis.conversionRate * 100).toFixed(2)} %</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {stats.series.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="size-5 text-primary" /> Évolution des publicités
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={stats.series} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#dfe8e2" />
-                  <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="#5b6b62" interval="preserveStartEnd" />
-                  <YAxis tick={{ fontSize: 11 }} stroke="#5b6b62" allowDecimals={false} />
-                  <Tooltip contentStyle={{ background: "#ffffff", border: "1px solid #dfe8e2", borderRadius: 8 }} />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Area type="monotone" dataKey="impressions" name="Impressions" stroke="#16834a" fill="#16834a" fillOpacity={0.15} strokeWidth={2} />
-                  <Bar dataKey="clicks" name="Clics" fill="hsl(217 91% 60%)" radius={[3, 3, 0, 0]} />
-                  <Line type="monotone" dataKey="conversions" name="Conversions" stroke="hsl(39 91% 63%)" strokeWidth={2} dot={{ r: 3 }} />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 }

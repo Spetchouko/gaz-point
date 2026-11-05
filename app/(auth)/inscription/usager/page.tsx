@@ -166,28 +166,23 @@ function InscriptionUsagerContent() {
 
       // Inscription réussie — déclencher l'envoi du code de vérification à 6 chiffres.
       // Le compte est déjà créé : un échec d'envoi ne doit pas bloquer l'utilisateur.
-      // On le redirige dans tous les cas, avec un message clair en cas d'échec.
+      // On redirige toujours vers la page de validation. L'affichage d'un
+      // éventuel échec d'envoi est géré par la page de validation elle-même
+      // afin de ne jamais afficher un faux message d'erreur si l'email
+      // arrive finalement avec un léger retard.
       const normalizedEmail = email.trim().toLowerCase()
-      let sendOk = true
       try {
-        const res = await fetch("/api/auth/email-otp/send-verification", {
+        await fetch("/api/auth/email-otp/send-verification", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: normalizedEmail, resend: false }),
         })
-        sendOk = res.ok
-        if (!sendOk) {
-          const data = await res.json().catch(() => null)
-          console.error("[signup-usager] envoi du code refusé:", data?.error?.message)
-        }
       } catch (sendErr) {
         console.error("[signup-usager] envoi du code échoué:", sendErr)
-        sendOk = false
       }
 
-      const flags = sendOk ? "&sent=1" : "&sendError=1"
       router.push(
-        `/validation-email?mode=${MODE_EMAIL}&email=${encodeURIComponent(normalizedEmail)}&redirect=${encodeURIComponent(redirectTo)}${flags}`
+        `/validation-email?mode=${MODE_EMAIL}&email=${encodeURIComponent(normalizedEmail)}&redirect=${encodeURIComponent(redirectTo)}&sent=1`
       )
       router.refresh()
     } catch (err) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
 import { reservation, pointDeVente } from "@/db/schema"
-import { eq, desc, and, count } from "drizzle-orm"
+import { eq, desc, and } from "drizzle-orm"
 import { getCurrentUser } from "@/lib/session"
 import { formatDateTime } from "@/lib/gaz"
 
@@ -22,13 +22,13 @@ export async function GET(req: NextRequest) {
     }
 
     const totalResult = await db
-      .select({ count: count() })
+      .count()
       .from(reservation)
       .leftJoin(pointDeVente, eq(reservation.pointId, pointDeVente.id))
       .where(conditions.length > 1 ? and(...conditions) : conditions[0])
-      .catch(() => [{ count: 0 }])
+      .catch(() => ({ count: 0 }))
 
-    const total = totalResult[0]?.count ?? 0
+    const total = totalResult.count ?? 0
 
     const reservations = await db
       .select({

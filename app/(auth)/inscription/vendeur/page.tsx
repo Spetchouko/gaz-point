@@ -172,29 +172,23 @@ function InscriptionVendeurContent() {
       // Le compte est créé. On envoie le code de vérification et on
       // redirige vers la page de configuration où le vendeur pourra ajouter
       // son adresse, téléphone, description, etc.
+      // On redirige toujours vers la page de validation. L'affichage d'un
+      // éventuel échec d'envoi est géré par la page de validation elle-même.
       const normalizedEmail = email.trim().toLowerCase()
-      let sendOk = true
       try {
-        const res = await fetch("/api/auth/email-otp/send-verification", {
+        await fetch("/api/auth/email-otp/send-verification", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: normalizedEmail, resend: false }),
         })
-        sendOk = res.ok
-        if (!sendOk) {
-          const data = await res.json().catch(() => null)
-          console.error("[signup-vendeur] envoi du code refusé:", data?.error?.message)
-        }
       } catch (sendErr) {
         console.error("[signup-vendeur] envoi du code échoué:", sendErr)
-        sendOk = false
       }
 
-      const flags = sendOk ? "&sent=1" : "&sendError=1"
       router.push(
         `/validation-email?mode=${MODE_EMAIL}&email=${encodeURIComponent(normalizedEmail)}&redirect=${encodeURIComponent(
           "/inscription/vendeur/configuration"
-        )}${flags}`
+        )}&sent=1`
       )
       router.refresh()
     } catch (err) {

@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
 interface ErrorBoundaryProps {
-  children?: ReactNode
+  children: ReactNode
 }
 
 interface ErrorBoundaryState {
@@ -48,7 +48,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               persiste.
             </p>
             <div className="mt-6">
-              <Button>
+              <Button asChild>
                 <Link href="/">Revenir à l&apos;accueil</Link>
               </Button>
             </div>
@@ -57,7 +57,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       )
     }
 
-    return this.props.children ?? null
+    return this.props.children
   }
 }
 

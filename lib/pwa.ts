@@ -13,12 +13,31 @@ export interface ServiceWorkerState {
   installing: boolean
   waiting: boolean
   updatefound: boolean
-  controller?: globalThis.ServiceWorker
+  controller?: ServiceWorker
   error?: boolean
+}
+
+export interface ServiceWorker extends EventTarget {
+  readonly state: ServiceWorkerState
+  addEventListener<K extends keyof WorkerEventMap>(
+    type: K,
+    listener: (this: ServiceWorker, ev: WorkerEventMap[K]) => unknown,
+    options?: AddEventListenerOptions | boolean,
+  ): void
+  removeEventListener<K extends keyof WorkerEventMap>(
+    type: K,
+    listener: (this: ServiceWorker, ev: WorkerEventMap[K]) => unknown,
+    options?: boolean,
+  ): void
+  postMessage(message: any, transfer?: Transferable[]): void
+  readonly controller: ServiceWorker | null
+  addEventListener(type: "message", listener: ((ev: MessageEvent) => unknown)): void
+  removeEventListener(type: "message", listener: ((ev: MessageEvent) => unknown)): void
 }
 
 declare global {
   interface Navigator {
+    serviceWorker: ServiceWorker | undefined
     readonly devMenu: boolean
   }
 }
@@ -41,10 +60,9 @@ export async function registerServiceWorker(
 
 /** Show the native install prompt if available. */
 export function promptInstall(): boolean {
-  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return false
-  const w = navigator.serviceWorker
+  const w = typeof navigator !== "undefined" ? navigator.serviceWorker : undefined
   if (!w?.controller) return false
-  if (w.controller.state === "activated") {
+  if (w.state === "active") {
     if ("onLine" in navigator) return true
     return typeof Notification !== "undefined" && Notification.permission === "granted"
   }
