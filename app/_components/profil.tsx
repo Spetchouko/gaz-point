@@ -15,7 +15,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { authClient } from "@/lib/auth-client"
-import { DashboardNav } from "@/app/_components/dashboard-nav"
 import { formatDate } from "@/lib/gaz"
 import { cn } from "@/lib/utils"
 
@@ -49,8 +48,6 @@ export function Profil({
   return (
     <div className="min-h-screen bg-background py-12">
       <div className="container mx-auto max-w-4xl px-4">
-        <DashboardNav pro={pro} />
-
         <header className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Mon profil</h1>
           <p className="mt-2 text-muted-foreground">

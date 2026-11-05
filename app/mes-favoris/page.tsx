@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { db } from "@/db"
 import { disponibilite, favori, pointDeVente } from "@/db/schema"
 import { MesFavoris } from "@/app/_components/mes-favoris"
+import { ClientLayout } from "@/app/_components/client-layout"
 import { requireUser } from "@/lib/session"
 
 export const metadata: Metadata = {
@@ -14,7 +15,10 @@ type ReportRow = typeof disponibilite.$inferSelect
 export default async function MesFavorisPage() {
   const user = await requireUser()
   const role = (user as unknown as { role?: string | null }).role ?? "client"
-  const isPro = role === "vendor" || role === "admin"
+
+  if (role === "admin" || role === "collaborateur") {
+    return <div>Accès réservé aux clients.</div>
+  }
 
   const [favRows, allPoints] = await Promise.all([
     db.select().from(favori).where(eq(favori.userId, user.id)),
@@ -38,17 +42,26 @@ export default async function MesFavorisPage() {
   }
 
   return (
-    <MesFavoris
-      pro={isPro}
-      points={allPoints.map((point) => ({
-        id: point.id,
-        name: point.name,
-        district: point.district,
-        address: point.address,
-        phone: point.phone,
-        isFavorite: favIds.has(point.id),
-        report: reportByPoint.get(point.id) ?? null,
-      }))}
-    />
+    <ClientLayout
+      clientName={user.name ?? "Usager"}
+      clientEmail={user.email}
+    >
+      <div className="min-h-screen bg-gray-50 py-6 sm:py-8">
+        <div className="container mx-auto max-w-4xl px-4">
+          <MesFavoris
+            pro={false}
+            points={allPoints.map((point) => ({
+              id: point.id,
+              name: point.name,
+              district: point.district,
+              address: point.address,
+              phone: point.phone,
+              isFavorite: favIds.has(point.id),
+              report: reportByPoint.get(point.id) ?? null,
+            }))}
+          />
+        </div>
+      </div>
+    </ClientLayout>
   )
 }

@@ -1,10 +1,21 @@
 import { Metadata } from "next"
 import { redirect } from "next/navigation"
-import { requireUser } from "@/lib/session"
+import { db } from "@/db"
+import { reservation, recharge, favori } from "@/db/schema"
+import { eq, count, and } from "drizzle-orm"
 import { DashboardClient } from "@/app/_components/dashboard-client"
+import { ClientLayout } from "@/app/_components/client-layout"
+import { requireUser } from "@/lib/session"
 
 export const metadata: Metadata = {
   title: { absolute: "Tableau de bord | GazPoints" },
+}
+
+type GlobalStats = {
+  totalReservations: number
+  activeReservations: number
+  totalRecharges: number
+  totalFavorites: number
 }
 
 export default async function DashboardPage() {
@@ -18,20 +29,49 @@ export default async function DashboardPage() {
   // Allow vendors to access client dashboard features (search, reservations)
   // They can still access /dashboard/vendeur for vendor-specific features
 
-  return (
-    <div className="min-h-screen bg-background py-6 sm:py-12">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight break-words">
-            Bienvenue {user.name}
-          </h1>
-          <p className="mt-2 text-sm sm:text-base text-muted-foreground">
-            Content de te voir de retour !
-          </p>
-        </div>
+  const [
+    totalReservations,
+    activeReservations,
+    totalRecharges,
+    totalFavorites,
+  ] = await Promise.all([
+    db
+      .select({ count: count() })
+      .from(reservation)
+      .where(eq(reservation.userId, user.id)),
+    db
+      .select({ count: count() })
+      .from(reservation)
+      .where(
+        and(
+          eq(reservation.userId, user.id),
+          eq(reservation.status, "confirmed"),
+        ),
+      ),
+    db
+      .select({ count: count() })
+      .from(recharge)
+      .where(eq(recharge.userId, user.id)),
+    db.select({ count: count() }).from(favori).where(eq(favori.userId, user.id)),
+  ])
 
-        <DashboardClient />
-      </div>
-    </div>
+  const globalStats: GlobalStats = {
+    totalReservations: Number(totalReservations[0]?.count ?? 0),
+    activeReservations: Number(activeReservations[0]?.count ?? 0),
+    totalRecharges: Number(totalRecharges[0]?.count ?? 0),
+    totalFavorites: Number(totalFavorites[0]?.count ?? 0),
+  }
+
+  return (
+    <ClientLayout
+      clientName={user.name ?? "Usager"}
+      clientEmail={user.email}
+    >
+      <DashboardClient
+        clientName={user.name}
+        clientEmail={user.email}
+        globalStats={globalStats}
+      />
+    </ClientLayout>
   )
 }

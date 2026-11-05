@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/card"
 import type { disponibilite } from "@/db/schema"
 import { toggleFavori } from "@/app/mes-favoris/actions"
-import { DashboardNav } from "@/app/_components/dashboard-nav"
 import {
   availabilityBadgeClass,
   availabilityLabel,
@@ -48,8 +47,6 @@ export function MesFavoris({
   return (
     <div className="min-h-screen bg-background py-12">
       <div className="container mx-auto max-w-4xl px-4">
-        <DashboardNav pro={pro} />
-
         <header className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">
             Points de vente favoris

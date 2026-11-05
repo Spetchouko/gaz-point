@@ -26,7 +26,6 @@ import {
   deleteRecharge,
   type ActionResult,
 } from "@/app/mes-commandes/actions"
-import { DashboardNav } from "@/app/_components/dashboard-nav"
 import {
   bottleFormats,
   formatDate,
@@ -50,8 +49,6 @@ export function MesCommandes({
   return (
     <div className="min-h-screen bg-background py-12">
       <div className="container mx-auto max-w-4xl px-4">
-        <DashboardNav pro={pro} />
-
         <header className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Mes commandes</h1>
           <p className="mt-2 text-muted-foreground">
