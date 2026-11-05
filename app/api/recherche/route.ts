@@ -103,16 +103,9 @@ export async function GET(request: NextRequest) {
           (!format || (item.format ?? "").toLowerCase() === format.toLowerCase())
       ) ?? null
 
-    const matchesBrand =
-      !brand ||
-      (report?.brand ?? "").toLowerCase() === brand.toLowerCase() ||
-      (point.brands?.some((b) => b.toLowerCase() === brand.toLowerCase()) ?? false)
-    const matchesFormat =
-      !format ||
-      (report?.format ?? "").toLowerCase() === format.toLowerCase() ||
-      (point.formats?.some((f) => f.toLowerCase() === format.toLowerCase()) ?? false)
-
-    if (!matchesBrand || !matchesFormat) continue
+    // Pas de disponibilité correspondant aux critères de marque/format
+    // pour ce point : on ne l'affiche pas (évite les résultats vides/fictifs).
+    if (!report) continue
 
     const expired =
       report?.expiresAt != null && new Date(report.expiresAt).getTime() < now.getTime()

@@ -151,13 +151,10 @@ export function RechercheGaz() {
       const data = await res.json()
       const results: SearchResult[] = data.results ?? []
 
-      // Message spécifique lorsqu'aucune marque correspondante n'est trouvée
-      if (brand && results.length === 0) {
-        setError(`Aucun point trouvé pour la marque « ${brand} ». Vérifie l'orthographe ou laisse le champ vide pour voir tous les points.`)
-      } else {
-        setResults(results)
-        await setCachedSearch(queryKey, results)
-      }
+      // Une réponse valide contenant zéro résultat est une recherche réussie,
+      // et non une erreur : on l'affiche comme telle (pas de message d'erreur).
+      setResults(results)
+      await setCachedSearch(queryKey, results)
     } catch {
       setError("Une erreur est survenue lors de la recherche.")
     } finally {
@@ -271,17 +268,14 @@ export function RechercheGaz() {
         <p className="mt-4 text-center text-sm text-destructive">{error}</p>
       )}
 
-      {results !== null && (
+      {results !== null && results.length > 0 && (
         <div className="mt-8">
           <h3 className="text-center font-heading text-base sm:text-lg font-semibold text-foreground">
-            {results.length > 0
-              ? `${results.length} point${results.length > 1 ? "s" : ""} trouvé${results.length > 1 ? "s" : ""}`
-              : "Aucun point trouvé"}
+            {results.length} point{results.length > 1 ? "s" : ""} trouvé{results.length > 1 ? "s" : ""}
           </h3>
 
-          {results.length > 0 && (
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {results.map((point) => (
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {results.map((point) => (
                 <Card key={point.id} className="shadow-sm border-border rounded-xl overflow-hidden hover:shadow-md transition-shadow">
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
@@ -341,7 +335,14 @@ export function RechercheGaz() {
                 </Card>
               ))}
             </div>
-          )}
+        </div>
+      )}
+
+      {results !== null && results.length === 0 && (
+        <div className="mt-8 text-center py-8">
+          <p className="text-sm text-muted-foreground">
+            Aucune information trouvée. Essayez de modifier vos critères de recherche.
+          </p>
         </div>
       )}
 

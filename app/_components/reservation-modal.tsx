@@ -179,6 +179,22 @@ export function ReservationModal({
                 </span>
               </div>
 
+              <div className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors">
+                <RadioGroupItem value="consigne" id="consigne" className="mt-1" />
+                <div className="flex-1">
+                  <Label htmlFor="consigne" className="font-medium cursor-pointer">
+                    Consigne
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Vous payez {formatPrice(RESERVATION_AMOUNT)} de consigne pour la
+                    bouteille. Le prix du gaz se règle directement au dépôt.
+                  </p>
+                </div>
+                <span className="font-semibold text-primary">
+                  {formatPrice(RESERVATION_AMOUNT)}
+                </span>
+              </div>
+
 
             </RadioGroup>
 
