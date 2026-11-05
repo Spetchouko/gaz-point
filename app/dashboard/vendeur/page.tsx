@@ -1,7 +1,7 @@
-import { asc, desc, eq, inArray } from "drizzle-orm"
+import { asc, count, desc, eq, and, inArray } from "drizzle-orm"
 import type { Metadata } from "next"
 import { db } from "@/db"
-import { disponibilite, pointDeVente } from "@/db/schema"
+import { disponibilite, pointDeVente, reservation } from "@/db/schema"
 import { DashboardVendeur } from "@/app/_components/dashboard-vendeur"
 import { VendorLayout } from "@/app/_components/vendor-layout"
 import { requirePro } from "@/lib/session"
@@ -82,6 +82,22 @@ export default async function DashboardVendeurPage() {
     lastUpdate,
   }
 
+  const [totalConsignations, pendingConsignations] = await Promise.all([
+    db
+      .select({ count: count() })
+      .from(reservation)
+      .where(eq(reservation.vendorId, user.id)),
+    db
+      .select({ count: count() })
+      .from(reservation)
+      .where(
+        and(
+          eq(reservation.vendorId, user.id),
+          eq(reservation.status, "confirmed")
+        )
+      ),
+  ])
+
   return (
     <VendorLayout
       role={role}
@@ -91,7 +107,11 @@ export default async function DashboardVendeurPage() {
       <DashboardVendeur
         vendorName={user.name}
         points={pointsWithStats}
-        globalStats={globalStats}
+        globalStats={{
+          ...globalStats,
+          totalConsignations: Number(totalConsignations[0]?.count ?? 0),
+          pendingConsignations: Number(pendingConsignations[0]?.count ?? 0),
+        }}
       />
     </VendorLayout>
   )
