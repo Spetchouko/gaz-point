@@ -4,11 +4,12 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard,
-  Search,
   Calendar,
+  Heart,
+  FileText,
+  MessageSquarePlus,
   User,
   LogOut,
-  Store,
 } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
@@ -22,37 +23,52 @@ type ClientNavItem = {
 const CLIENT_NAV_ITEMS: ClientNavItem[] = [
   {
     href: "/dashboard",
-    label: "Vue d'ensemble",
+    label: "Tableau de bord",
     icon: LayoutDashboard,
   },
   {
-    href: "/dashboard",
-    label: "Trouver du gaz",
-    icon: Search,
+    href: "/dashboard/reservations",
+    label: "Mes réservations",
+    icon: Calendar,
   },
   {
-    href: "/dashboard/reservations",
-    label: "Historique de mes activités",
-    icon: Calendar,
+    href: "/dashboard/favoris",
+    label: "Mes favoris",
+    icon: Heart,
+  },
+  {
+    href: "/dashboard/historique-codes",
+    label: "Historique des codes",
+    icon: FileText,
+  },
+  {
+    href: "/avis",
+    label: "Donner mon avis",
+    icon: MessageSquarePlus,
+  },
+  {
+    href: "/profil",
+    label: "Mon profil",
+    icon: User,
   },
 ]
 
 export function ClientSidebar({
   clientName,
   clientEmail,
-  collapsed,
-  setCollapsed,
+  sidebarOpen,
+  setSidebarOpen,
 }: {
   clientName: string
   clientEmail: string | null | undefined
-  collapsed: boolean
-  setCollapsed: (collapsed: boolean) => void
+  sidebarOpen: boolean
+  setSidebarOpen: (open: boolean) => void
 }) {
   const pathname = usePathname()
   const router = useRouter()
 
   const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href)
+    href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href)
 
   const handleSignOut = async () => {
     await authClient.signOut()
@@ -60,148 +76,99 @@ export function ClientSidebar({
     router.refresh()
   }
 
+  const handleNavClick = (href: string) => {
+    setSidebarOpen(false)
+    if (href.startsWith("http")) return
+    router.push(href)
+  }
+
+  const initials = clientName
+    .split(" ")
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("")
+    .slice(0, 2)
+
   return (
-    <nav
-      aria-label="Navigation client"
-      className="flex h-full flex-col"
-    >
+    <nav aria-label="Navigation client" className="flex h-full flex-col">
+      {/* En-tête du sidebar avec le logo GazPoints */}
       <div className="flex h-16 items-center justify-between border-b border-border px-4">
         <Link
           href="/dashboard"
           className="flex items-center gap-2 font-bold text-lg"
-          
+          onClick={() => {
+            setSidebarOpen(false)
+            router.push("/dashboard")
+          }}
         >
           <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Store className="size-5" />
+            <span className="text-sm font-semibold">{initials}</span>
           </span>
-          <span>GazPoints</span>
+          <span className={cn("font-bold tracking-tight", sidebarOpen ? "" : "hidden")}>
+            GazPoints
+          </span>
         </Link>
+        <button
+          type="button"
+          className="md:hidden p-1.5 text-muted-foreground hover:text-foreground"
+          onClick={() => setSidebarOpen(false)}
+          aria-label="Fermer le menu"
+        >
+          <span className="sr-only">Fermer</span>
+        </button>
       </div>
 
-      <ul className="flex-1 overflow-y-auto p-4 space-y-1">
-        {/* Groupe : Mon espace */}
-        <li className="px-2 pt-2">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium px-3 mb-2">
-            Mon espace
-          </p>
-        </li>
-        {CLIENT_NAV_ITEMS.slice(0, 1).map((item) => {
+      {/* Rubriques de navigation */}
+      <ul className="flex-1 overflow-y-auto p-2 space-y-1">
+        {CLIENT_NAV_ITEMS.map((item) => {
           const active = isActive(item.href)
           const Icon = item.icon
           return (
             <li key={item.href}>
               <Link
                 href={item.href}
-                
+                onClick={() => handleNavClick(item.href)}
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                   active
                     ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
-                <Icon className="size-4" aria-hidden />
-                {item.label}
-              </Link>
-            </li>
-          )
-        })}
-
-        {/* Groupe : Recherche de gaz */}
-        <li className="px-2 pt-4">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium px-3 mb-2">
-            Recherche de gaz
-          </p>
-        </li>
-        {CLIENT_NAV_ITEMS.slice(1, 2).map((item) => {
-          const active = isActive(item.href)
-          const Icon = item.icon
-          return (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-              >
-                <Icon className="size-4" aria-hidden />
-                {item.label}
-              </Link>
-            </li>
-          )
-        })}
-
-        {/* Groupe : Mes activités */}
-        <li className="px-2 pt-4">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium px-3 mb-2">
-            Mes activités
-          </p>
-        </li>
-        {CLIENT_NAV_ITEMS.slice(2, 3).map((item) => {
-          const active = isActive(item.href)
-          const Icon = item.icon
-          return (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-              >
-                <Icon className="size-4" aria-hidden />
-                {item.label}
+                <Icon className={cn("size-4 shrink-0", sidebarOpen ? "" : "hidden")} aria-hidden />
+                <span className={sidebarOpen ? "" : "hidden"}>{item.label}</span>
               </Link>
             </li>
           )
         })}
       </ul>
 
-      <div className="border-t border-border p-4 space-y-2">
-        <div className="flex items-center gap-3 rounded-lg px-3 py-2">
+      {/* Pied de sidebar : compte utilisateur + déconnexion */}
+      <div className="border-t border-border p-3 space-y-2">
+        <div className="flex items-center gap-3 rounded-lg px-2.5 py-2">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-            {clientName.charAt(0).toUpperCase()}
+            {initials}
           </span>
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-foreground">
+            <p className={cn("truncate text-sm font-medium text-foreground", sidebarOpen ? "" : "hidden")}>
               {clientName}
             </p>
-            <p className="truncate text-xs text-muted-foreground">
+            <p className={cn("truncate text-xs text-muted-foreground", sidebarOpen ? "" : "hidden")}>
               {clientEmail ?? "Usager"}
             </p>
           </div>
         </div>
-        <li className="px-2 pt-2">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium px-3 mb-2">
-            Autres
-          </p>
-        </li>
-        <Link
-          href="/"
-          
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          <Store className="size-4" aria-hidden />
-          Retour à l'accueil
-        </Link>
         <button
           type="button"
           onClick={handleSignOut}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className={cn(
+            "flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+            sidebarOpen ? "" : "flex-col items-start gap-1 py-1"
+          )}
           aria-label="Se déconnecter"
         >
-          <LogOut className="size-4" aria-hidden />
-          Déconnexion
+          <LogOut className={cn("size-4 shrink-0", sidebarOpen ? "" : "hidden")} aria-hidden />
+          <span className={sidebarOpen ? "" : "hidden"}>Déconnexion</span>
         </button>
       </div>
     </nav>

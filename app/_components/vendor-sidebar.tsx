@@ -4,12 +4,12 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard,
+  MapPin,
   Cylinder,
-  Calendar,
-  User,
-  Globe,
+  Shield,
+  Map,
+  MessageSquarePlus,
   LogOut,
-  Store,
 } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
@@ -23,28 +23,33 @@ type VendorNavItem = {
 const VENDOR_NAV_ITEMS: VendorNavItem[] = [
   {
     href: "/dashboard/vendeur",
-    label: "Vue d'ensemble",
+    label: "Tableau de bord",
     icon: LayoutDashboard,
   },
   {
-    href: "/dashboard/vendeur/espace-pro",
-    label: "Disponibilités",
+    href: "/dashboard/vendeur/points-de-vente",
+    label: "Mon point de livraison",
+    icon: MapPin,
+  },
+  {
+    href: "/dashboard/vendeur/disponibilites",
+    label: "Mes bouteilles et disponibilités",
     icon: Cylinder,
   },
   {
-    href: "/dashboard/reservations",
-    label: "Mes réservations",
-    icon: Calendar,
+    href: "/dashboard/vendeur/consignations",
+    label: "Mes consignations",
+    icon: Shield,
   },
   {
-    href: "/profil",
-    label: "Mon profil",
-    icon: User,
+    href: "/dashboard/vendeur/autour-de-moi",
+    label: "Points autour de moi",
+    icon: Map,
   },
   {
-    href: "/",
-    label: "Voir le site public",
-    icon: Globe,
+    href: "/avis",
+    label: "Donner mon avis",
+    icon: MessageSquarePlus,
   },
 ]
 
@@ -52,20 +57,22 @@ export function VendorSidebar({
   role,
   vendorName,
   vendorEmail,
-  collapsed,
-  setCollapsed,
+  sidebarOpen,
+  setSidebarOpen,
 }: {
   role: string | null | undefined
   vendorName: string
   vendorEmail: string | null | undefined
-  collapsed: boolean
-  setCollapsed: (collapsed: boolean) => void
+  sidebarOpen: boolean
+  setSidebarOpen: (open: boolean) => void
 }) {
   const pathname = usePathname()
   const router = useRouter()
 
   const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href)
+    href === "/dashboard/vendeur"
+      ? pathname === "/dashboard/vendeur"
+      : pathname.startsWith(href)
 
   const handleSignOut = async () => {
     await authClient.signOut()
@@ -73,25 +80,50 @@ export function VendorSidebar({
     router.refresh()
   }
 
+  const handleNavClick = (href: string) => {
+    setSidebarOpen(false)
+    router.push(href)
+  }
+
+  const initials = vendorName
+    .split(" ")
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("")
+    .slice(0, 2)
+
+  const isVendor = role === "vendor"
+
   return (
-    <nav
-      aria-label="Navigation vendeur"
-      className="flex h-full flex-col"
-    >
+    <nav aria-label="Navigation vendeur" className="flex h-full flex-col">
+      {/* En-tête du sidebar avec le nom de l'établissement */}
       <div className="flex h-16 items-center justify-between border-b border-border px-4">
         <Link
           href="/dashboard/vendeur"
           className="flex items-center gap-2 font-bold text-lg"
-          
+          onClick={() => {
+            setSidebarOpen(false)
+            router.push("/dashboard/vendeur")
+          }}
         >
           <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Store className="size-5" />
+            <span className="text-sm font-semibold">{initials}</span>
           </span>
-          <span>GazPoints</span>
+          <span className={cn("font-bold tracking-tight", sidebarOpen ? "" : "hidden")}>
+            GazPoints
+          </span>
         </Link>
+        <button
+          type="button"
+          className="md:hidden p-1.5 text-muted-foreground hover:text-foreground"
+          onClick={() => setSidebarOpen(false)}
+          aria-label="Fermer le menu"
+        >
+          <span className="sr-only">Fermer</span>
+        </button>
       </div>
 
-      <ul className="flex-1 overflow-y-auto p-4 space-y-1">
+      {/* Rubriques de navigation */}
+      <ul className="flex-1 overflow-y-auto p-2 space-y-1">
         {VENDOR_NAV_ITEMS.map((item) => {
           const active = isActive(item.href)
           const Icon = item.icon
@@ -99,33 +131,56 @@ export function VendorSidebar({
             <li key={item.href}>
               <Link
                 href={item.href}
-                
+                onClick={() => handleNavClick(item.href)}
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                   active
                     ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
-                <Icon className="size-4" aria-hidden />
-                {item.label}
+                <Icon className={cn("size-4 shrink-0", sidebarOpen ? "" : "hidden")} aria-hidden />
+                <span className={sidebarOpen ? "" : "hidden"}>{item.label}</span>
               </Link>
             </li>
           )
         })}
+
+        {/* Rubrique réservée aux vendeurs : gérer les disponibilités (espace pro) */}
+        {isVendor && (
+          <li key="espace-pro">
+            <Link
+              href="/dashboard/vendeur/espace-pro"
+              onClick={() => {
+                setSidebarOpen(false)
+                router.push("/dashboard/vendeur/espace-pro")
+              }}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                pathname === "/dashboard/vendeur/espace-pro"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <Cylinder className="size-4 shrink-0" aria-hidden />
+              <span className={sidebarOpen ? "" : "hidden"}>Espace pro</span>
+            </Link>
+          </li>
+        )}
       </ul>
 
-      <div className="border-t border-border p-4 space-y-2">
-        <div className="flex items-center gap-3 rounded-lg px-3 py-2">
+      {/* Pied de sidebar : compte utilisateur + déconnexion */}
+      <div className="border-t border-border p-3 space-y-2">
+        <div className="flex items-center gap-3 rounded-lg px-2.5 py-2">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-            {vendorName.charAt(0).toUpperCase()}
+            {initials}
           </span>
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-foreground">
+            <p className={cn("truncate text-sm font-medium text-foreground", sidebarOpen ? "" : "hidden")}>
               {vendorName}
             </p>
-            <p className="truncate text-xs text-muted-foreground">
+            <p className={cn("truncate text-xs text-muted-foreground", sidebarOpen ? "" : "hidden")}>
               {vendorEmail ?? "Vendeur"}
             </p>
           </div>
@@ -133,11 +188,14 @@ export function VendorSidebar({
         <button
           type="button"
           onClick={handleSignOut}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className={cn(
+            "flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+            sidebarOpen ? "" : "flex-col items-start gap-1 py-1"
+          )}
           aria-label="Se déconnecter"
         >
-          <LogOut className="size-4" aria-hidden />
-          Déconnexion
+          <LogOut className={cn("size-4 shrink-0", sidebarOpen ? "" : "hidden")} aria-hidden />
+          <span className={sidebarOpen ? "" : "hidden"}>Déconnexion</span>
         </button>
       </div>
     </nav>
