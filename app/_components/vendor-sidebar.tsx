@@ -7,8 +7,6 @@ import {
   MapPin,
   Cylinder,
   Shield,
-  Map,
-  MessageSquarePlus,
   LogOut,
 } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
@@ -28,28 +26,18 @@ const VENDOR_NAV_ITEMS: VendorNavItem[] = [
   },
   {
     href: "/dashboard/vendeur/points-de-vente",
-    label: "Point de vente",
+    label: "Mon point de vente",
     icon: MapPin,
   },
   {
     href: "/dashboard/vendeur/disponibilites",
-    label: "Gaz disponible",
+    label: "Disponibilités de gaz",
     icon: Cylinder,
   },
   {
-    href: "/dashboard/vendeur/consignations",
-    label: "Mes consignations",
+    href: "/dashboard/vendeur/profil",
+    label: "Mon profil",
     icon: Shield,
-  },
-  {
-    href: "/dashboard/vendeur/autour-de-moi",
-    label: "Point autour de moi",
-    icon: Map,
-  },
-  {
-    href: "/avis",
-    label: "Donner mon avis",
-    icon: MessageSquarePlus,
   },
 ]
 
