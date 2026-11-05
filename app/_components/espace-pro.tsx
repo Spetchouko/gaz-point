@@ -76,11 +76,13 @@ export function EspacePro({
   reporterName,
   points,
   vendors,
+  children,
 }: {
   role: "vendor" | "admin" | "collaborateur"
   reporterName: string
   points: PointRow[]
   vendors: VendorOption[]
+  children?: React.ReactNode
 }) {
   const isAdmin = role === "admin"
 

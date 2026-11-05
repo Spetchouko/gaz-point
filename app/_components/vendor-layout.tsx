@@ -4,17 +4,22 @@ import { useState } from "react"
 import { Menu, X, ChevronLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { VendorSidebar } from "./vendor-sidebar"
+import type { Dispatch, SetStateAction } from "react"
 
 export function VendorLayout({
   role,
   vendorName,
   vendorEmail,
   children,
+  sidebarOpen = false,
+  setSidebarOpen = () => {},
 }: {
   role: string | null | undefined
   vendorName: string
   vendorEmail: string | null | undefined
   children: React.ReactNode
+  sidebarOpen?: boolean
+  setSidebarOpen?: Dispatch<SetStateAction<boolean>>
 }) {
   const [collapsed, setCollapsed] = useState(false)
 
@@ -29,8 +34,8 @@ export function VendorLayout({
         vendorEmail={vendorEmail}
         collapsed={collapsed}
         setCollapsed={setCollapsed}
-        sidebarOpen={false}
-        setSidebarOpen={() => {}}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
       />
 
       <main

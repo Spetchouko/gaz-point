@@ -72,15 +72,15 @@ export function DashboardClient({
             >
               <Activity className="size-4" /> Trouver du gaz
             </Button>
-            <Button variant="outline" className="flex items-center gap-2 px-4 py-2.5">
-              <User className="size-4" /> Mon profil
-            </Button>
           </div>
         </header>
 
+        {/* Séparation visuelle entre bienvenue et recherche */}
+        <div className="mb-8 sm:mb-10 border-t border-border/50 mt-4 sm:mt-6" />
+
         {/* Section 1 : Recherche de gaz (en premier) */}
-        <section className="mb-6">
-          <div className="mb-4">
+        <section className="mb-8 sm:mb-10">
+          <div className="mb-4 sm:mb-6">
             <h2 className="text-lg sm:text-xl font-bold tracking-tight">
               Trouver du gaz
             </h2>
@@ -89,7 +89,9 @@ export function DashboardClient({
               vente disponibles en direct.
             </p>
           </div>
-          <TrouverMonGaz />
+          <div className="rounded-xl border border-border bg-white p-4 sm:p-6 shadow-sm">
+            <TrouverMonGaz />
+          </div>
         </section>
 
         {/* Section 2 : Statistiques du tableau de bord */}
