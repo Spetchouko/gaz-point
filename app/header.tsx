@@ -47,7 +47,7 @@ export function Header() {
         <Link
           href="/"
           onClick={closeMenu}
-          className="flex items-center gap-2.5 transition-opacity hover:opacity-80 ml-[60px]"
+          className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
         >
           <Image
             src="/brand/logo.png"
@@ -71,7 +71,7 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2 mr-[60px]">
+        <div className="flex items-center gap-2">
           {isAuthenticated ? (
             <UserMenu />
           ) : (

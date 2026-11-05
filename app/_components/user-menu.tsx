@@ -29,7 +29,7 @@ export function UserMenu({ isMobile = false }: UserMenuProps) {
   const role = (user as { role?: string } | undefined)?.role
   const isStaff = role === "admin" || role === "collaborateur"
   const espaceHref = isStaff ? "/admin" : role === "vendor" ? "/dashboard/pro" : "/dashboard"
-  const espaceLabel = isStaff ? t("dashboard_admin_title") : t("nav_account")
+  const espaceLabel = "Dashboard"
 
   const handleSignOut = async () => {
     await authClient.signOut()
@@ -48,7 +48,7 @@ export function UserMenu({ isMobile = false }: UserMenuProps) {
           variant="ghost"
           className={cn("gap-2 h-9 px-3", isMobile && "w-full justify-start py-2.5 text-left")}
         >
-          <Avatar className="size-8" data-size={avatarSize}>
+          <Avatar className="size-8 flex items-center justify-center" data-size={avatarSize}>
             <UserRound className="size-4" />
           </Avatar>
         </Button>
