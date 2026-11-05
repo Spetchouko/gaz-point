@@ -17,25 +17,24 @@ function ValidationEmailContent() {
 
   const emailParam = (params.get("email") ?? "").trim().toLowerCase()
   const email = emailParam || (session?.user?.email ?? "").toLowerCase()
-  const redirectParam = params.get("redirect") || "/dashboard"
   const linkVerified = params.get("verified") === "1"
+  const emailSentFromUrl = params.get("sent") === "1"
 
   const [code, setCode] = useState("")
   const [error, setError] = useState("")
-  const [notice, setNotice] = useState("Preparation de votre email de verification...")
+  const [notice, setNotice] = useState(emailSentFromUrl ? "Un code de verification a ete envoye a votre adresse email." : "")
   const [success, setSuccess] = useState(linkVerified)
   const [loading, setLoading] = useState(false)
   const [resending, setResending] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
-  const [emailSent, setEmailSent] = useState(false)
 
   const codeRef = useRef<HTMLInputElement[]>([])
 
   useEffect(() => {
     if (session?.user?.emailVerified) {
-      router.push(redirectParam)
+      router.push(`/connexion?email=${encodeURIComponent(session.user.email ?? "")}`)
     }
-  }, [redirectParam, router, session])
+  }, [router, session])
 
   useEffect(() => {
     if (linkVerified && email) {
@@ -43,8 +42,13 @@ function ValidationEmailContent() {
       setNotice("")
       setError("")
       setCode("")
+      const timer = setTimeout(() => {
+        router.push(`/connexion?email=${encodeURIComponent(email)}`)
+        router.refresh()
+      }, 800)
+      return () => clearTimeout(timer)
     }
-  }, [linkVerified, email])
+  }, [linkVerified, email, router])
 
   useEffect(() => {
     if (resendCooldown <= 0) return
@@ -53,16 +57,6 @@ function ValidationEmailContent() {
     }, 1000)
     return () => clearInterval(timer)
   }, [resendCooldown])
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!error && !success && !emailSent) {
-        setEmailSent(true)
-        setNotice("Code de verification envoye a votre adresse email.")
-      }
-    }, 1500)
-    return () => clearTimeout(timer)
-  }, [])
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -162,13 +156,13 @@ function ValidationEmailContent() {
       setError("")
       setNotice("")
       await new Promise((r) => setTimeout(r, 800))
-      router.push(redirectParam)
+      router.push(`/connexion?email=${encodeURIComponent(email)}`)
       router.refresh()
     } catch {
       setError("Une erreur inattendue est survenue. Veuillez reessayer.")
       setLoading(false)
     }
-  }, [loading, success, email, redirectParam, router])
+  }, [loading, success, email, router])
 
   const renvoyerCode = async () => {
     if (resending || resendCooldown > 0) return
@@ -179,7 +173,6 @@ function ValidationEmailContent() {
     setResending(true)
     setError("")
     setNotice("")
-    setEmailSent(false)
     setNotice("Preparation de votre email de verification...")
     try {
       const res = await fetch("/api/auth/email-otp/send-verification", {
@@ -200,14 +193,12 @@ function ValidationEmailContent() {
           setResendCooldown(retryAfter)
         }
         setResending(false)
-        setEmailSent(true)
         setNotice("Code de verification envoye a votre adresse email.")
         return
       }
       setNotice("Un nouveau code de verification a ete envoye a votre adresse e-mail.")
       setCode("")
       setResendCooldown(RESEND_COOLDOWN_SECONDS)
-      setEmailSent(true)
       setNotice("Code de verification envoye a votre adresse email.")
     } catch {
       setError("Une erreur inattendue est survenue. Veuillez reessayer.")
@@ -231,7 +222,7 @@ function ValidationEmailContent() {
             </CardHeader>
             <CardContent className="text-center">
               <p className="text-sm text-muted-foreground">
-                Redirection vers votre espace…
+                Redirection vers la connexion…
               </p>
             </CardContent>
           </Card>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, Suspense, useEffect } from "react"
+import { useCallback, Suspense, useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
 import { safeRedirect } from "@/lib/utils"
@@ -12,10 +12,9 @@ import { ModernCard } from "@/app/_components/card-modern"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import { Mail, Lock, Eye, EyeOff, Loader2, AlertCircle, ArrowLeft } from "lucide-react"
+import { Mail, Lock, Eye, EyeOff, Loader2, AlertCircle, ArrowLeft, CheckCircle } from "lucide-react"
 import { useTranslation } from "@/lib/i18n"
 import Image from "next/image"
-import { useState } from "react"
 
 function validateEmail(email: string): string | null {
   if (!email.trim()) return "L'email est requis."
@@ -40,13 +39,23 @@ function LoginPageContent() {
   const isStaff = (role?: string | null) =>
     role === "admin" || role === "collaborateur"
 
+  const emailParamFromUrl = (searchParams.get("email") ?? "").trim()
+  const emailVerifiedNotice = emailParamFromUrl ? "Votre adresse email est verifiee. Vous pouvez maintenant vous connecter." : ""
+  const passwordRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     if (!session?.user) return
     const role = (session.user as { role?: string }).role
     router.push(!explicitRedirect && isStaff(role) ? "/admin" : redirectTo)
   }, [session, router, redirectTo, explicitRedirect])
 
-  const [email, setEmail] = useState("")
+  useEffect(() => {
+    if (emailParamFromUrl) {
+      passwordRef.current?.focus()
+    }
+  }, [emailParamFromUrl])
+
+  const [email, setEmail] = useState(emailParamFromUrl)
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
@@ -154,6 +163,15 @@ function LoginPageContent() {
           </CardHeader>
 
           <CardContent className="space-y-4">
+            {emailVerifiedNotice && (
+              <div
+                className="flex items-center gap-2 rounded-md bg-primary/10 p-3 text-sm text-primary"
+                role="status"
+              >
+                <CheckCircle className="size-4 shrink-0" />
+                <span>{emailVerifiedNotice}</span>
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">{t("login_email")}</Label>
@@ -198,6 +216,7 @@ function LoginPageContent() {
                     disabled={loading}
                     aria-invalid={submitted && !!fieldErrors.password}
                     aria-describedby={submitted && fieldErrors.password ? "password-error" : undefined}
+                    ref={passwordRef}
                   />
                   <button
                     type="button"
