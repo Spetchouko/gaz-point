@@ -6,6 +6,8 @@ import { eq, count, and } from "drizzle-orm"
 import { DashboardClient } from "@/app/_components/dashboard-client"
 import { ClientLayout } from "@/app/_components/client-layout"
 import { requireUser } from "@/lib/session"
+import { Menu, X } from "lucide-react"
+import { useState } from "react"
 
 export const metadata: Metadata = {
   title: { absolute: "Tableau de bord | GazPoints" },
@@ -55,16 +57,35 @@ export default async function DashboardPage() {
     totalFavorites: Number(totalFavorites[0]?.count ?? 0),
   }
 
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
   return (
     <ClientLayout
       clientName={user.name ?? "Usager"}
       clientEmail={user.email}
+      sidebarOpen={sidebarOpen}
+      setSidebarOpen={setSidebarOpen}
     >
       <DashboardClient
         clientName={user.name}
         clientEmail={user.email}
         globalStats={globalStats}
       />
+      {/* Bouton de contrôle de sidebar - position en haut à gauche, sous la navigation */}
+      <div className="mt-4 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setSidebarOpen((prev) => !prev)}
+          className="md:hidden flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors size-10"
+          aria-label={sidebarOpen ? "Fermer le menu" : "Ouvrir le menu"}
+        >
+          {sidebarOpen ? (
+            <X className="size-5" />
+          ) : (
+            <Menu className="size-5" />
+          )}
+        </button>
+        <span className="text-sm text-muted-foreground">{sidebarOpen ? "Sidebar fermée" : "Sidebar ouverte"}</span>
+      </div>
     </ClientLayout>
   )
-}

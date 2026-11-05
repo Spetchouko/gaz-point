@@ -4,6 +4,8 @@ import { db } from "@/db"
 import { disponibilite, pointDeVente, user as userTable } from "@/db/schema"
 import { EspacePro } from "@/app/_components/espace-pro"
 import { requirePro } from "@/lib/session"
+import { Menu, X } from "lucide-react"
+import { useState } from "react"
 
 export const metadata: Metadata = {
   title: { absolute: "Espace professionnel | GazPoints" },
@@ -52,6 +54,8 @@ export default async function EspaceProPage() {
 
   const vendorNames = new Map(vendors.map((v) => [v.id, v.name]))
 
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
   return (
     <EspacePro
       role={role}
@@ -69,6 +73,23 @@ export default async function EspaceProPage() {
         report: reportByPoint.get(point.id) ?? null,
       }))}
       vendors={vendors}
-    />
+    >
+      {/* Bouton de contrôle de sidebar - position en haut à gauche, sous la navigation */}
+      <div className="mt-4 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setSidebarOpen((prev) => !prev)}
+          className="md:hidden flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors size-10"
+          aria-label={sidebarOpen ? "Fermer le menu" : "Ouvrir le menu"}
+        >
+          {sidebarOpen ? (
+            <X className="size-5" />
+          ) : (
+            <Menu className="size-5" />
+          )}
+        </button>
+        <span className="text-sm text-muted-foreground">{sidebarOpen ? "Sidebar fermée" : "Sidebar ouverte"}</span>
+      </div>
+    </EspacePro>
   )
 }

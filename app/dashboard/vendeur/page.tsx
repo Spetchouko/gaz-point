@@ -5,6 +5,8 @@ import { disponibilite, pointDeVente } from "@/db/schema"
 import { DashboardVendeur } from "@/app/_components/dashboard-vendeur"
 import { VendorLayout } from "@/app/_components/vendor-layout"
 import { requirePro } from "@/lib/session"
+import { Menu, X } from "lucide-react"
+import { useState } from "react"
 import { effectiveStatus } from "@/lib/gaz"
 
 export const revalidate = 60
@@ -83,17 +85,37 @@ export default async function DashboardVendeurPage() {
     lastUpdate,
   }
 
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
   return (
     <VendorLayout
       role={role}
       vendorName={user.name ?? "Vendeur"}
       vendorEmail={user.email}
+      sidebarOpen={sidebarOpen}
+      setSidebarOpen={setSidebarOpen}
     >
       <DashboardVendeur
         vendorName={user.name}
         points={pointsWithStats}
         globalStats={globalStats}
       />
+      {/* Bouton de contrôle de sidebar - position en haut à gauche, sous la navigation */}
+      <div className="mt-4 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setSidebarOpen((prev) => !prev)}
+          className="md:hidden flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors size-10"
+          aria-label={sidebarOpen ? "Fermer le menu" : "Ouvrir le menu"}
+        >
+          {sidebarOpen ? (
+            <X className="size-5" />
+          ) : (
+            <Menu className="size-5" />
+          )}
+        </button>
+        <span className="text-sm text-muted-foreground">{sidebarOpen ? "Sidebar fermée" : "Sidebarouverte"}</span>
+      </div>
     </VendorLayout>
   )
 }
