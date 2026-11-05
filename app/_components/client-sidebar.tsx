@@ -42,15 +42,11 @@ export function ClientSidebar({
   clientEmail,
   collapsed,
   setCollapsed,
-  sidebarOpen,
-  setSidebarOpen,
 }: {
   clientName: string
   clientEmail: string | null | undefined
   collapsed: boolean
   setCollapsed: (collapsed: boolean) => void
-  sidebarOpen: boolean
-  setSidebarOpen: (open: boolean) => void
 }) {
   const pathname = usePathname()
   const router = useRouter()
@@ -64,10 +60,6 @@ export function ClientSidebar({
     router.refresh()
   }
 
-  const handleNavClick = () => {
-    setSidebarOpen(false)
-  }
-
   return (
     <nav
       aria-label="Navigation client"
@@ -77,7 +69,7 @@ export function ClientSidebar({
         <Link
           href="/dashboard"
           className="flex items-center gap-2 font-bold text-lg"
-          onClick={handleNavClick}
+          
         >
           <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Store className="size-5" />
@@ -100,7 +92,7 @@ export function ClientSidebar({
             <li key={item.href}>
               <Link
                 href={item.href}
-                onClick={handleNavClick}
+                
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
@@ -129,7 +121,7 @@ export function ClientSidebar({
             <li key={item.href}>
               <Link
                 href={item.href}
-                onClick={handleNavClick}
+                
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
@@ -158,7 +150,7 @@ export function ClientSidebar({
             <li key={item.href}>
               <Link
                 href={item.href}
-                onClick={handleNavClick}
+                
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
@@ -196,7 +188,7 @@ export function ClientSidebar({
         </li>
         <Link
           href="/"
-          onClick={handleNavClick}
+          
           className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <Store className="size-4" aria-hidden />

@@ -54,16 +54,12 @@ export function VendorSidebar({
   vendorEmail,
   collapsed,
   setCollapsed,
-  sidebarOpen,
-  setSidebarOpen,
 }: {
   role: string | null | undefined
   vendorName: string
   vendorEmail: string | null | undefined
   collapsed: boolean
   setCollapsed: (collapsed: boolean) => void
-  sidebarOpen: boolean
-  setSidebarOpen: (open: boolean) => void
 }) {
   const pathname = usePathname()
   const router = useRouter()
@@ -77,10 +73,6 @@ export function VendorSidebar({
     router.refresh()
   }
 
-  const handleNavClick = () => {
-    setSidebarOpen(false)
-  }
-
   return (
     <nav
       aria-label="Navigation vendeur"
@@ -90,7 +82,7 @@ export function VendorSidebar({
         <Link
           href="/dashboard/vendeur"
           className="flex items-center gap-2 font-bold text-lg"
-          onClick={handleNavClick}
+          
         >
           <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Store className="size-5" />
@@ -107,7 +99,7 @@ export function VendorSidebar({
             <li key={item.href}>
               <Link
                 href={item.href}
-                onClick={handleNavClick}
+                
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
