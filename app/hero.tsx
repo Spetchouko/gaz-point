@@ -4,6 +4,7 @@ import { ArrowRight, Check } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { RechercheGaz } from "@/app/_components/recherche-gaz"
+import { PubliciteCarousel, type PubliciteBannerData } from "@/app/_components/publicite-banner"
 
 const benefits = [
   "Vérifie la dispo avant de partir",
@@ -11,7 +12,11 @@ const benefits = [
   "Évite les déplacements inutiles",
 ]
 
-export function Hero() {
+export function Hero({
+  searchPublicites,
+}: {
+  searchPublicites?: PubliciteBannerData[]
+}) {
   return (
     <section id="accueil" className="relative w-full overflow-hidden min-h-[640px] md:min-h-[720px]">
       {/* Image de fond */}
@@ -54,6 +59,12 @@ export function Hero() {
           id="trouver-du-gaz"
           className="mx-auto mt-10 max-w-3xl scroll-mt-24"
         >
+          {searchPublicites && searchPublicites.length > 0 && (
+            <PubliciteCarousel
+              publicites={searchPublicites}
+              className="mb-8 py-8 md:py-12"
+            />
+          )}
           <RechercheGaz />
 
           <div className="mt-8 flex justify-center">

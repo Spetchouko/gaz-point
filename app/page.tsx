@@ -14,37 +14,40 @@ import { getApprovedAvis, type AvisPublic } from "@/lib/avis"
 export default async function Home() {
   // Les bannières sont décoratives : une panne du marketing ne doit jamais
   // bloquer la landing. En cas d'erreur, elles sont simplement masquées.
-  // Deux emplacements seulement : sous la recherche et au-dessus de la FAQ.
+  // Deux emplacements : sous la bannière d'accueil (home_hero) et au-dessus
+  // de « Trouver mon Gaz » (home_search).
   const results = await Promise.allSettled([
+    getPublicitesForSlot("home_hero"),
     getPublicitesForSlot("home_search"),
     getApprovedAvis(),
   ])
+  let heroPublicites: PubliciteBannerData[] = []
   let searchPublicites: PubliciteBannerData[] = []
   let avis: AvisPublic[] = []
   if (results[0].status === "fulfilled") {
-    searchPublicites = results[0].value
+    heroPublicites = results[0].value
   } else {
-    console.error("Impossible de charger les publicités home_search:", results[0].reason)
+    console.error("Impossible de charger les publicités home_hero:", results[0].reason)
   }
   if (results[1].status === "fulfilled") {
-    avis = results[1].value
+    searchPublicites = results[1].value
   } else {
-    console.error("Impossible de charger les avis :", results[1].reason)
+    console.error("Impossible de charger les publicités home_search:", results[1].reason)
+  }
+  if (results[2].status === "fulfilled") {
+    avis = results[2].value
+  } else {
+    console.error("Impossible de charger les avis :", results[2].reason)
   }
 
   return (
     <>
-      <Hero />
+      <Hero searchPublicites={searchPublicites} />
+      <PubliciteCarousel publicites={heroPublicites} className="py-8 md:py-12" />
       <Storytelling />
       <Benefices />
       <Solution />
       {/* Skeleton placeholders for slower-rendering sections */}
-      <div className="skeleton min-h-[120px] w-full max-w-3xl rounded-lg bg-muted" />
-      <PubliciteCarousel
-        publicites={searchPublicites}
-        className="py-8 md:py-12"
-      />
-      {/* Skeleton for potentially slow sections */}
       <div className="skeleton min-h-[120px] w-full max-w-3xl rounded-lg bg-muted" />
       <Fiabilite />
       <Faq />
