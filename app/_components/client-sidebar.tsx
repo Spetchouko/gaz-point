@@ -6,12 +6,8 @@ import { useState } from "react"
 import {
   LayoutDashboard,
   Search,
-  MapPin,
   Calendar,
-  Package,
   User,
-  Settings,
-  Globe,
   LogOut,
   ChevronLeft,
   Store,
@@ -38,29 +34,9 @@ const CLIENT_NAV_ITEMS: ClientNavItem[] = [
     icon: Search,
   },
   {
-    href: "/mes-favoris",
-    label: "Disponibilités à proximité",
-    icon: MapPin,
-  },
-  {
-    href: "/mes-commandes",
-    label: "Mes consignations",
-    icon: Package,
-  },
-  {
     href: "/dashboard/reservations",
     label: "Historique de mes activités",
     icon: Calendar,
-  },
-  {
-    href: "/profil",
-    label: "Mon profil",
-    icon: User,
-  },
-  {
-    href: "/profil",
-    label: "Paramètres du compte",
-    icon: Settings,
   },
 ]
 
@@ -167,7 +143,7 @@ export function ClientSidebar({
             Recherche de gaz
           </p>
         </li>
-        {CLIENT_NAV_ITEMS.slice(1, 3).map((item) => {
+        {CLIENT_NAV_ITEMS.slice(1, 2).map((item) => {
           const active = isActive(item.href)
           const Icon = item.icon
           return (
@@ -196,36 +172,7 @@ export function ClientSidebar({
             Mes activités
           </p>
         </li>
-        {CLIENT_NAV_ITEMS.slice(3, 5).map((item) => {
-          const active = isActive(item.href)
-          const Icon = item.icon
-          return (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                onClick={handleNavClick}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-              >
-                <Icon className={cn("size-4 shrink-0", active && "text-primary-foreground")} aria-hidden />
-                {!collapsed && <span className="truncate">{item.label}</span>}
-              </Link>
-            </li>
-          )
-        })}
-
-        {/* Groupe : Mon compte */}
-        <li className="px-2 pt-4">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium px-3 mb-2">
-            Mon compte
-          </p>
-        </li>
-        {CLIENT_NAV_ITEMS.slice(5, 7).map((item) => {
+        {CLIENT_NAV_ITEMS.slice(2, 3).map((item) => {
           const active = isActive(item.href)
           const Icon = item.icon
           return (
@@ -277,7 +224,7 @@ export function ClientSidebar({
           onClick={handleNavClick}
           className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
-          <Globe className="size-4 shrink-0" aria-hidden />
+          <Store className="size-4 shrink-0" aria-hidden />
           {!collapsed && <span className="truncate">Retour au site public</span>}
         </Link>
         <button

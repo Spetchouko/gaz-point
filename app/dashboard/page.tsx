@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { db } from "@/db"
-import { reservation, recharge, favori } from "@/db/schema"
+import { reservation, favori } from "@/db/schema"
 import { eq, count, and } from "drizzle-orm"
 import { DashboardClient } from "@/app/_components/dashboard-client"
 import { ClientLayout } from "@/app/_components/client-layout"
@@ -14,7 +14,6 @@ export const metadata: Metadata = {
 type GlobalStats = {
   totalReservations: number
   activeReservations: number
-  totalRecharges: number
   totalFavorites: number
 }
 
@@ -32,7 +31,6 @@ export default async function DashboardPage() {
   const [
     totalReservations,
     activeReservations,
-    totalRecharges,
     totalFavorites,
   ] = await Promise.all([
     db
@@ -48,17 +46,12 @@ export default async function DashboardPage() {
           eq(reservation.status, "confirmed"),
         ),
       ),
-    db
-      .select({ count: count() })
-      .from(recharge)
-      .where(eq(recharge.userId, user.id)),
     db.select({ count: count() }).from(favori).where(eq(favori.userId, user.id)),
   ])
 
   const globalStats: GlobalStats = {
     totalReservations: Number(totalReservations[0]?.count ?? 0),
     activeReservations: Number(activeReservations[0]?.count ?? 0),
-    totalRecharges: Number(totalRecharges[0]?.count ?? 0),
     totalFavorites: Number(totalFavorites[0]?.count ?? 0),
   }
 
