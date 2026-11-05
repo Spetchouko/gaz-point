@@ -25,18 +25,18 @@ type VendorNavItem = {
 const VENDOR_NAV_ITEMS: VendorNavItem[] = [
   {
     href: "/dashboard/vendeur",
-    label: "Vue d'ensemble",
+    label: "Tableau de bord",
     icon: LayoutDashboard,
   },
   {
-    href: "/dashboard/vendeur/espace-pro",
-    label: "Disponibilités",
-    icon: Cylinder,
+    href: "/dashboard/vendeur/points-de-vente",
+    label: "Mes points de vente",
+    icon: Store,
   },
   {
-    href: "/dashboard/reservations",
-    label: "Mes réservations",
-    icon: Calendar,
+    href: "/dashboard/vendeur/disponibilites",
+    label: "Disponibilités",
+    icon: Cylinder,
   },
   {
     href: "/profil",
@@ -44,9 +44,9 @@ const VENDOR_NAV_ITEMS: VendorNavItem[] = [
     icon: User,
   },
   {
-    href: "/",
-    label: "Voir le site public",
-    icon: Globe,
+    href: "/auth/deconnexion",
+    label: "Déconnexion",
+    icon: LogOut,
   },
 ]
 
