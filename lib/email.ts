@@ -508,7 +508,6 @@ Contact : gazpoints@gmail.com
 
 export async function sendNewConsignationEmail({
   vendorEmail,
-  vendorName,
   reservationCode,
   pointName,
   brand,
