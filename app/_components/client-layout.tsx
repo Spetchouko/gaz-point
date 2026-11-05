@@ -22,7 +22,7 @@ export function ClientLayout({
       <DashboardMenuButton
         open={sidebarOpen}
         onToggle={() => setSidebarOpen((p) => !p)}
-        className="fixed left-4 top-4 z-50 md:hidden"
+        className="fixed left-4 top-16 z-50 md:hidden"
       />
 
       {/* Overlay mobile */}
