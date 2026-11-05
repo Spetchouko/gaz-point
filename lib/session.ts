@@ -7,17 +7,6 @@ import { auth } from "@/lib/auth"
 
 export type ProRole = "vendor" | "admin" | "collaborateur"
 
-export const ADMIN_MODULES = [
-  "utilisateurs",
-  "clients",
-  "vendeurs",
-  "disponibilites",
-  "marketing",
-  "avis",
-  "statistiques",
-] as const
-export type AdminModule = (typeof ADMIN_MODULES)[number]
-
 export type SessionUser = {
   id: string
   name: string
@@ -38,7 +27,7 @@ export async function getCurrentUser() {
 
 /**
  * Variantes pour les Route Handlers : ne redirigent jamais (un redirect()
- * lève NEXT_REDIRECT et serait avalé par le try/catch du handler → 500).
+ * lève NEXT_REDIRECT et serait avalé par le try/catch du handler '500).
  * Retournent null si l'utilisateur n'est pas authentifié / n'a pas le rôle.
  */
 export async function getProUser(): Promise<{ user: SessionUser; role: ProRole } | null> {
@@ -56,6 +45,11 @@ export async function getAdminUser(): Promise<SessionUser | null> {
   return user
 }
 
+/**
+ * Variantes pour les Route Handlers : ne redirigent jamais (un redirect()
+ * lève NEXT_REDIRECT et serait avalé par le try/catch du handler '500).
+ * Retournent null si l'utilisateur n'est pas authentifié / n'a pas le rôle.
+ */
 export async function requireUser() {
   const user = await getCurrentUser()
   if (!user) redirect("/connexion")
@@ -84,28 +78,8 @@ export async function requireCollaborator() {
 }
 
 export async function requireStaff(): Promise<StaffUser> {
-  const user = await requireUser()
-  const role = user.role ?? "client"
-  if (role !== "admin" && role !== "collaborateur") redirect("/admin/login")
-  const permissions =
-    role === "admin"
-      ? new Set<AdminModule>(ADMIN_MODULES)
-      : await getAdminPermissions(user.id)
-  return { user, role: role as "admin" | "collaborateur", permissions }
-}
-
-export async function getAdminPermissions(userId: string): Promise<Set<AdminModule>> {
-  const rows = await db
-    .select({ module: collaborateurPermission.module })
-    .from(collaborateurPermission)
-    .where(eq(collaborateurPermission.collaboratorId, userId))
-  return new Set(rows.map((r) => r.module as AdminModule))
-}
-
-export type StaffUser = {
-  user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>
-  role: "admin" | "collaborateur"
-  permissions: Set<AdminModule>
+  const staff = await getStaff()
+  return staff
 }
 
 export async function getStaff(): Promise<StaffUser> {
@@ -117,7 +91,40 @@ export async function getStaff(): Promise<StaffUser> {
     role === "admin"
       ? new Set<AdminModule>(ADMIN_MODULES)
       : await getAdminPermissions(user.id)
-  return { user, role, permissions }
+  return { user, role: role as "admin" | "collaborateur", permissions }
+}
+
+export type StaffUser = {
+  user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>
+  role: "admin" | "collaborateur"
+  permissions: Set<AdminModule>
+}
+
+export type AdminModule =
+  | "utilisateurs"
+  | "clients"
+  | "vendeurs"
+  | "disponibilites"
+  | "marketing"
+  | "avis"
+  | "statistiques"
+
+export const ADMIN_MODULES: AdminModule[] = [
+  "utilisateurs",
+  "clients",
+  "vendeurs",
+  "disponibilites",
+  "marketing",
+  "avis",
+  "statistiques",
+] as const
+
+export async function getAdminPermissions(userId: string): Promise<Set<AdminModule>> {
+  const rows = await db
+    .select({ module: collaborateurPermission.module })
+    .from(collaborateurPermission)
+    .where(eq(collaborateurPermission.collaboratorId, userId))
+  return new Set(rows.map((r) => r.module as AdminModule))
 }
 
 export async function requireStaffModule(module: AdminModule): Promise<StaffUser> {
