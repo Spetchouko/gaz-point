@@ -11,11 +11,7 @@ import {
   AlertCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-} from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { DisponibiliteForm } from "@/app/_components/disponibilite-form"
 import { cn } from "@/lib/utils"
@@ -28,7 +24,6 @@ import {
 } from "@/app/dashboard/pro/actions"
 import { useRouter } from "next/navigation"
 import { PointDeVenteCard } from "@/app/_components/cards"
-import { DisponibiliteCard } from "@/app/_components/cards"
 
 type DispoRow = {
   id: string
@@ -185,8 +180,8 @@ export function DashboardVendeur({
 
   if (points.length === 0) {
     return (
-      <div className="min-h-screen bg-background py-6 sm:py-12">
-        <div className="container mx-auto max-w-4xl px-4">
+      <div className="min-h-screen bg-background pt-6 pb-8 px-4">
+        <div className="container mx-auto max-w-4xl">
           <header className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
@@ -312,8 +307,8 @@ export function DashboardVendeur({
   }
 
   return (
-    <div className="min-h-screen bg-background py-6 sm:py-8">
-      <div className="container mx-auto max-w-7xl px-4">
+    <div className="min-h-screen bg-background pt-6 pb-8 px-4">
+      <div className="container mx-auto max-w-7xl">
         {/* Bienvenue */}
         <header className="mb-8">
           <div>
@@ -329,11 +324,13 @@ export function DashboardVendeur({
 
         {/* Cartes statistiques simplifiées */}
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="hover:shadow-sm transition-shadow">
-            <CardContent className="pt-5 pb-6">
+          <Card className="bg-white rounded-xl border border-border p-6 shadow-sm">
+            <CardContent>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Points de vente</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Points de vente
+                  </p>
                   <p className="text-2xl font-bold tracking-tight">
                     {globalStats.totalPoints}
                   </p>
@@ -348,11 +345,13 @@ export function DashboardVendeur({
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-sm transition-shadow">
-            <CardContent className="pt-5 pb-6">
+          <Card className="bg-white rounded-xl border border-border p-6 shadow-sm">
+            <CardContent>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Disponibilités actives</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Disponibilités actives
+                  </p>
                   <p className="text-2xl font-bold tracking-tight text-success">
                     {globalStats.availablePoints}
                   </p>
@@ -367,11 +366,13 @@ export function DashboardVendeur({
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-sm transition-shadow">
-            <CardContent className="pt-5 pb-6">
+          <Card className="bg-white rounded-xl border border-border p-6 shadow-sm">
+            <CardContent>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Consignations reçues</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Consignations reçues
+                  </p>
                   <p className="text-2xl font-bold tracking-tight text-primary">
                     {globalStats.totalConsignations}
                   </p>
@@ -386,11 +387,13 @@ export function DashboardVendeur({
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-sm transition-shadow">
-            <CardContent className="pt-5 pb-6">
+          <Card className="bg-white rounded-xl border border-border p-6 shadow-sm">
+            <CardContent>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">En attente</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    En attente
+                  </p>
                   <p className="text-2xl font-bold tracking-tight text-warning">
                     {globalStats.pendingConsignations}
                   </p>

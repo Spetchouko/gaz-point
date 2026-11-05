@@ -3,7 +3,48 @@
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { DashboardMenuButton } from "./dashboard-menu-button"
-import { ClientSidebar } from "./client-sidebar"
+import { DashboardSidebar } from "./dashboard-sidebar"
+import {
+  LayoutDashboard,
+  Calendar,
+  Heart,
+  FileText,
+  MessageSquarePlus,
+  User,
+} from "lucide-react"
+
+const CLIENT_NAV_ITEMS: { href: string; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  {
+    href: "/dashboard",
+    label: "Tableau de bord",
+    icon: LayoutDashboard,
+  },
+  {
+    href: "/dashboard/reservations",
+    label: "Mes réservations",
+    icon: Calendar,
+  },
+  {
+    href: "/dashboard/favoris",
+    label: "Mes favoris",
+    icon: Heart,
+  },
+  {
+    href: "/dashboard/historique-codes",
+    label: "Historique des codes",
+    icon: FileText,
+  },
+  {
+    href: "/avis",
+    label: "Donner mon avis",
+    icon: MessageSquarePlus,
+  },
+  {
+    href: "/profil",
+    label: "Mon profil",
+    icon: User,
+  },
+]
 
 export function ClientLayout({
   clientName,
@@ -44,18 +85,20 @@ export function ClientLayout({
           "md:relative md:translate-x-0 md:w-64 md:flex md:inset-y-auto md:left-auto md:top-auto md:h-auto md:z-auto"
         )}
       >
-        <ClientSidebar
-          clientName={clientName}
-          clientEmail={clientEmail}
+        <DashboardSidebar
+          role="client"
+          userName={clientName}
+          userEmail={clientEmail}
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
+          navItems={CLIENT_NAV_ITEMS}
         />
       </aside>
 
-      {/* Contenu principal — s'adapte à l'ouverture/fermeture du menu */}
+      {/* Contenu principal — pas d'espace blanc inutile en haut */}
       <div className="min-w-0 flex-1 relative">
         <main className="overflow-auto">
-          <div className="container mx-auto py-8 px-4">{children}</div>
+          <div className="container mx-auto pt-6 pb-8 px-4">{children}</div>
         </main>
       </div>
     </div>
