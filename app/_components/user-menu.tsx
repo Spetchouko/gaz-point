@@ -28,7 +28,7 @@ export function UserMenu({ isMobile = false }: UserMenuProps) {
   const user = session?.user
   const role = (user as { role?: string } | undefined)?.role
   const isStaff = role === "admin" || role === "collaborateur"
-  const espaceHref = isStaff ? "/admin" : role === "vendor" ? "/dashboard/pro" : "/dashboard"
+  const espaceHref = isStaff ? "/admin" : role === "vendor" ? "/dashboard/vendeur" : "/dashboard"
   const espaceLabel = "Dashboard"
 
   const handleSignOut = async () => {

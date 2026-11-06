@@ -24,19 +24,14 @@ const VENDOR_NAV_ITEMS: { href: string; label: string; icon: React.ComponentType
     icon: MapPin,
   },
   {
-    href: "/dashboard/vendeur/points-de-vente",
-    label: "Créer un point de vente",
-    icon: MapPin,
-  },
-  {
     href: "/dashboard/vendeur/disponibilites",
     label: "Disponibilités de gaz",
     icon: Cylinder,
   },
   {
-    href: "/dashboard/vendeur/disponibilites",
-    label: "Créer une disponibilité",
-    icon: Cylinder,
+    href: "/dashboard/vendeur/consignations",
+    label: "Mes commandes et consignes",
+    icon: Shield,
   },
   {
     href: "/dashboard/vendeur/profil",
