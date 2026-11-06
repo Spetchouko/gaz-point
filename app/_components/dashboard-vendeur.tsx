@@ -24,6 +24,7 @@ import {
 } from "@/app/dashboard/pro/actions"
 import { useRouter } from "next/navigation"
 import { PointDeVenteCard } from "@/app/_components/cards"
+import { DisponibiliteCard } from "@/app/_components/cards"
 
 type DispoRow = {
   id: string
@@ -33,6 +34,7 @@ type DispoRow = {
   quantity: number | null
   note: string | null
   createdAt: string | Date
+  brand: string | null
 }
 
 type PointWithStats = {
@@ -131,6 +133,19 @@ export function DashboardVendeur({
     }
   }
 
+  const handleDeleteDispo = async (dispoId: string) => {
+    setPointPending(true)
+    setPointAction(null)
+    const result = await deletePointDeVenteVendor(null, {
+      pointId: dispoId,
+    } as unknown as FormData)
+    setPointAction(result)
+    setPointPending(false)
+    if (result.ok) {
+      router.push("/dashboard/vendeur")
+    }
+  }
+
   const handleAddDispo = (point?: PointWithStats) => {
     if (point) {
       setEditingDispo({
@@ -141,6 +156,7 @@ export function DashboardVendeur({
           phone: null,
           quantity: null,
           note: null,
+          brand: null,
           createdAt: new Date().toISOString(),
         },
         pointId: point.id,
@@ -171,6 +187,8 @@ export function DashboardVendeur({
           ...dispo,
           pointId: point.id,
           pointName: point.name,
+          pointDistrict: point.district,
+          brand: dispo.brand,
         }))
       ),
     [points],
@@ -309,20 +327,19 @@ export function DashboardVendeur({
   return (
     <div className="min-h-screen bg-background pt-6 pb-8 px-4">
       <div className="container mx-auto max-w-7xl">
-        {/* Bienvenue */}
+        {/* En-tête du dashboard */}
         <header className="mb-8">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              Bonjour {firstName} !
+              Tableau de bord
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Bienvenue sur votre espace GazPoints. Gérez vos points de vente et
-              publiez vos disponibilités de gaz en toute autonomie.
+              Bonjour {firstName} !
             </p>
           </div>
         </header>
 
-        {/* Cartes statistiques simplifiées */}
+        {/* Cartes de synthèse */}
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card className="bg-white rounded-xl border border-border p-6 shadow-sm">
             <CardContent>
@@ -350,7 +367,28 @@ export function DashboardVendeur({
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Disponibilités actives
+                    Disponibilités publiées
+                  </p>
+                  <p className="text-2xl font-bold tracking-tight text-primary">
+                    {globalStats.totalDispos}
+                  </p>
+                </div>
+                <div className="flex size-10 items-center justify-center rounded-xl bg-primary/50 text-primary border border-primary/100">
+                  <Cylinder className="size-5" />
+                </div>
+              </div>
+              <CardDescription className="mt-2 text-xs text-muted-foreground">
+                Annonces de disponibilité actives
+              </CardDescription>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white rounded-xl border border-border p-6 shadow-sm">
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Disponibles
                   </p>
                   <p className="text-2xl font-bold tracking-tight text-success">
                     {globalStats.availablePoints}
@@ -371,7 +409,7 @@ export function DashboardVendeur({
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Consignations reçues
+                    Consignes reçues
                   </p>
                   <p className="text-2xl font-bold tracking-tight text-primary">
                     {globalStats.totalConsignations}
@@ -386,57 +424,6 @@ export function DashboardVendeur({
               </CardDescription>
             </CardContent>
           </Card>
-
-          <Card className="bg-white rounded-xl border border-border p-6 shadow-sm">
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    En attente
-                  </p>
-                  <p className="text-2xl font-bold tracking-tight text-warning">
-                    {globalStats.pendingConsignations}
-                  </p>
-                </div>
-                <div className="flex size-10 items-center justify-center rounded-xl bg-warning/50 text-warning border border-warning/100">
-                  <RefreshCw className="size-5" />
-                </div>
-              </div>
-              <CardDescription className="mt-2 text-xs text-muted-foreground">
-                Consignations à traiter
-              </CardDescription>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Raccourcis principaux */}
-        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-bold tracking-tight">
-              Actions rapides
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Gérez votre activité en quelques clics.
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Button
-              variant="default"
-              className="flex items-center gap-2"
-              onClick={() => router.push("/dashboard/vendeur/points-de-vente")}
-            >
-              <Plus className="size-4" />
-              Ajouter un point de vente
-            </Button>
-            <Button
-              variant="default"
-              className="flex items-center gap-2"
-              onClick={() => handleAddDispo()}
-            >
-              <Cylinder className="size-4" />
-              Publier une disponibilité
-            </Button>
-          </div>
         </div>
 
         {/* Mes points de vente */}
@@ -444,53 +431,182 @@ export function DashboardVendeur({
           <h2 className="text-lg font-bold tracking-tight mb-4">
             Mes points de vente
           </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {points.map((point) => (
-              <PointDeVenteCard
-                key={point.id}
-                variant="vendor"
-                id={point.id}
-                name={point.name}
-                district={point.district}
-                address={point.address}
-                phone={point.phone}
-                status={point.effectiveStatus}
-                disposCount={point.disponibilites.length}
-                isActive={point.isAvailable}
-                onView={() => {}}
-                onEdit={() => {
-                  // Navigation to point details handled by points-de-vente page
-                }}
-                onManageDispos={() => {
-                  setEditingDispo({
-                    dispo: {
-                      id: "",
-                      format: null,
-                      status: "disponible",
-                      phone: null,
-                      quantity: null,
-                      note: null,
-                      createdAt: new Date().toISOString(),
-                    },
-                    pointId: point.id,
-                    pointName: point.name,
-                  })
-                  setIsFormOpen(true)
-                }}
-                onDelete={() => {
-                  if (
-                    window.confirm(
-                      "Êtes-vous sûr de vouloir supprimer ce point de vente ?"
-                    )
-                  ) {
-                    deletePointDeVenteVendor(null, {
+          {points.length === 0 ? (
+            <div className="bg-white rounded-xl border border-border p-8 text-center shadow-sm">
+              <span className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-4">
+                <Store className="size-6" aria-hidden />
+              </span>
+              <p className="text-muted-foreground">Vous n'avez pas encore créé de point de vente.</p>
+              <Button
+                variant="default"
+                onClick={() => router.push("/dashboard/vendeur/points-de-vente")}
+                className="mt-4"
+              >
+                <Plus className="size-4 mr-2" />
+                Créer mon premier point de vente
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {points.map((point) => (
+                <PointDeVenteCard
+                  key={point.id}
+                  variant="vendor"
+                  id={point.id}
+                  name={point.name}
+                  district={point.district}
+                  address={point.address}
+                  phone={point.phone}
+                  status={point.effectiveStatus}
+                  disposCount={point.disponibilites.length}
+                  isActive={point.isAvailable}
+                  onView={() => {}}
+                  onEdit={() => {}}
+                  onManageDispos={() => {
+                    setEditingDispo({
+                      dispo: {
+                        id: "",
+                        format: null,
+                        status: "disponible",
+                        phone: null,
+                        quantity: null,
+                        note: null,
+                        brand: null,
+                        createdAt: new Date().toISOString(),
+                      },
                       pointId: point.id,
-                    } as unknown as FormData)
-                  }
-                }}
-              />
-            ))}
-          </div>
+                      pointName: point.name,
+                    })
+                    setIsFormOpen(true)
+                  }}
+                  onDelete={() => {
+                    if (
+                      window.confirm(
+                        "Êtes-vous sûr de vouloir supprimer ce point de vente ?"
+                      )
+                    ) {
+                      deletePointDeVenteVendor(null, {
+                        pointId: point.id,
+                      } as unknown as FormData)
+                    }
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Dernières disponibilités */}
+        <div className="mb-8">
+          <h2 className="text-lg font-bold tracking-tight mb-4">
+            Disponibilités récentes
+          </h2>
+          {allDispos.length === 0 ? (
+            <div className="bg-white rounded-xl border border-border p-8 text-center shadow-sm">
+              <span className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-4">
+                <Cylinder className="size-6" aria-hidden />
+              </span>
+              <p className="text-muted-foreground">Aucune disponibilité publiée pour le moment.</p>
+              <Button
+                variant="default"
+                onClick={() => router.push("/dashboard/vendeur/disponibilites")}
+                className="mt-4"
+              >
+                <Plus className="size-4 mr-2" />
+                Publier une disponibilité
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {allDispos.slice(0, 6).map((dispo) => (
+                <DisponibiliteCard
+                  key={dispo.id}
+                  variant="vendor"
+                  id={dispo.id}
+                  pointId={dispo.pointId}
+                  pointName={dispo.pointName}
+                  pointDistrict={dispo.pointDistrict}
+                  format={dispo.format}
+                  brand={dispo.brand}
+                  status={dispo.status}
+                  phone={dispo.phone}
+                  quantity={dispo.quantity}
+                  note={dispo.note}
+                  createdAt={dispo.createdAt}
+                  onEdit={() => {
+                    setEditingDispo({
+                      dispo: {
+                        id: dispo.id,
+                        format: dispo.format,
+                        status: dispo.status,
+                        phone: dispo.phone,
+                        quantity: dispo.quantity,
+                        note: dispo.note,
+                        brand: dispo.brand,
+                        createdAt: dispo.createdAt,
+                      },
+                      pointId: dispo.pointId,
+                      pointName: dispo.pointName,
+                    })
+                    setIsFormOpen(true)
+                  }}
+                  onToggleStatus={() => {
+                    setEditingDispo({
+                      dispo: {
+                        id: dispo.id,
+                        format: dispo.format,
+                        status: dispo.status === "disponible" ? "indisponible" : "disponible",
+                        phone: dispo.phone,
+                        quantity: dispo.quantity,
+                        note: dispo.note,
+                        brand: dispo.brand,
+                        createdAt: dispo.createdAt,
+                      },
+                      pointId: dispo.pointId,
+                      pointName: dispo.pointName,
+                    })
+                    setIsFormOpen(true)
+                  }}
+                  onDelete={() => {
+                    handleDeleteDispo(dispo.id)
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Dernières consignes */}
+        <div className="mb-8">
+          <h2 className="text-lg font-bold tracking-tight mb-4">
+            Dernières consignes reçues
+          </h2>
+          {globalStats.totalConsignations === 0 ? (
+            <div className="bg-white rounded-xl border border-border p-8 text-center shadow-sm">
+              <span className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-4">
+                <Shield className="size-6" aria-hidden />
+              </span>
+              <p className="text-muted-foreground">Aucune consigne reçue pour le moment.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {/* Les consignes seront affichées ici via une section dédiée si nécessaire */}
+              <div className="col-span-full">
+                <p className="text-sm text-muted-foreground">
+                  Consultez toutes vos consignes dans la rubrique{" "}
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="text-primary hover:underline font-medium"
+                    onClick={() => router.push("/dashboard/vendeur/consignations")}
+                  >
+                    Mes commandes et consignes
+                  </Button>
+                  .
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         <DisponibiliteForm
