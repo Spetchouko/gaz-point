@@ -99,7 +99,7 @@ export function VendorLayout({
       {/* Contenu principal — pas d'espace blanc inutile en haut */}
       <div className="min-w-0 flex-1 relative">
         <main className="overflow-auto">
-          <div className="container mx-auto pt-6 pb-8 px-4">{children}</div>
+          <div className="container mx-auto">{children}</div>
         </main>
       </div>
     </div>

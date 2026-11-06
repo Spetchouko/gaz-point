@@ -100,8 +100,10 @@ export function DashboardSidebar({
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
-                <Icon className={cn("size-4 shrink-0", sidebarOpen ? "" : "hidden")} aria-hidden />
-                <span className={sidebarOpen ? "" : "hidden"}>{item.label}</span>
+                <Icon className={cn("size-4 shrink-0", sidebarOpen ? "" : "hidden", "md:block")} aria-hidden />
+                {/* Sur mobile, le texte n'apparaît que quand le menu est ouvert.
+                     Sur desktop (md:), le texte est toujours visible. */}
+                <span className={cn(sidebarOpen ? "block" : "hidden", "md:block")}>{item.label}</span>
               </Link>
             </li>
           )
