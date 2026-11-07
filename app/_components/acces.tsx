@@ -46,7 +46,7 @@ export function Acces() {
             className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]"
           >
             <Sparkles className="size-3.5" />
-            Nos profils d&apos;abonnement
+            Nos profils d’abonnement
           </Badge>
 
           <h2 className="mt-6 text-balance font-heading text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl md:text-5xl">

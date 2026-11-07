@@ -210,7 +210,7 @@ export function AdminDisponibilitesBoard({
               {vendorPoints.length === 0 && (
                 <div className="rounded-lg border bg-muted p-6 text-center">
                   <p className="text-sm text-muted-foreground">
-                    Ce vendeur ne possède aucun point de vente. Il doit d&apos;en créer un depuis son espace vendeur avant que vous puissiez publier une disponibilité pour lui.
+                    Ce vendeur ne possède aucun point de vente. Il doit d’en créer un depuis son espace vendeur avant que vous puissiez publier une disponibilité pour lui.
                   </p>
                 </div>
               )}

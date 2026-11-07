@@ -143,7 +143,7 @@ export default function DevenirVendeurPage() {
           </h2>
           <p className="text-muted-foreground mb-8 max-w-md mx-auto">
             Créez votre compte vendeur et commencez à publier vos disponibilités 
-            aujourd&apos;hui. Aucun engagement mensuel.
+            aujourd’hui. Aucun engagement mensuel.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button render={<Link href="/inscription/vendeur">Créer mon compte vendeur</Link>} size="lg" />

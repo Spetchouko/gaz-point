@@ -129,7 +129,7 @@ export function AdminUserDetail({
         <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Fiche utilisateur</h1>
-            <p className="mt-2 text-muted-foreground">Détails du compte et actions d&apos;administration</p>
+            <p className="mt-2 text-muted-foreground">Détails du compte et actions d’administration</p>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className={cn("gap-1.5", role.color)}>
@@ -232,7 +232,7 @@ export function AdminUserDetail({
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Settings className="size-5 text-primary" />
-                    Actions d&apos;administration
+                    Actions d’administration
                   </CardTitle>
                   <CardDescription>Actions disponibles pour cet utilisateur</CardDescription>
                 </CardHeader>
@@ -273,7 +273,7 @@ export function AdminUserDetail({
                     )}
                     {isProtected && (
                       <p className="text-sm text-muted-foreground">
-                        Les comptes d&apos;administration ne peuvent pas être modifiés depuis cette page.
+                        Les comptes d’administration ne peuvent pas être modifiés depuis cette page.
                       </p>
                     )}
                   </div>
@@ -341,7 +341,7 @@ export function AdminUserDetail({
                     <Shield className="size-5 text-primary" />
                     Sécurité du compte
                   </CardTitle>
-                  <CardDescription>Informations liées à l&apos;authentification</CardDescription>
+                  <CardDescription>Informations liées à l’authentification</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-1.5 p-4 rounded-lg bg-muted/30">
@@ -367,7 +367,7 @@ export function AdminUserDetail({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Modifier le profil</DialogTitle>
-            <DialogDescription>Mise à jour du nom, de l&apos;email et du rôle</DialogDescription>
+            <DialogDescription>Mise à jour du nom, de l’email et du rôle</DialogDescription>
           </DialogHeader>
           <form action={handleSubmitEdit} className="space-y-4">
             <div className="space-y-1.5">

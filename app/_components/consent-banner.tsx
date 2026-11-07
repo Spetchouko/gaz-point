@@ -99,11 +99,11 @@ export function ConsentBanner() {
           <Cookie className="size-4 text-primary" />
         </div>
         <div className="flex-1 space-y-1">
-          <p className="text-sm font-semibold">Gestion du suivi d&apos;audience</p>
+          <p className="text-sm font-semibold">Gestion du suivi d’audience</p>
           <p className="text-sm text-muted-foreground">
             Nous mesurons anonymement le trafic (pages visitées, inscriptions) et la
             performance des publicités (impressions, clics, conversions) pour améliorer
-            GazPoints. Aucune donnée personnelle n&apos;est transmise. En cas de clic sur une
+            GazPoints. Aucune donnée personnelle n’est transmise. En cas de clic sur une
             publicité, un identifiant anonyme et un cookie publicitaire (gz_ad_ref, 30 jours)
             servent uniquement à mesurer son efficacité.
           </p>

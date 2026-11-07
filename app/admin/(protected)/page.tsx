@@ -234,7 +234,7 @@ export default async function AdminDashboardPage() {
       <header>
         <h1 className="text-2xl font-bold tracking-tight">Tableau de bord</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Vue d&apos;ensemble de la plateforme GAZ POINT
+          Vue d’ensemble de la plateforme GAZ POINT
         </p>
       </header>
 

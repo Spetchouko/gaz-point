@@ -25,15 +25,15 @@ export function Fiabilite() {
               </h2>
 
               <p className="mt-5 text-pretty text-lg text-muted-foreground leading-relaxed max-w-xl">
-                Une disponibilité n&apos;est jamais affichée seule. Tu vois le
-                statut, qui l&apos;a signalé, et le moment de la dernière mise
+                Une disponibilité n’est jamais affichée seule. Tu vois le
+                statut, qui l’a signalé, et le moment de la dernière mise
                 à jour.
               </p>
             </div>
 
             <div>
               <h3 className="font-heading text-xl font-bold tracking-tight text-foreground mb-5">
-                Qui met à jour l&apos;information
+                Qui met à jour l’information
               </h3>
 
               <div className="grid gap-3 sm:grid-cols-2">
@@ -51,7 +51,7 @@ export function Fiabilite() {
                   <span className="inline-flex size-10 items-center justify-center rounded-xl bg-sky text-navy shadow-md ring-1 ring-white/20 mb-3 group-hover:scale-105 transition-transform">
                     <Building2 className="size-4" />
                   </span>
-                  <p className="font-bold text-foreground">L&apos;administration</p>
+                  <p className="font-bold text-foreground">L’administration</p>
                   <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
                     Elle tient à jour les fiches officielles des points de
                     vente.
@@ -66,14 +66,14 @@ export function Fiabilite() {
               </h4>
               <div className="space-y-3 text-base leading-relaxed">
                 <p className="text-muted-foreground">
-                  Il ne peut pas garantir qu&apos;une bouteille restera
-                  disponible jusqu&apos;à ce que tu arrives. Ce que tu vois
-                  est ce qui a été signalé, à l&apos;heure indiquée.
+                  Il ne peut pas garantir qu’une bouteille restera
+                  disponible jusqu’à ce que tu arrives. Ce que tu vois
+                  est ce qui a été signalé, à l’heure indiquée.
                 </p>
                 <Separator className="bg-border/50" />
                 <p className="font-semibold text-foreground">
                   Quand une information est ancienne, elle est marquée comme
-                  telle. C&apos;est ça, la transparence.
+                  telle. C’est ça, la transparence.
                 </p>
               </div>
             </div>

@@ -21,7 +21,7 @@ export default function AdminSettingsPage() {
       <header>
         <h1 className="text-3xl font-bold tracking-tight">Paramètres</h1>
         <p className="mt-2 text-muted-foreground">
-          Configuration de la plateforme et préférences d&apos;administration
+          Configuration de la plateforme et préférences d’administration
         </p>
       </header>
 

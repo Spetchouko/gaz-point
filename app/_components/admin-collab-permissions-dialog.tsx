@@ -81,7 +81,7 @@ export function AdminCollabPermissionsDialog({
             Attribuez les modules auxquels ce collaborateur a accès. Un
             collaborateur sans module est en{" "}
             <strong className="text-foreground">consultation seule</strong> et ne
-            peut jamais hériter des privilèges d&apos;administrateur.
+            peut jamais hériter des privilèges d’administrateur.
           </p>
 
           <div className="space-y-3">

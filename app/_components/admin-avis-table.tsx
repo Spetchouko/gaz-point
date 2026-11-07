@@ -117,7 +117,7 @@ export function AdminAvisTable({
                       <Button variant="ghost" size="icon" className="h-8 w-8">
                         <MoreHorizontal className="size-4" />
                         <span className="sr-only">
-                          Actions pour l&apos;avis de {row.authorName}
+                          Actions pour l’avis de {row.authorName}
                         </span>
                       </Button>
                     </DropdownMenuTrigger>

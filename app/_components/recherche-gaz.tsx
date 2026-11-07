@@ -7,6 +7,7 @@ import {
   ChevronDown,
   LocateFixed,
   MapPin,
+  Phone,
   RefreshCw,
   Search,
 } from "lucide-react"
@@ -274,27 +275,28 @@ export function RechercheGaz() {
       </Card>
 
       {loading && (
-        <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <Search className="size-4 animate-spin" aria-hidden />
-          <span>Recherche des disponibilités en cours…</span>
+        <div className="mt-4 flex items-center justify-center gap-2 text-sm text-white">
+          <Search className="size-4 animate-spin text-white" aria-hidden />
+          <span className="text-white">Recherche des disponibilités en cours…</span>
         </div>
       )}
 
       {error && (
-        <div className="mt-5 py-6 text-center">
+        <div className="mt-5 bg-white border border-border rounded-2xl p-6 sm:p-8 shadow-sm">
           <div className="flex items-center justify-center gap-2">
             <AlertCircle className="size-6 text-destructive" aria-hidden />
           </div>
-          <p className="mt-3 text-sm text-destructive">{error}</p>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleRetry}
-            className="mt-4"
-          >
-            <RefreshCw className="size-4 mr-2" />
-            Réessayer la recherche
-          </Button>
+          <p className="mt-3 text-sm text-destructive text-center">{error}</p>
+          <div className="mt-6 flex justify-center">
+            <Button
+              type="button"
+              variant="default"
+              onClick={handleRetry}
+            >
+              <RefreshCw className="size-4 mr-2" />
+              Réessayer la recherche
+            </Button>
+          </div>
         </div>
       )}
 
@@ -325,20 +327,21 @@ export function RechercheGaz() {
       )}
 
       {results !== null && results.length === 0 && (
-        <div className="mt-5 py-8 text-center">
+        <div className="mt-5 bg-white border border-border rounded-2xl p-6 sm:p-8 shadow-sm">
           <div className="flex items-center justify-center gap-2">
-            <Search className="size-8 text-muted-foreground" aria-hidden />
+            <Search className="size-10 text-primary" aria-hidden />
           </div>
           <h3 className="mt-4 text-base font-semibold text-foreground">
             Aucun gaz disponible pour le moment
           </h3>
-          <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">
+          <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
             Nous vous invitons à réessayer un peu plus tard.
           </p>
           <div className="mt-6">
             <Button
               type="button"
-              variant="outline"
+              variant="default"
+              className="w-full sm:w-auto"
               onClick={handleResetAndSearch}
             >
               <RefreshCw className="size-4 mr-2" />

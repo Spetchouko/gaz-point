@@ -35,14 +35,14 @@ class NotFoundBoundary extends Component<NotFoundBoundaryProps, NotFoundBoundary
             </div>
             <h1 className="text-2xl font-bold tracking-tight">Page introuvable</h1>
             <p className="mt-3 text-sm text-muted-foreground">
-              Cette page n&apos;existe plus ou a été déplacée.
+              Cette page n’existe plus ou a été déplacée.
             </p>
             <div className="mt-6">
               <Link
                 href="/"
                 className="flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-primary hover:text-primary-foreground transition-colors shadow-sm"
               >
-                Revenir à l&apos;accueil
+                Revenir à l’accueil
               </Link>
             </div>
           </div>

@@ -470,7 +470,7 @@ export default async function AdminStatsPage({
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                    <span className="text-sm text-muted-foreground">Aujourd&apos;hui</span>
+                    <span className="text-sm text-muted-foreground">Aujourd’hui</span>
                     <span className="font-bold text-lg">{today}</span>
                   </div>
                   <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">

@@ -291,7 +291,7 @@ export function AdminVendeursTable({ vendors }: { vendors: VendorRow[] }) {
             {assistingVendor?.points.length === 0 ? (
               <div className="rounded-lg border bg-muted p-6 text-center">
                 <p className="text-sm text-muted-foreground">
-                  Ce vendeur ne possède aucun point de vente. Il doit d&apos;en créer un depuis son espace vendeur.
+                  Ce vendeur ne possède aucun point de vente. Il doit d’en créer un depuis son espace vendeur.
                 </p>
               </div>
             ) : (

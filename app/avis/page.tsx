@@ -31,7 +31,7 @@ export default async function AvisPage() {
           <h1 className="text-3xl font-bold tracking-tight">Donner mon avis</h1>
           <p className="mt-2 text-muted-foreground">
             Partage ton expérience avec GazPoints. Ton avis sera publié sur la page
-            d&apos;accueil après validation par notre équipe.
+            d’accueil après validation par notre équipe.
           </p>
         </header>
 

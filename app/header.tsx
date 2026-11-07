@@ -172,7 +172,7 @@ export function Header() {
                           className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
                         >
                           <UserPlus className="size-4" />
-                          S&apos;inscrire
+                          S’inscrire
                         </Link>
                         <Link
                           href="/connexion"

@@ -217,7 +217,7 @@ export function AdminDisponibiliteForm({
           </div>
         )}
         <div className="flex justify-between">
-          <dt>Niveau de l&apos;itinéraire</dt>
+          <dt>Niveau de l’itinéraire</dt>
           <dd className="font-medium text-foreground">{formState.note.trim()}</dd>
         </div>
         {isEditing && selectedPoint && (
@@ -401,7 +401,7 @@ export function AdminDisponibiliteForm({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="note-input">Niveau de l&apos;itinéraire (facultatif)</Label>
+              <Label htmlFor="note-input">Niveau de l’itinéraire (facultatif)</Label>
               <Textarea
                 id="note-input"
                 name="note"

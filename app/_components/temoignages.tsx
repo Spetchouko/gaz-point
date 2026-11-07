@@ -97,7 +97,7 @@ export function Temoignages({ avis }: { avis: AvisPublic[] }) {
           </Badge>
 
           <h2 className="mt-6 text-balance font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            La parole à ceux qui l&apos;utilisent
+            La parole à ceux qui l’utilisent
           </h2>
 
           <p className="mt-5 text-pretty text-base text-muted-foreground sm:text-lg">

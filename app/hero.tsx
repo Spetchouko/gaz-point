@@ -7,7 +7,7 @@ import { RechercheGaz } from "@/app/_components/recherche-gaz"
 import { PubliciteCarousel, type PubliciteBannerData } from "@/app/_components/publicite-banner"
 
 const benefits = [
-  "Vérifie la dispo avant de partir",
+  "Vérifie la disponibilité avant de partir",
   "Trouve un point de vente proche",
   "Évite les déplacements inutiles",
 ]
@@ -28,25 +28,25 @@ export function Hero({
         priority
       />
 
-      {/* Dégradé sombre pour lisibilité */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/70" />
+      {/* Voile noir pour assombrir la photo sans la masquer */}
+      <div className="absolute inset-0 bg-black/40" />
 
       {/* Contenu centré au-dessus */}
       <div className="relative z-10 container mx-auto px-4 pt-12 pb-16 md:py-20 flex flex-col items-center text-center">
         <div className="mx-auto max-w-3xl">
           <Badge
             variant="secondary"
-            className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em] bg-white/10 text-white border-white/20 backdrop-blur-sm"
+            className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em] bg-white text-primary border border-primary/20 shadow-sm"
           >
-            Avant de te déplacer, vérifie d&apos;abord
+            Vérifiez d’abord où il y en a
           </Badge>
 
-          <h1 className="mt-4 text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white leading-tight drop-shadow-lg">
+          <h1 className="mt-4 text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white leading-tight drop-shadow-md">
             Ton gaz est fini&nbsp;?{" "}
-            <span className="text-primary">Vérifie où il y en a avant de te déplacer.</span>
+            <span className="text-[#4ADE80] font-extrabold">Vérifiez où il y en a avant de vous déplacer.</span>
           </h1>
 
-          <p className="mt-3 text-lg sm:text-xl text-white/90 max-w-2xl mx-auto leading-relaxed drop-shadow">
+          <p className="mt-3 text-lg sm:text-xl text-white max-w-2xl mx-auto leading-relaxed drop-shadow-sm">
             GazPoints te montre les points de vente de gaz près de chez toi, avec la
             disponibilité, la distance et le numéro du vendeur.
           </p>
@@ -68,8 +68,8 @@ export function Hero({
           <div className="mt-5 flex justify-center">
             <Button
               size="lg"
-              variant="outline"
-              className="h-11 px-6 text-sm bg-white/10 text-white border-white/30 hover:bg-white/20 hover:text-white cursor-pointer backdrop-blur-sm rounded-xl"
+              variant="default"
+              className="h-11 px-6 text-sm text-primary-foreground rounded-xl"
               render={<Link href="/#comment-ca-marche" />}
               nativeButton={false}
             >
@@ -79,17 +79,17 @@ export function Hero({
           </div>
         </div>
 
-        {/* Proveurs rapides */}
+        {/* Avantages clés */}
         <ul className="mx-auto mt-8 max-w-3xl grid gap-3 sm:grid-cols-3 sm:gap-8">
           {benefits.map((benefit) => (
             <li
               key={benefit}
-              className="flex items-start gap-2 text-left text-sm text-white/90 bg-white/10 rounded-sm px-3 py-2 backdrop-blur-sm border border-white/10 shadow-sm"
+              className="flex items-start gap-2 text-left text-sm text-foreground bg-white rounded-sm px-3 py-2 shadow-sm border border-border"
             >
-              <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
+              <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
                 <Check className="size-3" />
               </span>
-              <span className="font-medium">{benefit}</span>
+              <span className="font-medium text-foreground">{benefit}</span>
             </li>
           ))}
         </ul>

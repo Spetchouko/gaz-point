@@ -39,11 +39,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             </div>
             <h1 className="text-2xl font-bold tracking-tight">Une erreur est survenue</h1>
             <p className="mt-3 text-sm text-muted-foreground">
-              Oops ! Quelque chose d&apos;imprévu est arrivé. Notre site a rencontre une
+              Oops ! Quelque chose d’imprévu est arrivé. Notre site a rencontré une
               erreur intérieure.
             </p>
             <p className="mt-2 max-w-sm mx-auto text-xs text-muted-foreground">
-              L&apos;erreur a été signalée. Veuillez réessayer, ou republicher si le problème
+              L’erreur a été signalée. Veuillez réessayer, ou republier si le problème
               persiste.
             </p>
             <div className="mt-6">
@@ -51,7 +51,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 href="/"
                 className="flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-primary hover:text-primary-foreground transition-colors shadow-sm"
               >
-                Revenir à l&apos;accueil
+                Revenir à l’accueil
               </Link>
             </div>
           </div>

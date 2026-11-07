@@ -196,7 +196,7 @@ export function DisponibiliteForm({
               </datalist>
               {pointUnknown && (
                 <p className="text-xs text-muted-foreground">
-                  Ce nom ne correspond pas encore à l&apos;un de vos dépôts enregistrés.
+                  Ce nom ne correspond pas encore à l’un de vos dépôts enregistrés.
                   Vérifiez la saisie exacte.
                 </p>
               )}

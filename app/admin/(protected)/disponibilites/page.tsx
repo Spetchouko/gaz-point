@@ -115,7 +115,7 @@ export default async function AdminDisponibilitesPage({
       <header>
         <h1 className="text-3xl font-bold tracking-tight">Disponibilités</h1>
         <p className="mt-2 text-muted-foreground">
-          Toutes les disponibilités publiées par les vendeurs et l&apos;administration
+          Toutes les disponibilités publiées par les vendeurs et l’administration
         </p>
       </header>
 

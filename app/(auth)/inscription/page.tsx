@@ -141,7 +141,7 @@ export default function InscriptionPage() {
             href="/"
             className="text-sm text-muted-foreground hover:text-foreground hover:underline"
           >
-            Retour à l&apos;accueil
+            Retour à l’accueil
           </Link>
         </div>
 

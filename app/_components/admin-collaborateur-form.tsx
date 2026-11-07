@@ -115,7 +115,7 @@ export function AdminCollaborateurForm() {
 
             <p className="text-sm text-muted-foreground">
               Le collaborateur pourra consulter le tableau de bord et exporter les
-              données. Seul l&apos;administrateur peut gérer les accès.
+              données. Seul l’administrateur peut gérer les accès.
             </p>
 
             {feedback && (

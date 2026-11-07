@@ -489,7 +489,7 @@ export function AdminVendeurDetail({
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Settings className="size-5 text-primary" />
-                    Actions d&apos;administration
+                    Actions d’administration
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">

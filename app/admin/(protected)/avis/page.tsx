@@ -30,10 +30,10 @@ export default async function AdminAvisPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-3xl font-bold tracking-tight">Avis &amp; Témoignages</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Avis et Témoignages</h1>
         <p className="mt-2 text-muted-foreground">
           Consulte, approuve, refuse ou masque les avis des usagers et des
-          vendeurs. Seuls les avis approuvés apparaissent sur la page d&apos;accueil.
+          vendeurs. Seuls les avis approuvés apparaissent sur la page d’accueil.
         </p>
       </header>
 

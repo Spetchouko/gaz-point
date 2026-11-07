@@ -163,7 +163,7 @@ function FormulaireAvatar({
         </CardTitle>
         <CardDescription>
           Une image carrée (PNG ou JPG, 2 Mo maximum). Elle est stockée directement dans ton
-          profil, aucun service externe n&apos;est utilisé.
+          profil, aucun service externe n’est utilisé.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -262,7 +262,7 @@ function FormulaireInformations({
           Informations personnelles
         </CardTitle>
         <CardDescription>
-          Ton nom et ton numéro de téléphone. L&apos;adresse email ne peut pas être
+          Ton nom et ton numéro de téléphone. L’adresse email ne peut pas être
           modifiée ici.
         </CardDescription>
       </CardHeader>
@@ -295,7 +295,7 @@ function FormulaireInformations({
             <Label htmlFor="email">Adresse email</Label>
             <Input id="email" value={profile.email} disabled />
             <p className="text-xs text-muted-foreground">
-              Pour changer d&apos;email, écris à gazpoints@gmail.com.
+              Pour changer d’email, écris à gazpoints@gmail.com.
             </p>
           </div>
 

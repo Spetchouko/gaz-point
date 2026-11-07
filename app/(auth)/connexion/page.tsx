@@ -40,7 +40,7 @@ function LoginPageContent() {
     role === "admin" || role === "collaborateur"
 
   const emailParamFromUrl = (searchParams.get("email") ?? "").trim()
-  const emailVerifiedNotice = emailParamFromUrl ? "Votre adresse email est verifiee. Vous pouvez maintenant vous connecter." : ""
+  const emailVerifiedNotice = emailParamFromUrl ? "Votre adresse email est vérifiée. Vous pouvez maintenant vous connecter." : ""
   const passwordRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -148,7 +148,7 @@ function LoginPageContent() {
             className="justify-start gap-1 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="size-4" />
-            Retour à l&apos;accueil
+            Retour à l’accueil
           </Button>
         </div>
 

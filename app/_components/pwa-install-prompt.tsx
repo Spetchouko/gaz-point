@@ -115,7 +115,7 @@ export function PwaInstallPrompt() {
             Installez GazPoints sur votre téléphone
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Retrouvez rapidement les points de vente de gaz depuis votre écran d&apos;accueil.
+            Retrouvez rapidement les points de vente de gaz depuis votre écran d’accueil.
           </p>
 
           {isIOS ? (
@@ -123,7 +123,7 @@ export function PwaInstallPrompt() {
               <p className="font-medium text-foreground">Instructions pour iPhone / iPad :</p>
               <ol className="list-decimal list-inside space-y-0.5">
                 <li>Appuyez sur le bouton <Share2 className="inline size-3 mx-0.5" aria-hidden /> <strong>Partager</strong> de Safari.</li>
-                <li>Faites défiler et sélectionnez <strong>« Sur l&apos;écran d&apos;accueil »</strong>.</li>
+                <li>Faites défiler et sélectionnez <strong>« Sur l’écran d’accueil »</strong>.</li>
                 <li>Appuyez sur <strong>« Ajouter »</strong>.</li>
               </ol>
             </div>
@@ -134,7 +134,7 @@ export function PwaInstallPrompt() {
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 active:translate-y-px"
               >
                 <Download className="size-4" aria-hidden />
-                Installer l&apos;application
+                Installer l’application
               </button>
               <button
                 onClick={handleLater}

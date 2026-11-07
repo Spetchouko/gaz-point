@@ -42,7 +42,7 @@ export function NotreDemarche() {
           <div className="mt-5 space-y-4 text-pretty text-base text-muted-foreground sm:text-lg">
             <p>
               Pourquoi, à Douala, une partie des ménages dépense-t-elle autant
-              d&apos;argent et de temps pour une seule bouteille de gaz ?
+              d’argent et de temps pour une seule bouteille de gaz ?
             </p>
             <p>
               La réponse tient en une phrase :{" "}
@@ -80,8 +80,8 @@ export function NotreDemarche() {
 
         <Card className="mx-auto mt-12 max-w-4xl border-0 bg-muted/60 p-6 shadow-none sm:p-8">
           <p className="text-pretty text-base leading-relaxed text-foreground sm:text-lg text-center">
-            GazPoints est né de ce constat : ce n&apos;est pas le gaz qui manque,
-            c&apos;est l&apos;information. Le gaz, lui, est déjà là, à quelques
+            GazPoints est né de ce constat : ce n’est pas le gaz qui manque,
+            c’est l’information. Le gaz, lui, est déjà là, à quelques
             kilomètres.
           </p>
         </Card>

@@ -41,7 +41,7 @@ export function StatsRangeSelector({
         className="h-9 rounded-lg border bg-background px-3 py-1.5 text-sm"
         aria-label="Période analysée"
       >
-        <option value="today">Aujourd&apos;hui</option>
+        <option value="today">Aujourd’hui</option>
         <option value="7">7 derniers jours</option>
         <option value="30">30 derniers jours</option>
         <option value="90">90 derniers jours</option>

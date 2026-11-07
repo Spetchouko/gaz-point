@@ -42,12 +42,12 @@ export function NotrePromesse() {
           </Badge>
 
           <h2 className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            Quatre règles qu&apos;on{" "}
+            Quatre règles qu’on{" "}
             <span className="text-primary">négocie pas</span>
           </h2>
 
           <p className="mt-5 text-pretty text-base text-muted-foreground sm:text-lg">
-            Elles sont la raison d&apos;être du service. Si GazPoints cessent de les
+            Elles sont la raison d’être du service. Si GazPoints cesse de les
             respecter, il ne sert plus à rien.
           </p>
         </div>

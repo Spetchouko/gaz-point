@@ -20,7 +20,7 @@ const sources = [
     icon: Clock,
     title: "La date de mise à jour",
     description:
-      "Chaque information est datée. Quand elle est ancienne, elle est marquée \"à confirmer\" au lieu d'être présentée comme fiable.",
+      "Chaque information est datée. Quand elle est ancienne, elle est marquée « à confirmer » au lieu d'être présentée comme fiable.",
   },
   {
     icon: MessageCircleQuestion,
@@ -43,7 +43,7 @@ export function NotreMethode() {
           </Badge>
 
           <h2 className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            D&apos;où vient l&apos;information que tu vois
+            D’où vient l’information que tu vois
           </h2>
 
           <p className="mt-5 text-pretty text-base text-muted-foreground sm:text-lg">
@@ -76,7 +76,7 @@ export function NotreMethode() {
                 Hors limites
               </Badge>
               <CardTitle className="mt-3 text-xl font-semibold tracking-tight text-foreground">
-                Ce que GazPoints ne font pas
+                Ce que GazPoints ne fait pas
               </CardTitle>
             </CardHeader>
             <CardContent className="px-0">
@@ -101,7 +101,7 @@ export function NotreMethode() {
               <Separator className="my-4 bg-border" />
 
               <p className="text-pretty text-sm font-medium text-foreground">
-                Une information honnête vaut mieux qu&apos;une information
+                Une information honnête vaut mieux qu’une information
                 rassurante.
               </p>
             </CardContent>

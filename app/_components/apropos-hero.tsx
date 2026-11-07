@@ -28,8 +28,8 @@ export function AproposHero() {
           </h1>
 
           <p className="mt-5 text-pretty text-base text-muted-foreground sm:text-lg max-w-3xl mx-auto">
-            Nous construisons un service d&apos;information sur les points de vente
-            de gaz menager. Pas une boutique, pas un revendeur : un moyen de
+            Nous construisons un service d’information sur les points de vente
+            de gaz pour les ménages. Pas une boutique, pas un revendeur : un moyen de
             se renseigner, avant de se déplacer. Deux profils : les
             usagers y entrent gratuitement, les vendeurs y publient leurs
             stocks.

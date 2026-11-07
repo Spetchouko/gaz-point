@@ -237,7 +237,7 @@ export function AdminCollaborateurDetail({
         <CardContent className="space-y-4">
           {isSelf ? (
             <p className="text-sm text-muted-foreground">
-              Vous consultez votre propre compte : la désactivation n&apos;est pas
+              Vous consultez votre propre compte : la désactivation n’est pas
               disponible.
             </p>
           ) : (
@@ -281,7 +281,7 @@ export function AdminCollaborateurDetail({
           <DialogHeader>
             <DialogTitle>Désactiver le collaborateur</DialogTitle>
             <DialogDescription>
-              « {profile.name} » perd ses accès d&apos;administration et redevient un
+              « {profile.name} » perd ses accès d’administration et redevient un
               usager classique.
             </DialogDescription>
           </DialogHeader>

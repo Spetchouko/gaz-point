@@ -113,7 +113,7 @@ export function Storytelling() {
                 Argent dépensé en transport, matinée gâchée et repas retardé.
               </h4>
               <p className="text-sm text-muted-foreground">
-                Personne ne t&apos;avait prévenu des ruptures de stock avant ton
+                Personne ne t’avait prévenu des ruptures de stock avant ton
                 déplacement.
               </p>
             </div>

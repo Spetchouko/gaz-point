@@ -67,7 +67,7 @@ export function AdminPublicitePreviewDialog({
         <DialogHeader>
           <DialogTitle>Aperçu — {ad.title}</DialogTitle>
           <DialogDescription>
-            Rendu de la bannière sur l&apos;accueil, aux deux emplacements
+            Rendu de la bannière sur l’accueil, aux deux emplacements
             disponibles.
           </DialogDescription>
         </DialogHeader>
@@ -75,9 +75,9 @@ export function AdminPublicitePreviewDialog({
         <div className="space-y-5">
           {legacySlot && (
             <p className="rounded-lg border border-warning/20 bg-warning/5 px-3 py-2 text-xs text-warning">
-              Cette publicité utilise l&apos;ancien emplacement «{" "}
-              {publiciteSlotLabel(ad.slot)} » qui n&apos;est plus diffusé. Elle
-              n&apos;apparaît donc plus sur le site.
+              Cette publicité utilise l’ancien emplacement «{" "}
+              {publiciteSlotLabel(ad.slot)} » qui n’est plus diffusé. Elle
+              n’apparaît donc plus sur le site.
             </p>
           )}
 
