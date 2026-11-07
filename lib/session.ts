@@ -1,0 +1,161 @@
+import { headers } from "next/headers"
+import { redirect } from "next/navigation"
+import { eq } from "drizzle-orm"
+import { db } from "@/db"
+import { collaborateurPermission } from "@/db/schema"
+import { auth } from "@/lib/auth"
+
+export type ProRole = "vendor" | "admin" | "collaborateur"
+
+export type SessionUser = {
+  id: string
+  name: string
+  email: string
+  emailVerified: boolean
+  image?: string | null
+  role?: string | null
+  phoneNumber?: string | null
+  mustChangePassword?: boolean
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+export async function getCurrentUser() {
+  const session = await auth.api.getSession({ headers: await headers() })
+  const user = session?.user
+  return (user as SessionUser | undefined) ?? null
+}
+
+/**
+ * Vérifie si un collaborateur doit changer son mot de passe temporaire.
+ * Redirige uniquement les collaborateurs (role === 'collaborateur') qui ont
+ * mustChangePassword = true vers la page obligatoire de changement de mot de passe.
+ * Les comptes administrateurs, vendeurs et clients ne sont jamais impactés.
+ */
+export function requirePasswordChangeIfNeeded(user: SessionUser): void {
+  if (user.role === "collaborateur" && user.mustChangePassword === true) {
+    redirect("/mot-de-passe-temporaire")
+  }
+}
+
+/**
+ * Variantes pour les Route Handlers : ne redirigent jamais (un redirect()
+ * lève NEXT_REDIRECT et serait avalé par le try/catch du handler '500).
+ * Retournent null si l'utilisateur n'est pas authentifié / n'a pas le rôle.
+ */
+export async function getProUser(): Promise<{ user: SessionUser; role: ProRole } | null> {
+  const user = await getCurrentUser()
+  if (!user) return null
+  const role = user.role ?? "client"
+  if (role !== "vendor" && role !== "admin" && role !== "collaborateur") return null
+  return { user, role: role as ProRole }
+}
+
+export async function getAdminUser(): Promise<SessionUser | null> {
+  const user = await getCurrentUser()
+  if (!user) return null
+  if ((user.role ?? "client") !== "admin") return null
+  return user
+}
+
+/**
+ * Variantes pour les Route Handlers : ne redirigent jamais (un redirect()
+ * lève NEXT_REDIRECT et serait avalé par le try/catch du handler '500).
+ * Retournent null si l'utilisateur n'est pas authentifié / n'a pas le rôle.
+ */
+export async function requireUser() {
+  const user = await getCurrentUser()
+  if (!user) redirect("/connexion")
+  // Seul un collaborateur avec mot de passe temporaire est redirigé.
+  // Les admins, vendeurs et clients ne sont jamais impactés.
+  requirePasswordChangeIfNeeded(user)
+  return user
+}
+
+export async function requirePro() {
+  const user = await requireUser()
+  const role = user.role ?? "client"
+  if (role !== "vendor" && role !== "admin" && role !== "collaborateur") redirect("/dashboard")
+  return { user, role: role as ProRole }
+}
+
+export async function requireAdmin() {
+  const user = await requireUser()
+  const role = user.role ?? "client"
+  if (role !== "admin") redirect("/dashboard")
+  return user
+}
+
+export async function requireCollaborator() {
+  const user = await requireUser()
+  const role = user.role ?? "client"
+  if (role !== "collaborateur" && role !== "admin") redirect("/dashboard")
+  return user
+}
+
+export async function requireStaff(): Promise<StaffUser> {
+  const staff = await getStaff()
+  return staff
+}
+
+export async function getStaff(): Promise<StaffUser> {
+  const user = await getCurrentUser()
+  if (!user) redirect("/admin/login")
+  const role = user.role ?? "client"
+  if (role !== "admin" && role !== "collaborateur") redirect("/admin/login")
+  // Seul un collaborateur avec mot de passe temporaire est redirigé.
+  requirePasswordChangeIfNeeded(user)
+  const permissions =
+    role === "admin"
+      ? new Set<AdminModule>(ADMIN_MODULES)
+      : await getAdminPermissions(user.id)
+  return { user, role: role as "admin" | "collaborateur", permissions }
+}
+
+export type StaffUser = {
+  user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>
+  role: "admin" | "collaborateur"
+  permissions: Set<AdminModule>
+}
+
+export type AdminModule =
+  | "utilisateurs"
+  | "clients"
+  | "vendeurs"
+  | "disponibilites"
+  | "marketing"
+  | "avis"
+  | "statistiques"
+
+export const ADMIN_MODULES: AdminModule[] = [
+  "utilisateurs",
+  "clients",
+  "vendeurs",
+  "disponibilites",
+  "marketing",
+  "avis",
+  "statistiques",
+] as const
+
+export async function getAdminPermissions(userId: string): Promise<Set<AdminModule>> {
+  const rows = await db
+    .select({ module: collaborateurPermission.module })
+    .from(collaborateurPermission)
+    .where(eq(collaborateurPermission.collaboratorId, userId))
+  return new Set(rows.map((r) => r.module as AdminModule))
+}
+
+export async function requireStaffModule(module: AdminModule): Promise<StaffUser> {
+  const staff = await getStaff()
+  if (staff.role !== "admin" && !staff.permissions.has(module)) {
+    redirect("/admin")
+  }
+  return staff
+}
+
+export function canAccessModule(
+  staff: Pick<StaffUser, "role" | "permissions">,
+  module: AdminModule
+): boolean {
+  return staff.role === "admin" || staff.permissions.has(module)
+}

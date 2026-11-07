@@ -1,0 +1,444 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ */
+/* Système de design GazPoints — Tailwind v4 (shadcn/ui base-nova)      */
+/*                                                                     */
+/* Tous les composants consomment exclusivement ces tokens sémantiques. */
+/* Aucune couleur de palette Tailwind brute (emerald, sky, red...) ne   */
+/* doit être écrite en dur dans le code applicatif.                     */
+/*                                                                     */
+/* Palette de marque :                                                  */
+/*  Vert profond  #16834A → primaire, actions principales               */
+/*  Bleu navy     #174A7E → secondaire, informations, dashboards        */
+/*  Bleu info     #1F6FB2 → accents informatifs (AA ≥ 5:1 sur blanc)    */
+/*  Fonds clairs  mint #EAF5EE · sky #EFF4FA · sand #F5F7F6             */
+/*  Textes        #17251E (gris profond) · #5B6B62 (secondaire)         */
+/*  États         success #17804A · warning #B45309 · erreur #B42318    */
+/* ------------------------------------------------------------------ */
+@theme {
+  /* Marque */
+  --color-primary: #16834a;
+  --color-primary-strong: #0e5c34;
+  --color-primary-foreground: #ffffff;
+
+  --color-navy: #174a7e;
+  --color-navy-strong: #103657;
+  --color-navy-foreground: #ffffff;
+
+  /* États sémantiques (contraste AA vérifié sur les fonds clairs) */
+  --color-success: #17804a;
+  --color-success-strong: #0f6b38;
+  --color-success-foreground: #ffffff;
+
+  --color-warning: #b45309;
+  --color-warning-strong: #92400e;
+  --color-warning-foreground: #ffffff;
+
+  --color-info: #1f6fb2;
+  --color-info-strong: #174a7e;
+  --color-info-foreground: #ffffff;
+
+  --color-destructive: #b42318;
+  --color-destructive-strong: #99131c;
+  --color-destructive-foreground: #ffffff;
+
+  /* Fonds alternés des sections */
+  --color-mint: #eaf5ee;
+  --color-sky: #eff4fa;
+  --color-sand: #f5f7f6;
+
+  /* Neutres */
+  --color-background: #ffffff;
+  --color-foreground: #17251e;
+  --color-card: #ffffff;
+  --color-card-foreground: #17251e;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #17251e;
+  --color-muted: #f5f7f6;
+  --color-muted-foreground: #5b6b62;
+  --color-border: #dfe8e2;
+  --color-input: #dfe8e2;
+  --color-ring: #16834a;
+
+  /* Secondary = bleu marque pâle (badges, boutons) */
+  --color-secondary: #eff4fa;
+  --color-secondary-foreground: #174a7e;
+
+  /* Graphiques (convention shadcn/ui : --color-chart-1..5) */
+  --color-chart-1: #16834a;
+  --color-chart-2: #174a7e;
+  --color-chart-3: #1f6fb2;
+  --color-chart-4: #b45309;
+  --color-chart-5: #5b6b62;
+
+  /* Typographie — une seule famille : Geist, chargée via next/font
+     (voir app/layout.tsx). Mono héritée du même système. */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Arrondis */
+  --radius-4xl: 2rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Animations tw-animate-css (fallback si le plugin n'est pas installé)*/
+/* ------------------------------------------------------------------ */
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes zoom-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes zoom-out {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.95); }
+}
+
+@keyframes slide-in-from-top-2 {
+  from { transform: translateY(-0.5rem); }
+  to { transform: translateY(0); }
+}
+
+@keyframes slide-in-from-bottom-2 {
+  from { transform: translateY(0.5rem); }
+  to { transform: translateY(0); }
+}
+
+@keyframes slide-in-from-left-2 {
+  from { transform: translateX(-0.5rem); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slide-in-from-right-2 {
+  from { transform: translateX(0.5rem); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slide-in-from-bottom-4 {
+  from { transform: translateY(1rem); }
+  to { transform: translateY(0); }
+}
+
+@keyframes slide-in-from-right-8 {
+  from { transform: translateX(2rem); }
+  to { transform: translateX(0); }
+}
+
+.animate-in {
+  animation: fade-in both;
+}
+
+.animate-out {
+  animation: fade-out both;
+}
+
+.fade-in-0 {
+  animation: fade-in both;
+}
+
+.fade-out-0 {
+  animation: fade-out both;
+}
+
+.zoom-in-95 {
+  animation: zoom-in both;
+}
+
+.zoom-out-95 {
+  animation: zoom-out both;
+}
+
+.slide-in-from-top-2 {
+  animation: slide-in-from-top-2 both;
+}
+
+.slide-in-from-bottom-2 {
+  animation: slide-in-from-bottom-2 both;
+}
+
+.slide-in-from-left-2 {
+  animation: slide-in-from-left-2 both;
+}
+
+.slide-in-from-right-2 {
+  animation: slide-in-from-right-2 both;
+}
+
+.slide-in-from-bottom-4 {
+  animation: slide-in-from-bottom-4 both;
+}
+
+.slide-in-from-right-8 {
+  animation: slide-in-from-right-8 both;
+}
+
+/* ------------------------------------------------------------------ */
+/* Base                                                                */
+/* ------------------------------------------------------------------ */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+/* Les titres utilisent la police de marque, resserrée et équilibrée */
+h1,
+h2,
+h3,
+.font-heading {
+  font-family: var(--font-heading);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+/* Sélection aux couleurs de marque (::selection) */
+::selection {
+  background-color: color-mix(in oklch, var(--color-primary) 18%, transparent);
+  color: var(--color-foreground);
+}
+
+/* Focus visible pour navigation clavier */
+*:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+/* Tableaux responsifs */
+table {
+  width: 100%;
+  font-size: 0.875rem;
+}
+
+/* Images : pas de débordement sur mobile */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Respect de prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Zones tactiles confortables */
+.btn,
+.link-hover {
+  @media (hover: hover) {
+    transition: color 0.2s, background-color 0.2s, border-color 0.2s;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Utilitaires de marque                                               */
+/* ------------------------------------------------------------------ */
+
+/* Dégradé de section : bleu clair → blanc (haut de page, sections clés) */
+@utility bg-gradient-section {
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-sky) 0%,
+    var(--color-background) 100%
+  );
+}
+
+/* Dégradé inversé : blanc → bleu clair */
+@utility bg-gradient-section-reverse {
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-background) 0%,
+    var(--color-sky) 100%
+  );
+}
+
+/* Dégradé teinté vert : blanc → mint (sections positives / CTA) */
+@utility bg-gradient-section-mint {
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-background) 0%,
+    var(--color-mint) 100%
+  );
+}
+
+.dark {
+  --color-background: #0a0f14;
+  --color-foreground: #e8ebe9;
+  --color-card: #10141a;
+  --color-card-foreground: #e8ebe9;
+  --color-popover: #10141a;
+  --color-popover-foreground: #e8ebe9;
+  --color-muted: #131820;
+  --color-muted-foreground: #a3a9ad;
+  --color-border: #1a2230;
+  --color-input: #1a2230;
+  --color-ring: #16834a;
+  --color-primary: #16834a;
+  --color-primary-strong: #1f9b5c;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #131820;
+  --color-secondary-foreground: #e8ebe9;
+  --color-success: #17804a;
+  --color-success-strong: #1f9b5c;
+  --color-success-foreground: #ffffff;
+  --color-warning: #b45309;
+  --color-warning-strong: #d97706;
+  --color-warning-foreground: #ffffff;
+  --color-info: #1f6fb2;
+  --color-info-strong: #2a8fd6;
+  --color-info-foreground: #ffffff;
+  --color-destructive: #b42318;
+  --color-destructive-strong: #d62828;
+  --color-destructive-foreground: #ffffff;
+  --color-mint: #0f1a14;
+  --color-sky: #0f1520;
+  --color-sand: #111418;
+}
+
+[aria-disabled="true"] {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* ------------------------------------------------------------------ */
+/* Layout — Administration (référence Microsoft Outlook)              */
+/*                                                                    */
+/* Barre supérieure, barre latérale et zone de travail pleine largeur */
+/* ------------------------------------------------------------------ */
+@utility admin-top-bar {
+  height: 3.5rem; /* h-14 */
+}
+@utility admin-sidebar-width {
+  width: 16rem; /* w-64 */
+}
+@utility admin-sidebar-collapsed-width {
+  width: 4rem; /* w-16 */
+}
+
+/* Barre latérale : séparation fine, pas d'encadrement lourd */
+.admin-sidebar {
+  @apply border-r border-border bg-card;
+}
+
+/* Zone de travail : occupe toute la surface disponible, pas de conteneur centré */
+.admin-workarea {
+  @apply flex-1 min-w-0;
+}
+.admin-workarea__main {
+  @apply flex-1 overflow-auto bg-background;
+}
+.admin-workarea__padding {
+  @apply px-6 py-5;
+}
+
+/* Carte statique compacte (Outlook) */
+.admin-stat-card {
+  @apply rounded-xl border bg-card p-4 transition-colors hover:bg-muted/40;
+}
+.admin-stat-card__value {
+  @apply text-2xl font-bold tracking-tight text-foreground;
+}
+.admin-stat-card__label {
+  @apply text-xs text-muted-foreground;
+}
+.admin-stat-card__icon {
+  @apply flex size-10 shrink-0 items-center justify-center rounded-xl border bg-muted/50 text-primary;
+}
+
+/* En-tête de page admin : titre + sous-titre */
+.admin-page-header {
+  @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-1;
+}
+.admin-page-title {
+  @apply text-2xl font-bold tracking-tight;
+}
+.admin-page-subtitle {
+  @apply text-sm text-muted-foreground;
+}
+
+/* Actions de page : groupe de boutons à droite de l'en-tête */
+.admin-page-actions {
+  @apply flex items-center gap-2;
+}
+
+/* Tableaux compacts : lignes serrées, séparateurs fins */
+.admin-table {
+  @apply rounded-lg border bg-card overflow-hidden;
+}
+.admin-table__wrap {
+  @apply overflow-x-auto;
+}
+.admin-table table {
+  @apply w-full text-sm;
+}
+.admin-table thead tr {
+  @apply border-b border-border bg-muted/50;
+}
+.admin-table th {
+  @apply px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground;
+}
+.admin-table td {
+  @apply px-4 py-3;
+}
+.admin-table tbody tr {
+  @apply divide-y divide-border hover:bg-muted/50 transition-colors;
+}
+
+/* Boutons d'action secondaires uniformes */
+.admin-btn {
+  @apply inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium transition-colors outline-none;
+}
+.admin-btn--primary {
+  @apply bg-primary text-primary-foreground hover:bg-primary-strong;
+}
+.admin-btn--secondary {
+  @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
+}
+.admin-btn--ghost {
+  @apply bg-background text-foreground hover:bg-muted hover:text-foreground;
+}
+.admin-btn--icon {
+  @apply h-9 w-9;
+}
+
+/* Séparateurs de section fins et élégants */
+.admin-section {
+  @apply space-y-5;
+}
+.admin-section__title {
+  @apply text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2;
+}
+
+/* Badge d'état compact */
+.admin-badge {
+  @apply inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider;
+}
+
+/* Overlay mobile du menu latéral */
+.admin-mobile-overlay {
+  @apply fixed inset-0 z-50 flex lg:hidden;
+}

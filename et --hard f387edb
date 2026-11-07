@@ -1,0 +1,108 @@
+[33m804e455[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mstable-804e455[m[33m)[m feat:
+[33mcde603d[m savepoint:
+[33mcbc96c2[m fix:
+[33mf387edb[m feat:
+[33m8a8d647[m v2
+[33m41a359b[m fix depetences
+[33m2845010[m feat
+[33m383d5d4[m fix
+[33mc8131a4[m fix:
+[33m76e0f6b[m fix:
+[33m2ee21dc[m feat:
+[33m4cf6be7[m fix:
+[33m28cf959[m feat:
+[33m18fdcb8[m amelioration
+[33m798988c[m feat:
+[33m921a540[m savepoint:
+[33m3a20a76[m modification
+[33mc49a7cc[m savepoint:
+[33m289c578[m Correction build espace-pro server client split
+[33m0ed2495[m Correction
+[33mc2b796b[m Harmonisation
+[33ma360f12[m Sauvegarde
+[33m945dabb[m Correction
+[33m236fc1a[m Améliorations
+[33m277269d[m Sauvegarde
+[33m1ad351f[m update options
+[33m61cbcef[m save changes
+[33m7df378b[m Correction
+[33mb3e6e13[m Simplification
+[33m0e17a71[m Correction
+[33m778ae0e[m Refonte
+[33m3dfe6e0[m Refonte
+[33m28f613f[m Refonte
+[33m1a66c79[m site mise à jours
+[33md9f284f[m mise à jours
+[33m4919fa6[m[33m ([m[1;32mbackup-indexeddb-cache[m[33m)[m email verification
+[33m28b1797[m fix: imports Card et ModernCard dans auth pages + null status guard
+[33m7e1aaa6[m fix: balises ModernCardContent coherent
+[33m7fe2ea6[m fix: balises ModernCard / ModernCardTitle / ModernCardHeader coherent
+[33ma662ace[m fix: import CardHeader/CardTitle/CardContent dans connexion
+[33ma14c08d[m fix: reservation ne bloque plus quand stock est null (SQL OR IS NULL)
+[33m1fc6c7a[m design: bouton reservation text blanc pur, gras 700, 16px, centre parfait
+[33m9e4e353[m design: texte bouton Fais une reservation passe a text-lg pour lisibilite
+[33m638e92e[m design: cartes disponibilite modernes - un bouton Faire une reservation, sans Signe par ni Appeler
+[33mea5c82b[m revert: recherche-gaz restaure (design pas souhaite)
+[33md4b51f8[m design: cartes disponibilite compactes avec bouton reservation unifie
+[33m6012495[m fix: import CardHeader/CardContent/CardTitle
+[33m24f5afe[m design: cartes recherche compactes, responsive, sans stock, bouton large
+[33m53bd652[m reservation: consigne supprimee, exp 24h, bouton large, stock cache, qty null OK, exp 1440
+[33mc4b7fc2[m save: avant modifications reservation
+[33m23b1d9e[m design
+[33m1750674[m design: title +2 em bold, placeholder Total/Bocom/Tradex
+[33m2d810af[m modif verif: separator Ou continuer avec comme usager
+[33m7982a94[m modif verif: bouton Google style formulaire usager
+[33m7430a87[m modif verif: bouton Google sur formulaire vendeur + cookie role
+[33m7346d96[m update fonctionnalité
+[33m99d6e3e[m modif 1 OTP: sujet email correct
+[33m0ea3b30[m modif 1 OTP: sendOnSignUp true + email design
+[33m79a4f5b[m perf nav: prefetch liens header (sans ancre)
+[33m6167f29[m perf vendeur: revalidate 60s
+[33mea77777[m perf admin: corrige requête dupliquée + revalidate 60s
+[33m797638a[m save: avant optimisation perf
+[33mc911c8c[m update site
+[33mc18f945[m update logo
+[33md018dd1[m save
+[33m52fa76f[m update
+[33m5c45512[m traduction
+[33m2ab43c5[m v1.2
+[33m7eb197f[m ameliorations apporter
+[33ma7e5f0f[m update ui
+[33mebd6b1f[m modification approuvé
+[33m1778da6[m mise à jour
+[33m2d00c3c[m update formulaire de disponibilité
+[33m93e0d22[m v1.01
+[33m61acd79[m update
+[33m900daca[m logo
+[33mfe48bf1[m mise à jour design
+[33m127f75a[m responsive
+[33mcb5a18a[m site complete
+[33meb3d484[m[33m ([m[1;33mtag: [m[1;33mpre-audit-snapshot[m[33m, [m[1;32mbackup-pre-audit[m[33m)[m chore: pre-audit snapshot (WIP state)
+[33m9b848d2[m feat: add PWA support, reviews, marketing tools, and comprehensive admin dashboard features
+[33m9fc1beb[m version 1:1
+[33ma2710a1[m final
+[33m5548722[m Dashboard improvement
+[33m5d1c51b[m feat(marketing): deux bannières sur l'accueil, aperçu fidèle et validation des publicités
+[33m84a6087[m fix(auth): rendre fiable la validation d'email par code à 6 chiffres
+[33m5e82bdc[m fix(build): corrige les erreurs de compilation Next.js
+[33me0d57e0[m modifications
+[33m66fe1fe[m Restructure about page to match landing page layout
+[33mc73d9bb[m Add Google sign-up option to usager and vendeur signup pages
+[33m8f455b5[m Fix: Add trustedOrigins to Better Auth config to resolve Invalid origin error on gazpoints.com
+[33m4cd8a28[m Remove CAPTCHA security from auth flows
+[33mf8e2475[m upgrade
+[33m6967f19[m Fondations pretes pour la production
+[33m6433128[m feat: Complete admin dashboard implementation
+[33m6e18f5f[m feat: T1-T3 — sécurité rôles, dialog Base UI, quantité/prix + recherche
+[33m3d5ecae[m feat: dashboard user spaces, pro availability area, and Cameroon-aligned legal pages
+[33m4d47b76[m redesign header layout and simplify navigation links
+[33m83785b6[m fix: add Google sign-in to auth cards and fix build errors
+[33m8431317[m Add dashboard, auth pages, and header user menu
+[33m3a16493[m feat: auth gate, dual subscription profiles, and shadcn landing redesign
+[33m8380753[m feat: link inscription/connexion pages in hero, CTA, header, and vendor section
+[33m91cf4da[m Update metadata, hero benefits, OG images, and section gradients
+[33m1fd82fc[m Restauration du projet GazPoint complet
+[33m33f6161[m Projet de départ
+[33m5ff8112[m Update GazPoint interface
+[33m7927f64[m Projet de départ
+[33m665a23b[m Initial commit from Create Next App
