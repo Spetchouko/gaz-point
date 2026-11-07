@@ -66,27 +66,27 @@ export function Storytelling() {
           </p>
         </div>
 
-        {/* Timeline / Cartes de situation */}
-        <div className="mx-auto mt-8 grid max-w-4xl gap-4 sm:grid-cols-2">
+        {/* Timeline / Cartes de situation — une ligne horizontale sur ordinateur */}
+        <div className="mx-auto mt-6 grid max-w-5xl gap-3 sm:gap-4 grid-cols-1 md:grid-cols-3">
           {painPoints.map((item, idx) => (
             <Card
               key={item.title}
-              className="p-4 rounded-xl border border-border bg-white shadow-sm transition-all hover:shadow-md hover:border-primary/20"
+              className="p-3 sm:p-4 rounded-xl border border-border bg-white shadow-sm transition-all hover:shadow-md hover:border-primary/20"
             >
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <span className="flex size-10 items-center justify-center rounded-xl bg-destructive/10 text-destructive ring-1 ring-destructive/20">
-                  <item.icon className="size-4" />
+              <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
+                <span className="flex size-8 sm:size-10 items-center justify-center rounded-xl bg-destructive/10 text-destructive ring-1 ring-destructive/20">
+                  <item.icon className="size-3.5 sm:size-4" />
                 </span>
                 <Badge
                   variant="outline"
-                  className="gap-1 font-semibold text-muted-foreground"
+                  className="gap-1 font-semibold text-muted-foreground text-xs sm:text-sm"
                 >
-                  <Clock className="size-3" />
+                  <Clock className="size-2.5 sm:size-3" />
                   {item.time}
                 </Badge>
               </div>
-              <CardTitle className="text-sm font-bold">
-                <span className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <CardTitle className="text-sm sm:text-base font-bold">
+                <span className="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   Étape 0{idx + 1}
                 </span>
                 <span className="mt-1 block font-bold text-foreground">
@@ -94,7 +94,7 @@ export function Storytelling() {
                 </span>
               </CardTitle>
               <CardContent>
-                <p className="text-sm leading-relaxed text-muted-foreground">
+                <p className="text-[12px] sm:text-sm leading-relaxed text-muted-foreground">
                   {item.description}
                 </p>
               </CardContent>
