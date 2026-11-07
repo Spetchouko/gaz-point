@@ -5,6 +5,7 @@ import { ImageUp, KeyRound, ShieldCheck, Trash2, UserRound, Eye, EyeOff } from "
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { PhoneInput } from "@/app/_components/phone-input"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { authClient } from "@/lib/auth-client"
@@ -263,12 +264,12 @@ function FormulaireInformations({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="phoneNumber">Téléphone</Label>
-            <Input
+            <PhoneInput
               id="phoneNumber"
-              value={phoneNumber}
-              onChange={(event) => setPhoneNumber(event.target.value)}
-              placeholder="Ex : +237 6 99 00 00 00"
+              label="Téléphone"
+              value={phoneNumber ?? undefined}
+              onChange={(normalized) => setPhoneNumber(normalized ?? "")}
+              className="pl-10 h-11"
             />
           </div>
 

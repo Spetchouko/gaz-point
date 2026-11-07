@@ -1,4 +1,4 @@
-import { asc, eq, inArray } from "drizzle-orm"
+import { and, asc, eq, inArray } from "drizzle-orm"
 import type { Metadata } from "next"
 import { db } from "@/db"
 import { disponibilite, pointDeVente } from "@/db/schema"
@@ -67,7 +67,9 @@ export default async function DisponibilitesPage() {
   }
 
   async function onDeleteDispo(dispoId: string) {
-    await db.delete(disponibilite).where(eq(disponibilite.id, dispoId))
+    await db.delete(disponibilite).where(
+      and(eq(disponibilite.id, dispoId), eq(disponibilite.vendorId, user.id))
+    )
   }
 
   return (

@@ -62,7 +62,7 @@ export function HistoriqueCodes() {
     async function fetchReservations() {
       try {
         const res = await fetch("/api/reservation/my")
-        if (!res.ok) throw new Error("Impossible de charger les codes de consignation")
+        if (!res.ok) throw new Error("Impossible de charger les codes de réservation")
         const data = await res.json()
         setReservations((data.reservations ?? []).map((r: Reservation & { amountType?: string }) => ({
           ...r,
@@ -88,7 +88,7 @@ export function HistoriqueCodes() {
       <Card>
         <CardContent className="py-8 text-center">
           <Loader2 className="size-6 mx-auto animate-spin text-muted-foreground" />
-          <p className="mt-2 text-sm text-muted-foreground">Chargement de vos codes de consignation...</p>
+          <p className="mt-2 text-sm text-muted-foreground">Chargement de vos codes de réservation...</p>
         </CardContent>
       </Card>
     )
@@ -110,9 +110,9 @@ export function HistoriqueCodes() {
       <Card>
         <CardContent className="py-10 text-center">
           <FileText className="size-10 mx-auto mb-3 text-muted-foreground/50" />
-          <p className="text-muted-foreground">Aucun code de consignation pour le moment</p>
+          <p className="text-muted-foreground">Aucun code de réservation pour le moment</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Vos codes de consignation apparaîtront ici après votre première réservation.
+            Vos codes de réservation apparaîtront ici après votre première réservation.
           </p>
         </CardContent>
       </Card>
@@ -123,10 +123,10 @@ export function HistoriqueCodes() {
     <>
       <div className="mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-          Historique des codes de consignation
+          Historique des codes de réservation
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Retrouvez ici tous les codes de consignation générés depuis votre compte.
+          Retrouvez ici tous les codes de réservation générés depuis votre compte.
         </p>
       </div>
 
@@ -134,7 +134,7 @@ export function HistoriqueCodes() {
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2">
             <FileText className="size-5" />
-            Mes codes de consignation
+            Mes codes de réservation
           </CardTitle>
           <span className="text-sm text-muted-foreground">{reservations.length} code{reservations.length > 1 ? "s" : ""}</span>
         </CardHeader>

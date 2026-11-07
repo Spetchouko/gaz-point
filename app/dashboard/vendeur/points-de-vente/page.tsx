@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm"
+import { and, asc, eq } from "drizzle-orm"
 import type { Metadata } from "next"
 import { db } from "@/db"
 import { pointDeVente } from "@/db/schema"
@@ -54,7 +54,9 @@ export default async function PointsDeVentePage() {
   }
 
   async function onDeletePoint(pointId: string) {
-    await db.delete(pointDeVente).where(eq(pointDeVente.id, pointId))
+    await db.delete(pointDeVente).where(
+      and(eq(pointDeVente.id, pointId), eq(pointDeVente.vendorId, user.id))
+    )
   }
 
   return (

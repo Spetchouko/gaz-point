@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { PhoneInput } from "@/app/_components/phone-input"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -405,13 +406,12 @@ function DisponibiliteVendeurForm({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="phone-input">Téléphone (facultatif)</Label>
-              <Input
+              <PhoneInput
                 id="phone-input"
-                type="tel"
-                value={formState.phone}
-                onChange={(e) => setFormState((s) => ({ ...s, phone: e.target.value }))}
-                placeholder="Ex: +237 6 99 00 00 00"
+                label="Téléphone (facultatif)"
+                value={formState.phone ?? undefined}
+                onChange={(normalized) => setFormState((s) => ({ ...s, phone: normalized ?? "" }))}
+                className="pl-10 h-11"
               />
             </div>
 

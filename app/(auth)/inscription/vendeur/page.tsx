@@ -6,6 +6,7 @@ import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ModernCard } from "@/app/_components/card-modern"
+import { PhoneInput } from "@/app/_components/phone-input"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -170,27 +171,40 @@ function InscriptionVendeurContent() {
 
       // === PHASE 2 : Rediriger vers la configuration du profil ===
       // Le compte est créé. On envoie le code de vérification et on
-      // redirige vers la page de configuration où le vendeur pourra ajouter
-      // son adresse, téléphone, description, etc.
-      // On redirige toujours vers la page de validation. L'affichage d'un
-      // éventuel échec d'envoi est géré par la page de validation elle-même.
+      // redirige vers la page de validation. Si l'envoi échoue, on affiche
+      // l'erreur à l'utilisateur au lieu de le laisser croire que l'email est parti.
       const normalizedEmail = email.trim().toLowerCase()
+      let emailSent = false
       try {
-        await fetch("/api/auth/email-otp/send-verification", {
+        const res = await fetch("/api/auth/email-otp/send-verification", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: normalizedEmail, resend: false }),
         })
+        if (res.ok) {
+          emailSent = true
+        } else {
+          const data = await res.json().catch(() => null)
+          console.error("[signup-vendeur] envoi du code échoué:", data?.error?.message ?? res.statusText)
+          setError(data?.error?.message ?? "L'envoi du code de vérification a échoué. Veuillez réessayer.")
+          setLoading(false)
+          return
+        }
       } catch (sendErr) {
-        console.error("[signup-vendeur] envoi du code échoué:", sendErr)
+        console.error("[signup-vendeur] envoi du code échoué (exception):", sendErr)
+        setError("L'envoi du code de vérification a échoué. Veuillez réessayer.")
+        setLoading(false)
+        return
       }
 
-      router.push(
-        `/validation-email?mode=${MODE_EMAIL}&email=${encodeURIComponent(normalizedEmail)}&redirect=${encodeURIComponent(
-          "/inscription/vendeur/configuration"
-        )}&sent=1`
-      )
-      router.refresh()
+      if (emailSent) {
+        router.push(
+          `/validation-email?mode=${MODE_EMAIL}&email=${encodeURIComponent(normalizedEmail)}&redirect=${encodeURIComponent(
+            "/inscription/vendeur/configuration"
+          )}&sent=1`
+        )
+        router.refresh()
+      }
     } catch (err) {
       console.error("[signup-vendeur] catch error:", err)
       setError("Une erreur inattendue est survenue. Veuillez réessayer.")
@@ -516,21 +530,15 @@ function ConfigurationProfilVendeur() {
               </div>
 
               <div className="space-y-3">
-                <Label htmlFor="businessPhone">Téléphone</Label>
-                <div className="relative">
-                  <Store className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="businessPhone"
-                    type="tel"
-                    autoComplete="tel"
-                    placeholder="+237 6 99 00 00 00"
-                    value={businessPhone}
-                    onChange={(e) => setBusinessPhone(e.target.value)}
-                    required
-                    className="pl-10 h-11"
-                    disabled={loading}
-                  />
-                </div>
+                <PhoneInput
+                  id="businessPhone"
+                  label="Téléphone"
+                  value={businessPhone ?? undefined}
+                  onChange={(normalized) => setBusinessPhone(normalized ?? "")}
+                  required
+                  className="pl-10 h-11"
+                  disabled={loading}
+                />
               </div>
 
               <div className="space-y-3">

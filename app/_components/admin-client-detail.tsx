@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { User, KeyRound, Trash2, Power, CheckCircle2, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { PhoneInput } from "@/app/_components/phone-input"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -211,8 +212,14 @@ export function AdminClientDetail({
               <Input id="email" name="email" type="email" value={edit.email} onChange={(e) => setEdit((s) => ({ ...s, email: e.target.value }))} required />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="phoneNumber">Telephone</Label>
-              <Input id="phoneNumber" name="phoneNumber" value={edit.phoneNumber} onChange={(e) => setEdit((s) => ({ ...s, phoneNumber: e.target.value }))} placeholder="+237 6 99 00 00 00" />
+              <PhoneInput
+                id="phoneNumber"
+                name="phoneNumber"
+                label="Telephone"
+                value={edit.phoneNumber ?? undefined}
+                onChange={(normalized) => setEdit((s) => ({ ...s, phoneNumber: normalized ?? "" }))}
+                className="pl-10 h-11"
+              />
             </div>
             {feedback && (
               <p role="alert" className={cn("text-sm", feedback.ok ? "text-success" : "text-destructive")}>{feedback.message}</p>

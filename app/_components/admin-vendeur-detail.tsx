@@ -6,6 +6,7 @@ import { User, Store, Phone, MapPin, Cylinder, Settings, Shield, KeyRound, Plus,
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { PhoneInput } from "@/app/_components/phone-input"
 import { Input } from "@/components/ui/input"
 import { PasswordField } from "@/components/ui/password-field"
 import { Label } from "@/components/ui/label"
@@ -538,8 +539,14 @@ export function AdminVendeurDetail({
               <Input id="vendor-name" name="name" value={edit.name} onChange={(e) => setEdit((s) => ({ ...s, name: e.target.value }))} required />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="vendor-phone">Téléphone</Label>
-              <Input id="vendor-phone" name="phoneNumber" value={edit.phoneNumber} onChange={(e) => setEdit((s) => ({ ...s, phoneNumber: e.target.value }))} placeholder="+237 6 99 00 00 00" />
+              <PhoneInput
+                id="vendor-phone"
+                name="phoneNumber"
+                label="Téléphone"
+                value={edit.phoneNumber ?? undefined}
+                onChange={(normalized) => setEdit((s) => ({ ...s, phoneNumber: normalized ?? "" }))}
+                className="pl-10 h-11"
+              />
             </div>
             {feedback && (
               <p role="alert" className={cn("text-sm break-words", feedback.ok ? "text-success" : "text-destructive")}>{feedback.message}</p>

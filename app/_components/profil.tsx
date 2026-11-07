@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { authClient } from "@/lib/auth-client"
+import { PhoneInput } from "@/app/_components/phone-input"
 import { formatDate } from "@/lib/gaz"
 import { cn } from "@/lib/utils"
 
@@ -281,13 +282,13 @@ function FormulaireInformations({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="phoneNumber">Téléphone</Label>
-            <Input
+            <PhoneInput
               id="phoneNumber"
-              value={phoneNumber}
-              onChange={(event) => setPhoneNumber(event.target.value)}
+              label="Téléphone"
+              value={phoneNumber ?? undefined}
+              onChange={(normalized) => setPhoneNumber(normalized ?? "")}
               disabled={!editMode}
-              placeholder="Ex : +237 6 99 00 00 00"
+              className="pl-10 h-11"
             />
           </div>
 

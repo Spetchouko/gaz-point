@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server"
-import nodemailer from "nodemailer"
-import { defaultRateLimiter, contactRateLimiter } from "@/lib/rate-limit"
+import { contactRateLimiter } from "@/lib/rate-limit"
+import { getTransporter, resolveSmtpCredentials } from "@/lib/email"
 
 const CONTACT_EMAIL = process.env.CONTACT_EMAIL ?? "gazpoints@gmail.com"
-const GMAIL_USER = process.env.GMAIL_USER ?? "gazpoints@gmail.com"
 
 const OBJETS = [
   "Question générale",
@@ -18,10 +17,10 @@ const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function escapeHtml(value: string) {
   return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
+    .replace(/&/g, "\u0026")
+    .replace(/</g, "\u003C")
+    .replace(/>/g, "\u003E")
+    .replace(/"/g, "\u0022")
 }
 
 function singleLine(value: string) {
@@ -70,8 +69,9 @@ export async function POST(request: Request) {
 
   const objetFinal = OBJETS.includes(objet) ? objet : "Question générale"
 
-  const appPassword = process.env.GMAIL_APP_PASSWORD
-  if (!appPassword) {
+  // Vérifier que la config email existe
+  const creds = resolveSmtpCredentials()
+  if (!creds) {
     return NextResponse.json(
       { ok: false, error: "Le formulaire n'est pas encore configuré." },
       { status: 503 }
@@ -79,15 +79,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true,
-      auth: { user: GMAIL_USER, pass: appPassword },
-    })
+    const transporter = getTransporter()
 
     await transporter.sendMail({
-      from: `"GazPoints — Contact" <${GMAIL_USER}>`,
+      from: `"GazPoints — Contact" <${creds.user}>`,
       to: CONTACT_EMAIL,
       replyTo: sanitizedReplyTo,
       subject: `[GazPoints] ${objetFinal} — ${singleLine(nom)}`,

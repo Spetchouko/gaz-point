@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Copy, Calendar, MapPin, Phone, AlertCircle, CheckCircle, XCircle, Loader2 } from "lucide-react"
 import { formatPrice } from "@/lib/gaz"
 import { cn } from "@/lib/utils"
+import { QRCodeDisplay } from "@/app/_components/qr-code-display"
 
 type Reservation = {
   id: string
@@ -29,6 +30,7 @@ type Reservation = {
   reservedAtFormatted: string
   collectedAtFormatted: string | null
   cancelledAtFormatted: string | null
+  qrCode?: string
 }
 
 const statusLabels: Record<string, string> = {
@@ -196,6 +198,12 @@ export function MesReservations() {
                   )}
                 </div>
               </div>
+
+              {res.qrCode && res.status === "confirmed" && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <QRCodeDisplay qrCodeDataUrl={res.qrCode} reservationCode={res.reservationCode} />
+                </div>
+              )}
             </div>
           ))}
         </div>

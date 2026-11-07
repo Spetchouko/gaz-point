@@ -5,6 +5,7 @@ import { eq, desc, ilike, or, and, inArray, notInArray, sql } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { db } from "@/db"
 import { hashPassword } from "better-auth/crypto"
+import { normalizePhone } from "@/lib/phone"
 import {
   user as userTable,
   account as accountTable,
@@ -528,14 +529,14 @@ export async function createVendor(
   if (!email) return { ok: false, message: "L'email est requis." }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, message: "Format d'email invalide." }
   if (password && password.length < 6) return { ok: false, message: "Le mot de passe doit contenir au moins 6 caractères." }
-  if (phoneNumber && !/^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{1,9}$/.test(phoneNumber)) {
-    return { ok: false, message: "Format de téléphone invalide." }
+  if (phoneNumber && !normalizePhone(phoneNumber)) {
+    return { ok: false, message: "Format de téléphone invalide. Le numéro doit contenir 9 chiffres (ex: 690123456)." }
   }
 
   const existingUser = await db.select({ id: userTable.id }).from(userTable).where(eq(userTable.email, email)).limit(1)
   if (existingUser.length > 0) return { ok: false, message: "Cette adresse email est déjà utilisée." }
 
-  const cleanPhoneNumber = phoneNumber?.replace(/[^\d+]/g, "") || null
+  const cleanPhoneNumber = normalizePhone(phoneNumber) || null
   const userId = randomUUID()
 
   await db.insert(userTable).values({
@@ -593,11 +594,11 @@ export async function updateVendor(
 
   if (!userId) return { ok: false, message: "Utilisateur introuvable." }
   if (!name) return { ok: false, message: "Le nom est requis." }
-  if (phoneNumber && !/^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{1,9}$/.test(phoneNumber)) {
-    return { ok: false, message: "Format de téléphone invalide." }
+  if (phoneNumber && !normalizePhone(phoneNumber)) {
+    return { ok: false, message: "Format de téléphone invalide. Le numéro doit contenir 9 chiffres (ex: 690123456)." }
   }
 
-  const cleanPhoneNumber = phoneNumber?.replace(/[^\d+]/g, "") || null
+  const cleanPhoneNumber = normalizePhone(phoneNumber) || null
 
   await db
     .update(userTable)
@@ -1071,8 +1072,8 @@ export async function createAdminCollaborator(
   if (!email) return { ok: false, message: "L'email est requis." }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, message: "Format d'email invalide." }
   if (!password || password.length < 8) return { ok: false, message: "Le mot de passe doit contenir au moins 8 caractères." }
-  if (phoneNumber && !/^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{1,9}$/.test(phoneNumber)) {
-    return { ok: false, message: "Format de téléphone invalide." }
+  if (phoneNumber && !normalizePhone(phoneNumber)) {
+    return { ok: false, message: "Format de téléphone invalide. Le numéro doit contenir 9 chiffres (ex: 690123456)." }
   }
   if (!["super_admin", "admin", "moderator"].includes(adminRole)) {
     return { ok: false, message: "Rôle administrateur invalide." }
@@ -1081,7 +1082,7 @@ export async function createAdminCollaborator(
   const existingUser = await db.select({ id: userTable.id }).from(userTable).where(eq(userTable.email, email)).limit(1)
   if (existingUser.length > 0) return { ok: false, message: "Cette adresse email est déjà utilisée." }
 
-  const cleanPhoneNumber = phoneNumber?.replace(/[^\d+]/g, "") || null
+  const cleanPhoneNumber = normalizePhone(phoneNumber) || null
   const userId = randomUUID()
 
   await db.insert(userTable).values({
@@ -1175,14 +1176,14 @@ export async function updateAdminCollaborator(
 
   if (!userId) return { ok: false, message: "Collaborateur introuvable." }
   if (!name) return { ok: false, message: "Le nom est requis." }
-  if (phoneNumber && !/^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{1,9}$/.test(phoneNumber)) {
-    return { ok: false, message: "Format de téléphone invalide." }
+  if (phoneNumber && !normalizePhone(phoneNumber)) {
+    return { ok: false, message: "Format de téléphone invalide. Le numéro doit contenir 9 chiffres (ex: 690123456)." }
   }
   if (!["super_admin", "admin", "moderator"].includes(adminRole)) {
     return { ok: false, message: "Rôle administrateur invalide." }
   }
 
-  const cleanPhoneNumber = phoneNumber?.replace(/[^\d+]/g, "") || null
+  const cleanPhoneNumber = normalizePhone(phoneNumber) || null
 
   await db
     .update(userTable)

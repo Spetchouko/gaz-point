@@ -32,5 +32,14 @@ async function handleAuthPost(req: Request): Promise<Response> {
     }
   }
 
-  return handler.POST(req);
+  try {
+    return await handler.POST(req);
+  } catch (error) {
+    console.error("[Better Auth] Handler error:", {
+      path,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    throw error;
+  }
 }

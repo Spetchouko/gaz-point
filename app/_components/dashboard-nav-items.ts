@@ -41,7 +41,7 @@ export function getVendorNavItems(): DashboardNavItem[] {
     { href: "/dashboard/vendeur", label: "Tableau de bord", icon: LayoutDashboard },
     { href: "/dashboard/vendeur/points-de-vente", label: "Mon point de vente", icon: MapPin },
     { href: "/dashboard/vendeur/disponibilites", label: "Disponibilités de gaz", icon: Cylinder },
-    { href: "/dashboard/vendeur/consignations", label: "Mes consignations", icon: Shield },
+    { href: "/dashboard/vendeur/reservations", label: "Mes réservations", icon: Shield },
     { href: "/dashboard/vendeur/profil", label: "Mon profil", icon: User },
   ]
 }

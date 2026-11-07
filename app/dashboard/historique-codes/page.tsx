@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/session"
 import { HistoriqueCodes } from "@/app/_components/historique-codes"
 
 export const metadata: Metadata = {
-  title: { absolute: "Historique des codes de consignation | GazPoints" },
+  title: { absolute: "Historique des codes de réservation | GazPoints" },
 }
 
 export default async function HistoriqueCodesPage() {

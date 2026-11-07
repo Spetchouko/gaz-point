@@ -9,6 +9,7 @@ import {
   recordConversionFromRequest,
 } from "@/lib/publicite-attribution"
 import { sendNewConsignationEmail } from "@/lib/email"
+import { generateReservationQRCode } from "@/lib/qrcode"
 
 const DEFAULT_RESERVATION_AMOUNT = 1000 // FCFA
 const RESERVATION_EXPIRY_MINUTES = 1440 // 24 heures
@@ -38,7 +39,7 @@ async function ensureUniqueCode(baseCode: string): Promise<string> {
     attempts++
   }
   // Dernière tentative : si toujours collision, on lève une erreur gérée par le catch
-  throw new Error("Impossible de générer un code de consignation unique")
+  throw new Error("Impossible de générer un code de réservation unique")
 }
 
 function cleanText(value: unknown, max: number): string | null {
@@ -290,7 +291,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Notification par e-mail au vendeur propriétaire du point de vente.
-    // L'échec d'envoi ne doit pas annuler la consignation déjà enregistrée.
+    // L'échec d'envoi ne doit pas annuler la réservation déjà enregistrée.
+    // Génération du QR Code (Data URL base64 PNG)
+    const qrCodeDataUrl = await generateReservationQRCode(reservationCode)
+
     if (point.vendorEmail) {
       await sendNewConsignationEmail({
         vendorEmail: point.vendorEmail,
@@ -299,6 +303,7 @@ export async function POST(req: NextRequest) {
         brand,
         format,
         reservedAt: new Date(),
+        clientName: currentUser.name,
       }).catch((err) => {
         console.error("[reservation/create] email notification failed:", err)
       })
@@ -309,6 +314,7 @@ export async function POST(req: NextRequest) {
       reservation: {
         id: reservationId,
         code: reservationCode,
+        qrCode: qrCodeDataUrl,
         expiresAt: expiresAt.toISOString(),
         amount: DEFAULT_RESERVATION_AMOUNT,
         amountType,

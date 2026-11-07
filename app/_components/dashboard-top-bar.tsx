@@ -43,7 +43,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/dashboard/vendeur": "Tableau de bord vendeur",
   "/dashboard/vendeur/points-de-vente": "Mon point de vente",
   "/dashboard/vendeur/disponibilites": "Disponibilités de gaz",
-  "/dashboard/vendeur/consignations": "Mes consignations",
+  "/dashboard/vendeur/reservations": "Mes réservations",
   "/dashboard/vendeur/profil": "Mon profil",
 }
 

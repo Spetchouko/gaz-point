@@ -14,6 +14,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { formatPrice } from "@/lib/gaz"
+import { QRCodeDisplay } from "@/app/_components/qr-code-display"
 
 export type ReservationResult = {
   code: string
@@ -26,6 +27,7 @@ export type ReservationResult = {
   pointName: string
   pointDistrict: string
   reservedAt: string
+  qrCode?: string
 }
 
 type PointData = {
@@ -97,16 +99,19 @@ export function ReservationModal({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-success">
               <CheckCircle className="size-5" />
-              Consignation confirmée
+              Réservation confirmée
             </DialogTitle>
             <DialogDescription>
-              Votre consignation a été enregistrée avec succès.
+              Votre réservation a été enregistrée avec succès.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {success.qrCode && (
+              <QRCodeDisplay qrCodeDataUrl={success.qrCode} reservationCode={success.code} />
+            )}
             <div className="rounded-lg bg-success/5 border border-success/20 p-4">
               <p className="text-center text-xs font-medium uppercase tracking-wide text-success">
-                Code de consignation
+                Code de réservation
               </p>
               <p className="mt-1 text-center font-mono text-lg font-bold tracking-wider text-success">
                 {success.code}
@@ -114,7 +119,7 @@ export function ReservationModal({
               <p className="mt-1 text-center text-sm text-success">
                 À présenter au vendeur pour le retrait
               </p>
-              <p className="mt-2 text-center text-xs text-success-foreground0">
+              <p className="mt-2 text-center text-xs text-success">
                 Expire le{" "}
                 {new Date(success.expiresAt).toLocaleString("fr-FR", {
                   day: "2-digit",

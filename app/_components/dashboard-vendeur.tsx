@@ -9,6 +9,8 @@ import {
   Shield,
   CheckCircle2,
   AlertCircle,
+  Activity,
+  User,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -56,8 +58,8 @@ type GlobalStats = {
   totalQuantity: number
   availablePoints: number
   lastUpdate: Date | null
-  totalConsignations: number
-  pendingConsignations: number
+  totalReservations: number
+  pendingReservations: number
 }
 
 export function DashboardVendeur({
@@ -92,430 +94,333 @@ export function DashboardVendeur({
     phone: string | null
   }) => {
     setPointPending(true)
-    setPointAction(null)
-    const result = await createPointDeVenteVendor(null, {
-      name: values.name,
-      district: values.district,
-      address: values.address,
-      phone: values.phone,
-    } as unknown as FormData)
-    setPointAction(result)
-    setPointPending(false)
-    if (result.ok) {
-      router.push("/dashboard/vendeur/points-de-vente")
+    try {
+      const formData = new FormData()
+      formData.set("name", values.name)
+      formData.set("district", values.district)
+      formData.set("address", values.address)
+      if (values.phone) formData.set("phone", values.phone)
+      const result = await createPointDeVenteVendor(null, formData)
+      setPointAction(result)
+    } finally {
+      setPointPending(false)
     }
   }
 
-  const handleTogglePoint = async (pointId: string, isActive: boolean) => {
+  const handleTogglePoint = async (pointId: string) => {
     setPointPending(true)
-    setPointAction(null)
-    const result = await togglePointDeVente(null, {
-      pointId,
-    } as unknown as FormData)
-    setPointAction(result)
-    setPointPending(false)
-    if (result.ok) {
-      router.push("/dashboard/vendeur")
+    try {
+      const formData = new FormData()
+      formData.set("pointId", pointId)
+      formData.set("isActive", "true")
+      const result = await togglePointDeVente(null, formData)
+      setPointAction(result)
+    } finally {
+      setPointPending(false)
     }
   }
 
   const handleDeletePoint = async (pointId: string) => {
-    setPointPending(true)
-    setPointAction(null)
-    const result = await deletePointDeVenteVendor(null, {
-      pointId,
-    } as unknown as FormData)
-    setPointAction(result)
-    setPointPending(false)
-    if (result.ok) {
-      router.push("/dashboard/vendeur")
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer ce point de vente ?")) {
+      const formData = new FormData()
+      formData.set("pointId", pointId)
+      const result = await deletePointDeVenteVendor(null, formData)
+      setPointAction(result)
     }
-  }
-
-  const handleAddDispo = (point?: PointWithStats) => {
-    if (point) {
-      setEditingDispo({
-        dispo: {
-          id: "",
-          format: null,
-          status: "disponible",
-          phone: null,
-          quantity: null,
-          note: null,
-          createdAt: new Date().toISOString(),
-        },
-        pointId: point.id,
-        pointName: point.name,
-      })
-    }
-    setIsFormOpen(true)
-  }
-
-  const handleEditDispo = (
-    dispo: PointWithStats["disponibilites"][0],
-    pointId: string,
-    pointName: string
-  ) => {
-    setEditingDispo({ dispo, pointId, pointName })
-    setIsFormOpen(true)
-  }
-
-  const handleCloseForm = () => {
-    setIsFormOpen(false)
-    setEditingDispo(null)
-  }
-
-  const allDispos = useMemo(
-    () =>
-      points.flatMap((point) =>
-        point.disponibilites.map((dispo) => ({
-          ...dispo,
-          pointId: point.id,
-          pointName: point.name,
-        }))
-      ),
-    [points],
-  )
-
-  const firstName = vendorName.split(" ")[0]
-
-  if (points.length === 0) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="max-w-4xl mx-auto">
-          <header className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-                Tableau de bord vendeur
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Bonjour {firstName}, voici ton espace de gestion
-              </p>
-            </div>
-            <Badge variant="secondary">Vendeur</Badge>
-          </header>
-
-          <Card className="max-w-2xl mx-auto border-2 border-dashed border-primary/20 rounded-2xl bg-primary/5">
-            <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
-              <span className="flex size-16 items-center justify-center rounded-full bg-primary/20 text-primary">
-                <Store className="size-8" aria-hidden />
-              </span>
-              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                Créez votre premier point de vente
-              </h2>
-              <p className="text-sm text-muted-foreground max-w-md">
-                Enregistrez votre point de vente pour permettre aux clients de
-                vous trouver et de consulter vos disponibilités en gaz.
-              </p>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  const formData = new FormData(e.currentTarget)
-                  handleCreatePoint({
-                    name: formData.get("name") as string,
-                    district: formData.get("district") as string,
-                    address: formData.get("address") as string,
-                    phone: (formData.get("phone") as string) || null,
-                  })
-                }}
-                className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:max-w-md"
-              >
-                <div className="flex-1 sm:w-auto space-y-2">
-                  <label className="block text-xs font-medium text-muted-foreground">
-                    Nom du point de vente
-                  </label>
-                  <input
-                    name="name"
-                    type="text"
-                    required
-                    placeholder="Ex: Dépôt Akwa"
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                  />
-                </div>
-                <div className="flex-1 sm:w-auto space-y-2">
-                  <label className="block text-xs font-medium text-muted-foreground">
-                    Quartier
-                  </label>
-                  <input
-                    name="district"
-                    type="text"
-                    required
-                    placeholder="Ex: Akwa"
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                  />
-                </div>
-                <div className="flex-1 sm:w-auto space-y-2">
-                  <label className="block text-xs font-medium text-muted-foreground">
-                    Adresse
-                  </label>
-                  <input
-                    name="address"
-                    type="text"
-                    required
-                    placeholder="Ex: Rue de la Paix, 123"
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                  />
-                </div>
-                <div className="flex-1 sm:w-auto space-y-2">
-                  <label className="block text-xs font-medium text-muted-foreground">
-                    Téléphone (facultatif)
-                  </label>
-                  <input
-                    name="phone"
-                    type="tel"
-                    placeholder="Ex: +237 6 99 00 00 00"
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  variant="default"
-                  size="lg"
-                  disabled={pointPending}
-                  className="whitespace-nowrap flex-1 sm:flex-none"
-                >
-                  {pointPending ? (
-                    <>
-                      <Store className="size-4 mr-2 animate-spin" /> Création en cours…
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="size-4 mr-2" />
-                      Créer mon point de vente
-                    </>
-                  )}
-                </Button>
-              </form>
-
-              {pointAction && (
-                <div
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-3 rounded-lg text-sm",
-                    pointAction.ok
-                      ? "bg-success/10 border border-success/20 text-success"
-                      : "bg-destructive/10 border border-destructive/20 text-destructive"
-                  )}
-                >
-                  {pointAction.ok ? <CheckCircle2 className="size-4" /> : <AlertCircle className="size-4" />}
-                  {pointAction.message}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto">
-        {/* Bienvenue */}
-        <header className="mb-6">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              Bonjour {firstName} !
-            </h1>
+    <div className="space-y-6">
+      {/* En-tête du dashboard */}
+      <header className="border-b border-border/20 pb-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold tracking-tight">
+            Bienvenue dans votre espace professionnel !
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Gérez votre point de vente et informez les clients de vos
+            disponibilités en gaz.
+          </p>
+          {vendorName && (
             <p className="mt-1 text-sm text-muted-foreground">
-              Bienvenue sur votre espace GazPoints. Gérez vos points de vente et
-              publiez vos disponibilités de gaz en toute autonomie.
+              {`Bonjour ${vendorName.split(" ")[0]}, depuis votre espace professionnel, vous pouvez publier vos disponibilités, gérer vos bouteilles, consulter les réservations et suivre votre activité.`}
             </p>
-          </div>
-        </header>
-
-        {/* Cartes statistiques simplifiées */}
-        <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="bg-white rounded-xl border border-border p-4 shadow-sm">
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Points de vente
-                  </p>
-                  <p className="text-2xl font-bold tracking-tight">
-                    {globalStats.totalPoints}
-                  </p>
-                </div>
-                <div className="flex size-10 items-center justify-center rounded-xl bg-primary/50 text-primary border border-primary/100">
-                  <Store className="size-5" />
-                </div>
-              </div>
-              <CardDescription className="mt-2 text-xs text-muted-foreground">
-                Vos établissements
-              </CardDescription>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white rounded-xl border border-border p-4 shadow-sm">
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Disponibilités actives
-                  </p>
-                  <p className="text-2xl font-bold tracking-tight text-success">
-                    {globalStats.availablePoints}
-                  </p>
-                </div>
-                <div className="flex size-10 items-center justify-center rounded-xl bg-success/50 text-success border border-success/100">
-                  <CheckCircle2 className="size-5" />
-                </div>
-              </div>
-              <CardDescription className="mt-2 text-xs text-muted-foreground">
-                Points actuellement approvisionnés
-              </CardDescription>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white rounded-xl border border-border p-4 shadow-sm">
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Consignations reçues
-                  </p>
-                  <p className="text-2xl font-bold tracking-tight text-primary">
-                    {globalStats.totalConsignations}
-                  </p>
-                </div>
-                <div className="flex size-10 items-center justify-center rounded-xl bg-primary/50 text-primary border border-primary/100">
-                  <Shield className="size-5" />
-                </div>
-              </div>
-              <CardDescription className="mt-2 text-xs text-muted-foreground">
-                Codes de consignation de vos clients
-              </CardDescription>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white rounded-xl border border-border p-4 shadow-sm">
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    En attente
-                  </p>
-                  <p className="text-2xl font-bold tracking-tight text-warning">
-                    {globalStats.pendingConsignations}
-                  </p>
-                </div>
-                <div className="flex size-10 items-center justify-center rounded-xl bg-warning/50 text-warning border border-warning/100">
-                  <RefreshCw className="size-5" />
-                </div>
-              </div>
-              <CardDescription className="mt-2 text-xs text-muted-foreground">
-                Consignations à traiter
-              </CardDescription>
-            </CardContent>
-          </Card>
+          )}
         </div>
+      </header>
 
-        {/* Raccourcis principaux */}
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-bold tracking-tight">
-              Actions rapides
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Gérez votre activité en quelques clics.
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Button
-              variant="default"
-              className="flex items-center gap-2"
-              onClick={() => router.push("/dashboard/vendeur/points-de-vente")}
-            >
-              <Plus className="size-4" />
-              Ajouter un point de vente
-            </Button>
-            <Button
-              variant="default"
-              className="flex items-center gap-2"
-              onClick={() => handleAddDispo()}
-            >
-              <Cylinder className="size-4" />
-              Publier une disponibilité
-            </Button>
-          </div>
+      {/* Raccourcis principaux */}
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-bold tracking-tight">
+            Actions rapides
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Gérez votre activité en quelques clics.
+          </p>
         </div>
+        <div className="flex gap-3">
+          <Button
+            variant="default"
+            className="flex items-center gap-2"
+            onClick={() => router.push("/dashboard")}
+          >
+            <Activity className="size-4" /> Trouver du gaz
+          </Button>
+        </div>
+      </div>
 
-        {/* Section : Recherche de gaz (même logique que le client) */}
-        <section className="mb-6">
-          <div className="rounded-xl border border-border bg-white p-4 sm:p-6 shadow-sm">
-            <TrouverMonGaz />
-          </div>
-        </section>
-
-        {/* Mes points de vente */}
-        <div className="mb-6">
-          <h2 className="text-lg font-bold tracking-tight mb-4">
+      {/* Section : Points de vente */}
+      <section className="mb-6">
+        <div className="mb-4 sm:mb-6">
+          <h2 className="text-lg font-bold tracking-tight">
             Mes points de vente
           </h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {points.map((point) => (
-              <PointDeVenteCard
-                key={point.id}
-                variant="vendor"
-                id={point.id}
-                name={point.name}
-                district={point.district}
-                address={point.address}
-                phone={point.phone}
-                status={point.effectiveStatus}
-                disposCount={point.disponibilites.length}
-                isActive={point.isAvailable}
-                onView={() => {}}
-                onEdit={() => {
-                  // Navigation to point details handled by points-de-vente page
-                }}
-                onManageDispos={() => {
-                  setEditingDispo({
-                    dispo: {
-                      id: "",
-                      format: null,
-                      status: "disponible",
-                      phone: null,
-                      quantity: null,
-                      note: null,
-                      createdAt: new Date().toISOString(),
-                    },
-                    pointId: point.id,
-                    pointName: point.name,
-                  })
-                  setIsFormOpen(true)
-                }}
-                onDelete={() => {
-                  if (
-                    window.confirm(
-                      "Êtes-vous sûr de vouloir supprimer ce point de vente ?"
-                    )
-                  ) {
-                    deletePointDeVenteVendor(null, {
-                      pointId: point.id,
-                    } as unknown as FormData)
-                  }
-                }}
-              />
-            ))}
-          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Consultez vos points de vente enregistrés et gérez vos disponibilités.
+          </p>
         </div>
 
-        <DisponibiliteForm
-          key={`${isFormOpen ? "open" : "closed"}-${editingDispo?.dispo.id ?? "new"}`}
-          open={isFormOpen}
-          onClose={handleCloseForm}
-          editingDispo={editingDispo}
-          points={points.map((p) => ({
-            id: p.id,
-            name: p.name,
-            district: p.district,
-            address: p.address,
-            phone: p.phone,
-            disponibilites: p.disponibilites,
-          }))}
-        />
-      </div>
+        <div className="rounded-xl border border-border bg-white p-4 sm:p-6 shadow-sm">
+          {/* Message quand aucun point de vente */}
+          {points.length === 0 ? (
+            <div className="min-h-[300px] flex flex-col items-center justify-center py-12">
+              <span className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-4">
+                <Store className="size-6" />
+              </span>
+              <p className="font-medium">Aucun point de vente pour l'instant</p>
+              <p className="text-sm text-muted-foreground max-w-md">
+                Ajoutez votre premier point de vente pour commencer à gérer vos
+                disponibilités de gaz.
+              </p>
+              <Button
+                onClick={() => setIsFormOpen(true)}
+                className="mt-4 mt-auto"
+                variant="default"
+              >
+                <Plus className="size-4" /> Ajouter un point de vente
+              </Button>
+            </div>
+          ) : (
+            /* Points de vente existants */
+            <div className="space-y-4">
+              {points.map((point) => (
+                <PointDeVenteCard
+                  key={point.id}
+                  id={point.id}
+                  name={point.name}
+                  district={point.district}
+                  address={point.address}
+                  phone={point.phone}
+                  disposCount={point.disponibilites.length}
+                  status={point.effectiveStatus}
+                  isActive={point.isAvailable}
+                  onManageDispos={() => {
+                    setEditingDispo({
+                      dispo: {
+                        id: "",
+                        format: null,
+                        status: "disponible",
+                        phone: null,
+                        quantity: null,
+                        note: null,
+                        createdAt: new Date().toISOString(),
+                      },
+                      pointId: point.id,
+                      pointName: point.name,
+                    })
+                    setIsFormOpen(true)
+                  }}
+                  onDelete={() => handleDeletePoint(point.id)}
+                  variant="vendor"
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Formulaire pour créer un nouveau point de vente */}
+          {isFormOpen && (
+            <div className="mt-8 max-w-md">
+              <Card className="p-6">
+                <CardHeader>
+                  <CardTitle>Nouveau point de vente</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault()
+                      const formData = new FormData(e.currentTarget)
+                      handleCreatePoint({
+                        name: String(formData.get("name") ?? "").trim(),
+                        district: String(formData.get("district") ?? "").trim(),
+                        address: String(formData.get("address") ?? "").trim(),
+                        phone: (String(formData.get("phone") ?? "").trim()) || null,
+                      })
+                    }}
+                    className="grid gap-4"
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-muted-foreground">
+                          Nom du point de vente
+                        </label>
+                        <input
+                          type="text"
+                          name="name"
+                          required
+                          placeholder="Ex: Dépôt Akwa"
+                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-muted-foreground">
+                          Quartier
+                        </label>
+                        <input
+                          type="text"
+                          name="district"
+                          required
+                          placeholder="Ex: Akwa"
+                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-muted-foreground">
+                          Adresse complète
+                        </label>
+                        <input
+                          type="text"
+                          name="address"
+                          required
+                          placeholder="Ex: Rue de la Paix, 123"
+                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-muted-foreground">
+                          Téléphone (optionnel)
+                        </label>
+                        <input
+                          type="tel"
+                          name="phone"
+                          placeholder="Ex: +237 6 99 00 00 00"
+                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-3">
+                      <Button
+                        type="button"
+                        onClick={() => setIsFormOpen(false)}
+                        className="flex-1"
+                      >
+                        Annuler
+                      </Button>
+                      <Button
+                        type="submit"
+                        className="ml-auto"
+                        disabled={pointPending}
+                      >
+                        {pointPending ? (
+                          <>
+                            <Store className="size-4 mr-2 animate-spin" />
+                            Création en cours…
+                          </>
+                        ) : (
+                          "Créer"
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Section : Statistiques du tableau de bord */}
+      <section className="mb-6">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="bg-white rounded-xl border border-border p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Points de vente
+                </p>
+                <p className="text-2xl font-bold tracking-tight text-primary">
+                  {globalStats.totalPoints}
+                </p>
+              </div>
+              <div className="flex size-10 items-center justify-center rounded-xl bg-primary/50 text-primary border border-primary/100">
+                <Store className="size-5" />
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Enregistrés
+            </p>
+          </div>
+
+          <div className="bg-white rounded-xl border border-border p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Disponibilités
+                </p>
+                <p className="text-2xl font-bold tracking-tight text-success">
+                  {globalStats.totalDispos}
+                </p>
+              </div>
+              <div className="flex size-10 items-center justify-center rounded-xl bg-success/50 text-success border border-success/100">
+                <Activity className="size-5" />
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Actives
+            </p>
+          </div>
+
+          <div className="bg-white rounded-xl border border-border p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Réservations
+                </p>
+                <p className="text-2xl font-bold tracking-tight text-warning">
+                  {globalStats.totalReservations}
+                </p>
+              </div>
+              <div className="flex size-10 items-center justify-center rounded-xl bg-warning/50 text-warning border border-warning/100">
+                <Shield className="size-5" />
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Reçues
+            </p>
+          </div>
+
+          <div className="bg-white rounded-xl border border-border p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Stock total
+                </p>
+                <p className="text-2xl font-bold tracking-tight">
+                  {globalStats.totalQuantity} bouteille(s)
+                </p>
+              </div>
+              <div className="flex size-10 items-center justify-center rounded-xl bg-primary/50 text-primary border border-primary/100">
+                <Cylinder className="size-5" />
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              En stock
+            </p>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

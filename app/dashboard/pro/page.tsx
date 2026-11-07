@@ -1,7 +1,8 @@
 import { asc, desc, eq, inArray } from "drizzle-orm"
 import type { Metadata } from "next"
+import { redirect } from "next/navigation"
 import { db } from "@/db"
-import { disponibilite, pointDeVente, user as userTable } from "@/db/schema"
+import { disponibilite, pointDeVente } from "@/db/schema"
 import { EspacePro } from "@/app/_components/espace-pro"
 import { requirePro } from "@/lib/session"
 
@@ -14,27 +15,19 @@ type ReportRow = typeof disponibilite.$inferSelect
 export default async function EspaceProPage() {
   const { user, role } = await requirePro()
 
-  const points =
-    role === "admin"
-      ? await db.select().from(pointDeVente).orderBy(asc(pointDeVente.name))
-      : await db
-          .select()
-          .from(pointDeVente)
-          .where(eq(pointDeVente.vendorId, user.id))
-          .orderBy(asc(pointDeVente.name))
+  // Interdire l'accès aux administrateurs : rediriger vers le dashboard admin
+  if (role === "admin" || role === "collaborateur") {
+    redirect("/admin")
+  }
 
-  const vendors =
-    role === "admin"
-      ? await db
-          .select({
-            id: userTable.id,
-            name: userTable.name,
-            email: userTable.email,
-          })
-          .from(userTable)
-          .where(eq(userTable.role, "vendor"))
-          .orderBy(asc(userTable.name))
-      : []
+  // Dans ce bloc, role est obligatoirement "vendor"
+  const points = await db
+    .select()
+    .from(pointDeVente)
+    .where(eq(pointDeVente.vendorId, user.id))
+    .orderBy(asc(pointDeVente.name))
+
+  const vendors: { id: string; name: string; email: string }[] = []
 
   const reportByPoint = new Map<string, ReportRow>()
   if (points.length > 0) {

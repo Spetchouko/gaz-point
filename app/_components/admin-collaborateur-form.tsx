@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { PhoneInput } from "@/app/_components/phone-input"
 import { PasswordField } from "@/components/ui/password-field"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -90,12 +91,11 @@ export function AdminCollaborateurForm() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="collab-phoneNumber">Téléphone</Label>
-                <Input
+                <PhoneInput
                   id="collab-phoneNumber"
                   name="phoneNumber"
-                  type="tel"
-                  placeholder="+237 6 99 00 00 00"
+                  label="Téléphone"
+                  className="pl-10 h-11"
                 />
               </div>
               <div className="space-y-1.5">

@@ -11,6 +11,7 @@ import {
   type AvailabilityStatus,
 } from "@/db/schema"
 import { requirePro } from "@/lib/session"
+import { normalizePhone } from "@/lib/phone"
 
 export type ActionResult = { ok: boolean; message: string }
 
@@ -68,6 +69,8 @@ export async function reportDisponibilite(
     }
   }
 
+  const cleanPhone = normalizePhone(phone) || null
+
   await db.insert(disponibilite).values({
     id: randomUUID(),
     pointId,
@@ -76,7 +79,7 @@ export async function reportDisponibilite(
     quantity,
     price,
     format,
-    phone,
+    phone: cleanPhone,
     reportedBy: user.id,
     reportedByName: user.name,
     source: role === "admin" ? "administration" : "vendeur",
@@ -271,8 +274,9 @@ export async function upsertDisponibilite(
   if (quantity === null || !Number.isFinite(quantity) || quantity < 0) {
     return { ok: false, message: "Quantité invalide (entier >= 0 requis)." }
   }
-  if (phone && !/^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{1,9}$/.test(phone)) {
-    return { ok: false, message: "Format de téléphone invalide." }
+  const cleanPhone = normalizePhone(phone) || null
+  if (phone && !cleanPhone) {
+    return { ok: false, message: "Format de téléphone invalide. Le numéro doit contenir 9 chiffres (ex: 690123456)." }
   }
 
   const [point] = await db
@@ -333,7 +337,7 @@ export async function upsertDisponibilite(
         status: effectiveStatus,
         format,
         quantity,
-        phone,
+        phone: cleanPhone,
         note: directions,
       })
       .where(eq(disponibilite.id, disponibiliteId))
@@ -357,7 +361,7 @@ export async function upsertDisponibilite(
         .set({
           status: effectiveStatus,
           quantity,
-          phone,
+          phone: cleanPhone,
           note: directions,
         })
         .where(eq(disponibilite.id, existing.id))
@@ -374,7 +378,7 @@ export async function upsertDisponibilite(
         status: effectiveStatus,
         format,
         quantity,
-        phone,
+        phone: cleanPhone,
         note: directions,
         reportedBy: user.id,
         reportedByName: user.name,
@@ -415,8 +419,9 @@ export async function createPointDeVenteVendor(
     }
   }
 
-  if (phone && !/^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{1,9}$/.test(phone)) {
-    return { ok: false, message: "Format de téléphone invalide." }
+  const cleanPhone = normalizePhone(phone) || null
+  if (phone && !cleanPhone) {
+    return { ok: false, message: "Format de téléphone invalide. Le numéro doit contenir 9 chiffres (ex: 690123456)." }
   }
 
   await db.insert(pointDeVente).values({
@@ -424,7 +429,7 @@ export async function createPointDeVenteVendor(
     name,
     district,
     address,
-    phone,
+    phone: cleanPhone,
     vendorId: user.id,
     isActive: true,
     createdAt: new Date(),

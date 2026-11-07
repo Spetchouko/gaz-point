@@ -44,12 +44,17 @@ export function DashboardClient({
       <header className="mb-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Tableau de bord
+            Bienvenue sur votre espace client !
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Bonjour {firstName}, retrouve rapidement ta bouteille de gaz
-            disponible près de chez toi.
+            Trouvez facilement votre bouteille de gaz et consultez les
+            disponibilités près de chez vous.
           </p>
+          {firstName && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              {`Bonjour ${firstName}, votre espace personnel vous permet de rechercher du gaz, de réserver une bouteille disponible et de suivre vos réservations.`}
+            </p>
+          )}
         </div>
       </header>
 

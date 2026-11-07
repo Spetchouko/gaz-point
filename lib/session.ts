@@ -15,7 +15,15 @@ export type SessionUser = {
   image?: string | null
   role?: string | null
   phoneNumber?: string | null
+  phoneVerified?: boolean
+  phoneNumberVerified?: boolean
+  isActive?: boolean
   mustChangePassword?: boolean
+  approvalStatus?: string
+  approvalRequestedAt?: Date | null
+  approvalProcessedAt?: Date | null
+  approvalProcessedBy?: string | null
+  rejectionReason?: string | null
   createdAt?: Date
   updatedAt?: Date
 }

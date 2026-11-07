@@ -1,7 +1,27 @@
 import nodemailer from "nodemailer"
 
-const GMAIL_USER = process.env.GMAIL_USER
-const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD
+/**
+ * Résolution des identifiants SMTP Gmail.
+ * Supporte deux conventions de noms de variables d'environnement :
+ *  - GMAIL_USER / GMAIL_APP_PASSWORD (préférées)
+ *  - EMAIL_USER / EMAIL_PASS (compatibilité)
+ * La première paire trouvée est utilisée. Les identifiants ne sont jamais
+ * exposés dans les logs ni transmis au navigateur.
+ */
+export function resolveSmtpCredentials(): { user: string; pass: string } | null {
+  const user =
+    process.env.GMAIL_USER ??
+    process.env.EMAIL_USER ??
+    process.env.SMTP_USER ??
+    undefined
+  const pass =
+    process.env.GMAIL_APP_PASSWORD ??
+    process.env.EMAIL_PASS ??
+    process.env.SMTP_PASS ??
+    undefined
+  if (!user || !pass) return null
+  return { user, pass }
+}
 
 interface MailInfo {
   accepted?: unknown[]
@@ -11,22 +31,30 @@ interface MailInfo {
 
 interface Transporter {
   sendMail(options: unknown): Promise<MailInfo>
+  verify(): Promise<boolean>
 }
 
 let cachedTransporter: Transporter | null = null
+let smtpUser = ""
+let smtpPass = ""
 
-function getTransporter(): Transporter {
+export function getTransporter(): Transporter {
   if (cachedTransporter) return cachedTransporter
-  if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
+
+  const creds = resolveSmtpCredentials()
+  if (!creds) {
     throw new Error(
-      "Email non configuré : GMAIL_USER et GMAIL_APP_PASSWORD doivent être définis dans .env."
+      "Email non configuré : définissez GMAIL_USER et GMAIL_APP_PASSWORD (ou EMAIL_USER et EMAIL_PASS) dans les variables d'environnement."
     )
   }
+  smtpUser = creds.user
+  smtpPass = creds.pass
+
   cachedTransporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
     secure: true,
-    auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
+    auth: { user: smtpUser, pass: smtpPass },
   })
   return cachedTransporter
 }
@@ -225,7 +253,7 @@ export async function sendVerificationEmail({
   const text = buildVerificationText({ code, expiresInMinutes, verificationLink: link })
 
   const info = await transporter.sendMail({
-    from: `"GazPoints" <${GMAIL_USER}>`,
+    from: `"GazPoints" <${smtpUser}>`,
     to: email,
     subject: `Verifiez votre adresse email – GazPoints`,
     text,
@@ -249,7 +277,7 @@ export async function sendVerificationEmailResend({
   const text = buildVerificationText({ code, expiresInMinutes, verificationLink: link })
 
   const info = await transporter.sendMail({
-    from: `"GazPoints" <${GMAIL_USER}>`,
+    from: `"GazPoints" <${smtpUser}>`,
     to: email,
     subject: `Nouveau code de verification GazPoints : ${code}`,
     text,
@@ -350,7 +378,7 @@ L'equipe GazPoints
   `
 
   await transporter.sendMail({
-    from: `"GazPoints" <${GMAIL_USER}>`,
+    from: `"GazPoints" <${smtpUser}>`,
     to: vendorEmail,
     subject: title,
     text,
@@ -365,6 +393,7 @@ export interface NewConsignationEmailParams {
   brand: string | null
   format: string | null
   reservedAt: Date
+  clientName: string
 }
 
 interface ConsignationEmailContent {
@@ -373,6 +402,7 @@ interface ConsignationEmailContent {
   brand: string | null
   format: string | null
   reservedAt: Date
+  clientName: string
 }
 
 function buildNewConsignationHtml({
@@ -381,6 +411,7 @@ function buildNewConsignationHtml({
   brand,
   format,
   reservedAt,
+  clientName,
 }: ConsignationEmailContent): string {
   const dateStr = new Intl.DateTimeFormat("fr-FR", {
     dateStyle: "medium",
@@ -392,7 +423,7 @@ function buildNewConsignationHtml({
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nouvelle consignation reçue – GazPoints</title>
+  <title>Nouvelle réservation sur GazPoints</title>
 </head>
 <body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
@@ -410,26 +441,23 @@ function buildNewConsignationHtml({
           </tr>
           <tr>
             <td style="padding:32px 24px;color:#1f2937;">
-              <h1 style="margin:0 0 12px;font-size:22px;font-weight:700;color:#111827;text-align:center;">Nouvelle consignation reçue</h1>
+              <h1 style="margin:0 0 12px;font-size:22px;font-weight:700;color:#111827;text-align:center;">Nouvelle réservation sur GazPoints</h1>
               <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;text-align:center;">
-                Une nouvelle consignation vient d&apos;être effectuée sur votre point de vente GazPoints.
+                Bonjour,
+              </p>
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;text-align:center;">
+                Vous avez reçu une nouvelle réservation sur GazPoints.
               </p>
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin:24px 0;">
                 <tr>
                   <td style="padding:16px 24px;">
-                    <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#111827;">Code de consignation</p>
-                    <p style="margin:0;font-size:18px;font-weight:700;color:#16a34a;letter-spacing:2px;font-family:monospace;">${reservationCode}</p>
+                    <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#111827;">Nom du client</p>
+                    <p style="margin:0;font-size:16px;font-weight:700;color:#16a34a;letter-spacing:1px;font-family:monospace;">${clientName}</p>
                   </td>
                 </tr>
                 <tr>
                   <td style="padding:0 24px 16px 24px;">
-                    <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#111827;">Point de vente</p>
-                    <p style="margin:0;font-size:14px;color:#4b5563;">${pointName}</p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:0 24px 16px 24px;">
-                    <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#111827;">Bouteille</p>
+                    <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#111827;">Format de bouteille</p>
                     <p style="margin:0;font-size:14px;color:#4b5563;">${format ?? "—"}</p>
                   </td>
                 </tr>
@@ -441,24 +469,36 @@ function buildNewConsignationHtml({
                 </tr>
                 <tr>
                   <td style="padding:0 24px 16px 24px;">
-                    <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#111827;">Date et heure</p>
+                    <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#111827;">Point de vente</p>
+                    <p style="margin:0;font-size:14px;color:#4b5563;">${pointName}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 16px 24px;">
+                    <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#111827;">Date de réservation</p>
                     <p style="margin:0;font-size:14px;color:#4b5563;">${dateStr}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 16px 24px;">
+                    <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#111827;">Code de réservation</p>
+                    <p style="margin:0;font-size:18px;font-weight:700;color:#16a34a;letter-spacing:2px;font-family:monospace;">${reservationCode}</p>
                   </td>
                 </tr>
               </table>
               <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;text-align:center;">
-                Connectez-vous à votre espace vendeur pour consulter les détails de cette consignation.
+                Une nouvelle réservation est disponible dans votre espace professionnel.
               </p>
               <div style="text-align:center;margin:24px 0;">
-                <a href="${process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.gazpoints.com"}/dashboard/vendeur/consignations" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 24px;border-radius:8px;font-size:14px;">Voir mes consignations</a>
+                <a href="${process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.gazpoints.com"}/dashboard/vendeur/reservations" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 24px;border-radius:8px;font-size:14px;">Voir mes réservations</a>
               </div>
             </td>
           </tr>
           <tr>
             <td style="background:#f9fafb;padding:24px;border-top:1px solid #e5e7eb;">
-              <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#111827;text-align:center;">L&apos;équipe GazPoints</p>
-              <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">Trouvez votre bouteille de gaz avant de vous déplacer.</p>
-              <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">Contact : gazpoints@gmail.com</p>
+              <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#111827;text-align:center;">L'equipe GazPoints</p>
+              <p style="margin:0;font-size:12px;color:#6b7280;text-align:center;">Trouvez votre bouteille de gaz avant de vous deplacer.</p>
+              <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">www.gazpoints.com</p>
             </td>
           </tr>
         </table>
@@ -476,31 +516,35 @@ function buildNewConsignationText({
   brand,
   format,
   reservedAt,
+  clientName,
 }: ConsignationEmailContent): string {
   const dateStr = new Intl.DateTimeFormat("fr-FR", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(reservedAt)
   return `
-GazPoints — Nouvelle consignation reçue
+GazPoints — Nouvelle réservation
 
 Bonjour,
 
-Une nouvelle consignation vient d'être effectuée sur votre point de vente GazPoints.
+Vous avez reçu une nouvelle réservation sur GazPoints.
 
-Informations de la consignation :
-- Code de consignation : ${reservationCode}
-- Point de vente : ${pointName}
-- Bouteille : ${format ?? "—"}
+Détails :
+- Nom du client : ${clientName}
+- Format de bouteille : ${format ?? "—"}
 - Marque : ${brand ?? "—"}
-- Date : ${dateStr}
+- Point de vente : ${pointName}
+- Date de réservation : ${dateStr}
+- Code de réservation : ${reservationCode}
 
-Connectez-vous à votre espace vendeur pour consulter les détails de cette consignation.
+Une nouvelle réservation est disponible dans votre espace professionnel.
 
----
-L'équipe GazPoints
-Trouvez votre bouteille de gaz avant de vous déplacer.
-Contact : gazpoints@gmail.com
+Connectez-vous à votre dashboard vendeur pour consulter les informations et préparer la remise de la bouteille.
+
+Merci de faire confiance à GazPoints.
+
+L'equipe GazPoints
+www.gazpoints.com
   `
 }
 
@@ -511,6 +555,7 @@ export async function sendNewConsignationEmail({
   brand,
   format,
   reservedAt,
+  clientName,
 }: NewConsignationEmailParams) {
   const transporter = getTransporter()
   const html = buildNewConsignationHtml({
@@ -519,6 +564,7 @@ export async function sendNewConsignationEmail({
     brand,
     format,
     reservedAt,
+    clientName,
   })
   const text = buildNewConsignationText({
     reservationCode,
@@ -526,12 +572,13 @@ export async function sendNewConsignationEmail({
     brand,
     format,
     reservedAt,
+    clientName,
   })
 
   const info = await transporter.sendMail({
-    from: `"GazPoints" <${GMAIL_USER}>`,
+    from: `"GazPoints" <${smtpUser}>`,
     to: vendorEmail,
-    subject: "Nouvelle consignation reçue sur votre point de vente — GazPoints",
+    subject: "Nouvelle réservation sur GazPoints",
     text,
     html,
   })

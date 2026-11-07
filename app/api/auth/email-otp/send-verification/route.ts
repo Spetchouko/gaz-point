@@ -32,6 +32,15 @@ function generateLinkToken(): string {
 }
 
 /**
+ * Log de diagnostic structuré pour tracer l'envoi OTP.
+ * Ne journalise jamais le code OTP, le mot de passe ou les identifiants secrets.
+ */
+function logDiag(step: string, details: Record<string, unknown> = {}) {
+  const timestamp = new Date().toISOString()
+  console.log(`[OTP-DIAG] ${timestamp} | ${step}`, JSON.stringify(details))
+}
+
+/**
  * Envoie (ou renvoie) le code de verification a 6 chiffres.
  *
  * Corps : { email: string, resend?: boolean }
@@ -75,8 +84,11 @@ export async function POST(req: NextRequest) {
     // Anti-enumeration : on repond « ok » sans rien envoyer si le compte est
     // inconnu ou deja verifie (aucune fuite d'information sur les comptes).
     if (!account || account.emailVerified) {
+      logDiag("SKIP_SEND", { email, reason: !account ? "unknown_account" : "already_verified" })
       return NextResponse.json({ ok: true })
     }
+
+    logDiag("ACCOUNT_FOUND", { email, userId: account.id, emailVerified: account.emailVerified })
 
     // 2) Limitation serveur : un seul envoi toutes les 60 s, aligne sur l'UI.
     const now = new Date()
@@ -101,6 +113,7 @@ export async function POST(req: NextRequest) {
         (now.getTime() - new Date(recent.createdAt).getTime()) / 1000
       )
       const remaining = Math.max(1, RESEND_COOLDOWN_SECONDS - elapsed)
+      logDiag("RATE_LIMITED", { email, elapsed, remaining })
       return NextResponse.json(
         {
           error: {
@@ -114,11 +127,14 @@ export async function POST(req: NextRequest) {
 
     // 3) Invalide les eventuels anciens codes et anciens jetons de lien.
     await db.delete(verification).where(eq(verification.identifier, identifier))
+    logDiag("CLEANED_OLD_OTP", { email })
 
     // 4) Genere + stocke un nouveau code a 6 chiffres (stockage hache).
+    logDiag("GENERATING_OTP", { email })
     const code = await auth.api.createVerificationOTP({
       body: { email, type: "email-verification" },
     })
+    logDiag("OTP_GENERATED", { email, codeLength: code?.length ?? 0 })
 
     // 5) Genere et stocke un jeton de verification par lien direct (methode B).
     const linkToken = generateLinkToken()
@@ -131,6 +147,7 @@ export async function POST(req: NextRequest) {
       createdAt: now,
       updatedAt: now,
     })
+    logDiag("LINK_TOKEN_STORED", { email, tokenPrefix: linkToken.slice(0, 8) })
 
     // 6) Construit le lien de verification directe.
     const verificationLink = buildVerificationLink(
@@ -140,6 +157,7 @@ export async function POST(req: NextRequest) {
 
     // 7) Envoi effectif. On confirme le succès QUE si l'envoi a reussi.
     try {
+      logDiag("SENDING_EMAIL", { email, isResend })
       if (isResend) {
         await sendVerificationEmailResend({
           email,
@@ -155,8 +173,10 @@ export async function POST(req: NextRequest) {
           verificationLink,
         })
       }
+      logDiag("EMAIL_SENT_OK", { email, isResend })
     } catch (emailError) {
-      console.error("[send-verification] email send failed:", emailError)
+      const errMsg = emailError instanceof Error ? emailError.message : String(emailError)
+      logDiag("EMAIL_SEND_FAILED", { email, error: errMsg })
       // Nettoie le code et le jeton non delivres : l'utilisateur peut reessayer immediatement.
       await db
         .delete(verification)
@@ -178,6 +198,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true })
   } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err)
+    logDiag("UNEXPECTED_ERROR", { error: errMsg })
     console.error("[send-verification] error:", err)
     return NextResponse.json(
       { error: { message: "Une erreur inattendue est survenue." } },

@@ -165,26 +165,36 @@ function InscriptionUsagerContent() {
       }
 
       // Inscription réussie — déclencher l'envoi du code de vérification à 6 chiffres.
-      // Le compte est déjà créé : un échec d'envoi ne doit pas bloquer l'utilisateur.
-      // On redirige toujours vers la page de validation. L'affichage d'un
-      // éventuel échec d'envoi est géré par la page de validation elle-même
-      // afin de ne jamais afficher un faux message d'erreur si l'email
-      // arrive finalement avec un léger retard.
       const normalizedEmail = email.trim().toLowerCase()
+      let emailSent = false
       try {
-        await fetch("/api/auth/email-otp/send-verification", {
+        const res = await fetch("/api/auth/email-otp/send-verification", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: normalizedEmail, resend: false }),
         })
+        if (res.ok) {
+          emailSent = true
+        } else {
+          const data = await res.json().catch(() => null)
+          console.error("[signup-usager] envoi du code échoué:", data?.error?.message ?? res.statusText)
+          setError(data?.error?.message ?? "L'envoi du code de vérification a échoué. Veuillez réessayer.")
+          setLoading(false)
+          return
+        }
       } catch (sendErr) {
-        console.error("[signup-usager] envoi du code échoué:", sendErr)
+        console.error("[signup-usager] envoi du code échoué (exception):", sendErr)
+        setError("L'envoi du code de vérification a échoué. Veuillez réessayer.")
+        setLoading(false)
+        return
       }
 
-      router.push(
-        `/validation-email?mode=${MODE_EMAIL}&email=${encodeURIComponent(normalizedEmail)}&redirect=${encodeURIComponent(redirectTo)}&sent=1`
-      )
-      router.refresh()
+      if (emailSent) {
+        router.push(
+          `/validation-email?mode=${MODE_EMAIL}&email=${encodeURIComponent(normalizedEmail)}&redirect=${encodeURIComponent(redirectTo)}&sent=1`
+        )
+        router.refresh()
+      }
     } catch (err) {
       console.error("[signup-usager] catch error:", err)
       setError("Une erreur inattendue est survenue. Veuillez réessayer.")

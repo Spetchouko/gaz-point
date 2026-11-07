@@ -4,6 +4,7 @@ import { reservation, pointDeVente } from "@/db/schema"
 import { eq, desc, and, count } from "drizzle-orm"
 import { getCurrentUser } from "@/lib/session"
 import { formatDateTime } from "@/lib/gaz"
+import { generateReservationQRCode } from "@/lib/qrcode"
 
 export async function GET(req: NextRequest) {
   try {
@@ -60,20 +61,28 @@ export async function GET(req: NextRequest) {
       .offset((page - 1) * pageSize)
       .orderBy(desc(reservation.reservedAt))
 
-    // Add computed status (check expiry)
+    // Add computed status (check expiry) and QR Code
     const now = new Date()
-    const reservationsWithStatus = reservations.map((r) => {
-      const isExpired = r.expiresAt && new Date(r.expiresAt) < now
-      const effectiveStatus = isExpired && r.status === "confirmed" ? "expired" : r.status
-      return {
-        ...r,
-        status: effectiveStatus,
-        isExpired,
-        reservedAtFormatted: formatDateTime(r.reservedAt),
-        collectedAtFormatted: r.collectedAt ? formatDateTime(r.collectedAt) : null,
-        cancelledAtFormatted: r.cancelledAt ? formatDateTime(r.cancelledAt) : null,
-      }
-    })
+    const reservationsWithStatus = await Promise.all(
+      reservations.map(async (r) => {
+        const isExpired = r.expiresAt && new Date(r.expiresAt) < now
+        const effectiveStatus = isExpired && r.status === "confirmed" ? "expired" : r.status
+        // Generate QR Code for confirmed reservations
+        const qrCode = effectiveStatus === "confirmed"
+          ? await generateReservationQRCode(r.reservationCode)
+          : undefined
+
+        return {
+          ...r,
+          status: effectiveStatus,
+          isExpired,
+          qrCode,
+          reservedAtFormatted: formatDateTime(r.reservedAt),
+          collectedAtFormatted: r.collectedAt ? formatDateTime(r.collectedAt) : null,
+          cancelledAtFormatted: r.cancelledAt ? formatDateTime(r.cancelledAt) : null,
+        }
+      })
+    )
 
     return NextResponse.json({
       reservations: reservationsWithStatus,

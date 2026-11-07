@@ -113,11 +113,16 @@ function LoginPageContent() {
       const role = (signInData?.user as { role?: string } | undefined)?.role
       const mustChange = (signInData?.user as { mustChangePassword?: boolean } | undefined)?.mustChangePassword
       // Seul un collaborateur avec mot de passe temporaire est redirigé.
-      // Les admins, vendeurs et clients conservent leur comportement normal.
+      // Les vendeurs vont sur leur dashboard professionnel, les clients sur
+      // leur dashboard usager, les administrateurs sur l'admin.
       if (role === "collaborateur" && mustChange === true) {
         router.push("/mot-de-passe-temporaire")
+      } else if (!explicitRedirect && role === "vendor") {
+        router.push("/dashboard/vendeur")
+      } else if (!explicitRedirect && isStaff(role)) {
+        router.push("/admin")
       } else {
-        router.push(!explicitRedirect && isStaff(role) ? "/admin" : redirectTo)
+        router.push(redirectTo)
       }
       router.refresh()
     } catch {

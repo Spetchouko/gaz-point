@@ -82,7 +82,7 @@ export default async function DashboardVendeurPage() {
     lastUpdate,
   }
 
-  const [totalConsignations, pendingConsignations] = await Promise.all([
+  const [totalReservations, pendingReservations] = await Promise.all([
     db
       .select({ count: count() })
       .from(reservation)
@@ -109,8 +109,8 @@ export default async function DashboardVendeurPage() {
         points={pointsWithStats}
         globalStats={{
           ...globalStats,
-          totalConsignations: Number(totalConsignations[0]?.count ?? 0),
-          pendingConsignations: Number(pendingConsignations[0]?.count ?? 0),
+          totalReservations: Number(totalReservations[0]?.count ?? 0),
+          pendingReservations: Number(pendingReservations[0]?.count ?? 0),
         }}
       />
     </VendorLayout>

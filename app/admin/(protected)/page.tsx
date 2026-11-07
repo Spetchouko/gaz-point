@@ -232,10 +232,17 @@ export default async function AdminDashboardPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-bold tracking-tight">Tableau de bord</h1>
+        <h1 className="text-2xl font-bold tracking-tight">
+          Bienvenue dans votre espace d'administration !
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Vue d’ensemble de la plateforme GAZ POINT
+          Pilotez et supervisez l'ensemble de la plateforme GazPoints.
         </p>
+        {staff.user.name && (
+          <p className="mt-1 text-sm text-muted-foreground">
+            {`Bonjour ${staff.user.name.split(" ")[0]}, gérez les utilisateurs, les vendeurs, les disponibilités, les réservations, les collaborateurs et les paramètres de la plateforme.`}
+          </p>
+        )}
       </header>
 
       <AdminDashboardSections

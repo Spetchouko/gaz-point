@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Store, Plus, X, MapPin, LogOut } from "lucide-react"
+import { PhoneInput } from "@/app/_components/phone-input"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -243,11 +244,15 @@ export function PointsDeVenteClient({
                     <label className="block text-sm font-medium text-muted-foreground">
                       Téléphone (optionnel)
                     </label>
-                    <input
-                      type="text"
+                    <PhoneInput
+                      id="edit-point-phone"
                       name="phone"
-                      value={editingPoint.phone}
-                      className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                      label="Téléphone (optionnel)"
+                      value={editingPoint.phone ?? undefined}
+                      onChange={(normalized) =>
+                        setEditingPoint({ ...editingPoint, phone: normalized })
+                      }
+                      className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary pl-8"
                     />
                   </div>
                 )}
@@ -312,10 +317,11 @@ export function PointsDeVenteClient({
                   <label className="block text-sm font-medium text-muted-foreground">
                     Téléphone (optionnel)
                   </label>
-                  <input
-                    type="text"
+                  <PhoneInput
+                    id="create-point-phone"
                     name="phone"
-                    className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                    label="Téléphone (optionnel)"
+                    className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary pl-8"
                   />
                 </div>
                 <div className="flex justify-end gap-3">
