@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { Store, Plus, MapPin, Trash2, Edit, X, Loader2 } from "lucide-react"
+import { Store, Plus, MapPin, Trash2, Edit, X, Loader2, Cylinder, Shield } from "lucide-react"
 import { PhoneInput } from "@/app/_components/phone-input"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,7 +18,6 @@ import {
 import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -27,7 +26,6 @@ import {
 } from "@/components/ui/dialog"
 import {
   AlertDialog,
-  AlertDialogTrigger,
   AlertDialogContent,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -38,6 +36,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
+import type { ActionResult } from "@/app/dashboard/pro/actions"
 
 const pointDeVenteSchema = z.object({
   name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
@@ -56,22 +55,23 @@ type PointRow = {
   phone: string | null
   isActive: boolean
   createdAt: Date
+  dispoCount: number
 }
 
 type PointsDeVenteClientProps = {
   userName: string
   userEmail: string | null | undefined
   points: PointRow[]
-  onSavePoint: (values: PointDeVenteFormValues) => Promise<void>
-  onUpdatePoint: (pointId: string, values: PointDeVenteFormValues) => Promise<void>
-  onDeletePoint: (pointId: string) => Promise<void>
+  onCreatePoint: (formData: FormData) => Promise<ActionResult>
+  onUpdatePoint: (formData: FormData) => Promise<ActionResult>
+  onDeletePoint: (formData: FormData) => Promise<ActionResult>
 }
 
 export function PointsDeVenteClient({
   userName,
   userEmail,
   points,
-  onSavePoint,
+  onCreatePoint,
   onUpdatePoint,
   onDeletePoint,
 }: PointsDeVenteClientProps) {
@@ -81,6 +81,7 @@ export function PointsDeVenteClient({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [actionResult, setActionResult] = useState<{ ok: boolean; message: string } | null>(null)
   const router = useRouter()
 
   const form = useForm<PointDeVenteFormValues>({
@@ -119,28 +120,47 @@ export function PointsDeVenteClient({
 
   const closeAddDialog = () => {
     setIsAddDialogOpen(false)
+    setActionResult(null)
   }
 
   const closeEditDialog = () => {
     setIsEditDialogOpen(false)
     setEditingPoint(null)
+    setActionResult(null)
   }
 
   const handleSubmit = async (values: PointDeVenteFormValues) => {
     setIsSubmitting(true)
+    setActionResult(null)
     try {
+      const formData = new FormData()
+      formData.set("name", values.name)
+      formData.set("district", values.district)
+      formData.set("address", values.address)
+      if (values.phone) formData.set("phone", values.phone)
+
+      let result: { ok: boolean; message: string }
       if (isEditMode && editingPoint) {
-        await onUpdatePoint(editingPoint.id, values)
-        toast.success("Point de vente modifié avec succès")
+        formData.set("pointId", editingPoint.id)
+        formData.set("isActive", "true")
+        result = await onUpdatePoint(formData)
       } else {
-        await onSavePoint(values)
-        toast.success("Point de vente créé avec succès")
+        result = await onCreatePoint(formData)
       }
-      form.reset()
-      if (isEditMode) {
-        closeEditDialog()
+
+      setActionResult(result)
+      if (result.ok) {
+        toast.success(result.message)
+        form.reset()
+        if (isEditMode) {
+          closeEditDialog()
+        } else {
+          closeAddDialog()
+        }
+        // Refresh the page to show updated data
+        router.refresh()
       } else {
-        closeAddDialog()
+        toast.error(result.message)
       }
     } catch (error) {
       console.error("Erreur lors de l'enregistrement:", error)
@@ -153,8 +173,15 @@ export function PointsDeVenteClient({
   const handleDelete = async (pointId: string) => {
     setIsSubmitting(true)
     try {
-      await onDeletePoint(pointId)
-      toast.success("Point de vente supprimé")
+      const formData = new FormData()
+      formData.set("pointId", pointId)
+      const result = await onDeletePoint(formData)
+      if (result.ok) {
+        toast.success(result.message)
+        router.refresh()
+      } else {
+        toast.error(result.message)
+      }
     } catch (error) {
       console.error("Erreur lors de la suppression:", error)
       toast.error("Une erreur est survenue. Veuillez réessayer.")
@@ -162,6 +189,27 @@ export function PointsDeVenteClient({
       setIsSubmitting(false)
       setIsDeleteDialogOpen(false)
       setDeleteConfirmId(null)
+    }
+  }
+
+  const handleToggle = async (pointId: string, isActive: boolean) => {
+    setIsSubmitting(true)
+    try {
+      const formData = new FormData()
+      formData.set("pointId", pointId)
+      formData.set("isActive", isActive ? "false" : "true")
+      const result = await onUpdatePoint(formData)
+      if (result.ok) {
+        toast.success(result.message)
+        router.refresh()
+      } else {
+        toast.error(result.message)
+      }
+    } catch (error) {
+      console.error("Erreur:", error)
+      toast.error("Une erreur est survenue. Veuillez réessayer.")
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -178,6 +226,32 @@ export function PointsDeVenteClient({
         <Button onClick={openAddModal}>
           <Plus className="size-4" /> Ajouter un point de vente
         </Button>
+      </div>
+
+      {/* Raccourcis rapides */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push("/dashboard/vendeur/disponibilites")}>
+          <CardContent className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Cylinder className="size-5" />
+            </div>
+            <div>
+              <h3 className="font-medium">Créer une disponibilité</h3>
+              <p className="text-sm text-muted-foreground">Publier une nouvelle disponibilité de gaz</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push("/dashboard/vendeur/disponibilites")}>
+          <CardContent className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-success/10 text-success">
+              <Shield className="size-5" />
+            </div>
+            <div>
+              <h3 className="font-medium">Gérer mes disponibilités</h3>
+              <p className="text-sm text-muted-foreground">Consulter et modifier les disponibilités publiées</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Liste des points de vente ou état vide */}
@@ -222,6 +296,9 @@ export function PointsDeVenteClient({
                       Inactif
                     </Badge>
                   )}
+                  <Badge variant="secondary" className="text-sm">
+                    {point.dispoCount} disponibilité{point.dispoCount > 1 ? "s" : ""}
+                  </Badge>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -229,6 +306,14 @@ export function PointsDeVenteClient({
                     onClick={() => openEditModal(point)}
                   >
                     <Edit className="size-3" /> Modifier
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1"
+                    onClick={() => router.push(`/dashboard/vendeur/disponibilites?pointId=${point.id}`)}
+                  >
+                    <Cylinder className="size-3" /> Disponibilités
                   </Button>
                   <Button
                     variant="destructive"
@@ -240,16 +325,6 @@ export function PointsDeVenteClient({
                     }}
                   >
                     <Trash2 className="size-3" /> Supprimer
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1"
-                    onClick={() => {
-                      router.push(`/dashboard/vendeur/disponibilites?pointId=${point.id}`)
-                    }}
-                  >
-                    <Plus className="size-3" /> Gérer disponibilités
                   </Button>
                 </div>
               </CardHeader>
@@ -279,14 +354,23 @@ export function PointsDeVenteClient({
               </CardContent>
             </Card>
           ))}
+
+          {/* Carte d'ajout en bas de liste */}
+          <Card className="border-dashed border-2 border-border hover:border-primary/50 transition-colors" onClick={openAddModal}>
+            <CardContent className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-3">
+                <Plus className="size-6" />
+              </div>
+              <h3 className="font-medium text-lg">Ajouter un point de vente</h3>
+              <p className="text-sm text-muted-foreground mt-1">Cliquez pour créer un nouveau point de vente</p>
+            </CardContent>
+          </Card>
         </div>
       )}
 
-      {/* Add Dialog - compact card style, appears below the cards */}
+      {/* Add Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent
-          className="max-w-md sm:max-w-lg rounded-lg bg-card p-4 shadow-sm border-border mt-4"
-        >
+        <DialogContent className="max-w-md sm:max-w-lg rounded-lg bg-card p-4 shadow-sm border-border mt-4">
           <DialogHeader className="pb-3">
             <DialogTitle>Ajouter un point de vente</DialogTitle>
             <DialogDescription>
@@ -300,15 +384,14 @@ export function PointsDeVenteClient({
             isSubmitting={isSubmitting}
             isEditMode={false}
             onClose={closeAddDialog}
+            actionResult={actionResult}
           />
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog - compact card style */}
+      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent
-          className="max-w-md sm:max-w-lg rounded-lg bg-card p-4 shadow-sm border-border"
-        >
+        <DialogContent className="max-w-md sm:max-w-lg rounded-lg bg-card p-4 shadow-sm border-border">
           <DialogHeader className="pb-3">
             <DialogTitle>Modifier le point de vente</DialogTitle>
             <DialogDescription>
@@ -322,6 +405,9 @@ export function PointsDeVenteClient({
             isSubmitting={isSubmitting}
             isEditMode={true}
             onClose={closeEditDialog}
+            actionResult={actionResult}
+            point={editingPoint}
+            onToggle={handleToggle}
           />
         </DialogContent>
       </Dialog>
@@ -334,7 +420,7 @@ export function PointsDeVenteClient({
             <AlertDialogDescription>
               {deleteConfirmId &&
                 points.find((p) => p.id === deleteConfirmId) &&
-                `Cette action est irréversible. Le point devente « ${points.find((p) => p.id === deleteConfirmId)?.name} » sera définitivement supprimé.`}
+                `Cette action est irréversible. Le point de vente « ${points.find((p) => p.id === deleteConfirmId)?.name} » sera définitivement supprimé.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -365,18 +451,27 @@ function PointDeVenteForm({
   isSubmitting,
   isEditMode,
   onClose,
+  actionResult,
+  point,
+  onToggle,
 }: {
   form: ReturnType<typeof useForm<PointDeVenteFormValues>>
   onSubmit: (values: PointDeVenteFormValues) => Promise<void>
   isSubmitting: boolean
   isEditMode: boolean
   onClose: () => void
+  actionResult: { ok: boolean; message: string } | null
+  point?: PointRow | null
+  onToggle?: (pointId: string, isActive: boolean) => Promise<void>
 }) {
   return (
-    <form
-      onSubmit={form.handleSubmit(onSubmit)}
-      className="space-y-4"
-    >
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      {actionResult && !actionResult.ok && (
+        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+          {actionResult.message}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-3">
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-muted-foreground">
@@ -386,7 +481,7 @@ function PointDeVenteForm({
             id="name"
             {...form.register("name")}
             className={cn(
-              "mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus-ring-2 focus:ring-primary/50 focus:border-primary",
+              "mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary",
               form.formState.errors.name && "border-destructive"
             )}
             disabled={isSubmitting}
@@ -406,7 +501,7 @@ function PointDeVenteForm({
             id="district"
             {...form.register("district")}
             className={cn(
-              "mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus-ring-2 focus:ring-primary/50 focus:border-primary",
+              "mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary",
               form.formState.errors.district && "border-destructive"
             )}
             disabled={isSubmitting}
@@ -427,7 +522,7 @@ function PointDeVenteForm({
           id="address"
           {...form.register("address")}
           className={cn(
-            "mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus-ring-2 focus:ring-primary/50 focus:border-primary",
+            "mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary",
             form.formState.errors.address && "border-destructive"
           )}
           disabled={isSubmitting}
@@ -450,7 +545,7 @@ function PointDeVenteForm({
           value={form.watch("phone") ?? undefined}
           onChange={(normalized) => form.setValue("phone", normalized, { shouldValidate: true })}
           className={cn(
-            "mt-1 block w-full rounded-lg border border-input px-3 py-2 focus-ring-2 focus:ring-primary/50 focus:border-primary pl-8",
+            "mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary pl-8",
             form.formState.errors.phone && "border-destructive"
           )}
           disabled={isSubmitting}
@@ -461,9 +556,27 @@ function PointDeVenteForm({
           </p>
         )}
       </div>
-      <DialogFooter
-        className="flex justify-end gap-3 pt-4 border-t border-border mt-2"
-      >
+
+      {isEditMode && point && onToggle && (
+        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
+          <div>
+            <p className="font-medium">Statut du point de vente</p>
+            <p className="text-sm text-muted-foreground">
+              {point.isActive ? "Actif - Les clients peuvent voir ce point de vente" : "Inactif - Masqué aux clients"}
+            </p>
+          </div>
+          <Button
+            variant={point.isActive ? "outline" : "default"}
+            size="sm"
+            onClick={() => onToggle(point.id, point.isActive)}
+            disabled={isSubmitting}
+          >
+            {point.isActive ? "Désactiver" : "Activer"}
+          </Button>
+        </div>
+      )}
+
+      <DialogFooter className="flex justify-end gap-3 pt-4 border-t border-border mt-2">
         <Button
           type="button"
           variant="ghost"

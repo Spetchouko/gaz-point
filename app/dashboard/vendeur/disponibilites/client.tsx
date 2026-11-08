@@ -13,6 +13,9 @@ import {
   MapPin,
   Edit,
   Loader2,
+  Truck,
+  RotateCcw,
+  Package,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -52,6 +55,9 @@ const dispoSchema = z.object({
   note: z.string().optional().nullable(),
   quantity: z.number().nullable().optional(),
   brand: z.string().optional().nullable(),
+  delivery: z.boolean().optional(),
+  exchange: z.boolean().optional(),
+  gasSale: z.boolean().optional(),
 })
 
 type DispoFormValues = z.infer<typeof dispoSchema>
@@ -64,6 +70,9 @@ type DispoRow = {
   quantity: number | null
   format: string | null
   brand: string | null
+  delivery: boolean
+  exchange: boolean
+  gasSale: boolean
   createdAt: Date
 }
 
@@ -130,6 +139,9 @@ export function DisponibilitesClient({
       note: null,
       quantity: null,
       brand: null,
+      delivery: false,
+      exchange: false,
+      gasSale: false,
     })
     setEditingDispo(null)
     setIsAddDialogOpen(true)
@@ -144,6 +156,9 @@ export function DisponibilitesClient({
       note: dispo.note,
       quantity: dispo.quantity,
       brand: dispo.brand,
+      delivery: dispo.delivery,
+      exchange: dispo.exchange,
+      gasSale: dispo.gasSale,
     })
     setEditingDispo(dispo)
     setIsEditDialogOpen(true)
@@ -270,7 +285,7 @@ export function DisponibilitesClient({
                     {pointDispos.map((dispo) => {
                       const effective = dispo.status as "disponible" | "indisponible" | "a_confirmer"
                       return (
-                        <div key={dispo.id} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm mb-3">
+                        <div key={dispo.id} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-sm mb-3">
                           <div>
                             <p className="text-muted-foreground">Format</p>
                             <p className="font-medium">{dispo.format ?? "—"}</p>
@@ -290,6 +305,15 @@ export function DisponibilitesClient({
                             <p className="font-medium">
                               {dispo.quantity !== null ? `${dispo.quantity} bouteille${dispo.quantity > 1 ? "s" : ""}` : "—"}
                             </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Services</p>
+                            <div className="flex gap-1 flex-wrap">
+                              {dispo.delivery && <Badge variant="secondary" className="text-xs"><Truck className="size-3 mr-1" /> Livraison</Badge>}
+                              {dispo.exchange && <Badge variant="secondary" className="text-xs"><RotateCcw className="size-3 mr-1" /> Échange</Badge>}
+                              {dispo.gasSale && <Badge variant="secondary" className="text-xs"><Package className="size-3 mr-1" /> Gaz chargé</Badge>}
+                              {!dispo.delivery && !dispo.exchange && !dispo.gasSale && <span className="text-xs text-muted-foreground">—</span>}
+                            </div>
                           </div>
                         </div>
                       )
@@ -426,6 +450,40 @@ function DispoForm({
         <div>
           <label htmlFor="note" className="block text-sm font-medium text-muted-foreground">Note (optionnel)</label>
           <textarea id="note" rows={2} {...form.register("note")} placeholder="Indication pour les clients" className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary" disabled={isSubmitting} />
+        </div>
+      </div>
+
+      {/* Services additionnels */}
+      <div className="space-y-2 p-3 rounded-lg bg-muted/30 border border-border">
+        <h4 className="text-sm font-medium">Services additionnels</h4>
+        <div className="grid gap-2 sm:grid-cols-3">
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              {...form.register("delivery")}
+              className="size-4 rounded border-input text-primary focus:ring-primary/50"
+              disabled={isSubmitting}
+            />
+            <span>Livraison à domicile</span>
+          </label>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              {...form.register("exchange")}
+              className="size-4 rounded border-input text-primary focus:ring-primary/50"
+              disabled={isSubmitting}
+            />
+            <span>Échange de bouteille (prix à discuter au dépôt)</span>
+          </label>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              {...form.register("gasSale")}
+              className="size-4 rounded border-input text-primary focus:ring-primary/50"
+              disabled={isSubmitting}
+            />
+            <span>Vente bouteille chargée (prix à discuter au dépôt)</span>
+          </label>
         </div>
       </div>
 

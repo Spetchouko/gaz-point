@@ -1,10 +1,12 @@
-import { and, asc, eq } from "drizzle-orm"
+import { and, asc, count, eq, inArray } from "drizzle-orm"
 import type { Metadata } from "next"
 import { db } from "@/db"
-import { pointDeVente } from "@/db/schema"
+import { disponibilite, pointDeVente } from "@/db/schema"
 import { VendorLayout } from "@/app/_components/vendor-layout"
 import { requirePro } from "@/lib/session"
 import { PointsDeVenteClient } from "./client"
+import { createPointDeVenteVendor, deletePointDeVenteVendor, togglePointDeVente } from "@/app/dashboard/pro/actions"
+import type { ActionResult } from "@/app/dashboard/pro/actions"
 
 export const metadata: Metadata = {
   title: { absolute: "Mes points de vente | GazPoints" },
@@ -31,53 +33,29 @@ export default async function PointsDeVentePage() {
     .where(eq(pointDeVente.vendorId, user.id))
     .orderBy(asc(pointDeVente.name))
 
-  async function onSavePoint(values: {
-    name: string
-    district: string
-    address: string
-    phone?: string | null
-  }) {
-    if (values.name) {
-      await db
-        .insert(pointDeVente)
-        .values({
-          id: crypto.randomUUID(),
-          name: values.name,
-          district: values.district,
-          address: values.address,
-          phone: values.phone ?? null,
-          vendorId: user.id,
-          isActive: true,
-          createdAt: new Date(),
-        })
-    }
+  // Get count of disponibilités for each point
+  const pointsWithCounts = await Promise.all(
+    points.map(async (point) => {
+      const result = await db
+        .select({ count: count() })
+        .from(disponibilite)
+        .where(eq(disponibilite.pointId, point.id))
+      const dispoCount = Number(result[0]?.count ?? 0)
+      return { ...point, dispoCount }
+    })
+  )
+
+  // Wrapper functions to match the expected client signature
+  const onCreatePoint = async (formData: FormData): Promise<ActionResult> => {
+    return createPointDeVenteVendor(null, formData)
   }
 
-  async function onUpdatePoint(
-    pointId: string,
-    values: {
-      name: string
-      district: string
-      address: string
-      phone?: string | null
-    }
-  ) {
-    await db
-      .update(pointDeVente)
-      .set({
-        name: values.name,
-        district: values.district,
-        address: values.address,
-        phone: values.phone ?? null,
-        updatedAt: new Date(),
-      })
-      .where(and(eq(pointDeVente.id, pointId), eq(pointDeVente.vendorId, user.id)))
+  const onUpdatePoint = async (formData: FormData): Promise<ActionResult> => {
+    return togglePointDeVente(null, formData)
   }
 
-  async function onDeletePoint(pointId: string) {
-    await db.delete(pointDeVente).where(
-      and(eq(pointDeVente.id, pointId), eq(pointDeVente.vendorId, user.id))
-    )
+  const onDeletePoint = async (formData: FormData): Promise<ActionResult> => {
+    return deletePointDeVenteVendor(null, formData)
   }
 
   return (
@@ -89,8 +67,8 @@ export default async function PointsDeVentePage() {
       <PointsDeVenteClient
         userName={user.name ?? "Vendeur"}
         userEmail={user.email}
-        points={points}
-        onSavePoint={onSavePoint}
+        points={pointsWithCounts}
+        onCreatePoint={onCreatePoint}
         onUpdatePoint={onUpdatePoint}
         onDeletePoint={onDeletePoint}
       />

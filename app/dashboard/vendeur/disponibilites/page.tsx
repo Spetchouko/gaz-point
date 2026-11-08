@@ -1,6 +1,4 @@
-"use client"
-
-import { and, asc, eq, inArray } from "drizzle-orm"
+import { and, asc, count, eq, inArray } from "drizzle-orm"
 import type { Metadata } from "next"
 import { db } from "@/db"
 import { disponibilite, pointDeVente } from "@/db/schema"
@@ -8,16 +6,18 @@ import { VendorLayout } from "@/app/_components/vendor-layout"
 import { requirePro } from "@/lib/session"
 import { DisponibilitesClient } from "./client"
 import { createDisponibilite, deleteDisponibilite, updateDisponibilite } from "./actions"
-import { useSearchParams, usePathname } from "next/navigation"
 
 export const metadata: Metadata = {
   title: { absolute: "Disponibilités | GazPoints" },
 }
 
-export default function DisponibilitesPage() {
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const pointId = searchParams.get("pointId") as string | null
+interface DisponibilitesPageProps {
+  searchParams: Promise<{ pointId?: string }>
+}
+
+export default async function DisponibilitesPage({ searchParams }: DisponibilitesPageProps) {
+  const resolvedSearchParams = await searchParams
+  const pointId = resolvedSearchParams.pointId ?? null
 
   const { user, role } = await requirePro()
 
@@ -47,10 +47,13 @@ export default function DisponibilitesPage() {
       quantity: disponibilite.quantity,
       format: disponibilite.format,
       brand: disponibilite.brand,
+      delivery: disponibilite.delivery,
+      exchange: disponibilite.exchange,
+      gasSale: disponibilite.gasSale,
       createdAt: disponibilite.createdAt,
     })
     .from(disponibilite)
-    .where(pointFilter
+    .where(pointId
       ? and(eq(disponibilite.pointId, pointId), eq(disponibilite.vendorId, user.id))
       : eq(disponibilite.vendorId, user.id))
 

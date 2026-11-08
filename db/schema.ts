@@ -146,6 +146,10 @@ export const disponibilite = pgTable(
     reportedBy: text("reported_by").references(() => user.id, { onDelete: "set null" }),
     reportedByName: text("reported_by_name").notNull(),
     source: text("source").notNull(), // AvailabilitySource
+    // Services additionnels
+    delivery: boolean("delivery").default(false).notNull(), // Livraison à domicile
+    exchange: boolean("exchange").default(false).notNull(), // Échange de bouteille (prix à discuter au dépôt)
+    gasSale: boolean("gas_sale").default(false).notNull(), // Vente de bouteille de gaz chargée (prix à discuter au dépôt)
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()

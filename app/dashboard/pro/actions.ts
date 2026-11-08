@@ -339,6 +339,9 @@ export async function upsertDisponibilite(
         quantity,
         phone: cleanPhone,
         note: directions,
+        delivery: Boolean(formData.get("delivery")),
+        exchange: Boolean(formData.get("exchange")),
+        gasSale: Boolean(formData.get("gasSale")),
       })
       .where(eq(disponibilite.id, disponibiliteId))
 
@@ -363,6 +366,9 @@ export async function upsertDisponibilite(
           quantity,
           phone: cleanPhone,
           note: directions,
+          delivery: Boolean(formData.get("delivery")),
+          exchange: Boolean(formData.get("exchange")),
+          gasSale: Boolean(formData.get("gasSale")),
         })
         .where(eq(disponibilite.id, existing.id))
 
@@ -380,6 +386,9 @@ export async function upsertDisponibilite(
         quantity,
         phone: cleanPhone,
         note: directions,
+        delivery: Boolean(formData.get("delivery")),
+        exchange: Boolean(formData.get("exchange")),
+        gasSale: Boolean(formData.get("gasSale")),
         reportedBy: user.id,
         reportedByName: user.name,
         source: role === "admin" ? "administration" : "vendeur",

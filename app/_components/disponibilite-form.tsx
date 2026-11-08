@@ -78,6 +78,9 @@ export function DisponibiliteForm({
     note: editingDispo?.dispo.note ?? "",
     brand: (editingDispo?.dispo as { brand?: string | null })?.brand ?? "",
     expiresAt: "",
+    delivery: (editingDispo?.dispo as { delivery?: boolean })?.delivery ?? false,
+    exchange: (editingDispo?.dispo as { exchange?: boolean })?.exchange ?? false,
+    gasSale: (editingDispo?.dispo as { gas_sale?: boolean })?.gas_sale ?? false,
   })
   const [step, setStep] = useState<"form" | "deleteConfirm">("form")
   const [feedback, setFeedback] = useState<ActionResult | null>(null)
@@ -292,6 +295,46 @@ export function DisponibiliteForm({
                 disabled={pending}
                 className="pl-10 h-11"
               />
+            </div>
+
+            {/* Services additionnels */}
+            <div className="space-y-2 p-3 rounded-lg bg-muted/30 border border-border">
+              <h4 className="text-sm font-medium">Services additionnels</h4>
+              <div className="grid gap-2 sm:grid-cols-3">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="delivery"
+                    checked={formState.delivery}
+                    onChange={(e) => setFormState((s) => ({ ...s, delivery: e.target.checked }))}
+                    className="size-4 rounded border-input text-primary focus:ring-primary/50"
+                    disabled={pending}
+                  />
+                  <span>Livraison à domicile</span>
+                </label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="exchange"
+                    checked={formState.exchange}
+                    onChange={(e) => setFormState((s) => ({ ...s, exchange: e.target.checked }))}
+                    className="size-4 rounded border-input text-primary focus:ring-primary/50"
+                    disabled={pending}
+                  />
+                  <span>Échange de bouteille (prix à discuter au dépôt)</span>
+                </label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="gasSale"
+                    checked={formState.gasSale}
+                    onChange={(e) => setFormState((s) => ({ ...s, gasSale: e.target.checked }))}
+                    className="size-4 rounded border-input text-primary focus:ring-primary/50"
+                    disabled={pending}
+                  />
+                  <span>Vente bouteille chargée (prix à discuter au dépôt)</span>
+                </label>
+              </div>
             </div>
 
             {feedback && !feedback.ok && (
