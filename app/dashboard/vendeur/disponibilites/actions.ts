@@ -7,11 +7,12 @@ import { eq, and } from "drizzle-orm"
 
 export async function createDisponibilite(values: {
   pointId: string
-  status: string
-  note: string | null
-  quantity: number | null
-  format: string | null
-  brand: string | null
+  pointName?: string
+  format?: string | null
+  status: "disponible" | "a_confirmer" | "indisponible"
+  note?: string | null
+  quantity?: number | null
+  brand?: string | null
 }) {
   const { user } = await requirePro()
 
@@ -20,10 +21,10 @@ export async function createDisponibilite(values: {
     pointId: values.pointId,
     vendorId: user.id,
     status: values.status,
-    note: values.note,
-    quantity: values.quantity,
-    format: values.format,
-    brand: values.brand,
+    note: values.note ?? null,
+    quantity: values.quantity ?? null,
+    format: values.format ?? null,
+    brand: values.brand ?? null,
     reportedBy: user.id,
     reportedByName: user.name ?? "Vendeur",
     source: "vendeur",
@@ -35,11 +36,12 @@ export async function updateDisponibilite(
   dispoId: string,
   values: {
     pointId: string
-    status: string
-    note: string | null
-    quantity: number | null
-    format: string | null
-    brand: string | null
+    pointName?: string
+    format?: string | null
+    status: "disponible" | "a_confirmer" | "indisponible"
+    note?: string | null
+    quantity?: number | null
+    brand?: string | null
   }
 ) {
   const { user } = await requirePro()
@@ -49,10 +51,10 @@ export async function updateDisponibilite(
     .set({
       pointId: values.pointId,
       status: values.status,
-      note: values.note,
-      quantity: values.quantity,
-      format: values.format,
-      brand: values.brand,
+      note: values.note ?? null,
+      quantity: values.quantity ?? null,
+      format: values.format ?? null,
+      brand: values.brand ?? null,
       updatedAt: new Date(),
     })
     .where(and(eq(disponibilite.id, dispoId), eq(disponibilite.vendorId, user.id)))
