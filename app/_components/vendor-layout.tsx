@@ -1,6 +1,7 @@
 "use client"
 
 import { DashboardShell } from "./dashboard-shell"
+import { ToastProvider } from "./toast-provider"
 
 export function VendorLayout({
   role,
@@ -18,6 +19,7 @@ export function VendorLayout({
   return (
     <DashboardShell role={dashboardRole}>
       {children}
+      <ToastProvider />
     </DashboardShell>
   )
 }

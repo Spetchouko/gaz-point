@@ -35,7 +35,7 @@ export default async function PointsDeVentePage() {
     name: string
     district: string
     address: string
-    phone: string | null
+    phone?: string | null
   }) {
     if (values.name) {
       await db
@@ -45,12 +45,33 @@ export default async function PointsDeVentePage() {
           name: values.name,
           district: values.district,
           address: values.address,
-          phone: values.phone,
+          phone: values.phone ?? null,
           vendorId: user.id,
           isActive: true,
           createdAt: new Date(),
         })
     }
+  }
+
+  async function onUpdatePoint(
+    pointId: string,
+    values: {
+      name: string
+      district: string
+      address: string
+      phone?: string | null
+    }
+  ) {
+    await db
+      .update(pointDeVente)
+      .set({
+        name: values.name,
+        district: values.district,
+        address: values.address,
+        phone: values.phone ?? null,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(pointDeVente.id, pointId), eq(pointDeVente.vendorId, user.id)))
   }
 
   async function onDeletePoint(pointId: string) {
@@ -70,6 +91,7 @@ export default async function PointsDeVentePage() {
         userEmail={user.email}
         points={points}
         onSavePoint={onSavePoint}
+        onUpdatePoint={onUpdatePoint}
         onDeletePoint={onDeletePoint}
       />
     </VendorLayout>

@@ -1,7 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { Store, Plus, X, MapPin, LogOut } from "lucide-react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { toast } from "sonner"
+import { Store, Plus, MapPin, Trash2, Edit, X, Loader2 } from "lucide-react"
 import { PhoneInput } from "@/app/_components/phone-input"
 import { Button } from "@/components/ui/button"
 import {
@@ -12,7 +16,36 @@ import {
   CardDescription,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
+
+const pointDeVenteSchema = z.object({
+  name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+  district: z.string().min(2, "Le quartier doit contenir au moins 2 caractères"),
+  address: z.string().min(5, "L'adresse doit contenir au moins 5 caractères"),
+  phone: z.string().optional().nullable(),
+})
+
+type PointDeVenteFormValues = z.infer<typeof pointDeVenteSchema>
 
 type PointRow = {
   id: string
@@ -28,12 +61,8 @@ type PointsDeVenteClientProps = {
   userName: string
   userEmail: string | null | undefined
   points: PointRow[]
-  onSavePoint: (values: {
-    name: string
-    district: string
-    address: string
-    phone: string | null
-  }) => Promise<void>
+  onSavePoint: (values: PointDeVenteFormValues) => Promise<void>
+  onUpdatePoint: (pointId: string, values: PointDeVenteFormValues) => Promise<void>
   onDeletePoint: (pointId: string) => Promise<void>
 }
 
@@ -42,75 +71,117 @@ export function PointsDeVenteClient({
   userEmail,
   points,
   onSavePoint,
+  onUpdatePoint,
   onDeletePoint,
 }: PointsDeVenteClientProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [editingPoint, setEditingPoint] = useState<{
-    id: string | null
-    name: string
-    district: string
-    address: string
-    phone: string | null
-  } | null>(null)
+  const [editingPoint, setEditingPoint] = useState<PointRow | null>(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSavePoint = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-    await onSavePoint({
-      name: formData.get("name") as string,
-      district: formData.get("district") as string,
-      address: formData.get("address") as string,
-      phone: formData.get("phone") as string | null,
+  const form = useForm<PointDeVenteFormValues>({
+    resolver: zodResolver(pointDeVenteSchema),
+    defaultValues: {
+      name: "",
+      district: "",
+      address: "",
+      phone: null,
+    },
+  })
+
+  const isEditMode = !!editingPoint
+
+  const openAddModal = () => {
+    form.reset({
+      name: "",
+      district: "",
+      address: "",
+      phone: null,
     })
-    setShowAddForm(false)
     setEditingPoint(null)
-    window.location.href = "/dashboard/vendeur/points-de-vente"
+    setIsAddDialogOpen(true)
   }
 
-  const handleDeletePoint = async (pointId: string) => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer ce point de vente ?")) {
-      await onDeletePoint(pointId)
-      window.location.href = "/dashboard/vendeur/points-de-vente"
+  const openEditModal = (point: PointRow) => {
+    form.reset({
+      name: point.name,
+      district: point.district,
+      address: point.address,
+      phone: point.phone ?? null,
+    })
+    setEditingPoint(point)
+    setIsEditDialogOpen(true)
+  }
+
+  const closeDialogs = () => {
+    setIsAddDialogOpen(false)
+    setIsEditDialogOpen(false)
+    setEditingPoint(null)
+  }
+
+  const handleSubmit = async (values: PointDeVenteFormValues) => {
+    setIsSubmitting(true)
+    try {
+      if (isEditMode && editingPoint) {
+        await onUpdatePoint(editingPoint.id, values)
+        toast.success("Point de vente modifié avec succès")
+      } else {
+        await onSavePoint(values)
+        toast.success("Point de vente créé avec succès")
+      }
+      form.reset()
+      closeDialogs()
+    } catch (error) {
+      console.error("Erreur lors de l'enregistrement:", error)
+      toast.error("Une erreur est survenue. Veuillez réessayer.")
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
-  const isEditMode = showAddForm && !!editingPoint
-  const isAddMode = showAddForm && !editingPoint
+  const handleDelete = async (pointId: string) => {
+    setIsSubmitting(true)
+    try {
+      await onDeletePoint(pointId)
+      toast.success("Point de vente supprimé")
+    } catch (error) {
+      console.error("Erreur lors de la suppression:", error)
+      toast.error("Une erreur est survenue. Veuillez réessayer.")
+    } finally {
+      setIsSubmitting(false)
+      setIsDeleteDialogOpen(false)
+      setDeleteConfirmId(null)
+    }
+  }
 
   return (
-    <div>
-      <div className="pt-4 border-b border-muted/20">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">
-            Mes points de vente
-          </h1>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Tableau de bord"
-            onClick={() => {
-              window.location.href = "/dashboard/vendeur"
-            }}
-          >
-            <Store className="size-4" />
-          </Button>
+    <div className="space-y-6">
+      {/* Header avec titre et bouton d'ajout */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Mes points de vente</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Gérez vos points de vente et leurs disponibilités
+          </p>
         </div>
+        <Button onClick={openAddModal}>
+          <Plus className="size-4" /> Ajouter un point de vente
+        </Button>
       </div>
 
+      {/* Liste des points de vente ou état vide */}
       {points.length === 0 ? (
-        <div className="min-h-[300px] flex flex-col items-center justify-center py-12">
+        <div className="min-h-[300px] flex flex-col items-center justify-center py-12 border border-border/50 rounded-xl">
           <span className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-4">
             <Store className="size-6" />
           </span>
           <p className="font-medium">Aucun point de vente pour l'instant</p>
-          <p className="text-sm text-muted-foreground max-w-md">
+          <p className="text-sm text-muted-foreground max-w-md text-center">
             Ajoutez votre premier point de vente pour commencer à gérer vos disponibilités de gaz.
           </p>
-          <Button
-            onClick={() => setShowAddForm(true)}
-            className="mt-4 mt-auto"
-          >
+          <Button onClick={openAddModal} className="mt-4">
             <Plus className="size-4" /> Ajouter un point de vente
           </Button>
         </div>
@@ -119,23 +190,22 @@ export function PointsDeVenteClient({
           {points.map((point) => (
             <Card key={point.id} className="hover:shadow-sm transition-shadow">
               <CardHeader className="flex flex-wrap items-start justify-between gap-2 pb-3">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Store className="size-4 text-primary" aria-hidden />
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="flex items-center gap-2 text-base truncate">
+                    <Store className="size-4 text-primary shrink-0" aria-hidden />
                     {point.name}
                   </CardTitle>
-                  <CardDescription className="mt-1 flex items-center gap-1.5">
+                  <CardDescription className="mt-1 flex items-center gap-1.5 truncate">
                     <MapPin className="size-3.5 shrink-0" aria-hidden />
                     {point.address} — {point.district}
                   </CardDescription>
                 </div>
-                <div className="flex items-center gap-2">
-                  {point.isActive && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  {point.isActive ? (
                     <Badge variant="outline" className="text-sm">
                       Actif
                     </Badge>
-                  )}
-                  {!point.isActive && (
+                  ) : (
                     <Badge variant="destructive" className="text-sm">
                       Inactif
                     </Badge>
@@ -144,23 +214,20 @@ export function PointsDeVenteClient({
                     variant="ghost"
                     size="sm"
                     className="gap-1"
-                    onClick={() => setEditingPoint({
-                      id: point.id,
-                      name: point.name,
-                      district: point.district,
-                      address: point.address,
-                      phone: point.phone ?? null,
-                    })}
+                    onClick={() => openEditModal(point)}
                   >
-                    <X className="size-3" /> Modifier
+                    <Edit className="size-3" /> Modifier
                   </Button>
                   <Button
                     variant="destructive"
                     size="sm"
                     className="gap-1"
-                    onClick={() => handleDeletePoint(point.id)}
+                    onClick={() => {
+                      setDeleteConfirmId(point.id)
+                      setIsDeleteDialogOpen(true)
+                    }}
                   >
-                    <LogOut className="size-3" /> Supprimer
+                    <Trash2 className="size-3" /> Supprimer
                   </Button>
                 </div>
               </CardHeader>
@@ -193,149 +260,199 @@ export function PointsDeVenteClient({
         </div>
       )}
 
-      {isEditMode && editingPoint ? (
-        <div className="mt-8 max-w-md">
-          <Card className="p-6">
-            <CardHeader>
-              <CardTitle>Modifier le point de vente</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSavePoint}>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground">
-                      Nom du point de vente
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={editingPoint.name}
-                      required
-                      className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground">
-                      Quartier
-                    </label>
-                    <input
-                      type="text"
-                      name="district"
-                      value={editingPoint.district}
-                      required
-                      className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground">
-                    Adresse complète
-                  </label>
-                  <input
-                    type="text"
-                    name="address"
-                    value={editingPoint.address}
-                    required
-                    className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                  />
-                </div>
-                {editingPoint.phone && (
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-muted-foreground">
-                      Téléphone (optionnel)
-                    </label>
-                    <PhoneInput
-                      id="edit-point-phone"
-                      name="phone"
-                      label="Téléphone (optionnel)"
-                      value={editingPoint.phone ?? undefined}
-                      onChange={(normalized) =>
-                        setEditingPoint({ ...editingPoint, phone: normalized })
-                      }
-                      className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary pl-8"
-                    />
-                  </div>
-                )}
-                <div className="flex justify-end gap-3">
-                  <Button type="button" onClick={() => setEditingPoint(null)}>
-                    Annuler
-                  </Button>
-                  <Button type="submit" className="ml-auto">
-                    Enregistrer
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
+      {/* Add Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="max-w-md sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Ajouter un point de vente</DialogTitle>
+            <DialogDescription>
+              Renseignez les informations de votre nouveau point de vente.
+            </DialogDescription>
+          </DialogHeader>
+          <PointDeVenteForm
+            form={form}
+            onSubmit={handleSubmit}
+            isSubmitting={isSubmitting}
+            isEditMode={false}
+            onClose={closeDialogs}
+          />
+        </DialogContent>
+      </Dialog>
 
-      {isAddMode && !editingPoint ? (
-        <div className="mt-8 max-w-md">
-          <Card className="p-6">
-            <CardHeader>
-              <CardTitle>Nouveau point de vente</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSavePoint}>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground">
-                      Nom du point de vente
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      required
-                      className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground">
-                      Quartier
-                    </label>
-                    <input
-                      type="text"
-                      name="district"
-                      required
-                      className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground">
-                    Adresse complète
-                  </label>
-                  <input
-                    type="text"
-                    name="address"
-                    required
-                    className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground">
-                    Téléphone (optionnel)
-                  </label>
-                  <PhoneInput
-                    id="create-point-phone"
-                    name="phone"
-                    label="Téléphone (optionnel)"
-                    className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary pl-8"
-                  />
-                </div>
-                <div className="flex justify-end gap-3">
-                  <Button type="button" onClick={() => setShowAddForm(false)}>
-                    Annuler
-                  </Button>
-                  <Button type="submit">Créer</Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-md sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Modifier le point de vente</DialogTitle>
+            <DialogDescription>
+              Mettez à jour les informations de votre point de vente.
+            </DialogDescription>
+          </DialogHeader>
+          <PointDeVenteForm
+            form={form}
+            onSubmit={handleSubmit}
+            isSubmitting={isSubmitting}
+            isEditMode={true}
+            onClose={closeDialogs}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer ce point de vente ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteConfirmId &&
+                points.find((p) => p.id === deleteConfirmId) &&
+                `Cette action est irréversible. Le point de vente « ${points.find((p) => p.id === deleteConfirmId)?.name} » sera définitivement supprimé.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="size-4 animate-spin mr-2" />
+                  Suppression...
+                </>
+              ) : (
+                "Supprimer"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+  )
+}
+
+function PointDeVenteForm({
+  form,
+  onSubmit,
+  isSubmitting,
+  isEditMode,
+  onClose,
+}: {
+  form: ReturnType<typeof useForm<PointDeVenteFormValues>>
+  onSubmit: (values: PointDeVenteFormValues) => Promise<void>
+  isSubmitting: boolean
+  isEditMode: boolean
+  onClose: () => void
+}) {
+  return (
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium text-muted-foreground">
+            Nom du point de vente
+          </label>
+          <input
+            id="name"
+            {...form.register("name")}
+            className={cn(
+              "mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary",
+              form.formState.errors.name && "border-destructive"
+            )}
+            disabled={isSubmitting}
+            aria-invalid={!!form.formState.errors.name}
+          />
+          {form.formState.errors.name && (
+            <p className="mt-1 text-sm text-destructive" role="alert">
+              {form.formState.errors.name.message}
+            </p>
+          )}
+        </div>
+        <div>
+          <label htmlFor="district" className="block text-sm font-medium text-muted-foreground">
+            Quartier
+          </label>
+          <input
+            id="district"
+            {...form.register("district")}
+            className={cn(
+              "mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary",
+              form.formState.errors.district && "border-destructive"
+            )}
+            disabled={isSubmitting}
+            aria-invalid={!!form.formState.errors.district}
+          />
+          {form.formState.errors.district && (
+            <p className="mt-1 text-sm text-destructive" role="alert">
+              {form.formState.errors.district.message}
+            </p>
+          )}
+        </div>
+      </div>
+      <div>
+        <label htmlFor="address" className="block text-sm font-medium text-muted-foreground">
+          Adresse complète
+        </label>
+        <input
+          id="address"
+          {...form.register("address")}
+          className={cn(
+            "mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary",
+            form.formState.errors.address && "border-destructive"
+          )}
+          disabled={isSubmitting}
+          aria-invalid={!!form.formState.errors.address}
+        />
+        {form.formState.errors.address && (
+          <p className="mt-1 text-sm text-destructive" role="alert">
+            {form.formState.errors.address.message}
+          </p>
+        )}
+      </div>
+      <div>
+        <label htmlFor="phone" className="block text-sm font-medium text-muted-foreground">
+          Téléphone (optionnel)
+        </label>
+        <PhoneInput
+          id="phone"
+          name="phone"
+          label="Téléphone (optionnel)"
+          value={form.watch("phone") ?? undefined}
+          onChange={(normalized) => form.setValue("phone", normalized, { shouldValidate: true })}
+          className={cn(
+            "mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary pl-8",
+            form.formState.errors.phone && "border-destructive"
+          )}
+          disabled={isSubmitting}
+        />
+        {form.formState.errors.phone && (
+          <p className="mt-1 text-sm text-destructive" role="alert">
+            {form.formState.errors.phone.message}
+          </p>
+        )}
+      </div>
+      <DialogFooter className="flex justify-end gap-3 pt-4 border-t border-border mt-2">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onClose}
+          disabled={isSubmitting}
+        >
+          Annuler
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <>
+              <Loader2 className="size-4 animate-spin mr-2" />
+              Enregistrement...
+            </>
+          ) : isEditMode ? (
+            "Enregistrer les modifications"
+          ) : (
+            "Enregistrer le point de vente"
+          )}
+        </Button>
+      </DialogFooter>
+    </form>
   )
 }
 
