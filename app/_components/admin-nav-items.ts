@@ -20,6 +20,8 @@ export type NavItem = {
   href: string
   label: string
   icon: ComponentType<{ className?: string }>
+  /** Sous-items optionnels (menu dépliable, style Outlook) */
+  subItems?: NavItem[]
 }
 
 export type NavSection = {

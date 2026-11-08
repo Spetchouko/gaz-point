@@ -3,15 +3,14 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
-import { LogOut, ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronDown, ChevronLeft, ChevronRight, LogOut } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
 import React from "react"
 import type { ComponentType } from "react"
 import {
-  getClientNavItems,
-  getVendorNavItems,
-  type DashboardNavItem,
+  getDashboardNavSections,
+  type DashboardNavSection,
   type DashboardRole,
 } from "./dashboard-nav-items"
 
@@ -30,7 +29,7 @@ export function DashboardNav({
   const user = session?.user as
     | { name?: string | null; email?: string | null }
     | undefined
-  const items = role === "vendor" ? getVendorNavItems() : getClientNavItems()
+  const allSections = getDashboardNavSections(role)
 
   const roleLabel = role === "vendor" ? "Vendeur" : "Usager"
   const initial = user?.name?.charAt(0).toUpperCase() ?? "U"
@@ -39,11 +38,29 @@ export function DashboardNav({
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href)
 
+  const isSectionActive = (section: DashboardNavSection) =>
+    section.items.some((item) => isActive(item.href))
+
   const handleSignOut = async () => {
     await authClient.signOut()
     router.push("/")
     router.refresh()
   }
+
+  const [openSections, setOpenSections] = useState<Set<string>>(
+    new Set(allSections.map((s) => s.key))
+  )
+
+  const toggleSection = (key: string) => {
+    setOpenSections((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
+  const isSectionOpen = (key: string) => openSections.has(key)
 
   const renderIcon = (Icon: ComponentType<{ className?: string }>) => {
     if (collapsed) {
@@ -56,12 +73,32 @@ export function DashboardNav({
     return <Icon className="size-4 shrink-0" aria-hidden />
   }
 
-  const isSectionActive = (section: { items: DashboardNavItem[] }) =>
-    section.items.some((item) => isActive(item.href))
+  const linkBase =
+    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+  const activeCls = "bg-primary text-primary-foreground"
+  const inactiveCls = "text-muted-foreground hover:bg-muted hover:text-foreground"
 
-  const sections: { key: string; label: string; items: DashboardNavItem[] }[] = [
-    { key: "navigation", label: "Navigation", items },
-  ]
+  const renderItems = (items: DashboardNavSection["items"], indent: number) => {
+    return items.map((item) => {
+      const active = isActive(item.href)
+      return (
+        <li key={item.href}>
+          <Link
+            href={item.href}
+            aria-current={active ? "page" : undefined}
+            className={cn(
+              linkBase,
+              `pl-${indent === 0 ? 3 : 9}`,
+              active ? activeCls : inactiveCls
+            )}
+          >
+            {renderIcon(item.icon)}
+            {!collapsed && item.label}
+          </Link>
+        </li>
+      )
+    })
+  }
 
   return (
     <nav aria-label="Navigation du dashboard" className="flex h-full flex-col">
@@ -98,40 +135,52 @@ export function DashboardNav({
       </div>
 
       {/* Sections de navigation */}
-      <ul className="flex-1 overflow-y-auto p-2 space-y-1">
-        {sections.map((section) => {
+      <ul className="flex-1 overflow-y-auto p-1 space-y-1">
+        {allSections.map((section) => {
           const active = isSectionActive(section)
+          const open = isSectionOpen(section.key)
+          const showItems = collapsed || open
+
           return (
             <React.Fragment key={section.key}>
               {!collapsed && (
-                <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <div
+                  onClick={() => toggleSection(section.key)}
+                  className={cn(
+                    "flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:bg-muted cursor-pointer select-none",
+                    active ? "text-primary font-bold" : ""
+                  )}
+                  role="button"
+                  aria-expanded={open}
+                  aria-label={section.label}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault()
+                      toggleSection(section.key)
+                    }
+                  }}
+                >
                   {section.label}
-                </p>
+                  <ChevronDown
+                    className={cn("ml-auto size-3.5 transition-transform duration-200", open && "rotate-180")}
+                    aria-hidden
+                  />
+                </div>
               )}
-              {section.items.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    aria-current={isActive(item.href) ? "page" : undefined}
-                    className={cn(
-                      "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                      isActive(item.href)
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    )}
-                  >
-                    {renderIcon(item.icon)}
-                    {!collapsed && item.label}
-                  </Link>
-                </li>
-              ))}
+
+              {showItems ? (
+                <ul className="space-y-0.5">
+                  {renderItems(section.items, 0)}
+                </ul>
+              ) : null}
             </React.Fragment>
           )
         })}
       </ul>
 
       {/* Pied de barre latérale : profil + déconnexion */}
-      <div className="border-t border-border p-2 space-y-1">
+      <div className="border-t border-border p-1 space-y-1">
         <div
           className={cn(
             "flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer transition-colors hover:bg-muted",
@@ -159,7 +208,7 @@ export function DashboardNav({
           type="button"
           onClick={handleSignOut}
           className={cn(
-            "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+            "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
             collapsed ? "justify-center px-1" : "px-3"
           )}
         >

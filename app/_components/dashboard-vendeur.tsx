@@ -130,14 +130,14 @@ export function DashboardVendeur({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* En-tête du dashboard */}
-      <header className="border-b border-border/20 pb-4">
+      <header className="border-b border-border/20 pb-3">
         <div className="flex flex-col gap-2 sm:gap-3 w-full">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight">
             Bienvenue dans votre espace professionnel !
           </h1>
-          <p className="text-sm sm:text-base lg:text-lg text-muted-foreground leading-relaxed">
+          <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
             Gérez votre point de vente et informez les clients de vos
             disponibilités en gaz.
           </p>
@@ -145,16 +145,16 @@ export function DashboardVendeur({
       </header>
 
       {/* Raccourcis principaux */}
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold tracking-tight">
+          <h2 className="text-base font-bold tracking-tight">
             Actions rapides
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Gérez votre activité en quelques clics.
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           <Button
             variant="default"
             className="flex items-center gap-2"
@@ -166,9 +166,9 @@ export function DashboardVendeur({
       </div>
 
       {/* Section : Points de vente */}
-      <section className="mb-6">
-        <div className="mb-4 sm:mb-6">
-          <h2 className="text-lg font-bold tracking-tight">
+      <section className="mb-4">
+        <div className="mb-3 sm:mb-4">
+          <h2 className="text-base font-bold tracking-tight">
             Mes points de vente
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -176,12 +176,12 @@ export function DashboardVendeur({
           </p>
         </div>
 
-        <div className="rounded-xl border border-border bg-white p-4 sm:p-6 shadow-sm">
+        <div className="rounded-xl border border-border bg-white p-3 sm:p-4 shadow-sm">
           {/* Message quand aucun point de vente */}
           {points.length === 0 ? (
-            <div className="min-h-[300px] flex flex-col items-center justify-center py-12">
-              <span className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-4">
-                <Store className="size-6" />
+            <div className="min-h-[240px] flex flex-col items-center justify-center py-8">
+              <span className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary mb-3">
+                <Store className="size-5" />
               </span>
               <p className="font-medium">Aucun point de vente pour l'instant</p>
               <p className="text-sm text-muted-foreground max-w-md">
@@ -198,7 +198,7 @@ export function DashboardVendeur({
             </div>
           ) : (
             /* Points de vente existants */
-            <div className="space-y-4">
+            <div className="space-y-3">
               {points.map((point) => (
                 <PointDeVenteCard
                   key={point.id}
@@ -235,8 +235,8 @@ export function DashboardVendeur({
 
           {/* Formulaire pour créer un nouveau point de vente */}
           {isFormOpen && (
-            <div className="mt-8 max-w-md">
-              <Card className="p-6">
+            <div className="mt-6 max-w-md">
+              <Card className="p-4">
                 <CardHeader>
                   <CardTitle>Nouveau point de vente</CardTitle>
                 </CardHeader>
@@ -252,9 +252,9 @@ export function DashboardVendeur({
                         phone: (String(formData.get("phone") ?? "").trim()) || null,
                       })
                     }}
-                    className="grid gap-4"
+                    className="grid gap-3"
                   >
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
                       <div>
                         <label className="block text-sm font-medium text-muted-foreground">
                           Nom du point de vente
@@ -280,7 +280,7 @@ export function DashboardVendeur({
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
                       <div>
                         <label className="block text-sm font-medium text-muted-foreground">
                           Adresse complète
@@ -305,7 +305,7 @@ export function DashboardVendeur({
                         />
                       </div>
                     </div>
-                    <div className="flex justify-end gap-3">
+                    <div className="flex justify-end gap-2">
                       <Button
                         type="button"
                         onClick={() => setIsFormOpen(false)}
@@ -337,80 +337,80 @@ export function DashboardVendeur({
       </section>
 
       {/* Section : Statistiques du tableau de bord */}
-      <section className="mb-6">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="bg-white rounded-xl border border-border p-4 shadow-sm">
+      <section className="mb-4">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="bg-white rounded-xl border border-border p-3 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Points de vente
                 </p>
-                <p className="text-2xl font-bold tracking-tight text-primary">
+                <p className="text-xl font-bold tracking-tight text-primary">
                   {globalStats.totalPoints}
                 </p>
               </div>
-              <div className="flex size-10 items-center justify-center rounded-xl bg-primary/50 text-primary border border-primary/100">
-                <Store className="size-5" />
+              <div className="flex size-9 items-center justify-center rounded-xl bg-primary/50 text-primary border border-primary/100">
+                <Store className="size-4" />
               </div>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-muted-foreground">
               Enregistrés
             </p>
           </div>
 
-          <div className="bg-white rounded-xl border border-border p-4 shadow-sm">
+          <div className="bg-white rounded-xl border border-border p-3 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Disponibilités
                 </p>
-                <p className="text-2xl font-bold tracking-tight text-success">
+                <p className="text-xl font-bold tracking-tight text-success">
                   {globalStats.totalDispos}
                 </p>
               </div>
-              <div className="flex size-10 items-center justify-center rounded-xl bg-success/50 text-success border border-success/100">
-                <Activity className="size-5" />
+              <div className="flex size-9 items-center justify-center rounded-xl bg-success/50 text-success border border-success/100">
+                <Activity className="size-4" />
               </div>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-muted-foreground">
               Actives
             </p>
           </div>
 
-          <div className="bg-white rounded-xl border border-border p-4 shadow-sm">
+          <div className="bg-white rounded-xl border border-border p-3 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Réservations
                 </p>
-                <p className="text-2xl font-bold tracking-tight text-warning">
+                <p className="text-xl font-bold tracking-tight text-warning">
                   {globalStats.totalReservations}
                 </p>
               </div>
-              <div className="flex size-10 items-center justify-center rounded-xl bg-warning/50 text-warning border border-warning/100">
-                <Shield className="size-5" />
+              <div className="flex size-9 items-center justify-center rounded-xl bg-warning/50 text-warning border border-warning/100">
+                <Shield className="size-4" />
               </div>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-muted-foreground">
               Reçues
             </p>
           </div>
 
-          <div className="bg-white rounded-xl border border-border p-4 shadow-sm">
+          <div className="bg-white rounded-xl border border-border p-3 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Stock total
                 </p>
-                <p className="text-2xl font-bold tracking-tight">
+                <p className="text-xl font-bold tracking-tight">
                   {globalStats.totalQuantity} bouteille(s)
                 </p>
               </div>
-              <div className="flex size-10 items-center justify-center rounded-xl bg-primary/50 text-primary border border-primary/100">
-                <Cylinder className="size-5" />
+              <div className="flex size-9 items-center justify-center rounded-xl bg-primary/50 text-primary border border-primary/100">
+                <Cylinder className="size-4" />
               </div>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-muted-foreground">
               En stock
             </p>
           </div>
