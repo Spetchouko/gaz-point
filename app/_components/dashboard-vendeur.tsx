@@ -133,19 +133,14 @@ export function DashboardVendeur({
     <div className="space-y-6">
       {/* En-tête du dashboard */}
       <header className="border-b border-border/20 pb-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">
+        <div className="flex flex-col gap-2 sm:gap-3 w-full">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
             Bienvenue dans votre espace professionnel !
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm sm:text-base lg:text-lg text-muted-foreground leading-relaxed">
             Gérez votre point de vente et informez les clients de vos
             disponibilités en gaz.
           </p>
-          {vendorName && (
-            <p className="mt-1 text-sm text-muted-foreground">
-              {`Bonjour ${vendorName.split(" ")[0]}, depuis votre espace professionnel, vous pouvez publier vos disponibilités, gérer vos bouteilles, consulter les réservations et suivre votre activité.`}
-            </p>
-          )}
         </div>
       </header>
 
