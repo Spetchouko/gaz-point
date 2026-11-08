@@ -1,6 +1,10 @@
 "use client"
 
 import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { toast } from "sonner"
 import {
   Store,
   Plus,
@@ -8,6 +12,7 @@ import {
   LogOut,
   MapPin,
   Edit,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,8 +23,38 @@ import {
   CardDescription,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog"
 import { availabilityLabel, availabilityBadgeClass } from "@/lib/gaz"
 import { cn } from "@/lib/utils"
+
+const dispoSchema = z.object({
+  pointId: z.string().min(1, "Sélectionnez un point de vente"),
+  pointName: z.string().optional(),
+  format: z.string().optional().nullable(),
+  status: z.enum(["disponible", "a_confirmer", "indisponible"]),
+  note: z.string().optional().nullable(),
+  quantity: z.number().nullable().optional(),
+  brand: z.string().optional().nullable(),
+})
+
+type DispoFormValues = z.infer<typeof dispoSchema>
 
 type DispoRow = {
   id: string
@@ -43,15 +78,8 @@ type DisponibilitesClientProps = {
   userEmail: string | null | undefined
   points: PointRow[]
   allDispos: DispoRow[]
-  onSaveDispo: (values: {
-    pointId: string
-    pointName: string
-    format: string | null
-    status: string
-    note: string | null
-    quantity: number | null
-    brand: string | null
-  }) => Promise<void>
+  onSaveDispo: (values: DispoFormValues) => Promise<void>
+  onUpdateDispo: (dispoId: string, values: DispoFormValues) => Promise<void>
   onDeleteDispo: (dispoId: string) => Promise<void>
 }
 
@@ -61,20 +89,30 @@ export function DisponibilitesClient({
   points,
   allDispos,
   onSaveDispo,
+  onUpdateDispo,
   onDeleteDispo,
 }: DisponibilitesClientProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [editingDispo, setEditingDispo] = useState<{
-    id: string
-    pointId: string
-    pointName: string
-    format: string | null
-    status: string
-    note: string | null
-    quantity: number | null
-    brand: string | null
-  } | null>(null)
+  const [editingDispo, setEditingDispo] = useState<DispoRow | null>(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const form = useForm<DispoFormValues>({
+    resolver: zodResolver(dispoSchema),
+    defaultValues: {
+      pointId: "",
+      pointName: "",
+      format: null,
+      status: "disponible",
+      note: null,
+      quantity: null,
+      brand: null,
+    },
+  })
+
+  const isEditMode = !!editingDispo
 
   const disposByPoint = new Map<string, DispoRow[]>()
   allDispos.forEach((d) => {
@@ -83,55 +121,81 @@ export function DisponibilitesClient({
     disposByPoint.set(d.pointId, existing)
   })
 
-  const isEditMode = showAddForm && !!editingDispo
-  const isAddMode = showAddForm && !editingDispo
-
-  const handleSaveDispo = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-    await onSaveDispo({
-      pointId: formData.get("pointId") as string,
-      pointName: formData.get("pointName") as string,
-      format: (formData.get("format") as string) || null,
-      status: formData.get("status") as string,
-      note: (formData.get("note") as string) || null,
-      quantity: Number(formData.get("quantity")) || null,
-      brand: (formData.get("brand") as string) || null,
+  const openAddModal = () => {
+    form.reset({
+      pointId: "",
+      pointName: "",
+      format: null,
+      status: "disponible",
+      note: null,
+      quantity: null,
+      brand: null,
     })
-    setShowAddForm(false)
     setEditingDispo(null)
-    window.location.href = "/dashboard/vendeur/disponibilites"
+    setIsAddDialogOpen(true)
   }
 
-  const handleDeleteDispo = async (dispoId: string) => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer cette disponibilité ?")) {
-      await onDeleteDispo(dispoId)
-      window.location.href = "/dashboard/vendeur/disponibilites"
+  const openEditModal = (dispo: DispoRow, pointName: string) => {
+    form.reset({
+      pointId: dispo.pointId,
+      pointName: pointName,
+      format: dispo.format,
+      status: dispo.status as "disponible" | "a_confirmer" | "indisponible",
+      note: dispo.note,
+      quantity: dispo.quantity,
+      brand: dispo.brand,
+    })
+    setEditingDispo(dispo)
+    setIsEditDialogOpen(true)
+  }
+
+  const closeDialogs = () => {
+    setIsAddDialogOpen(false)
+    setIsEditDialogOpen(false)
+    setEditingDispo(null)
+  }
+
+  const handleSubmit = async (values: DispoFormValues) => {
+    setIsSubmitting(true)
+    try {
+      if (isEditMode && editingDispo) {
+        await onUpdateDispo(editingDispo.id, values)
+        toast.success("Disponibilité modifiée avec succès")
+      } else {
+        await onSaveDispo(values)
+        toast.success("Disponibilité publiée avec succès")
+      }
+      form.reset()
+      closeDialogs()
+    } catch (error) {
+      console.error("Erreur lors de l'enregistrement:", error)
+      toast.error("Une erreur est survenue. Veuillez réessayer.")
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
-  function effectiveStatus(
-    status: string,
-    createdAt: Date | string
-  ): "disponible" | "indisponible" | "a_confirmer" {
-    return status as "disponible" | "indisponible" | "a_confirmer"
+  const handleDelete = async (dispoId: string) => {
+    setIsSubmitting(true)
+    try {
+      await onDeleteDispo(dispoId)
+      toast.success("Disponibilité supprimée")
+    } catch (error) {
+      console.error("Erreur lors de la suppression:", error)
+      toast.error("Une erreur est survenue. Veuillez réessayer.")
+    } finally {
+      setIsSubmitting(false)
+      setIsDeleteDialogOpen(false)
+      setDeleteConfirmId(null)
+    }
   }
 
   return (
     <div>
       <div className="pt-4 border-b border-muted/20">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">
-            Disponibilités
-          </h1>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Tableau de bord"
-            onClick={() => {
-              window.location.href = "/dashboard/vendeur"
-            }}
-          >
+          <h1 className="text-2xl font-bold tracking-tight">Disponibilités</h1>
+          <Button variant="ghost" size="icon" aria-label="Tableau de bord" onClick={() => window.location.href = "/dashboard/vendeur"}>
             <Store className="size-4" />
           </Button>
         </div>
@@ -154,9 +218,7 @@ export function DisponibilitesClient({
           <CardContent>
             <p className="text-sm text-muted-foreground">Disponibles</p>
             <p className="text-2xl font-bold text-success">
-              {allDispos.filter(
-                (d) => d.status === "disponible" && d.quantity && d.quantity > 0
-              ).length}
+              {allDispos.filter((d) => d.status === "disponible" && d.quantity && d.quantity > 0).length}
             </p>
           </CardContent>
         </Card>
@@ -199,315 +261,180 @@ export function DisponibilitesClient({
                       <Plus className="size-4" />
                     </span>
                     <p>Aucune disponibilité pour le moment</p>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setShowAddForm(true)
-                      }}
-                    >
+                    <Button variant="ghost" size="sm" onClick={openAddModal}>
                       <Plus className="size-4" /> Ajouter
                     </Button>
                   </div>
                 ) : (
                   <div className="p-4">
                     {pointDispos.map((dispo) => {
-                      const effective = effectiveStatus(
-                        dispo.status,
-                        dispo.createdAt
-                      )
+                      const effective = dispo.status as "disponible" | "indisponible" | "a_confirmer"
                       return (
-                        <div
-                          key={dispo.id}
-                          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm mb-3"
-                        >
+                        <div key={dispo.id} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm mb-3">
                           <div>
                             <p className="text-muted-foreground">Format</p>
-                            <p className="font-medium">
-                              {dispo.format ?? "—"}
-                            </p>
+                            <p className="font-medium">{dispo.format ?? "—"}</p>
                           </div>
                           <div>
                             <p className="text-muted-foreground">Marque</p>
-                            <p className="font-medium">
-                              {dispo.brand ?? "—"}
-                            </p>
+                            <p className="font-medium">{dispo.brand ?? "—"}</p>
                           </div>
                           <div>
                             <p className="text-muted-foreground">Statut</p>
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "shrink-0",
-                                availabilityBadgeClass[
-                                  effective as keyof typeof availabilityBadgeClass
-                                ]
-                              )}
-                            >
+                            <Badge variant="outline" className={cn("shrink-0", availabilityBadgeClass[effective])}>
                               {availabilityLabel[effective]}
                             </Badge>
                           </div>
                           <div>
                             <p className="text-muted-foreground">Quantité</p>
                             <p className="font-medium">
-                              {dispo.quantity !== null
-                                ? `${dispo.quantity} bouteille${
-                                    dispo.quantity > 1 ? "s" : ""
-                                  }`
-                                : "—"}
-                              </p>
+                              {dispo.quantity !== null ? `${dispo.quantity} bouteille${dispo.quantity > 1 ? "s" : ""}` : "—"}
+                            </p>
                           </div>
                         </div>
                       )
                     })}
+
+                    <div className="pt-3 border-t border-muted/20 flex flex-wrap gap-2">
+                      {pointDispos.map((dispo) => (
+                        <Button
+                          key={dispo.id}
+                          variant="ghost"
+                          size="sm"
+                          className="flex-1 min-w-[120px]"
+                          onClick={() => openEditModal(dispo, point.name)}
+                        >
+                          <Edit className="size-4" aria-hidden /> Voir détails
+                        </Button>
+                      ))}
+                      {pointDispos.map((dispo) => (
+                        <Button
+                          key={`delete-${dispo.id}`}
+                          variant="destructive"
+                          size="sm"
+                          className="flex-1 min-w-[120px]"
+                          onClick={() => {
+                            setDeleteConfirmId(dispo.id)
+                            setIsDeleteDialogOpen(true)
+                          }}
+                        >
+                          <LogOut className="size-4" /> Supprimer
+                        </Button>
+                      ))}
+                    </div>
                   </div>
                 )}
-
-                <div className="pt-3 border-t border-muted/20 flex gap-2">
-                  {pointDispos.map((dispo) => (
-                    <Button
-                      key={dispo.id}
-                      variant="ghost"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() =>
-                        setEditingDispo({
-                          id: dispo.id,
-                          pointId: dispo.pointId,
-                          pointName: point.name,
-                          format: dispo.format,
-                          status: dispo.status,
-                          note: dispo.note,
-                          quantity: dispo.quantity,
-                          brand: dispo.brand,
-                        })
-                      }
-                    >
-                      <Edit className="size-4" aria-hidden /> Voir détails
-                    </Button>
-                  ))}
-                  {pointDispos.map((dispo) => (
-                    <Button
-                      key={`delete-${dispo.id}`}
-                      variant="destructive"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => handleDeleteDispo(dispo.id)}
-                    >
-                      <LogOut className="size-4" /> Supprimer
-                    </Button>
-                  ))}
-                </div>
               </CardContent>
             </Card>
           )
         })}
       </div>
 
-      {isEditMode && editingDispo ? (
-        <div className="mt-8 max-w-md">
-          <Card className="p-6">
-            <CardHeader>
-              <CardTitle>Modifier la disponibilité</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSaveDispo}>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground">
-                      Point de vente
-                    </label>
-                    <select
-                      name="pointId"
-                      value={editingDispo.pointId}
-                      className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                    >
-                      {points.map((point) => (
-                        <option
-                          key={point.id}
-                          value={point.id}
-                          selected={point.id === editingDispo.pointId}
-                        >
-                          {point.name} ({point.district})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground">
-                      Format de bouteille
-                    </label>
-                    <input
-                      type="text"
-                      name="format"
-                      value={editingDispo.format ?? ""}
-                      className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground">
-                      Statut
-                    </label>
-                    <select
-                      name="status"
-                      value={editingDispo.status}
-                      className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                    >
-                      <option value="disponible">Disponible</option>
-                      <option value="a_confirmer">À confirmer</option>
-                      <option value="indisponible">Indisponible</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground">
-                      Quantité
-                    </label>
-                    <input
-                      type="number"
-                      name="quantity"
-                      value={editingDispo.quantity ?? ""}
-                      className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground">
-                      Marque
-                    </label>
-                    <input
-                      type="text"
-                      name="brand"
-                      value={editingDispo.brand ?? ""}
-                      className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground">
-                      Note (optionnel)
-                    </label>
-                    <textarea
-                      name="note"
-                      value={editingDispo.note ?? ""}
-                      rows={2}
-                      className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-3">
-                  <Button type="button" onClick={() => setEditingDispo(null)}>
-                    Annuler
-                  </Button>
-                  <Button type="submit" className="ml-auto">
-                    Enregistrer
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
+      {/* Add Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="max-w-md sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Nouvelle disponibilité</DialogTitle>
+            <DialogDescription>Publiez une nouvelle disponibilité de gaz.</DialogDescription>
+          </DialogHeader>
+          <DispoForm form={form} onSubmit={handleSubmit} isSubmitting={isSubmitting} isEditMode={false} onClose={closeDialogs} points={points} />
+        </DialogContent>
+      </Dialog>
 
-      {isAddMode && !editingDispo ? (
-        <div className="mt-8 max-w-md">
-          <Card className="p-6">
-            <CardHeader>
-              <CardTitle>Nouvelle disponibilité</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSaveDispo}>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground">
-                      Point de vente
-                    </label>
-                    <select
-                      name="pointId"
-                      required
-                      className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                    >
-                      {points.map((point) => (
-                        <option key={point.id} value={point.id}>
-                          {point.name} ({point.district})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground">
-                      Format de bouteille
-                    </label>
-                    <input
-                      type="text"
-                      name="format"
-                      placeholder="ex: 12,5 kg, 6 kg"
-                      className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground">
-                      Statut
-                    </label>
-                    <select
-                      name="status"
-                      required
-                      className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                    >
-                      <option value="disponible">Disponible</option>
-                      <option value="a_confirmer">À confirmer</option>
-                      <option value="indisponible">Indisponible</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground">
-                      Quantité
-                    </label>
-                    <input
-                      type="number"
-                      name="quantity"
-                      min="0"
-                      required
-                      className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground">
-                    Marque
-                  </label>
-                  <input
-                    type="text"
-                    name="brand"
-                    placeholder="ex: Total, Tradex, Bocom"
-                    className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground">
-                    Note (optionnel)
-                  </label>
-                  <textarea
-                    name="note"
-                    rows={2}
-                    placeholder="Indication pour les clients"
-                    className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                  />
-                </div>
-                <div className="flex justify-end gap-3">
-                  <Button type="button" onClick={() => setShowAddForm(false)}>
-                    Annuler
-                  </Button>
-                  <Button type="submit">Publier</Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-md sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Modifier la disponibilité</DialogTitle>
+            <DialogDescription>Mettez à jour les informations de cette disponibilité.</DialogDescription>
+          </DialogHeader>
+          <DispoForm form={form} onSubmit={handleSubmit} isSubmitting={isSubmitting} isEditMode={true} onClose={closeDialogs} points={points} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette disponibilité ?</AlertDialogTitle>
+            <AlertDialogDescription>Cette action est irréversible. La disponibilité sera définitivement supprimée.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)} disabled={isSubmitting}>
+              {isSubmitting ? (<> <Loader2 className="size-4 animate-spin mr-2" /> Suppression... </>) : ("Supprimer")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+  )
+}
+
+function DispoForm({
+  form,
+  onSubmit,
+  isSubmitting,
+  isEditMode,
+  onClose,
+  points,
+}: {
+  form: ReturnType<typeof useForm<DispoFormValues>>
+  onSubmit: (values: DispoFormValues) => Promise<void>
+  isSubmitting: boolean
+  isEditMode: boolean
+  onClose: () => void
+  points: PointRow[]
+}) {
+  return (
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <div>
+        <label htmlFor="pointId" className="block text-sm font-medium text-muted-foreground">Point de vente</label>
+        <select id="pointId" {...form.register("pointId")} className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary" disabled={isEditMode}>
+          {points.map((point) => (
+            <option key={point.id} value={point.id}>{point.name} ({point.district})</option>
+          ))}
+        </select>
+        {form.formState.errors.pointId && <p className="mt-1 text-sm text-destructive" role="alert">{form.formState.errors.pointId.message}</p>}
+      </div>
+
+      <div>
+        <label htmlFor="format" className="block text-sm font-medium text-muted-foreground">Format de bouteille</label>
+        <input id="format" type="text" {...form.register("format")} placeholder="ex: 12,5 kg, 6 kg" className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary" disabled={isSubmitting} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="status" className="block text-sm font-medium text-muted-foreground">Statut</label>
+          <select id="status" {...form.register("status")} className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary" disabled={isSubmitting}>
+            <option value="disponible">Disponible</option>
+            <option value="a_confirmer">À confirmer</option>
+            <option value="indisponible">Indisponible</option>
+          </select>
+        </div>
+        <div>
+          <label htmlFor="quantity" className="block text-sm font-medium text-muted-foreground">Quantité</label>
+          <input id="quantity" type="number" min="0" {...form.register("quantity", { valueAsNumber: true })} className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary" disabled={isSubmitting} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="brand" className="block text-sm font-medium text-muted-foreground">Marque</label>
+          <input id="brand" type="text" {...form.register("brand")} placeholder="ex: Total, Tradex, Bocom" className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary" disabled={isSubmitting} />
+        </div>
+        <div>
+          <label htmlFor="note" className="block text-sm font-medium text-muted-foreground">Note (optionnel)</label>
+          <textarea id="note" rows={2} {...form.register("note")} placeholder="Indication pour les clients" className="mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary" disabled={isSubmitting} />
+        </div>
+      </div>
+
+      <DialogFooter className="flex justify-end gap-3 pt-4 border-t border-border mt-2">
+        <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>Annuler</Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? (<> <Loader2 className="size-4 animate-spin mr-2" /> Enregistrement... </>) : (isEditMode ? "Enregistrer les modifications" : "Publier la disponibilité")}
+        </Button>
+      </DialogFooter>
+    </form>
   )
 }

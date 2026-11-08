@@ -5,6 +5,7 @@ import { disponibilite, pointDeVente } from "@/db/schema"
 import { VendorLayout } from "@/app/_components/vendor-layout"
 import { requirePro } from "@/lib/session"
 import { DisponibilitesClient } from "./client"
+import { createDisponibilite, deleteDisponibilite, updateDisponibilite } from "./actions"
 
 export const metadata: Metadata = {
   title: { absolute: "Disponibilités | GazPoints" },
@@ -41,37 +42,6 @@ export default async function DisponibilitesPage() {
     .from(disponibilite)
     .where(inArray(disponibilite.vendorId, [user.id]))
 
-  async function onSaveDispo(values: {
-    pointId: string
-    pointName: string
-    format: string | null
-    status: string
-    note: string | null
-    quantity: number | null
-    brand: string | null
-  }) {
-    await db.insert(disponibilite).values({
-      id: crypto.randomUUID(),
-      pointId: values.pointId,
-      vendorId: user.id,
-      status: values.status,
-      note: values.note,
-      quantity: values.quantity,
-      format: values.format,
-      brand: values.brand,
-      reportedBy: user.id,
-      reportedByName: user.name ?? "Vendeur",
-      source: "vendeur",
-      createdAt: new Date(),
-    })
-  }
-
-  async function onDeleteDispo(dispoId: string) {
-    await db.delete(disponibilite).where(
-      and(eq(disponibilite.id, dispoId), eq(disponibilite.vendorId, user.id))
-    )
-  }
-
   return (
     <VendorLayout
       role={role}
@@ -83,8 +53,9 @@ export default async function DisponibilitesPage() {
         userEmail={user.email}
         points={points}
         allDispos={allDispos}
-        onSaveDispo={onSaveDispo}
-        onDeleteDispo={onDeleteDispo}
+        onSaveDispo={createDisponibilite}
+        onUpdateDispo={updateDisponibilite}
+        onDeleteDispo={deleteDisponibilite}
       />
     </VendorLayout>
   )
