@@ -37,6 +37,7 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
+import { useRouter } from "next/navigation"
 
 const pointDeVenteSchema = z.object({
   name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
@@ -80,6 +81,7 @@ export function PointsDeVenteClient({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const router = useRouter()
 
   const form = useForm<PointDeVenteFormValues>({
     resolver: zodResolver(pointDeVenteSchema),
@@ -115,8 +117,11 @@ export function PointsDeVenteClient({
     setIsEditDialogOpen(true)
   }
 
-  const closeDialogs = () => {
+  const closeAddDialog = () => {
     setIsAddDialogOpen(false)
+  }
+
+  const closeEditDialog = () => {
     setIsEditDialogOpen(false)
     setEditingPoint(null)
   }
@@ -132,7 +137,11 @@ export function PointsDeVenteClient({
         toast.success("Point de vente créé avec succès")
       }
       form.reset()
-      closeDialogs()
+      if (isEditMode) {
+        closeEditDialog()
+      } else {
+        closeAddDialog()
+      }
     } catch (error) {
       console.error("Erreur lors de l'enregistrement:", error)
       toast.error("Une erreur est survenue. Veuillez réessayer.")
@@ -188,8 +197,11 @@ export function PointsDeVenteClient({
       ) : (
         <div className="space-y-4">
           {points.map((point) => (
-            <Card key={point.id} className="hover:shadow-sm transition-shadow">
-              <CardHeader className="flex flex-wrap items-start justify-between gap-2 pb-3">
+            <Card
+              key={point.id}
+              className="border border-border rounded-xl bg-white p-4 shadow-sm hover:shadow-md transition-sm"
+            >
+              <CardHeader className="flex flex-wrap items-start justify-between gap-2 pb-2">
                 <div className="flex-1 min-w-0">
                   <CardTitle className="flex items-center gap-2 text-base truncate">
                     <Store className="size-4 text-primary shrink-0" aria-hidden />
@@ -229,6 +241,16 @@ export function PointsDeVenteClient({
                   >
                     <Trash2 className="size-3" /> Supprimer
                   </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1"
+                    onClick={() => {
+                      router.push(`/dashboard/vendeur/disponibilites?pointId=${point.id}`)
+                    }}
+                  >
+                    <Plus className="size-3" /> Gérer disponibilités
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
@@ -260,40 +282,46 @@ export function PointsDeVenteClient({
         </div>
       )}
 
-      {/* Add Dialog */}
+      {/* Add Dialog - compact card style, appears below the cards */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-md sm:max-w-lg">
-          <DialogHeader>
+        <DialogContent
+          className="max-w-md sm:max-w-lg rounded-lg bg-card p-4 shadow-sm border-border mt-4"
+        >
+          <DialogHeader className="pb-3">
             <DialogTitle>Ajouter un point de vente</DialogTitle>
             <DialogDescription>
               Renseignez les informations de votre nouveau point de vente.
             </DialogDescription>
           </DialogHeader>
+
           <PointDeVenteForm
             form={form}
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
             isEditMode={false}
-            onClose={closeDialogs}
+            onClose={closeAddDialog}
           />
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
+      {/* Edit Dialog - compact card style */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-md sm:max-w-lg">
-          <DialogHeader>
+        <DialogContent
+          className="max-w-md sm:max-w-lg rounded-lg bg-card p-4 shadow-sm border-border"
+        >
+          <DialogHeader className="pb-3">
             <DialogTitle>Modifier le point de vente</DialogTitle>
             <DialogDescription>
               Mettez à jour les informations de votre point de vente.
             </DialogDescription>
           </DialogHeader>
+
           <PointDeVenteForm
             form={form}
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
             isEditMode={true}
-            onClose={closeDialogs}
+            onClose={closeEditDialog}
           />
         </DialogContent>
       </Dialog>
@@ -306,7 +334,7 @@ export function PointsDeVenteClient({
             <AlertDialogDescription>
               {deleteConfirmId &&
                 points.find((p) => p.id === deleteConfirmId) &&
-                `Cette action est irréversible. Le point de vente « ${points.find((p) => p.id === deleteConfirmId)?.name} » sera définitivement supprimé.`}
+                `Cette action est irréversible. Le point devente « ${points.find((p) => p.id === deleteConfirmId)?.name} » sera définitivement supprimé.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -345,8 +373,11 @@ function PointDeVenteForm({
   onClose: () => void
 }) {
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+    <form
+      onSubmit={form.handleSubmit(onSubmit)}
+      className="space-y-4"
+    >
+      <div className="grid grid-cols-1 gap-3">
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-muted-foreground">
             Nom du point de vente
@@ -355,7 +386,7 @@ function PointDeVenteForm({
             id="name"
             {...form.register("name")}
             className={cn(
-              "mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary",
+              "mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus-ring-2 focus:ring-primary/50 focus:border-primary",
               form.formState.errors.name && "border-destructive"
             )}
             disabled={isSubmitting}
@@ -375,7 +406,7 @@ function PointDeVenteForm({
             id="district"
             {...form.register("district")}
             className={cn(
-              "mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary",
+              "mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus-ring-2 focus:ring-primary/50 focus:border-primary",
               form.formState.errors.district && "border-destructive"
             )}
             disabled={isSubmitting}
@@ -396,7 +427,7 @@ function PointDeVenteForm({
           id="address"
           {...form.register("address")}
           className={cn(
-            "mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary",
+            "mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus-ring-2 focus:ring-primary/50 focus:border-primary",
             form.formState.errors.address && "border-destructive"
           )}
           disabled={isSubmitting}
@@ -419,7 +450,7 @@ function PointDeVenteForm({
           value={form.watch("phone") ?? undefined}
           onChange={(normalized) => form.setValue("phone", normalized, { shouldValidate: true })}
           className={cn(
-            "mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary pl-8",
+            "mt-1 block w-full rounded-lg border border-input px-3 py-2 focus-ring-2 focus:ring-primary/50 focus:border-primary pl-8",
             form.formState.errors.phone && "border-destructive"
           )}
           disabled={isSubmitting}
@@ -430,7 +461,9 @@ function PointDeVenteForm({
           </p>
         )}
       </div>
-      <DialogFooter className="flex justify-end gap-3 pt-4 border-t border-border mt-2">
+      <DialogFooter
+        className="flex justify-end gap-3 pt-4 border-t border-border mt-2"
+      >
         <Button
           type="button"
           variant="ghost"

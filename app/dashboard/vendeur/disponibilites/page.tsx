@@ -1,3 +1,5 @@
+"use client"
+
 import { and, asc, eq, inArray } from "drizzle-orm"
 import type { Metadata } from "next"
 import { db } from "@/db"
@@ -6,17 +8,25 @@ import { VendorLayout } from "@/app/_components/vendor-layout"
 import { requirePro } from "@/lib/session"
 import { DisponibilitesClient } from "./client"
 import { createDisponibilite, deleteDisponibilite, updateDisponibilite } from "./actions"
+import { useSearchParams, usePathname } from "next/navigation"
 
 export const metadata: Metadata = {
   title: { absolute: "Disponibilités | GazPoints" },
 }
 
-export default async function DisponibilitesPage() {
+export default function DisponibilitesPage() {
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const pointId = searchParams.get("pointId") as string | null
+
   const { user, role } = await requirePro()
 
   if (role !== "vendor") {
     return <div>Accès réservé aux vendeurs.</div>
   }
+
+  // Build query filters based on pointId
+  const pointFilter = pointId ? eq(pointDeVente.id, pointId) : undefined
 
   const points = await db
     .select({
@@ -25,7 +35,7 @@ export default async function DisponibilitesPage() {
       district: pointDeVente.district,
     })
     .from(pointDeVente)
-    .where(eq(pointDeVente.vendorId, user.id))
+    .where(pointFilter ?? eq(pointDeVente.vendorId, user.id))
     .orderBy(asc(pointDeVente.name))
 
   const allDispos = await db
@@ -40,7 +50,9 @@ export default async function DisponibilitesPage() {
       createdAt: disponibilite.createdAt,
     })
     .from(disponibilite)
-    .where(inArray(disponibilite.vendorId, [user.id]))
+    .where(pointFilter
+      ? and(eq(disponibilite.pointId, pointId), eq(disponibilite.vendorId, user.id))
+      : eq(disponibilite.vendorId, user.id))
 
   return (
     <VendorLayout
