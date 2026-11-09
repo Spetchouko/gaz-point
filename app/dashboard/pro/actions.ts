@@ -441,6 +441,12 @@ export async function createPointDeVenteVendor(
     phone: cleanPhone,
     vendorId: user.id,
     isActive: true,
+    deliveryEnabled: false,
+    deliveryFee: 0,
+    exchangeEnabled: false,
+    exchangeBrands: [],
+    exchangeFormats: [],
+    gasSaleEnabled: false,
     createdAt: new Date(),
   })
 

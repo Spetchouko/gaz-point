@@ -19,9 +19,9 @@ import {
  * - Refuse tout caractère non numérique et limite à 9 chiffres.
  * - Retourne la valeur normalisée (+237XXXXXXXXX) ou null si vide/invalide.
  *
- * Exemple d'affichage : +237 | 690123456
+ * Design : identique aux autres champs du projet, avec préfixe intégré.
  *
- * @param props - { value, onChange, disabled, required, id, label, className, error }
+ * @param props - { value, onChange, disabled, required, id, name, label, className, error }
  */
 export function PhoneInput({
   value,

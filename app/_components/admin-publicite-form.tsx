@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { PhoneInput } from "@/app/_components/phone-input"
 import { createPublicite, updatePublicite, type ActionResult } from "@/app/admin/actions"
 import { cn } from "@/lib/utils"
 import type { PubliciteRow } from "@/app/_components/admin-publicite-table"
@@ -432,32 +433,28 @@ export function AdminPubliciteForm({
                   </div>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <Input
-                      id="ad-phone"
-                      name="phone"
-                      type="tel"
-                      value={formState.phone}
-                      onChange={(e) =>
-                        setFormState((s) => ({ ...s, phone: e.target.value }))
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Input
-                      id="ad-link"
-                      name="linkUrl"
-                      type="url"
-                      value={formState.linkUrl}
-                      onChange={(e) =>
-                        setFormState((s) => ({ ...s, linkUrl: e.target.value }))
-                      }
-                      placeholder="https://…"
-                    />
-                  </div>
-                </div>
+                <div className="space-y-1.5">
+                <PhoneInput
+                  id="ad-phone"
+                  name="phone"
+                  label="Téléphone"
+                  value={formState.phone ?? undefined}
+                  onChange={(normalized: string | null) => setFormState((s) => ({ ...s, phone: normalized ?? "" }))}
+                />
               </div>
+
+                <div>
+                  <Input
+                    id="ad-link"
+                    name="linkUrl"
+                    type="url"
+                    value={formState.linkUrl}
+                    onChange={(e) =>
+                      setFormState((s) => ({ ...s, linkUrl: e.target.value }))
+                    }
+                    placeholder="https://…"
+                  />
+                </div>
 
               {/* ---------- Emplacement ---------- */}
               <div>
@@ -540,6 +537,9 @@ export function AdminPubliciteForm({
                   </FieldWithLabel>
                 </div>
               </div>
+            </div>
+
+            {/* Close form fields column */}
             </div>
 
             {/* ------------------------ Action Buttons ------------------------ */}

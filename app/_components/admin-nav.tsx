@@ -1,9 +1,16 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
-import { ChevronDown, ChevronLeft, ChevronRight, LogOut } from "lucide-react"
+import {
+  ArrowLeftCircle,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  LogOut,
+} from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
 import React from "react"
@@ -102,22 +109,24 @@ export function AdminNav({
 
   return (
     <nav aria-label="Navigation administration" className="flex h-full flex-col">
-      {/* En-tête de la barre latérale : logo + nom de l'application */}
+      {/* En-tête de la barre latérale : logo GazPoints + nom */}
       <div className="flex h-14 items-center justify-between border-b border-border px-3">
         <Link
           href="/admin"
-          className={cn(
-            "flex items-center gap-2",
-            collapsed ? "justify-center px-1" : "px-3 font-bold text-lg tracking-tight"
-          )}
-          title="GAZ POINT Admin"
+          className="flex items-center gap-2 px-3"
+          onClick={(e) => {
+            e.preventDefault()
+            router.push("/admin")
+          }}
         >
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <span className={cn("text-sm font-semibold", collapsed ? "hidden" : "")}>
-              {initial}
-            </span>
-          </span>
-          {!collapsed && <span>GAZ POINT Admin</span>}
+          <Image
+            src="/brand/logo.png"
+            alt="GazPoints"
+            width={24}
+            height={24}
+            className="shrink-0 size-6"
+          />
+          <span className="truncate text-sm font-bold tracking-tight">GazPoints</span>
         </Link>
         <button
           type="button"
@@ -179,8 +188,22 @@ export function AdminNav({
         })}
       </ul>
 
-      {/* Pied de barre latérale : profil + déconnexion */}
+      {/* Pied de barre latérale : lien retour accueil + profil + déconnexion */}
       <div className="border-t border-border p-1 space-y-1">
+        <Link
+          href="/"
+          onClick={(e) => {
+            e.preventDefault()
+            router.push("/")
+          }}
+          className={cn(
+            "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+            collapsed ? "justify-center px-1" : "px-3"
+          )}
+        >
+          <ArrowLeftCircle className="size-4" aria-hidden />
+          {!collapsed && <span>{"Retour à l\u0027accueil"}</span>}
+        </Link>
         <div
           className={cn(
             "flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer transition-colors hover:bg-muted",

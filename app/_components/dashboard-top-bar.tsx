@@ -89,10 +89,7 @@ export function DashboardTopBar({
       <div className="flex shrink-0 items-center gap-2">
         <Link
           href="/dashboard"
-          className={cn(
-            "flex items-center gap-2 px-2 py-1 rounded-lg text-primary font-semibold tracking-tight text-sm",
-            collapsed ? "px-1 hidden lg:flex" : ""
-          )}
+          className="flex items-center gap-2 px-2 py-1 rounded-lg text-primary font-semibold tracking-tight text-sm"
           onClick={(e) => {
             e.preventDefault()
             router.push("/dashboard")
@@ -101,20 +98,17 @@ export function DashboardTopBar({
           <Image
             src="/brand/logo.png"
             alt="GazPoints"
-            width={32}
-            height={32}
-            className={cn(
-              "shrink-0",
-              collapsed ? "size-5 hidden" : "size-6"
-            )}
+            width={24}
+            height={24}
+            className="shrink-0 size-6"
           />
-          <span className="hidden sm:inline">GazPoints</span>
+          <span className="text-sm font-bold tracking-tight">GazPoints</span>
         </Link>
 
-        <span className="hidden sm:inline-block">
+        <span className="inline-block text-muted-foreground">
           /
         </span>
-        <span className={cn("hidden sm:inline text-xs font-semibold text-muted-foreground", collapsed ? "hidden" : "")}>
+        <span className={cn("text-xs font-semibold text-muted-foreground", collapsed ? "hidden" : "")}>
           {title}
         </span>
       </div>
@@ -208,10 +202,11 @@ export function DashboardTopBar({
                 <Image
                   src="/brand/logo.png"
                   alt="GazPoints"
-                  width={32}
-                  height={32}
+                  width={24}
+                  height={24}
                   className="size-6 shrink-0"
                 />
+                <span className="text-sm font-bold tracking-tight">GazPoints</span>
                 <span className="ml-auto text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   {roleLabel}
                 </span>

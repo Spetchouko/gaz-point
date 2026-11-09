@@ -59,9 +59,9 @@ export function Header() {
           <Image
             src="/brand/logo.png"
             alt="GazPoints"
-            width={22}
-            height={22}
-            className="h-6 w-6 object-contain shrink-0"
+            width={20}
+            height={20}
+            className="h-5 w-5 object-contain shrink-0"
           />
           <span className="font-heading text-lg font-bold tracking-tight text-foreground">
             GazPoints

@@ -95,8 +95,7 @@ export function AdminCollaborateurForm() {
                   id="collab-phoneNumber"
                   name="phoneNumber"
                   label="Téléphone"
-                  className="pl-10 h-11"
-                />
+                  />
               </div>
               <div className="space-y-1.5">
                 <PasswordField

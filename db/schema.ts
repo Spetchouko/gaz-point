@@ -111,6 +111,13 @@ export const pointDeVente = pgTable(
     phone: text("phone"),
     brands: text("brands").array(),
     formats: text("formats").array(),
+    // Services configuration
+    deliveryEnabled: boolean("delivery_enabled").default(false).notNull(),
+    deliveryFee: integer("delivery_fee").default(0).notNull(), // FCFA
+    exchangeEnabled: boolean("exchange_enabled").default(false).notNull(),
+    exchangeBrands: text("exchange_brands").array().default([]), // Marques acceptées pour l'échange
+    exchangeFormats: text("exchange_formats").array().default([]), // Grammages acceptés pour l'échange
+    gasSaleEnabled: boolean("gas_sale_enabled").default(false).notNull(),
     vendorId: text("vendor_id").references(() => user.id, { onDelete: "set null" }),
     isActive: boolean("is_active").default(true).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -174,6 +181,29 @@ export const brand = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [uniqueIndex("brand_name_key_idx").on(table.nameKey)]
+);
+
+export const pointDeVenteBouteille = pgTable(
+  "point_de_vente_bouteille",
+  {
+    id: text("id").primaryKey(),
+    pointDeVenteId: text("point_de_vente_id")
+      .notNull()
+      .references(() => pointDeVente.id, { onDelete: "cascade" }),
+    brandId: text("brand_id")
+      .notNull()
+      .references(() => brand.id, { onDelete: "cascade" }),
+    format: text("format").notNull(), // ex: '6 kg', '12,5 kg', '15 kg'
+  },
+  (table) => [
+    uniqueIndex("point_de_vente_bouteille_unique_idx").on(
+      table.pointDeVenteId,
+      table.brandId,
+      table.format
+    ),
+    index("point_de_vente_bouteille_point_idx").on(table.pointDeVenteId),
+    index("point_de_vente_bouteille_brand_idx").on(table.brandId),
+  ]
 );
 
 export const favori = pgTable(
@@ -409,8 +439,78 @@ export const reservation = pgTable(
   ]
 )
 
+export const vendorSubscription = pgTable(
+  "vendor_subscription",
+  {
+    id: text("id").primaryKey(),
+    vendorId: text("vendor_id")
+      .notNull()
+      .unique()
+      .references(() => user.id, { onDelete: "cascade" }),
+    status: text("status").default("inactive").notNull(), // 'active' | 'inactive' | 'past_due' | 'cancelled'
+    currentPeriodStart: timestamp("current_period_start"),
+    currentPeriodEnd: timestamp("current_period_end"),
+    cancelledAt: timestamp("cancelled_at"),
+    lastPaymentAt: timestamp("last_payment_at"),
+    lastPaymentReference: text("last_payment_reference"), // GeniusPay reference
+    amount: integer("amount").default(5000).notNull(), // FCFA/XAF
+    currency: text("currency").default("XAF").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("vendor_subscription_vendor_id_idx").on(table.vendorId),
+    index("vendor_subscription_status_idx").on(table.status),
+  ]
+)
+
+export const paymentTransaction = pgTable(
+  "payment_transaction",
+  {
+    id: text("id").primaryKey(),
+    vendorId: text("vendor_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    geniuspayReference: text("geniuspay_reference").notNull().unique(), // MTX-XXXXXXXXXX
+    geniuspayId: integer("geniuspay_id"), // internal GeniusPay ID
+    amount: integer("amount").notNull(), // XAF
+    currency: text("currency").default("XAF").notNull(),
+    fees: integer("fees"),
+    netAmount: integer("net_amount"),
+    status: text("status").notNull(), // 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'expired' | 'refunded'
+    paymentMethod: text("payment_method"), // 'wave' | 'pawapay' | 'orange_money' | 'mtn_money' | 'card' | etc.
+    paymentProvider: text("payment_provider"),
+    customerName: text("customer_name"),
+    customerEmail: text("customer_email"),
+    customerPhone: text("customer_phone"),
+    checkoutUrl: text("checkout_url"),
+    successUrl: text("success_url"),
+    errorUrl: text("error_url"),
+    metadata: text("metadata"), // JSON string
+    environment: text("environment").notNull(), // 'sandbox' | 'live'
+    initiatedAt: timestamp("initiated_at").defaultNow().notNull(),
+    completedAt: timestamp("completed_at"),
+    webhookReceivedAt: timestamp("webhook_received_at"),
+    webhookVerified: boolean("webhook_verified").default(false).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("payment_transaction_vendor_id_idx").on(table.vendorId),
+    index("payment_transaction_geniuspay_reference_idx").on(table.geniuspayReference),
+    index("payment_transaction_status_idx").on(table.status),
+    index("payment_transaction_created_at_idx").on(table.createdAt),
+  ]
+)
+
 export const relations = defineRelations(
-  { user, session, account, verification, pointDeVente, disponibilite, favori, recharge, adminAction, collaborateurPermission, publicite, trafficEvent, brand, avis, reservation },
+  { user, session, account, verification, pointDeVente, disponibilite, favori, recharge, adminAction, collaborateurPermission, publicite, trafficEvent, brand, avis, reservation, vendorSubscription, paymentTransaction },
   (r) => ({
     user: {
       sessions: r.many.session(),
@@ -419,6 +519,11 @@ export const relations = defineRelations(
       recharges: r.many.recharge(),
       adminActions: r.many.adminAction(),
       avis: r.many.avis(),
+      vendorSubscription: r.one.vendorSubscription({
+        from: r.user.id,
+        to: r.vendorSubscription.vendorId,
+      }),
+      paymentTransactions: r.many.paymentTransaction(),
     },
     session: {
       user: r.one.user({
@@ -515,6 +620,18 @@ export const relations = defineRelations(
       disponibilite: r.one.disponibilite({
         from: r.reservation.disponibiliteId,
         to: r.disponibilite.id,
+      }),
+    },
+    vendorSubscription: {
+      vendor: r.one.user({
+        from: r.vendorSubscription.vendorId,
+        to: r.user.id,
+      }),
+    },
+    paymentTransaction: {
+      vendor: r.one.user({
+        from: r.paymentTransaction.vendorId,
+        to: r.user.id,
       }),
     },
   })

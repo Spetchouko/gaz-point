@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { db } from "@/db"
-import { user, pointDeVente, disponibilite } from "@/db/schema"
+import { user, pointDeVente, disponibilite, vendorSubscription, paymentTransaction } from "@/db/schema"
 import { eq, inArray, desc } from "drizzle-orm"
 import { AdminVendeurDetail } from "@/app/_components/admin-vendeur-detail"
 import { requireStaffModule } from "@/lib/session"
@@ -38,6 +38,19 @@ export default async function AdminVendeurDetailPage({
         .orderBy(desc(disponibilite.createdAt))
     : []
 
+  // Fetch subscription and payment history
+  const [subscription] = await db
+    .select()
+    .from(vendorSubscription)
+    .where(eq(vendorSubscription.vendorId, id))
+    .limit(1)
+
+  const payments = await db
+    .select()
+    .from(paymentTransaction)
+    .where(eq(paymentTransaction.vendorId, id))
+    .orderBy(desc(paymentTransaction.createdAt))
+
   const dispoByPoint = new Map<string, typeof dispos[0][]>()
   for (const d of dispos) {
     const existing = dispoByPoint.get(d.pointId) ?? []
@@ -50,5 +63,5 @@ export default async function AdminVendeurDetailPage({
     disponibilites: dispoByPoint.get(p.id) ?? [],
   }))
 
-  return <AdminVendeurDetail vendor={vendor} points={pointsWithDispos} />
+  return <AdminVendeurDetail vendor={vendor} points={pointsWithDispos} subscription={subscription ?? null} payments={payments} />
 }

@@ -43,7 +43,9 @@ function ValidationEmailContent() {
       setError("")
       setCode("")
       const timer = setTimeout(() => {
-        router.push(`/connexion?email=${encodeURIComponent(email)}`)
+        // Check if vendor by making a quick API call or use session
+        // For now, redirect to a page that will determine the right destination
+        router.push(`/connexion?email=${encodeURIComponent(email)}&redirect=auto`)
         router.refresh()
       }, 800)
       return () => clearTimeout(timer)
@@ -317,7 +319,7 @@ function ValidationEmailContent() {
                     onClick={renvoyerCode}
                     className="text-sm text-primary hover:underline font-medium"
                   >
-                    Vous n'avez pas reçu le code ? Renvoyer un code
+                    Vous n&apos;avez pas reçu le code ? Renvoyer un code
                   </button>
                 )}
               </div>

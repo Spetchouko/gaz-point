@@ -1,20 +1,10 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
-import {
-  ArrowLeft,
-  ArrowRight,
-  Bell,
-  ChevronLeft,
-  ChevronRight,
-  Cylinder,
-  LogOut,
-  Menu,
-  Search,
-  User,
-} from "lucide-react"
+import { Bell, LogOut, Menu, Search, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -90,56 +80,30 @@ export function AdminTopBar({
         collapsed ? "pl-2" : "pl-5"
       )}
     >
-      {/* Bouton de réduction / agrandissement de la barre latérale (bureau uniquement) */}
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="h-8 w-8 shrink-0 hidden lg:flex"
-        onClick={onToggleCollapse}
-        aria-label={
-          collapsed
-            ? "Développer le menu latéral"
-            : "Réduire le menu latéral"
-        }
-      >
-        {collapsed ? (
-          <ChevronRight className="size-3.5" />
-        ) : (
-          <ChevronLeft className="size-3.5" />
-        )}
-      </Button>
+      {/* Logo + titre de page active (compact, mobile-friendly) */}
+      <div className="flex shrink-0 items-center gap-2">
+        <Link
+          href="/admin"
+          className="flex items-center gap-2 px-2 py-1 rounded-lg text-primary font-semibold tracking-tight text-sm"
+          onClick={(e) => {
+            e.preventDefault()
+            router.push("/admin")
+          }}
+        >
+          <Image
+            src="/brand/logo.png"
+            alt="GazPoints"
+            width={24}
+            height={24}
+            className="shrink-0 size-6"
+          />
+          <span className="text-sm font-bold tracking-tight">GazPoints</span>
+        </Link>
 
-      {/* Boutons de navigation historique */}
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="h-8 w-8 shrink-0"
-        onClick={() => router.back()}
-        aria-label="Page précédente"
-      >
-        <ArrowLeft className="size-3.5" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="h-8 w-8 shrink-0"
-        onClick={() => router.forward()}
-        aria-label="Page suivante"
-      >
-        <ArrowRight className="size-3.5" />
-      </Button>
-
-      <span className="sr-only">Navigation précédente / suivante</span>
-
-      {/* Identifiant de l'application + titre de la page active */}
-      <div className="flex shrink-0 items-center gap-2 px-2 py-1 rounded-lg bg-muted/50 text-muted-foreground">
-        <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          <Cylinder className="size-3" aria-hidden />
+        <span className="inline-block text-muted-foreground">
+          /
         </span>
-        <span className={cn("text-xs font-semibold", collapsed ? "hidden" : "")}>
+        <span className={cn("text-xs font-semibold text-muted-foreground", collapsed ? "hidden" : "")}>
           {title}
         </span>
       </div>
@@ -229,15 +193,22 @@ export function AdminTopBar({
             </button>
           </SheetTrigger>
           <SheetContent side="right" className="w-[90vw] max-w-md p-0">
-            <SheetHeader className="border-b border-border p-4">
-              <SheetTitle className="flex items-center gap-2">
-                <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Cylinder className="size-5" aria-hidden />
+            <SheetHeader className="border-b border-border p-4 bg-card">
+              <SheetTitle className="flex items-center gap-2 text-lg font-bold tracking-tight text-foreground">
+                <Image
+                  src="/brand/logo.png"
+                  alt="GazPoints"
+                  width={24}
+                  height={24}
+                  className="size-6 shrink-0"
+                />
+                <span className="ml-auto text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  {roleLabel}
                 </span>
-                GAZ POINT Admin
+                <span className="text-sm font-bold tracking-tight">GazPoints</span>
               </SheetTitle>
             </SheetHeader>
-            <nav className="flex flex-col gap-1 p-4" aria-label="Navigation administration mobile">
+            <nav className="flex flex-col gap-0.5 p-3" aria-label="Navigation administration mobile">
               {items.map((item) => {
                 const Icon = item.icon
                 const active = isActive(item.href)
@@ -250,29 +221,45 @@ export function AdminTopBar({
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                       active
-                        ? "bg-primary text-primary-foreground"
+                        ? "bg-primary/10 text-primary border border-primary/100"
                         : "text-muted-foreground hover:bg-muted hover:text-foreground"
                     )}
                   >
-                    <Icon className="size-4" aria-hidden />
+                    <Icon className="size-4 shrink-0" aria-hidden />
                     {item.label}
                   </Link>
                 )
               })}
-              <div className="border-t border-border mt-3 pt-3 space-y-1">
+              <div className="border-t border-border mt-2 pt-3 space-y-0">
                 <button
                   type="button"
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground text-destructive"
                   onClick={() => {
                     setMobileOpen(false)
                     handleSignOut()
                   }}
                 >
-                  <LogOut className="size-4" />
+                  <LogOut className="size-4 shrink-0" />
                   Déconnexion
                 </button>
               </div>
             </nav>
+            <div className="p-3 border-t border-border text-center space-y-2">
+              <Link
+                href="/admin"
+                className="block text-xs font-medium text-primary hover:text-primary-strong"
+                onClick={() => setMobileOpen(false)}
+              >
+                ← Retour au tableau de bord
+              </Link>
+              <Link
+                href="/"
+                className="block text-xs font-medium text-muted-foreground hover:text-foreground"
+                onClick={() => setMobileOpen(false)}
+              >
+                {"Retour à l\u0027accueil"}
+              </Link>
+            </div>
           </SheetContent>
         </Sheet>
       </div>

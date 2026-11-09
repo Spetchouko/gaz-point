@@ -6,8 +6,8 @@ import { Activity, User } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { TrouverMonGaz } from "@/app/_components/trouver-mon-gaz"
-import { MesReservations } from "@/app/_components/mes-reservations"
 import { DashboardSection } from "@/app/_components/dashboard-section"
+import { MesReservations } from "@/app/_components/mes-reservations"
 
 type GlobalStats = {
   totalReservations: number
@@ -52,6 +52,18 @@ export function DashboardClient({
         </p>
       </header>
 
+      {/* Section : Recherche de gaz (juste sous le message de bienvenue) */}
+      <section className="mb-4">
+        <DashboardSection
+          title="Rechercher du gaz"
+          icon={Activity}
+          count={undefined}
+          className=""
+        >
+          <TrouverMonGaz />
+        </DashboardSection>
+      </section>
+
       {/* Section : Statistiques principales */}
       <section className="mb-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -88,18 +100,6 @@ export function DashboardClient({
             </p>
           </DashboardSection>
         </div>
-      </section>
-
-      {/* Section : Recherche de gaz */}
-      <section className="mb-4">
-        <DashboardSection
-          title="Rechercher du gaz"
-          icon={Activity}
-          count={undefined}
-          className=""
-        >
-          <TrouverMonGaz />
-        </DashboardSection>
       </section>
 
       {/* Section : Historique des activités */}

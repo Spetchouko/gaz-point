@@ -156,7 +156,7 @@ function AdminLoginPageContent() {
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     onBlur={() => setSubmitted(true)}
                     required
-                    className="pl-10 h-11"
+                    
                     disabled={loading}
                     aria-invalid={submitted && !!fieldErrors.email}
                     aria-describedby={submitted && fieldErrors.email ? "email-error" : undefined}

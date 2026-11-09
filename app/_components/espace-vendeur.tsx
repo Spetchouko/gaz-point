@@ -411,7 +411,7 @@ function DisponibiliteVendeurForm({
                 label="Téléphone (facultatif)"
                 value={formState.phone ?? undefined}
                 onChange={(normalized) => setFormState((s) => ({ ...s, phone: normalized ?? "" }))}
-                className="pl-10 h-11"
+                
               />
             </div>
 

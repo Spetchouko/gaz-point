@@ -20,6 +20,7 @@ import {
   type DashboardNavSection,
   type DashboardRole,
 } from "./dashboard-nav-items"
+import { VendorSubscriptionStatus } from "./vendor-subscription-status"
 
 export function DashboardNav({
   role,
@@ -41,6 +42,8 @@ export function DashboardNav({
   const roleLabel = role === "vendor" ? "Vendeur" : "Usager"
   const initial = user?.name?.charAt(0).toUpperCase() ?? "U"
   const userName = user?.name ?? (role === "vendor" ? "Vendeur" : "Usager")
+
+  const showSubscriptionStatus = role === "vendor"
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href)
@@ -113,10 +116,7 @@ export function DashboardNav({
       <div className="flex h-14 items-center justify-between border-b border-border px-3">
         <Link
           href="/dashboard"
-          className={cn(
-            "flex items-center gap-2",
-            collapsed ? "justify-center px-1" : "px-3 font-bold text-lg tracking-tight"
-          )}
+          className="flex items-center gap-2 px-3"
           onClick={(e) => {
             e.preventDefault()
             router.push("/dashboard")
@@ -125,15 +125,11 @@ export function DashboardNav({
           <Image
             src="/brand/logo.png"
             alt="GazPoints"
-            width={32}
-            height={32}
-            className={cn(
-              "shrink-0",
-              collapsed ? "size-6" : "size-8",
-              collapsed ? "hidden" : ""
-            )}
+            width={24}
+            height={24}
+            className="shrink-0 size-6"
           />
-          {!collapsed && <span className="truncate">GazPoints</span>}
+          <span className="truncate text-sm font-bold tracking-tight">GazPoints</span>
         </Link>
         <button
           type="button"
@@ -211,6 +207,11 @@ export function DashboardNav({
           <ArrowLeftCircle className="size-4" aria-hidden />
           {!collapsed && <span>{"Retour à l\u0027accueil"}</span>}
         </Link>
+        {showSubscriptionStatus && !collapsed && (
+          <div className="px-3 py-2">
+            <VendorSubscriptionStatus />
+          </div>
+        )}
         <div
           className={cn(
             "flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer transition-colors hover:bg-muted",

@@ -276,7 +276,7 @@ function InscriptionVendeurContent() {
                     onChange={(e) => handleInputChange("businessName", e.target.value)}
                     onBlur={() => setSubmitted(true)}
                     required
-                    className="pl-10 h-11"
+                    
                     disabled={loading}
                     aria-invalid={submitted && !!fieldErrors.businessName}
                     aria-describedby={
@@ -308,7 +308,7 @@ function InscriptionVendeurContent() {
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     onBlur={() => setSubmitted(true)}
                     required
-                    className="pl-10 h-11"
+                    
                     disabled={loading}
                     aria-invalid={submitted && !!fieldErrors.email}
                     aria-describedby={
@@ -518,7 +518,7 @@ function ConfigurationProfilVendeur() {
                     value={businessAddress}
                     onChange={(e) => setBusinessAddress(e.target.value)}
                     required
-                    className="pl-10 h-11"
+                    
                     disabled={loading}
                   />
                 </div>
@@ -536,7 +536,7 @@ function ConfigurationProfilVendeur() {
                   value={businessPhone ?? undefined}
                   onChange={(normalized) => setBusinessPhone(normalized ?? "")}
                   required
-                  className="pl-10 h-11"
+                  
                   disabled={loading}
                 />
               </div>

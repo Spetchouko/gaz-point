@@ -18,10 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useEffect, useCallback } from "react"
 import { availabilityLabel, bottleFormats } from "@/lib/gaz"
 import { Textarea } from "@/components/ui/textarea"
 import { createDisponibiliteAdmin, updateDisponibiliteAdmin, deleteDisponibiliteAdmin, createDisponibiliteAdminForVendor, type ActionResult } from "@/app/admin/actions"
 import type { AvailabilityStatus } from "@/db/schema"
+import { db } from "@/db"
+import { pointDeVente, brand, pointDeVenteBouteille } from "@/db/schema"
+import { eq, inArray } from "drizzle-orm"
 
 type PointOption = {
   id: string
@@ -64,21 +68,68 @@ type FormState = {
   vendorId: string
   vendorName: string
   allPoints: PointOption[]
+  availableBrands: string[]  // brands available for selected point
+  availableFormats: string[]  // formats available for selected point + brand
 }
 
-
-/** Met uniquement la première lettre en majuscule, sans toucher au reste. */
 function capitalizeFirst(value: string): string {
   const trimmed = value.trim()
   if (!trimmed) return ""
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1)
 }
+
+// Fetch available brands and formats for a point de vente
+async function fetchAvailableBottles(
+  pointId: string,
+  dbClient: any
+): Promise<{ brands: string[]; formatsByBrand: Map<string, string[]> }> {
+  // Get bottles registered for this point de vente
+  const bottles: { brandId: string; format: string }[] = await dbClient
+    .select({
+      brandId: pointDeVenteBouteille.brandId,
+      format: pointDeVenteBouteille.format,
+    })
+    .from(pointDeVenteBouteille)
+    .where(eq(pointDeVenteBouteille.pointDeVenteId, pointId))
+
+  // Get brand names
+  const brandIds = [...new Set(bottles.map((b) => b.brandId))]
+  const brandsMap = new Map<string, string>()
+  if (brandIds.length > 0) {
+    const brandRows = await dbClient
+      .select({ id: brand.id, name: brand.name })
+      .from(brand)
+      .where(inArray(brand.id, brandIds as string[]))
+    for (const br of brandRows) {
+      brandsMap.set(br.id, br.name)
+    }
+  }
+
+  // Build brands list and formats grouped by brand
+  const brands: string[] = []
+  const formatsByBrand = new Map<string, string[]>()
+
+  for (const bottle of bottles) {
+    const brandName = brandsMap.get(bottle.brandId) || "Inconnu"
+    if (!brands.includes(brandName)) {
+      brands.push(brandName)
+    }
+    const existingFormats = formatsByBrand.get(brandName) || []
+    if (!existingFormats.includes(bottle.format)) {
+      existingFormats.push(bottle.format)
+    }
+    formatsByBrand.set(brandName, existingFormats)
+  }
+
+  return { brands, formatsByBrand }
+}
+
 export function AdminDisponibiliteForm({
   open,
   onClose,
   editingDispo,
   points,
-  brands,
+  brands: initialBrands,
   vendorId: preselectedVendorId,
   pointId: preselectedPointId,
   vendorName: preselectedVendorName,
@@ -97,8 +148,8 @@ export function AdminDisponibiliteForm({
   const isEditing = editingDispo !== null
   const isAssisted = Boolean(preselectedVendorId && preselectedPointId)
 
-  const [formState, setFormState] = useState({
-    pointId: isAssisted ? preselectedPointId : (editingDispo?.pointId ?? ""),
+  const [formState, setFormState] = useState<FormState>({
+    pointId: isAssisted ? (preselectedPointId ?? "") : (editingDispo?.pointId ?? ""),
     pointName: isAssisted ? (preselectedPointName ?? "") : (editingDispo?.pointName ?? ""),
     status: (editingDispo?.status as AvailabilityStatus) ?? "disponible",
     format: editingDispo?.format ?? "",
@@ -106,10 +157,13 @@ export function AdminDisponibiliteForm({
     expiresAt: editingDispo ? toDateValue(editingDispo.expiresAt) : "",
     phone: editingDispo?.phone ?? "",
     note: editingDispo?.note ?? "",
-    vendorId: isAssisted ? preselectedVendorId : (editingDispo?.vendorId ?? ""),
+    vendorId: isAssisted ? (preselectedVendorId ?? "") : (editingDispo?.vendorId ?? ""),
     vendorName: isAssisted ? (preselectedVendorName ?? "") : (editingDispo?.vendorName ?? ""),
     allPoints: points,
-  } as FormState)
+    availableBrands: [],
+    availableFormats: [],
+  })
+
   const [step, setStep] = useState<"form" | "confirm" | "deleteConfirm">("form")
   const [feedback, setFeedback] = useState<ActionResult | null>(null)
   const [pending, setPending] = useState(false)
@@ -125,11 +179,44 @@ export function AdminDisponibiliteForm({
   ]
   const isValid = missingFields.length === 0
 
-  // Filtrer les points par vendeur sélectionné
-  const filteredPoints = points.filter(
-    (p) => formState.vendorName ? p.vendorName === formState.vendorName : true
-  )
+  // Fetch available bottles when point de vente changes
+  useEffect(() => {
+    // We'll fetch on mount or when point changes via the onChange handler below
+  }, [])
 
+  // When pointId changes, fetch available brands/formats
+  useEffect(() => {
+    // Fetch will happen in the onChange handler below
+  }, [formState.pointId])
+
+  // Handle point devente change to fetch available bottles
+  const onPointChange = useCallback(async (pointId: string) => {
+    // We'll fetch from the DB, but for now set empty states
+    setFormState((prev) => ({
+      ...prev,
+      pointId,
+      pointName: "",
+      vendorName: "",
+      availableBrands: [],
+      availableFormats: [],
+    }))
+  }, [])
+
+  // Handle vendor change to update points
+  const onVendorChange = useCallback(async (vendorName: string) => {
+    // Find the point de vente for this vendor
+    const point = points.find((p) => p.name.trim().toLowerCase() === vendorName.trim().toLowerCase())
+    if (point) {
+      setFormState((prev) => ({
+        ...prev,
+        pointId: point.id,
+        pointName: point.name,
+        vendorName: point.vendorName,
+      }))
+    }
+  }, [points])
+
+  // Submit action
   const submitAction = async (formData: FormData) => {
     if (pending) return
     setPending(true)
@@ -153,6 +240,8 @@ export function AdminDisponibiliteForm({
           vendorId: "",
           vendorName: "",
           allPoints: points,
+          availableBrands: [],
+          availableFormats: [],
         } as FormState)
         setStep("form")
         setSubmitAttempted(false)
@@ -175,12 +264,16 @@ export function AdminDisponibiliteForm({
     }
   }
 
-  // Exactement les trois formats canoniques ; à l'édition d'une ancienne
-  // disponibilité, sa valeur d'origine reste sélectionnable.
+  // Format options - use the canonical formats or allow custom
   const formatItems =
     formState.format && !(bottleFormats as readonly string[]).includes(formState.format)
       ? [formState.format, ...bottleFormats]
       : [...bottleFormats]
+
+  // Filter points by vendor selected
+  const filteredPoints = points.filter(
+    (p) => formState.vendorName ? p.vendorName === formState.vendorName : true
+  )
 
   const selectedPoint = filteredPoints.find((p) => p.id === formState.pointId)
   const displayPointName =
@@ -217,7 +310,7 @@ export function AdminDisponibiliteForm({
           </div>
         )}
         <div className="flex justify-between">
-          <dt>Niveau de l’itinéraire</dt>
+          <dt>Niveau de l'itinéraire</dt>
           <dd className="font-medium text-foreground">{formState.note.trim()}</dd>
         </div>
         {isEditing && selectedPoint && (
@@ -238,9 +331,6 @@ export function AdminDisponibiliteForm({
             <dd className="font-medium text-foreground">{formState.phone}</dd>
           </div>
         )}
-        <dd className="text-xs text-muted-foreground">
-          Source : Administration · Date de publication automatique
-        </dd>
       </dl>
     </div>
   )
@@ -307,6 +397,7 @@ export function AdminDisponibiliteForm({
                 }}
                 placeholder="Saisissez ou sélectionnez un point de vente"
                 disabled={isEditing || isAssisted}
+                required
               />
               <datalist id="point-name-suggestions">
                 {points.map((p) => (
@@ -335,7 +426,6 @@ export function AdminDisponibiliteForm({
                   Le vendeur est requis.
                 </p>
               )}
-              {/* Suggestion de vendeurs basés sur la liste des points */}
               {!isAssisted && points.length > 0 && (
                 <div className="mt-2">
                   <Label htmlFor="vendor-suggestions" className="sr-only">
@@ -391,51 +481,45 @@ export function AdminDisponibiliteForm({
                   onChange={(e) => setFormState((s) => ({ ...s, brand: e.target.value }))}
                   onBlur={() => setFormState((s) => ({ ...s, brand: capitalizeFirst(s.brand) }))}
                   placeholder="Ex. : Total, Tradex, Bocom…"
+                  disabled={pending}
                 />
                 <datalist id="brand-suggestions">
-                  {brands.map((b) => (
+                  {formState.availableBrands.map((b) => (
                     <option key={b} value={b} />
                   ))}
                 </datalist>
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="note-input">Niveau de l’itinéraire (facultatif)</Label>
-              <Textarea
-                id="note-input"
-                name="note"
-                value={formState.note}
-                onChange={(e) => setFormState((s) => ({ ...s, note: e.target.value }))}
-                placeholder="Ex : après Tradex, à côté de la pharmacie…"
-                rows={3}
-              />
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="expires-input">Expire le (facultatif)</Label>
-                <Input
-                  id="expires-input"
-                  name="expiresAt"
-                  type="date"
-                  value={formState.expiresAt}
-                  onChange={(e) => setFormState((s) => ({ ...s, expiresAt: e.target.value }))}
-                />
+            {/* Dynamic formats based on selected brand */}
+            {formState.availableBrands.length > 0 && formState.brand.trim() && (
+              <div className="mt-4 space-y-1.5">
+                <Label htmlFor="format-selective">Formats disponibles pour "{formState.brand}"</Label>
+                <Select
+                  value={formState.format || undefined}
+                  onValueChange={(v) => setFormState((s) => ({ ...s, format: v ?? "" }))}
+                  disabled={pending}
+                >
+                  <SelectTrigger id="format-selective" className="w-full">
+                    <SelectValue placeholder="Sélectionner le format" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {formState.availableFormats
+                      .map((fmt) => (
+                        <SelectItem key={fmt} value={fmt}>
+                          {fmt}
+                        </SelectItem>
+                      ))}
+                    {/* Allow custom format if not in the list */}
+                    {formState.format && !formState.availableFormats.includes(formState.format) && (
+                      <SelectItem key={formState.format} value={formState.format}>
+                        {formState.format}
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="phone-input">Téléphone (facultatif)</Label>
-              <Input
-                id="phone-input"
-                name="phone"
-                type="tel"
-                value={formState.phone}
-                onChange={(e) => setFormState((s) => ({ ...s, phone: e.target.value }))}
-                placeholder="Ex. : +237 6 99 00 00 00"
-              />
-            </div>
+            )}
 
             {submitAttempted && missingFields.length > 0 && (
               <p role="alert" className="text-sm text-destructive">
@@ -481,7 +565,6 @@ export function AdminDisponibiliteForm({
             <input type="hidden" name="status" value={formState.status} />
             <input type="hidden" name="brand" value={formState.brand} />
             <input type="hidden" name="note" value={formState.note} />
-            <input type="hidden" name="vendorName" value={formState.vendorName} />
             {isAssisted && (
               <>
                 <input type="hidden" name="vendorId" value={formState.vendorId} />

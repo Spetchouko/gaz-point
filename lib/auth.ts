@@ -197,7 +197,11 @@ export const auth = betterAuth({
         // Valider le format camerounais : +237 suivi de 9 chiffres.
         phoneNumberValidator: async (phone: string) => {
           const clean = phone.replace(/\s/g, "")
-          return /^\+237\d{9}$/.test(clean)
+          // Format standard: +237 suivi de 9 chiffres
+          const standardFormat = /^\+237\d{9}$/.test(clean)
+          // Format avec espaces: +237 suivi de 9 chiffres avec séparateurs
+          const spacedFormat = /^\+237\s\d{2}\s\d{2}\s\d{2}\s\d{2}$/.test(phone)
+          return standardFormat || spacedFormat
         },
         // Envoi du code OTP. On ne simule jamais l'envoi ; si cette fonction
         // n'est pas remplacée par une vraie intégration, Better Auth lèvera

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
 import { reservation, pointDeVente } from "@/db/schema"
-import { eq, desc, and, inArray, count } from "drizzle-orm"
+import { eq, desc, and, inArray, sql, count } from "drizzle-orm"
 import { getProUser } from "@/lib/session"
 import { formatDateTime } from "@/lib/gaz"
 import { generateReservationQRCode } from "@/lib/qrcode"
@@ -88,7 +88,39 @@ export async function GET(req: NextRequest) {
     const reservationsWithStatus = await Promise.all(
       reservations.map(async (r) => {
         const isExpired = r.expiresAt && new Date(r.expiresAt) < now
-        const effectiveStatus = isExpired && r.status === "confirmed" ? "expired" : r.status
+        // Map statuses to the new system
+        let effectiveStatus = r.status
+        let statusLabel = r.status
+        const isReservedAtOld = r.reservedAt && new Date(r.reservedAt) < new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // 30 days old
+
+        switch (r.status) {
+          case "confirmed":
+            effectiveStatus = "confirmed"
+            statusLabel = "Confirmée"
+            break
+          case "collected":
+            effectiveStatus = "collected"
+            statusLabel = "Retirée"
+            break
+          case "cancelled":
+            effectiveStatus = "cancelled"
+            statusLabel = "Annulée"
+            break
+          case "en_attente":
+          case "pending":
+            effectiveStatus = "en_attente"
+            statusLabel = "En attente"
+            break
+          case "terminee":
+          case "completed":
+            effectiveStatus = "terminee"
+            statusLabel = "Terminée"
+            break
+          default:
+            effectiveStatus = r.status
+            statusLabel = r.status
+        }
+
         // Generate QR Code for confirmed reservations
         const qrCode = effectiveStatus === "confirmed"
           ? await generateReservationQRCode(r.reservationCode)
@@ -97,6 +129,7 @@ export async function GET(req: NextRequest) {
         return {
           ...r,
           status: effectiveStatus,
+          statusLabel,
           isExpired,
           qrCode,
           reservedAtFormatted: formatDateTime(r.reservedAt),
@@ -114,6 +147,61 @@ export async function GET(req: NextRequest) {
     console.error("[reservation/vendor] error:", err)
     return NextResponse.json(
       { error: "Erreur lors de la récupération des réservations" },
+      { status: 500 }
+    )
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const auth = await getProUser()
+    if (!auth) {
+      return NextResponse.json({ error: "Accès réservé aux vendeurs" }, { status: 401 })
+    }
+    const { user, role } = auth
+    if (role !== "vendor") {
+      return NextResponse.json({ error: "Accès réservé aux vendeurs" }, { status: 403 })
+    }
+
+    const body = await req.json()
+    const { action, reservationId, newStatus } = body
+
+    switch (action) {
+      case "confirm": {
+        await db
+          .update(reservation)
+          .set({ status: "confirmed", collectedAt: null })
+          .where(eq(reservation.id, reservationId))
+        return NextResponse.json({ ok: true, message: "Réservation confirmée" })
+      }
+      case "cancel": {
+        await db
+          .update(reservation)
+          .set({ status: "cancelled", cancelledAt: new Date() })
+          .where(eq(reservation.id, reservationId))
+        return NextResponse.json({ ok: true, message: "Réservation annulée" })
+      }
+      case "terminee": {
+        await db
+          .update(reservation)
+          .set({ status: "terminee", collectedAt: new Date() })
+          .where(eq(reservation.id, reservationId))
+        return NextResponse.json({ ok: true, message: "Réservation marquée comme terminée" })
+      }
+      case "en_attente": {
+        await db
+          .update(reservation)
+          .set({ status: "en_attente" })
+          .where(eq(reservation.id, reservationId))
+        return NextResponse.json({ ok: true, message: "Réservation en attente" })
+      }
+      default:
+        return NextResponse.json({ error: "Action inconnue" }, { status: 400 })
+    }
+  } catch (err) {
+    console.error("[reservation/vendor/action] error:", err)
+    return NextResponse.json(
+      { error: "Erreur lors de la mise à jour de la réservation" },
       { status: 500 }
     )
   }

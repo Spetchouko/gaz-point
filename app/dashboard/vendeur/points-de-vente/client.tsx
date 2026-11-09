@@ -544,10 +544,6 @@ function PointDeVenteForm({
           label="Téléphone (optionnel)"
           value={form.watch("phone") ?? undefined}
           onChange={(normalized) => form.setValue("phone", normalized, { shouldValidate: true })}
-          className={cn(
-            "mt-1 block w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary pl-8",
-            form.formState.errors.phone && "border-destructive"
-          )}
           disabled={isSubmitting}
         />
         {form.formState.errors.phone && (

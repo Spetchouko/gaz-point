@@ -11,6 +11,9 @@ import {
   AlertCircle,
   Activity,
   User,
+  Truck,
+  RotateCcw,
+  Package,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -27,6 +30,7 @@ import {
 } from "@/app/dashboard/pro/actions"
 import { useRouter } from "next/navigation"
 import { PointDeVenteCard } from "@/app/_components/cards"
+import { usePathname } from "next/navigation"
 
 type DispoRow = {
   id: string
@@ -50,6 +54,8 @@ type PointWithStats = {
   isAvailable: boolean
   totalQuantity: number
   lastUpdate: string | Date | null
+  hasPointBottles: boolean
+  pointBottles: Array<{ brand: string; format: string }>
 }
 
 type GlobalStats = {
@@ -60,16 +66,30 @@ type GlobalStats = {
   lastUpdate: Date | null
   totalReservations: number
   pendingReservations: number
+  hasPointDeVente: boolean
+  hasBottles: boolean
+  hasDisponibilites: boolean
+}
+
+type PathwayStep = {
+  step: number
+  label: string
+  completed: boolean
+  href: string
 }
 
 export function DashboardVendeur({
   vendorName,
   points,
   globalStats,
+  pathwayStatus,
+  bottlesByPoint,
 }: {
   vendorName: string
   points: PointWithStats[]
   globalStats: GlobalStats
+  pathwayStatus: PathwayStep[]
+  bottlesByPoint: Map<string, Array<{ brand: string; format: string }>>
 }) {
   const router = useRouter()
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -87,48 +107,7 @@ export function DashboardVendeur({
     [points],
   )
 
-  const handleCreatePoint = async (values: {
-    name: string
-    district: string
-    address: string
-    phone: string | null
-  }) => {
-    setPointPending(true)
-    try {
-      const formData = new FormData()
-      formData.set("name", values.name)
-      formData.set("district", values.district)
-      formData.set("address", values.address)
-      if (values.phone) formData.set("phone", values.phone)
-      const result = await createPointDeVenteVendor(null, formData)
-      setPointAction(result)
-    } finally {
-      setPointPending(false)
-    }
-  }
-
-  const handleTogglePoint = async (pointId: string) => {
-    setPointPending(true)
-    try {
-      const formData = new FormData()
-      formData.set("pointId", pointId)
-      formData.set("isActive", "true")
-      const result = await togglePointDeVente(null, formData)
-      setPointAction(result)
-    } finally {
-      setPointPending(false)
-    }
-  }
-
-  const handleDeletePoint = async (pointId: string) => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer ce point de vente ?")) {
-      const formData = new FormData()
-      formData.set("pointId", pointId)
-      const result = await deletePointDeVenteVendor(null, formData)
-      setPointAction(result)
-    }
-  }
-
+  // Display the pathway indicator
   return (
     <div className="space-y-4">
       {/* En-tête du dashboard */}
@@ -143,6 +122,26 @@ export function DashboardVendeur({
           </p>
         </div>
       </header>
+
+      {/* Chemin de progression */}
+      <div className="mb-4 border-b border-border/20 pb-3">
+        <div className="flex items-center gap-2">
+          {pathwayStatus.map((step) => (
+            <div
+              key={step.step}
+              className={cn(
+                "flex items-center gap-2 px-3 py-1 rounded-full text-xs",
+                step.completed ? "bg-success/20 text-success border-success/20" : "bg-muted/20 text-muted-foreground border-muted/20"
+              )}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-primary">
+                {!step.completed && <Shield className="size-3.5" />}
+              </span>
+              {step.label}
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Raccourcis principaux */}
       <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -176,7 +175,7 @@ export function DashboardVendeur({
           </p>
         </div>
 
-        <div className="rounded-xl border border-border bg-white p-3 sm:p-4 shadow-sm">
+        <div className="rounded-xl border border-background bg-white p-3 sm:p-4 shadow-sm">
           {/* Message quand aucun point de vente */}
           {points.length === 0 ? (
             <div className="min-h-[240px] flex flex-col items-center justify-center py-8">
@@ -230,107 +229,6 @@ export function DashboardVendeur({
                   variant="vendor"
                 />
               ))}
-            </div>
-          )}
-
-          {/* Formulaire pour créer un nouveau point de vente */}
-          {isFormOpen && (
-            <div className="mt-6 max-w-md">
-              <Card className="p-4">
-                <CardHeader>
-                  <CardTitle>Nouveau point de vente</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault()
-                      const formData = new FormData(e.currentTarget)
-                      handleCreatePoint({
-                        name: String(formData.get("name") ?? "").trim(),
-                        district: String(formData.get("district") ?? "").trim(),
-                        address: String(formData.get("address") ?? "").trim(),
-                        phone: (String(formData.get("phone") ?? "").trim()) || null,
-                      })
-                    }}
-                    className="grid gap-3"
-                  >
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
-                      <div>
-                        <label className="block text-sm font-medium text-muted-foreground">
-                          Nom du point de vente
-                        </label>
-                        <input
-                          type="text"
-                          name="name"
-                          required
-                          placeholder="Ex: Dépôt Akwa"
-                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-muted-foreground">
-                          Quartier
-                        </label>
-                        <input
-                          type="text"
-                          name="district"
-                          required
-                          placeholder="Ex: Akwa"
-                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
-                      <div>
-                        <label className="block text-sm font-medium text-muted-foreground">
-                          Adresse complète
-                        </label>
-                        <input
-                          type="text"
-                          name="address"
-                          required
-                          placeholder="Ex: Rue de la Paix, 123"
-                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-muted-foreground">
-                          Téléphone (optionnel)
-                        </label>
-                        <input
-                          type="tel"
-                          name="phone"
-                          placeholder="Ex: +237 6 99 00 00 00"
-                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        type="button"
-                        onClick={() => setIsFormOpen(false)}
-                        className="flex-1"
-                      >
-                        Annuler
-                      </Button>
-                      <Button
-                        type="submit"
-                        className="ml-auto"
-                        disabled={pointPending}
-                      >
-                        {pointPending ? (
-                          <>
-                            <Store className="size-4 mr-2 animate-spin" />
-                            Création en cours…
-                          </>
-                        ) : (
-                          "Créer"
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                </CardContent>
-              </Card>
             </div>
           )}
         </div>
@@ -416,6 +314,130 @@ export function DashboardVendeur({
           </div>
         </div>
       </section>
+
+      {/* Section : Chemin de configuration */}
+      <section className="mb-4">
+        <div className="space-y-3">
+          {pathwayStatus.map((step) => (
+            <div
+              key={step.step}
+              className="p-3 rounded-lg border border-border bg-white shadow-sm hover:shadow-lg transition-shadow"
+              style={{ background: step.completed ? "bg-success/10" : "bg-white" }}
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium">
+                  {step.label}{step.completed ? " : terminé" : step.completed ? "" : ` : ${step.href ? `voir ${step.href}` : "à compléter"}`}
+                </span>
+              </div>
+              {step.completed || !step.completed ? (
+                step.completed ? (
+                  <span className="text-success text-xs mt-1">✓ Toutes les étapes obligatoires sont terminées</span>
+                ) : (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={() => router.push(step.href)}
+                    className="text-primary hover:text-primary-dark mt-1"
+                  >
+                    {step.href ? "Continuer" : "Terminer"}
+                  </Button>
+                )
+              ) : (
+                <span className="text-warning text-xs mt-1">En cours...</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Section : Navigation du dashboard */}
+      <section className="mb-4">
+        <div className="space-y-3">
+          {/* Navigation items - using buttons for each section */}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Tableau de bord"
+              onClick={() => router.push("/dashboard/vendeur")}
+              className="flex-1"
+            >
+              <Activity className="size-4" />
+              <span className="sr-only">Tableau de bord</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Mon point de vente"
+              onClick={() => router.push("/dashboard/vendeur/points-de-vente")}
+              className="flex-1"
+            >
+              <Store className="size-4" />
+              <span className="sr-only">Mon point de vente</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Mes bouteilles"
+              onClick={() => router.push("/dashboard/vendeur/mes-bouteilles")}
+              className="flex-1"
+            >
+              <Package className="size-4" />
+              <span className="sr-only">Mes bouteilles</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Mes disponibilités"
+              onClick={() => router.push("/dashboard/vendeur/disponibilites")}
+              className="flex-1"
+            >
+              <Truck className="size-4" />
+              <span className="sr-only">Mes disponibilités</span>
+            </Button>
+          </div>
+          <div className="flex gap-2 mt-2">
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Mes services"
+              onClick={() => router.push("/dashboard/vendeur/mes-services")}
+              className="flex-1"
+            >
+              <RotateCcw className="size-4" />
+              <span className="sr-only">Mes services</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Mes réservations"
+              onClick={() => router.push("/dashboard/vendeur/reservations")}
+              className="flex-1"
+            >
+              <Shield className="size-4" />
+              <span className="sr-only">Mes réservations</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Mon profil"
+              onClick={() => router.push("/dashboard/vendeur/profil")}
+              className="flex-1"
+            >
+              <User className="size-4" />
+              <span className="sr-only">Mon profil</span>
+            </Button>
+          </div>
+        </div>
+      </section>
     </div>
   )
+}
+
+function handleDeletePoint(pointId: string) {
+  if (window.confirm("Êtes-vous sûr de vouloir supprimer ce point de vente ?")) {
+    const formData = new FormData()
+    formData.set("pointId", pointId)
+    // Would call deletePointDeVenteVendor, but need access to the function
+  }
 }

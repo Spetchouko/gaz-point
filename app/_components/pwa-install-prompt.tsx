@@ -105,9 +105,9 @@ export function PwaInstallPrompt() {
           <Image
             src="/brand/logo.png"
             alt="GazPoints"
-            width={32}
-            height={32}
-            className="h-8 w-8 object-contain"
+            width={24}
+            height={24}
+            className="h-6 w-6 object-contain"
           />
         </div>
         <div className="min-w-0 flex-1">

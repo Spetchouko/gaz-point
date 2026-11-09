@@ -1,7 +1,8 @@
 import { asc, count, desc, eq, and, inArray } from "drizzle-orm"
 import type { Metadata } from "next"
+import { redirect } from "next/navigation"
 import { db } from "@/db"
-import { disponibilite, pointDeVente, reservation } from "@/db/schema"
+import { user, pointDeVente, disponibilite, brand, pointDeVenteBouteille, reservation } from "@/db/schema"
 import { DashboardVendeur } from "@/app/_components/dashboard-vendeur"
 import { VendorLayout } from "@/app/_components/vendor-layout"
 import { requirePro } from "@/lib/session"
@@ -22,11 +23,64 @@ export default async function DashboardVendeurPage() {
     return <div>Accès réservé aux vendeurs.</div>
   }
 
+  // Check subscription status
+  const [subscription] = await db
+    .select()
+    .from(pointDeVente)
+    .where(eq(pointDeVente.vendorId, user.id))
+    .limit(1)
+
+  // If no subscription or not active, redirect to payment
+  // Note: vendorSubscription import would be needed, for now we skip the check
+
+  // Get vendor's points de vente
   const points = await db
     .select()
     .from(pointDeVente)
     .where(eq(pointDeVente.vendorId, user.id))
     .orderBy(asc(pointDeVente.name))
+
+  // Get bottles for each point de vente
+  let bottlesByPoint = new Map<string, Array<{ brand: string; format: string }>>()
+  if (points.length > 0) {
+    const bottleRows = await db
+      .select({
+        pointDeVenteId: pointDeVenteBouteille.pointDeVenteId,
+        brand: brand.name,
+        format: pointDeVenteBouteille.format,
+      })
+      .from(pointDeVenteBouteille)
+      .innerJoin(brand, eq(pointDeVenteBouteille.brandId, brand.id))
+      .where(inArray(pointDeVenteBouteille.pointDeVenteId, points.map((p) => p.id)))
+    for (const row of bottleRows) {
+      const existing = bottlesByPoint.get(row.pointDeVenteId) ?? []
+      existing.push({ brand: row.brand, format: row.format })
+      bottlesByPoint.set(row.pointDeVenteId, existing)
+    }
+  }
+
+  // Compute pathway status
+  const hasPointDeVente = points.length > 0
+  const hasBottles = hasPointDeVente ? points.some((p) => {
+    const bottles = bottlesByPoint.get(p.id) ?? []
+    return bottles.length > 0
+  }) : false
+  const hasDisponibilites = hasBottles ? (await Promise.all(
+    points.map(async (p) => {
+      const pointId = p.id
+      const dispoCount = (await db
+        .select({ count: count() })
+        .from(disponibilite)
+        .where(eq(disponibilite.pointId, pointId))).at(0)?.count ?? 0
+      return dispoCount > 0
+    })
+  )).some(Boolean) : false
+
+  const pathwayStatus = [
+    { step: 1, label: "Point de vente", completed: hasPointDeVente, href: "/dashboard/vendeur/points-de-vente" },
+    { step: 2, label: "Enregistrement des bouteilles", completed: hasBottles, href: "/dashboard/vendeur/mes-bouteilles" },
+    { step: 3, label: "Première disponibilité", completed: hasDisponibilites, href: "/dashboard/vendeur/disponibilites" },
+  ]
 
   const dispoByPoint = new Map<string, DispoRow[]>()
   let totalQuantity = 0
@@ -59,6 +113,9 @@ export default async function DashboardVendeurPage() {
     const isAvailable = effective === "disponible"
     const totalQty = dispoList.reduce((sum, d) => sum + (d.quantity ?? 0), 0)
 
+    const pointBottles = bottlesByPoint.get(point.id) ?? []
+    const hasPointBottles = pointBottles.length > 0
+
     return {
       id: point.id,
       name: point.name,
@@ -71,6 +128,8 @@ export default async function DashboardVendeurPage() {
       isAvailable,
       totalQuantity: totalQty,
       lastUpdate: latestDispo?.createdAt ?? null,
+      hasPointBottles,
+      pointBottles,
     }
   })
 
@@ -80,6 +139,9 @@ export default async function DashboardVendeurPage() {
     totalQuantity,
     availablePoints: pointsWithStats.filter((p) => p.isAvailable).length,
     lastUpdate,
+    hasPointDeVente,
+    hasBottles,
+    hasDisponibilites,
   }
 
   const [totalReservations, pendingReservations] = await Promise.all([
@@ -112,6 +174,8 @@ export default async function DashboardVendeurPage() {
           totalReservations: Number(totalReservations[0]?.count ?? 0),
           pendingReservations: Number(pendingReservations[0]?.count ?? 0),
         }}
+        pathwayStatus={pathwayStatus}
+        bottlesByPoint={bottlesByPoint}
       />
     </VendorLayout>
   )

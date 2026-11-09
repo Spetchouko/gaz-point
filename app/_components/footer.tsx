@@ -70,8 +70,8 @@ export function Footer() {
               <Image
                 src="/brand/logo.png"
                 alt="GazPoints"
-                width={28}
-                height={28}
+                width={24}
+                height={24}
                 className="h-6 w-6 object-contain shrink-0"
               />
               <span className="font-heading text-lg font-bold tracking-tight text-foreground">GazPoints</span>

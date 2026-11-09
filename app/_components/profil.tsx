@@ -288,8 +288,7 @@ function FormulaireInformations({
               value={phoneNumber ?? undefined}
               onChange={(normalized) => setPhoneNumber(normalized ?? "")}
               disabled={!editMode}
-              className="pl-10 h-11"
-            />
+              />
           </div>
 
           <div className="space-y-1.5 sm:col-span-2">

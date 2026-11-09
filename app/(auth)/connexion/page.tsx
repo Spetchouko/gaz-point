@@ -46,7 +46,17 @@ function LoginPageContent() {
   useEffect(() => {
     if (!session?.user) return
     const role = (session.user as { role?: string }).role
-    router.push(!explicitRedirect && isStaff(role) ? "/admin" : redirectTo)
+    const user = session.user as { role?: string; emailVerified?: boolean }
+    
+    // For vendors: check if email is verified but subscription might not be active
+    // The dashboard will handle subscription check and redirect to payment if needed
+    if (!explicitRedirect && isStaff(role)) {
+      router.push("/admin")
+    } else if (!explicitRedirect && role === "vendor") {
+      router.push("/dashboard/vendeur")
+    } else {
+      router.push(redirectTo)
+    }
   }, [session, router, redirectTo, explicitRedirect])
 
   useEffect(() => {
@@ -163,9 +173,9 @@ function LoginPageContent() {
               <Image
                 src="/brand/logo.png"
                 alt="GazPoints"
-                width={28}
-                height={28}
-                className="h-7 w-7 object-contain"
+                width={24}
+                height={24}
+                className="h-6 w-6 object-contain"
               />
             </div>
             <CardTitle className="text-xl font-bold">{t("login_title")}</CardTitle>
@@ -198,7 +208,7 @@ function LoginPageContent() {
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     onBlur={() => setSubmitted(true)}
                     required
-                    className="pl-10 h-11"
+                    
                     disabled={loading}
                     aria-invalid={submitted && !!fieldErrors.email}
                     aria-describedby={submitted && fieldErrors.email ? "email-error" : undefined}

@@ -1,6 +1,6 @@
 "use client"
 
-import { MapPin, Phone, Shield } from "lucide-react"
+import { MapPin, Phone, Shield, Truck, RotateCcw, Package } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -24,6 +24,10 @@ export type ResultatRechercheCardProps = {
   format: string | null
   status: AvailabilityStatus | null | string
   disponibiliteId: string
+  hasDelivery: boolean
+  hasExchange: boolean
+  hasGasSale: boolean
+  deliveryFee: number | null
   onConsigner?: () => void
   className?: string
 }
@@ -38,6 +42,10 @@ export function ResultatRechercheCard({
   format,
   status,
   disponibiliteId,
+  hasDelivery,
+  hasExchange,
+  hasGasSale,
+  deliveryFee,
   onConsigner,
   className,
 }: ResultatRechercheCardProps) {
@@ -72,6 +80,32 @@ export function ResultatRechercheCard({
         >
           {availabilityLabel[statusKey]}
         </Badge>
+
+        {/* Services badges */}
+        {hasDelivery || hasExchange || hasGasSale && (
+          <div className="mt-1 flex items-center gap-2">
+            {hasGasSale && (
+              <Badge variant="secondary" className="text-xs">
+                <Package className="size-3 mr-1" /> Gaz chargé
+              </Badge>
+            )}
+            {hasDelivery && (
+              <Badge variant="secondary" className="text-xs">
+                <Truck className="size-3 mr-1" /> Livraison
+              </Badge>
+            )}
+            {hasExchange && (
+              <Badge variant="secondary" className="text-xs">
+                <RotateCcw className="size-3 mr-1" /> Échange
+              </Badge>
+            )}
+            {hasDelivery && deliveryFee !== null && (
+              <span className="text-xs text-muted-foreground">
+                {deliveryFee} FCFA
+              </span>
+            )}
+          </div>
+        )}
       </CardHeader>
 
       <CardContent className="pt-2">

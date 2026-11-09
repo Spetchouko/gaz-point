@@ -293,7 +293,7 @@ export function DisponibiliteForm({
                 value={formState.phone ?? undefined}
                 onChange={(normalized) => setFormState((s) => ({ ...s, phone: normalized ?? "" }))}
                 disabled={pending}
-                className="pl-10 h-11"
+                
               />
             </div>
 

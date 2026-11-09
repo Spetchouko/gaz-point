@@ -44,6 +44,11 @@ export type SearchResult = {
   stale: boolean
   expired: boolean
   disponibiliteId: string
+  // Services
+  hasDelivery: boolean
+  hasExchange: boolean
+  hasGasSale: boolean
+  deliveryFee: number | null
 }
 
 /**
@@ -138,7 +143,36 @@ export function RechercheGaz() {
       const res = await fetch(`/api/recherche?${params.toString()}`)
       if (!res.ok) throw new Error("Recherche impossible")
       const data = await res.json()
-      const searchedResults: SearchResult[] = data.results ?? []
+      let searchedResults: SearchResult[] = data.results ?? []
+
+      // Fetch service data for each result (delivery, exchange, gaz sale, frais)
+      if (searchedResults.length > 0 && data.disponibiliteIds?.length > 0) {
+        const dispoIds = data.disponibiliteIds
+        const dispoRes = await fetch(`/api/disponibilites?ids=${dispoIds.join(",")}`)
+        if (dispoRes.ok) {
+          const dispoData = await dispoRes.json()
+          const dispoMap = new Map(dispoData.map((d: any) => [d.id, d]))
+          searchedResults = searchedResults.map((r) => {
+            const dispo = dispoMap.get(r.disponibiliteId) as { delivery: boolean; exchange: boolean; gasSale: boolean; price: number | null } | undefined
+            if (dispo) {
+              return {
+                ...r,
+                hasDelivery: dispo.delivery,
+                hasExchange: dispo.exchange,
+                hasGasSale: dispo.gasSale,
+                deliveryFee: dispo.price ?? null,
+              }
+            }
+            return {
+              ...r,
+              hasDelivery: false,
+              hasExchange: false,
+              hasGasSale: false,
+              deliveryFee: null,
+            }
+          })
+        }
+      }
 
       // Une réponse valide contenant zéro résultat est une recherche réussie,
       // et non une erreur : on l'affiche comme telle (pas de message d'erreur).
@@ -319,6 +353,10 @@ export function RechercheGaz() {
                 format={point.format}
                 status={point.status}
                 disponibiliteId={point.disponibiliteId}
+                hasDelivery={point.hasDelivery}
+                hasExchange={point.hasExchange}
+                hasGasSale={point.hasGasSale}
+                deliveryFee={point.deliveryFee}
                 onConsigner={() => openReservationModal(point)}
               />
             ))}

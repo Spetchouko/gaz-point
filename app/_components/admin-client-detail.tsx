@@ -218,8 +218,7 @@ export function AdminClientDetail({
                 label="Telephone"
                 value={edit.phoneNumber ?? undefined}
                 onChange={(normalized) => setEdit((s) => ({ ...s, phoneNumber: normalized ?? "" }))}
-                className="pl-10 h-11"
-              />
+                />
             </div>
             {feedback && (
               <p role="alert" className={cn("text-sm", feedback.ok ? "text-success" : "text-destructive")}>{feedback.message}</p>

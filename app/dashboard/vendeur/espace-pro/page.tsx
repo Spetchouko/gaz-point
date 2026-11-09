@@ -1,7 +1,8 @@
 import { asc, desc, eq, inArray } from "drizzle-orm"
 import type { Metadata } from "next"
+import { redirect } from "next/navigation"
 import { db } from "@/db"
-import { disponibilite, pointDeVente } from "@/db/schema"
+import { disponibilite, pointDeVente, vendorSubscription } from "@/db/schema"
 import { EspaceVendeur } from "@/app/_components/espace-vendeur"
 import { VendorLayout } from "@/app/_components/vendor-layout"
 import { requirePro } from "@/lib/session"
@@ -17,6 +18,18 @@ export default async function EspaceVendeurPage() {
 
   if (role !== "vendor") {
     return <div>Accès réservé aux vendeurs.</div>
+  }
+
+  // Check subscription status
+  const [subscription] = await db
+    .select()
+    .from(vendorSubscription)
+    .where(eq(vendorSubscription.vendorId, user.id))
+    .limit(1)
+
+  // If no subscription or not active, redirect to payment
+  if (!subscription || subscription.status !== "active") {
+    redirect("/paiement/abonnement")
   }
 
   const points = await db

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react"
 import Link from "next/link"
-import { User, Store, Phone, MapPin, Cylinder, Settings, Shield, KeyRound, Plus, TrendingUp, CheckCircle2, X } from "lucide-react"
+import { User, Store, Phone, MapPin, Cylinder, Settings, Shield, KeyRound, Plus, TrendingUp, CheckCircle2, X, CreditCard, Calendar } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -63,12 +63,59 @@ type PointWithDispos = {
   }[]
 }
 
+type SubscriptionStatus = {
+  id: string
+  vendorId: string
+  status: string
+  currentPeriodStart: Date | string | null
+  currentPeriodEnd: Date | string | null
+  cancelledAt: Date | string | null
+  lastPaymentAt: Date | string | null
+  lastPaymentReference: string | null
+  amount: number
+  currency: string
+  createdAt: Date | string
+  updatedAt: Date | string
+} | null
+
+type PaymentTransaction = {
+  id: string
+  vendorId: string
+  geniuspayReference: string
+  geniuspayId: number | null
+  amount: number
+  currency: string
+  fees: number | null
+  netAmount: number | null
+  status: string
+  paymentMethod: string | null
+  paymentProvider: string | null
+  customerName: string | null
+  customerEmail: string | null
+  customerPhone: string | null
+  checkoutUrl: string | null
+  successUrl: string | null
+    errorUrl: string | null
+  metadata: string | null
+  environment: string
+  initiatedAt: Date | string
+  completedAt: Date | string | null
+  webhookReceivedAt: Date | string | null
+  webhookVerified: boolean
+  createdAt: Date | string
+  updatedAt: Date | string
+}[]
+
 export function AdminVendeurDetail({
   vendor,
   points,
+  subscription,
+  payments,
 }: {
   vendor: VendorProfile
   points: PointWithDispos[]
+  subscription: SubscriptionStatus
+  payments: PaymentTransaction
 }) {
   const [, startTransition] = useTransition()
   const [dialog, setDialog] = useState<"edit" | "reset" | "toggle" | null>(null)
@@ -113,13 +160,13 @@ export function AdminVendeurDetail({
   }
 
   const totalPoints = points.length
-  const totalDispos = points.reduce((sum, p) => sum + p.disponibilites.length, 0)
+  const totalDispos = points.reduce((sum: number, p: PointWithDispos) => sum + p.disponibilites.length, 0)
   const activeDispos = points.reduce(
-    (sum, p) => sum + p.disponibilites.filter((d) => d.status === "disponible" && (d.quantity ?? 0) > 0).length,
+    (sum: number, p: PointWithDispos) => sum + p.disponibilites.filter((d) => d.status === "disponible" && (d.quantity ?? 0) > 0).length,
     0
   )
   const totalQty = points.reduce(
-    (sum, p) => sum + p.disponibilites.reduce((s, d) => s + (d.quantity ?? 0), 0),
+    (sum: number, p: PointWithDispos) => sum + p.disponibilites.reduce((s: number, d) => s + (d.quantity ?? 0), 0),
     0
   )
 
@@ -239,6 +286,7 @@ export function AdminVendeurDetail({
             <TabsList aria-label="Sections vendeur">
               <TabsTrigger value="depots">Dépôts ({totalPoints})</TabsTrigger>
               <TabsTrigger value="disponibilites">Disponibilités ({totalDispos})</TabsTrigger>
+              <TabsTrigger value="abonnements">Abonnement & Paiements</TabsTrigger>
               <TabsTrigger value="compte">Compte</TabsTrigger>
             </TabsList>
 
@@ -366,7 +414,7 @@ export function AdminVendeurDetail({
                 </CardHeader>
                 <CardContent>
                   {(() => {
-                    const allDispos = points.flatMap((p) =>
+                    const allDispos = points.flatMap((p: PointWithDispos) =>
                       p.disponibilites.map((d) => ({ ...d, pointName: p.name, pointDistrict: p.district }))
                     ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
@@ -425,6 +473,152 @@ export function AdminVendeurDetail({
                       </div>
                     )
                   })()}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="abonnements" className="space-y-6">
+              {/* Subscription Status */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="size-5 text-primary" />
+                    Statut de l'abonnement
+                  </CardTitle>
+                  <CardDescription>Gestion de l'abonnement professionnel (5 000 FCFA/mois)</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {subscription ? (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Statut</label>
+                        <Badge variant={
+                          subscription.status === "active" ? "default" :
+                          subscription.status === "past_due" ? "destructive" :
+                          subscription.status === "cancelled" ? "outline" : "secondary"
+                        }>
+                          {subscription.status === "active" ? "Actif" :
+                          subscription.status === "inactive" ? "Inactif" :
+                          subscription.status === "past_due" ? "En retard" :
+                          subscription.status === "cancelled" ? "Annulé" : subscription.status}
+                        </Badge>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Période en cours</label>
+                        <p className="font-mono text-sm">
+                          {subscription.currentPeriodStart ? formatDate(subscription.currentPeriodStart) : "—"}
+                          {subscription.currentPeriodEnd ? ` → ${formatDate(subscription.currentPeriodEnd)}` : ""}
+                        </p>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Dernier paiement</label>
+                        <p className="font-mono text-sm">
+                          {subscription.lastPaymentAt ? formatDate(subscription.lastPaymentAt) : "—"}
+                        </p>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Montant mensuel</label>
+                        <p className="font-medium">
+                          {subscription.amount?.toLocaleString()} {subscription.currency}
+                        </p>
+                      </div>
+                      {subscription.lastPaymentReference && (
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Référence dernier paiement</label>
+                          <code className="font-mono text-sm break-all">{subscription.lastPaymentReference}</code>
+                        </div>
+                      )}
+                      {subscription.cancelledAt && (
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Annulé le</label>
+                          <p className="font-mono text-sm text-destructive">{formatDate(subscription.cancelledAt)}</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <CreditCard className="size-12 mx-auto text-muted-foreground mb-4" />
+                      <p className="font-medium">Aucun abonnement trouvé</p>
+                      <p className="text-sm text-muted-foreground mt-1">Le vendeur n'a pas encore souscrit d'abonnement</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Payment History */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="size-5 text-primary" />
+                    Historique des paiements
+                  </CardTitle>
+                  <CardDescription>Transactions GeniusPay pour cet abonnement</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {payments.length === 0 ? (
+                    <div className="text-center py-8">
+                      <CreditCard className="size-12 mx-auto text-muted-foreground mb-4" />
+                      <p className="font-medium">Aucun paiement enregistré</p>
+                      <p className="text-sm text-muted-foreground mt-1">Les paiements apparaîtront ici après traitement</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {payments.map((payment) => (
+                        <div key={payment.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 rounded-lg border bg-card">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                            <div className="flex items-center gap-3">
+                              <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                <CreditCard className="size-4" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-foreground">
+                                  {payment.geniuspayReference}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {formatDate(payment.initiatedAt)}
+                                  {payment.completedAt && ` · Complété le ${formatDate(payment.completedAt)}`}
+                                </p>
+                              </div>
+                            </div>
+                            <Badge variant={
+                              payment.status === "completed" ? "default" :
+                              payment.status === "failed" ? "destructive" :
+                              payment.status === "cancelled" ? "outline" :
+                              payment.status === "expired" ? "outline" :
+                              payment.status === "refunded" ? "secondary" : "secondary"
+                            }>
+                              {payment.status === "completed" ? "Réussi" :
+                              payment.status === "failed" ? "Échoué" :
+                              payment.status === "cancelled" ? "Annulé" :
+                              payment.status === "expired" ? "Expiré" :
+                              payment.status === "refunded" ? "Remboursé" :
+                              payment.status === "pending" ? "En attente" :
+                              payment.status === "processing" ? "En cours" : payment.status}
+                            </Badge>
+                          </div>
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-sm">
+                            <span className="font-medium text-foreground">
+                              {payment.amount?.toLocaleString()} {payment.currency}
+                              {payment.fees && payment.netAmount && (
+                                <> · Net: {payment.netAmount.toLocaleString()} {payment.currency}</>
+                              )}
+                            </span>
+                            {payment.paymentMethod && (
+                              <span className="text-muted-foreground capitalize">
+                                {payment.paymentMethod.replace("_", " ")}
+                                {payment.paymentProvider && ` (${payment.paymentProvider})`}
+                              </span>
+                            )}
+                            {payment.environment && (
+                              <Badge variant="outline" className="shrink-0 text-xs">
+                                {payment.environment}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -545,7 +739,6 @@ export function AdminVendeurDetail({
                 label="Téléphone"
                 value={edit.phoneNumber ?? undefined}
                 onChange={(normalized) => setEdit((s) => ({ ...s, phoneNumber: normalized ?? "" }))}
-                className="pl-10 h-11"
               />
             </div>
             {feedback && (

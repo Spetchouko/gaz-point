@@ -6,6 +6,7 @@ import { avis } from "@/db/schema"
 import { AvisForm } from "@/app/_components/avis-form"
 import { requireUser } from "@/lib/session"
 import type { AvisStatus } from "@/lib/avis-shared"
+import { ClientLayout } from "@/app/_components/client-layout"
 
 export const metadata: Metadata = {
   title: { absolute: "Donner mon avis | GazPoints" },
@@ -25,22 +26,15 @@ export default async function AvisPage() {
     .limit(1)
 
   return (
-    <div className="min-h-screen bg-background py-12">
-      <div className="container mx-auto max-w-2xl px-4">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Donner mon avis</h1>
-          <p className="mt-2 text-muted-foreground">
-            Partage ton expérience avec GazPoints. Ton avis sera publié sur la page
-            d’accueil après validation par notre équipe.
-          </p>
-        </header>
-
-        <AvisForm
-          defaultQuote={existing?.quote ?? ""}
-          defaultCity={existing?.city ?? ""}
-          currentStatus={(existing?.status as AvisStatus | undefined) ?? null}
-        />
-      </div>
-    </div>
+    <ClientLayout
+      clientName={user.name ?? "Usager"}
+      clientEmail={user.email}
+    >
+      <AvisForm
+        defaultQuote={existing?.quote ?? ""}
+        defaultCity={existing?.city ?? ""}
+        currentStatus={(existing?.status as AvisStatus | undefined) ?? null}
+      />
+    </ClientLayout>
   )
 }

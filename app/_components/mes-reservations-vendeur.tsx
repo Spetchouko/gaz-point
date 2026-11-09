@@ -27,6 +27,8 @@ type Reservation = {
   pointDistrict: string
   isExpired: boolean
   reservedAtFormatted: string
+  statusLabel: string
+  qrCode: string | undefined
 }
 
 const statusLabels: Record<string, string> = {
@@ -34,6 +36,8 @@ const statusLabels: Record<string, string> = {
   collected: "Retirée",
   cancelled: "Annulée",
   expired: "Expirée",
+  en_attente: "En attente",
+  terminee: "Terminée",
 }
 
 const statusColors: Record<string, string> = {
@@ -41,6 +45,8 @@ const statusColors: Record<string, string> = {
   collected: "bg-success/10 text-success border-success/20",
   cancelled: "bg-destructive/10 text-destructive border-destructive/20",
   expired: "bg-warning/10 text-warning border-warning/20",
+  en_attente: "bg-warning/10 text-warning border-warning/20",
+  terminee: "bg-success/10 text-success border-success/20",
 }
 
 export function MesReservationsVendeur() {
@@ -106,10 +112,58 @@ export function MesReservationsVendeur() {
     }
   }
 
-  const handleCollect = async () => {
-    if (!scanResult?.reservation || scanning) return
-    // This would call the collect endpoint - for now just show result
-    setScanResult({ ...scanResult!, ok: true, error: "Retrait confirmé" })
+  const handleConfirm = async (reservationId: string) => {
+    if (scanning) return
+    const res = await fetch("/api/reservation/vendor", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "confirm", reservationId }),
+    })
+    const data = await res.json()
+    if (res.ok && data.ok) {
+      // Refresh list
+      const refreshRes = await fetch("/api/reservation/vendor")
+      if (refreshRes.ok) {
+        const refreshData = await refreshRes.json()
+        setReservations(refreshData.reservations ?? [])
+      }
+    }
+  }
+
+  const handleCancel = async (reservationId: string) => {
+    if (scanning) return
+    const res = await fetch("/api/reservation/vendor", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "cancel", reservationId }),
+    })
+    const data = await res.json()
+    if (res.ok && data.ok) {
+      // Refresh list
+      const refreshRes = await fetch("/api/reservation/vendor")
+      if (refreshRes.ok) {
+        const refreshData = await refreshRes.json()
+        setReservations(refreshData.reservations ?? [])
+      }
+    }
+  }
+
+  const handleTerminee = async (reservationId: string) => {
+    if (scanning) return
+    const res = await fetch("/api/reservation/vendor", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "terminee", reservationId }),
+    })
+    const data = await res.json()
+    if (res.ok && data.ok) {
+      // Refresh list
+      const refreshRes = await fetch("/api/reservation/vendor")
+      if (refreshRes.ok) {
+        const refreshData = await refreshRes.json()
+        setReservations(refreshData.reservations ?? [])
+      }
+    }
   }
 
   const resetScan = () => {
@@ -216,7 +270,7 @@ export function MesReservationsVendeur() {
                       <strong>Point :</strong> {scanResult.reservation.pointName}
                     </p>
                     <p>
-                      <strong>Statut :</strong> {scanResult.status}
+                      <strong>Statut :</strong> {scanResult.reservation.statusLabel}
                     </p>
                     {scanResult.reservation.clientPhone && (
                       <p>
@@ -231,9 +285,28 @@ export function MesReservationsVendeur() {
                 )}
 
                 {scanResult.ok && scanResult.status === "confirmed" && (
-                  <Button onClick={handleCollect} className="mt-2 w-full" size="lg">
+                  <Button onClick={() => handleConfirm(scanResult.reservation!.id)} className="mt-2 w-full" size="lg">
                     <Shield className="size-4 mr-2" />
                     Confirmer le retrait
+                  </Button>
+                )}
+
+                {scanResult.ok && scanResult.status === "en_attente" && (
+                  <Button onClick={() => handleConfirm(scanResult.reservation!.id)} className="mt-2 w-full" size="lg">
+                    <CheckCircle className="size-4 mr-2" />
+                    Confirmer
+                  </Button>
+                )}
+
+                {scanResult.ok && scanResult.status === "terminee" && (
+                  <Button variant="ghost" size="sm" onClick={resetScan} className="mt-2">
+                    Réservation déjà traitée
+                  </Button>
+                )}
+
+                {scanResult.ok && scanResult.status === "cancelled" && (
+                  <Button variant="ghost" size="sm" onClick={resetScan} className="mt-2">
+                    Réservation annulée
                   </Button>
                 )}
 
@@ -280,7 +353,7 @@ export function MesReservationsVendeur() {
                           variant="outline"
                           className={cn(statusColors[res.status] || "bg-muted text-muted-foreground")}
                         >
-                          {statusLabels[res.status] || res.status}
+                          {res.statusLabel}
                         </Badge>
                       </div>
 
@@ -301,6 +374,49 @@ export function MesReservationsVendeur() {
                       <p className="text-xs text-muted-foreground">{res.reservedAtFormatted}</p>
                       {res.isExpired && (
                         <p className="text-xs text-warning font-medium">Expirée</p>
+                      )}
+                      {res.status === "confirmed" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleConfirm(res.id)}
+                          className="mt-1 px-3 py-1 text-sm"
+                        >
+                          Confirmer
+                        </Button>
+                      )}
+                      {res.status === "en_attente" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleConfirm(res.id)}
+                          className="mt-1 px-3 py-1 text-sm"
+                        >
+                          Confirmer
+                        </Button>
+                      )}
+                      {res.status === "cancelled" && (
+                        <span className="text-xs text-muted-foreground">Annulée</span>
+                      )}
+                      {res.status !== "cancelled" && res.status !== "terminee" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCancel(res.id)}
+                          className="mt-1 px-3 py-1 text-sm text-destructive"
+                        >
+                          Annuler
+                        </Button>
+                      )}
+                      {res.status === "confirmed" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleTerminee(res.id)}
+                          className="mt-1 px-3 py-1 text-sm text-success"
+                        >
+                          Terminée
+                        </Button>
                       )}
                     </div>
                   </div>

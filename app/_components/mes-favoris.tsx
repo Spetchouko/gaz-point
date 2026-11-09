@@ -1,6 +1,6 @@
 "use client"
 
-import { useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { Heart, MapPin, Phone, Signal } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -43,7 +43,7 @@ export function MesFavoris({
   points: PointFavori[]
   pro?: boolean
 }) {
-  const [pending, startTransition] = useTransition()
+  const router = useRouter()
   const favorites = points.filter((point) => point.isFavorite)
   const others = points.filter((point) => !point.isFavorite)
 
@@ -96,10 +96,10 @@ export function MesFavoris({
                 address={point.address}
                 phone={point.phone}
                 isFavorite={point.isFavorite}
-                onToggleFavorite={() =>
-                startTransition(() => toggleFavori(point.id))
-              }
-                isPending={pending}
+                onToggleFavorite={async () => {
+                  await toggleFavori(point.id)
+                  router.refresh()
+                }}
                 disposCount={point.report ? 1 : 0}
                 status={getStatus(point.report)}
               />
@@ -123,10 +123,10 @@ export function MesFavoris({
                   address={point.address}
                   phone={point.phone}
                   isFavorite={point.isFavorite}
-                  onToggleFavorite={() =>
-                    startTransition(() => toggleFavori(point.id))
-                  }
-                  isPending={pending}
+                  onToggleFavorite={async () => {
+                    await toggleFavori(point.id)
+                    router.refresh()
+                  }}
                   disposCount={point.report ? 1 : 0}
                   status={getStatus(point.report)}
                 />

@@ -1,8 +1,6 @@
 "use client"
 
 import { useCallback, useState } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { AdminNav } from "./admin-nav"
 import { AdminTopBar } from "./admin-top-bar"
 import type { StaffNavRole } from "./admin-nav-items"
@@ -24,7 +22,7 @@ export function AdminShell({
   const staffRole = role as StaffNavRole
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex flex-col lg:flex-row">
       {/* Barre latérale de navigation (référence Outlook) */}
       <aside
         className={cn(
@@ -50,7 +48,7 @@ export function AdminShell({
         />
 
         {/* Zone de travail : occupe toute la surface disponible */}
-        <main className="admin-workarea__main">
+        <main className="admin-workarea__main flex-1 overflow-auto">
           <div className="admin-workarea__padding">{children}</div>
         </main>
       </div>

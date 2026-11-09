@@ -137,9 +137,9 @@ function ResetPasswordPageContent() {
             <Image
               src="/brand/logo.png"
               alt="GazPoints"
-              width={26}
-              height={26}
-              className="h-6.5 w-6.5 object-contain"
+              width={24}
+              height={24}
+              className="h-6 w-6 object-contain"
             />
           </div>
           <CardTitle className="text-2xl">Nouveau mot de passe</CardTitle>

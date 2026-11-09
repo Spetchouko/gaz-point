@@ -263,7 +263,7 @@ function InscriptionUsagerContent() {
                     onChange={(e) => handleInputChange("name", e.target.value)}
                     onBlur={() => setSubmitted(true)}
                     required
-                    className="pl-10 h-11"
+                    
                     disabled={loading}
                     aria-invalid={submitted && !!fieldErrors.name}
                     aria-describedby={
@@ -294,7 +294,7 @@ function InscriptionUsagerContent() {
                       onChange={(e) => handleInputChange("email", e.target.value)}
                       onBlur={() => setSubmitted(true)}
                       required
-                      className="pl-10 h-11"
+                      
                       disabled={loading}
                       aria-invalid={submitted && !!fieldErrors.email}
                       aria-describedby={

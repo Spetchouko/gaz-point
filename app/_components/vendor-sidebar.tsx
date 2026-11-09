@@ -8,6 +8,8 @@ import {
   Cylinder,
   Shield,
   LogOut,
+  Package,
+  Truck,
 } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
@@ -30,9 +32,24 @@ const VENDOR_NAV_ITEMS: VendorNavItem[] = [
     icon: MapPin,
   },
   {
+    href: "/dashboard/vendeur/mes-bouteilles",
+    label: "Mes bouteilles",
+    icon: Package,
+  },
+  {
     href: "/dashboard/vendeur/disponibilites",
-    label: "Disponibilités de gaz",
+    label: "Mes disponibilités",
     icon: Cylinder,
+  },
+  {
+    href: "/dashboard/vendeur/mes-services",
+    label: "Mes services",
+    icon: Truck,
+  },
+  {
+    href: "/dashboard/vendeur/reservations",
+    label: "Mes réservations",
+    icon: Shield,
   },
   {
     href: "/dashboard/vendeur/profil",
