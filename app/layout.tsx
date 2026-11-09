@@ -3,8 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/app/_components/theme-provider";
 import { LangProvider } from "@/app/_components/lang-provider";
-import { Header } from "@/app/header";
-import { Footer } from "@/app/_components/footer";
 import { RecherchePermanente } from "@/app/_components/recherche-permanente";
 import { ConsentBanner } from "@/app/_components/consent-banner";
 import { LangUpdater } from "@/app/_components/lang-updater";
@@ -66,9 +64,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <LangProvider>
             <LangUpdater />
             <NavigationLoader />
-            <Header />
-          <main className="flex-1">{children}</main>
-            <Footer />
+            {children}
           </LangProvider>
         </ThemeProvider>
         <RecherchePermanente />

@@ -31,5 +31,6 @@ export async function toggleFavori(pointId: string): Promise<void> {
       .values({ id: randomUUID(), userId: user.id, pointId })
   }
 
+  revalidatePath("/dashboard/favoris")
   revalidatePath("/mes-favoris")
 }

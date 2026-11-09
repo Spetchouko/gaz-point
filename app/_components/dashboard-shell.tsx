@@ -18,8 +18,8 @@ export function DashboardShell({
   const toggleCollapse = useCallback(() => setCollapsed((prev) => !prev), [])
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Barre latérale de navigation (référence Outlook) */}
+    <div className="min-h-screen bg-background flex flex-col lg:flex-row">
+      {/* Barre latérale de navigation (desktop uniquement) */}
       <aside
         className={cn(
           "shrink-0 flex h-full flex-col border-r border-border bg-card hidden lg:flex transition-all duration-300 ease-in-out",
@@ -42,7 +42,7 @@ export function DashboardShell({
         />
 
         {/* Zone de travail : occupe toute la surface disponible */}
-        <main className="admin-workarea__main">
+        <main className="admin-workarea__main flex-1 overflow-auto">
           <div className="admin-workarea__padding">{children}</div>
         </main>
       </div>

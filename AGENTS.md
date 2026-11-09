@@ -91,3 +91,14 @@ A task is complete only when its intended functionality is implemented, security
 - Next.js 16 has breaking changes — check `node_modules/next/dist/docs/` before assuming APIs
 - `SheetTrigger` must be imported from `@/components/ui/sheet` (defined there, not from @base-ui/react)
 - WSL paths: dev server may fail with UNC paths (`\\wsl.localhost\...`) — run from Windows path or native Linux
+
+### Règles de protection des secrets
+
+- Ne jamais modifier, écraser, renommer, déplacer ou supprimer les fichiers `.env`, `.env.local`, `.env.production` et les autres variantes contenant des variables d'environnement.
+- Ne jamais publier, exposer, copier dans le code frontend ou transférer le contenu de ces fichiers.
+- Ne jamais déplacer un fichier `.env` vers `public/`, `src/`, `app/` ou tout autre répertoire exposé au navigateur.
+- Ne jamais committer ces fichiers dans Git ni les inclure dans une sauvegarde publique.
+- Ne jamais afficher leurs valeurs dans les logs, les rapports ou les réponses.
+- Ne jamais modifier les identifiants, mots de passe, clés API, secrets de session ou paramètres de connexion existants.
+- Si une variable d'environnement semble manquer, signaler son nom sans révéler sa valeur et demander une intervention distincte.
+- Vérifier que les fichiers d'environnement sont correctement exclus de Git et que les secrets ne sont pas exposés par le code client.

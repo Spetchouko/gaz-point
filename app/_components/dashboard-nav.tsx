@@ -1,9 +1,16 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
-import { ChevronDown, ChevronLeft, ChevronRight, LogOut } from "lucide-react"
+import {
+  ArrowLeftCircle,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  LogOut,
+} from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
 import React from "react"
@@ -102,7 +109,7 @@ export function DashboardNav({
 
   return (
     <nav aria-label="Navigation du dashboard" className="flex h-full flex-col">
-      {/* En-tête de la barre latérale : logo + nom de l'application */}
+      {/* En-tête de la barre latérale : logo GazPoints + réduction */}
       <div className="flex h-14 items-center justify-between border-b border-border px-3">
         <Link
           href="/dashboard"
@@ -110,14 +117,23 @@ export function DashboardNav({
             "flex items-center gap-2",
             collapsed ? "justify-center px-1" : "px-3 font-bold text-lg tracking-tight"
           )}
-          title="GAZ POINT"
+          onClick={(e) => {
+            e.preventDefault()
+            router.push("/dashboard")
+          }}
         >
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <span className={cn("text-sm font-semibold", collapsed ? "hidden" : "")}>
-              {initial}
-            </span>
-          </span>
-          {!collapsed && <span>GazPoints</span>}
+          <Image
+            src="/brand/logo.png"
+            alt="GazPoints"
+            width={32}
+            height={32}
+            className={cn(
+              "shrink-0",
+              collapsed ? "size-6" : "size-8",
+              collapsed ? "hidden" : ""
+            )}
+          />
+          {!collapsed && <span className="truncate">GazPoints</span>}
         </Link>
         <button
           type="button"
@@ -179,8 +195,22 @@ export function DashboardNav({
         })}
       </ul>
 
-      {/* Pied de barre latérale : profil + déconnexion */}
+      {/* Pied de barre latérale : lien retour accueil + profil + déconnexion */}
       <div className="border-t border-border p-1 space-y-1">
+        <Link
+          href="/"
+          onClick={(e) => {
+            e.preventDefault()
+            router.push("/")
+          }}
+          className={cn(
+            "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+            collapsed ? "justify-center px-1" : "px-3"
+          )}
+        >
+          <ArrowLeftCircle className="size-4" aria-hidden />
+          {!collapsed && <span>{"Retour à l\u0027accueil"}</span>}
+        </Link>
         <div
           className={cn(
             "flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer transition-colors hover:bg-muted",

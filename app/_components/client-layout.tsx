@@ -1,6 +1,7 @@
 "use client"
 
 import { DashboardShell } from "./dashboard-shell"
+import { MiniFooter } from "./mini-footer"
 
 export function ClientLayout({
   clientName,
@@ -14,6 +15,7 @@ export function ClientLayout({
   return (
     <DashboardShell role="client">
       {children}
+      <MiniFooter />
     </DashboardShell>
   )
 }

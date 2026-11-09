@@ -96,7 +96,9 @@ export function MesFavoris({
                 address={point.address}
                 phone={point.phone}
                 isFavorite={point.isFavorite}
-                onToggleFavorite={() => toggleFavori(point.id)}
+                onToggleFavorite={() =>
+                startTransition(() => toggleFavori(point.id))
+              }
                 isPending={pending}
                 disposCount={point.report ? 1 : 0}
                 status={getStatus(point.report)}

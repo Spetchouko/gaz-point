@@ -77,8 +77,8 @@ export function PhoneInput({
       )}
       <div className={cn("flex items-center", disabled && "opacity-60 pointer-events-none")}>
         <span className={cn(
-          "shrink-0 flex items-center justify-center rounded-l-lg border border-r-0 bg-muted px-2.5 text-sm font-medium text-muted-foreground",
-          disabled && "bg-muted/50",
+          "shrink-0 flex items-center justify-center rounded-l-lg border border-r-0 bg-primary px-2.5 text-sm font-medium text-primary-foreground",
+          disabled && "bg-primary/50",
         )}>
           {COUNTRY_CODE}
         </span>
@@ -96,7 +96,7 @@ export function PhoneInput({
           required={required}
           placeholder={`690123456`}
           className={cn(
-            "pl-8 rounded-r-lg focus:ring-0",
+            "pl-8 rounded-r-lg focus:ring-0 text-base",
             error && "border-destructive focus:border-destructive",
             className,
           )}

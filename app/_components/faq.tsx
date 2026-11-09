@@ -105,8 +105,8 @@ export function Faq() {
                 Prêt à commencer&nbsp;?
               </CardTitle>
               <CardDescription className="text-muted-foreground">
-                Créez votre compte en quelques secondes et vérifiez votre numéro
-                de téléphone pour accéder à GazPoints.
+                Créez votre compte en quelques secondes et vérifiez votre compte
+                pour accéder à GazPoints.
               </CardDescription>
             </CardHeader>
             <CardContent>
