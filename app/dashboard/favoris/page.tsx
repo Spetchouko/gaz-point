@@ -5,6 +5,7 @@ import { disponibilite, favori, pointDeVente } from "@/db/schema"
 import { MesFavoris } from "@/app/_components/mes-favoris"
 import { ClientLayout } from "@/app/_components/client-layout"
 import { requireUser } from "@/lib/session"
+import { RefreshCw } from "lucide-react"
 
 export const metadata: Metadata = {
   title: { absolute: "Mes favoris | GazPoints" },
@@ -20,10 +21,44 @@ export default async function FavorisPage() {
     return <div>Accès réservé aux clients.</div>
   }
 
-  const [favRows, allPoints] = await Promise.all([
-    db.select().from(favori).where(eq(favori.userId, user.id)),
-    db.select().from(pointDeVente).orderBy(asc(pointDeVente.name)),
-  ])
+  let favRows: typeof favori.$inferSelect[] = []
+  let allPoints: typeof pointDeVente.$inferSelect[] = []
+
+  try {
+    const result = await Promise.all([
+      db.select().from(favori).where(eq(favori.userId, user.id)),
+      db.select().from(pointDeVente).orderBy(asc(pointDeVente.name)),
+    ])
+    favRows = result[0]
+    allPoints = result[1]
+  } catch (error) {
+    console.error("[FavorisPage] Erreur de chargement:", error)
+    return (
+      <ClientLayout
+        clientName={user.name ?? "Usager"}
+        clientEmail={user.email}
+      >
+        <div className="min-h-screen flex flex-col items-center justify-center py-20">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-destructive mb-2">
+              Erreur de chargement
+            </h1>
+            <p className="text-sm text-muted-foreground mb-6">
+              Impossible de charger tes favoris. Vérifie ta connexion et réessaie.
+            </p>
+            <button
+              onClick={() => {
+                window.location.reload()
+              }}
+              className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/90"
+            >
+              <RefreshCw className="size-4" /> Recharger la page
+            </button>
+          </div>
+        </div>
+      </ClientLayout>
+    )
+  }
 
   const favIds = new Set(favRows.map((row) => row.pointId))
 
