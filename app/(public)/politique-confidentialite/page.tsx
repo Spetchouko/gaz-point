@@ -33,7 +33,7 @@ const document: LegalDocument = {
         "Nous ne collectons que les données strictement nécessaires au fonctionnement du service. Selon votre rôle, les données diffèrent :",
       ],
       list: [
-        "Usager (client) : nom complet, adresse email, mot de passe haché, numéro de téléphone camerounais (+237, optionnel), rôle, photo de profil (optionnelle), statut de vérification email/téléphone, favoris, historique d'achats (recharges), avis déposés.",
+        "Usager (client) : nom complet, adresse email, mot de passe haché, numéro de téléphone camerounais (+237, optionnel), rôle, photo de profil (optionnelle), historique d'achats (recharges), avis déposés.",
         "Vendeur : nom du dépôt (utilisé comme nom du compte), adresse email, mot de passe haché, numéro de téléphone (optionnel), rôle, points de vente gérés (nom, quartier, adresse, téléphone, marques, formats), disponibilités publiées (statut, quantité, prix, format, marque, poids, expiration, téléphone du dépositaire), abonnement actif/inactif.",
         "Administrateur / Collaborateur : nom, email, rôle, permissions accordées, journal des actions d'administration (création, modification, suppression, export).",
         "Visiteurs (non connectés) : aucune donnée personnelle n'est collectée sans consentement. Seuls des événements de trafic anonymes peuvent être enregistrés si le consentement est donné (voir section Cookies).",
@@ -57,10 +57,6 @@ const document: LegalDocument = {
         {
           term: "Affichage des disponibilités et recherche",
           value: "Exécution du service (intérêt légitime pour les visiteurs).",
-        },
-        {
-          term: "Gestion des favoris et historique d'achats",
-          value: "Exécution du contrat (fonctionnalités demandées par l'usager).",
         },
         {
           term: "Publication et modération des avis",

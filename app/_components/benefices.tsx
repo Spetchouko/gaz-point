@@ -1,4 +1,3 @@
-import Image from "next/image"
 import {
   Compass,
   MapPinOff,
@@ -55,7 +54,7 @@ export function Benefices() {
                 variant="secondary"
                 className="h-5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
               >
-                Ce que ça t'apporte
+                Ce que ça t&apos;apporte
               </Badge>
 
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
@@ -63,7 +62,7 @@ export function Benefices() {
               </h2>
 
               <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
-                GazPoints ne te vend pas juste une information : il t'aide à
+                GazPoints ne te vend pas juste une information : il t&apos;aide à
                 choisir où aller, avant de te déplacer.
               </p>
             </div>
@@ -94,14 +93,14 @@ export function Benefices() {
             </div>
           </div>
 
-          {/* Image à droite — pleine section */}
-          <div className="relative w-full h-[300px] sm:h-[380px] lg:h-auto lg:min-h-[400px] overflow-hidden rounded-2xl shadow-2xl ring-2 ring-white/10 lg:sticky lg:top-20">
-            <Image
-              src="/brand/kill.png"
-              alt="Ce que ça t'apporte"
-              fill
-              className="object-cover"
-              priority
+          {/* Image à droite — pleine section avec aspect-ratio réservé */}
+          <div className="relative w-full overflow-hidden rounded-2xl shadow-2xl ring-2 ring-white/10 lg:sticky lg:top-20 aspect-[4/3] sm:aspect-[3/2] lg:aspect-[16/9]">
+            <div
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat rounded-2xl"
+              style={{
+                backgroundImage: 'url("/brand/kill.png")',
+              }}
+              aria-hidden="true"
             />
           </div>
         </div>

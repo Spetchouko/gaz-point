@@ -100,10 +100,7 @@
   "dashboard_client_welcome": "Bonjour,",
   "dashboard_vendeur_title": "Espace vendeur",
   "dashboard_admin_title": "Administration",
-  "nav_dashboard": "Tableau de bord",
-  "nav_favoris": "Mes favoris",
-  "nav_reservations": "Mes réservations",
-  "nav_profil": "Mon profil",
+  
   "nav_avis": "Avis",
   "nav_dashboard": "Tableau de bord",
   "nav_logout": "Se déconnecter",

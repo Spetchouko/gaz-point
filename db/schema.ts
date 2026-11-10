@@ -206,24 +206,6 @@ export const pointDeVenteBouteille = pgTable(
   ]
 );
 
-export const favori = pgTable(
-  "favori",
-  {
-    id: text("id").primaryKey(),
-    userId: text("user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    pointId: text("point_id")
-      .notNull()
-      .references(() => pointDeVente.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-  },
-  (table) => [
-    index("favori_user_id_idx").on(table.userId),
-    uniqueIndex("favori_user_point_idx").on(table.userId, table.pointId),
-  ],
-);
-
 export const recharge = pgTable(
   "recharge",
   {
@@ -558,16 +540,6 @@ export const relations = defineRelations(
       reporter: r.one.user({
         from: r.disponibilite.reportedBy,
         to: r.user.id,
-      }),
-    },
-    favori: {
-      user: r.one.user({
-        from: r.favori.userId,
-        to: r.user.id,
-      }),
-      point: r.one.pointDeVente({
-        from: r.favori.pointId,
-        to: r.pointDeVente.id,
       }),
     },
     recharge: {

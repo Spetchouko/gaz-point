@@ -76,7 +76,7 @@ export function AdminTopBar({
   return (
     <div
       className={cn(
-        "sticky top-0 z-40 flex h-12 items-center gap-1 border-b border-border bg-background/85 px-3 backdrop-blur-md supports-backdrop-filter:bg-background/65 lg:px-4",
+        "sticky top-0 z-40 flex h-14 items-center gap-1 border-b border-border bg-background/85 px-3 backdrop-blur-md supports-backdrop-filter:bg-background/65 lg:px-4",
         collapsed ? "pl-2" : "pl-5"
       )}
     >

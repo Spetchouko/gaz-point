@@ -6,18 +6,21 @@ import { LangProvider } from "@/app/_components/lang-provider";
 import { RecherchePermanente } from "@/app/_components/recherche-permanente";
 import { ConsentBanner } from "@/app/_components/consent-banner";
 import { LangUpdater } from "@/app/_components/lang-updater";
-import { NavigationLoader } from "@/app/_components/navigation-loader";
 import { PwaRegistration } from "@/app/_components/pwa-registration";
 import { PwaInstallPrompt } from "@/app/_components/pwa-install-prompt";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "optional",
+  preload: true,
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "optional",
+  preload: true,
 });
 
 export const metadata: Metadata = {
@@ -63,7 +66,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ThemeProvider>
           <LangProvider>
             <LangUpdater />
-            <NavigationLoader />
             {children}
           </LangProvider>
         </ThemeProvider>

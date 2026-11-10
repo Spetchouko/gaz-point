@@ -59,15 +59,10 @@ export default async function Home() {
       <Storytelling />
       <Benefices />
       <Solution />
-      {/* Skeleton placeholders for slower-rendering sections */}
-      <div className="skeleton min-h-[120px] w-full max-w-3xl rounded-lg bg-muted" />
       <Fiabilite />
       <Faq />
-      <div className="skeleton min-h-[120px] w-full max-w-3xl rounded-lg bg-muted" />
       <Temoignages avis={avis} />
-      <div className="skeleton min-h-[120px] w-full max-w-3xl rounded-lg bg-muted" />
       <Acces />
-      <div className="skeleton min-h-[120px] w-full max-w-3xl rounded-lg bg-muted" />
       <CtaFinal />
     </>
   )

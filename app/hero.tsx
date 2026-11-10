@@ -1,5 +1,4 @@
 import Link from "next/link"
-import Image from "next/image"
 import { ArrowRight, Check } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -18,21 +17,22 @@ export function Hero({
   searchPublicites?: PubliciteBannerData[]
 }) {
   return (
-    <section id="accueil" className="relative w-full overflow-hidden min-h-[560px] md:min-h-[640px]">
-      {/* Image de fond */}
-      <Image
-        src="/brand/hero.webp"
-        alt="GazPoints"
-        fill
-        className="object-cover"
-        priority
+    <section id="accueil" className="relative w-full overflow-hidden">
+      {/* Image de fond avec aspect-ratio réservé pour éviter CLS */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: 'url("/brand/hero.webp")',
+          aspectRatio: "16 / 9",
+        }}
+        aria-hidden="true"
       />
 
       {/* Voile noir pour assombrir la photo sans la masquer */}
       <div className="absolute inset-0 bg-black/40" />
 
       {/* Contenu centré au-dessus */}
-      <div className="relative z-10 container mx-auto px-4 pt-12 pb-16 md:py-20 flex flex-col items-center text-center">
+      <div className="relative z-10 container mx-auto px-4 pt-12 pb-16 md:py-20 flex flex-col items-center text-center min-h-[560px] md:min-h-[640px]">
         <div className="mx-auto max-w-3xl">
           <Badge
             variant="secondary"

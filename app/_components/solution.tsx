@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import {
   ArrowRight,
@@ -53,14 +52,14 @@ export function Solution() {
     >
       <div className="container mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-          {/* Image à gauche — pleine section */}
-          <div className="relative w-full h-[420px] sm:h-[500px] lg:h-auto lg:min-h-[520px] overflow-hidden rounded-3xl shadow-2xl ring-4 ring-white/10">
-            <Image
-              src="/brand/jgtr.webp"
-              alt="Point de vente GazPoints"
-              fill
-              className="object-cover"
-              priority
+          {/* Image à gauche — pleine section avec aspect-ratio réservé */}
+          <div className="relative w-full overflow-hidden rounded-3xl shadow-2xl ring-4 ring-white/10 aspect-[4/3] sm:aspect-[3/2] lg:aspect-[16/9]">
+            <div
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat rounded-3xl"
+              style={{
+                backgroundImage: 'url("/brand/jgtr.webp")',
+              }}
+              aria-hidden="true"
             />
           </div>
 

@@ -23,21 +23,21 @@ export function RecherchePermanente() {
     return () => observer.disconnect()
   }, [])
 
+  if (!visible) return null
+
   return (
     <div
       className={cn(
-        "pointer-events-none fixed inset-x-0 bottom-0 z-40 px-4 pb-4 transition-all duration-300",
+        "fixed inset-x-0 bottom-0 z-40 px-4 pb-4 transition-opacity duration-200",
         "sm:inset-x-auto sm:bottom-6 sm:right-6 sm:px-0 sm:pb-0",
-        visible
-          ? "translate-y-0 opacity-100"
-          : "pointer-events-none translate-y-4 opacity-0"
+        "opacity-100"
       )}
     >
       <button
         type="button"
         onClick={handleClick}
         className={cn(
-          "pointer-events-auto flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm shadow-foreground/10 transition-colors hover:bg-primary/90 cursor-pointer",
+          "flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm shadow-foreground/10 transition-colors hover:bg-primary/90 cursor-pointer",
           "sm:h-11"
         )}
       >

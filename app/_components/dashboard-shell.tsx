@@ -22,7 +22,7 @@ export function DashboardShell({
       {/* Barre latérale de navigation (desktop uniquement) */}
       <aside
         className={cn(
-          "shrink-0 flex h-full flex-col border-r border-border bg-card hidden lg:flex transition-all duration-300 ease-in-out",
+          "shrink-0 flex h-full flex-col border-r border-border bg-card hidden lg:flex transition-width duration-300 ease-in-out",
           collapsed ? "w-16" : "w-64"
         )}
       >

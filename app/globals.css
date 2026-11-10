@@ -79,6 +79,9 @@
 
   /* Arrondis */
   --radius-4xl: 2rem;
+
+  /* Hauteur du header unifiée (56px = 3.5rem = h-14) */
+  --header-height: 3.5rem;
 }
 
 /* ------------------------------------------------------------------ */
@@ -252,6 +255,29 @@ img {
   @media (hover: hover) {
     transition: color 0.2s, background-color 0.2s, border-color 0.2s;
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Layout — Réservation d'espace pour header sticky                   */
+/* ------------------------------------------------------------------ */
+
+/* Utilitaire pour réserver l'espace du header (56px) sous le header sticky */
+@utility pt-header {
+  padding-top: var(--header-height);
+}
+
+/* Variante pour les pages avec header public (h-14) */
+@utility pt-header-public {
+  padding-top: var(--header-height);
+}
+
+/* Variante pour les dashboards (header h-14) */
+@utility pt-header-dashboard {
+  padding-top: var(--header-height);
+}
+
+@utility pt-header-admin {
+  padding-top: var(--header-height);
 }
 
 /* ------------------------------------------------------------------ */

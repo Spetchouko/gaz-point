@@ -1,4 +1,3 @@
-import Image from "next/image"
 import { Building2, Store } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -25,15 +24,15 @@ export function Fiabilite() {
               </h2>
 
               <p className="mt-5 text-pretty text-lg text-muted-foreground leading-relaxed max-w-xl">
-                Une disponibilité n’est jamais affichée seule. Tu vois le
-                statut, qui l’a signalé, et le moment de la dernière mise
+                Une disponibilité n&apos;est jamais affichée seule. Tu vois le
+                statut, qui l&apos;a signalé, et le moment de la dernière mise
                 à jour.
               </p>
             </div>
 
             <div>
               <h3 className="font-heading text-xl font-bold tracking-tight text-foreground mb-5">
-                Qui met à jour l’information
+                Qui met à jour l'information
               </h3>
 
               <div className="grid gap-3 sm:grid-cols-2">
@@ -51,7 +50,7 @@ export function Fiabilite() {
                   <span className="inline-flex size-10 items-center justify-center rounded-xl bg-sky text-navy shadow-md ring-1 ring-white/20 mb-3 group-hover:scale-105 transition-transform">
                     <Building2 className="size-4" />
                   </span>
-                  <p className="font-bold text-foreground">L’administration</p>
+                  <p className="font-bold text-foreground">L'administration</p>
                   <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
                     Elle tient à jour les fiches officielles des points de
                     vente.
@@ -66,29 +65,29 @@ export function Fiabilite() {
               </h4>
               <div className="space-y-3 text-base leading-relaxed">
                 <p className="text-muted-foreground">
-                  Il ne peut pas garantir qu’une bouteille restera
-                  disponible jusqu’à ce que tu arrives. Ce que tu vois
-                  est ce qui a été signalé, à l’heure indiquée.
+                  Il ne peut pas garantir qu&apos;une bouteille restera
+                  disponible jusqu&apos;à ce que tu arrives. Ce que tu vois
+                  est ce qui a été signalé, à l&apos;heure indiquée.
                 </p>
                 <Separator className="bg-border/50" />
                 <p className="font-semibold text-foreground">
                   Quand une information est ancienne, elle est marquée comme
-                  telle. C’est ça, la transparence.
+                  telle. C&apos;est ça, la transparence.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Image droite — pleine, moderne */}
-          <div className="order-1 lg:order-2 relative w-full h-[380px] sm:h-[460px] lg:h-auto lg:min-h-[560px] overflow-hidden rounded-3xl shadow-2xl ring-4 ring-white/10 lg:sticky lg:top-24">
-            <Image
-              src="/brand/1.webp"
-              alt="Fiabilité des informations"
-              fill
-              className="object-cover"
-              priority
+          {/* Image droite — pleine, moderne avec aspect-ratio réservé */}
+          <div className="order-1 lg:order-2 relative w-full overflow-hidden rounded-3xl shadow-2xl ring-4 ring-white/10 lg:sticky lg:top-24 aspect-[4/3] sm:aspect-[3/2] lg:aspect-[16/9]">
+            <div
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat rounded-3xl"
+              style={{
+                backgroundImage: 'url("/brand/1.webp")',
+              }}
+              aria-hidden="true"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/10 via-transparent to-black/10 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/10 via-transparent to-black/10 pointer-events-none rounded-3xl" />
           </div>
         </div>
       </div>
