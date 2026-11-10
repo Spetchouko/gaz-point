@@ -38,16 +38,29 @@ const PAGE_TITLES: Record<string, string> = {
   "/dashboard/vendeur/disponibilites": "Disponibilités de gaz",
   "/dashboard/vendeur/reservations": "Mes réservations",
   "/dashboard/vendeur/profil": "Mon profil",
+  "/admin": "Tableau de bord admin",
+  "/admin/users": "Utilisateurs",
+  "/admin/vendeurs": "Vendeurs",
+  "/admin/points-de-vente": "Points de vente",
+  "/admin/disponibilites": "Disponibilités",
+  "/admin/marketing": "Publicités",
+  "/admin/avis": "Avis & témoignages",
+  "/admin/statistiques": "Statistiques",
+  "/admin/profil": "Mon profil",
+  "/admin/parametres": "Paramètres",
+  "/admin/collaborateurs": "Collaborateurs",
 }
 
 export function DashboardTopBar({
   role,
   collapsed,
   onToggleCollapse,
+  permissions,
 }: {
   role: DashboardRole
   collapsed: boolean
   onToggleCollapse: () => void
+  permissions?: string[]
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -56,15 +69,20 @@ export function DashboardTopBar({
   const user = session?.user as
     | { name?: string | null; email?: string | null; role?: string | null }
     | undefined
-  const roleLabel = role === "vendor" ? "Vendeur" : "Usager"
+  const roleLabel =
+    role === "vendor"
+      ? "Vendeur"
+      : role === "admin" || role === "collaborateur"
+        ? "Administrateur"
+        : "Usager"
   const initial = user?.name?.charAt(0).toUpperCase() ?? "U"
-  const userName = user?.name ?? (role === "vendor" ? "Vendeur" : "Usager")
+  const userName = user?.name ?? roleLabel
   const title = PAGE_TITLES[pathname] ?? "Tableau de bord"
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href)
 
   // Items de navigation mobile, regroupés par rôle
-  const sections = getDashboardNavSections(role)
+  const sections = getDashboardNavSections(role, permissions)
   const mobileItems: Array<{
     href: string
     label: string
@@ -77,6 +95,8 @@ export function DashboardTopBar({
     router.refresh()
   }
 
+  const adminHref = role === "admin" || role === "collaborateur" ? "/admin" : "/dashboard"
+
   return (
     <div
       className={cn(
@@ -87,11 +107,11 @@ export function DashboardTopBar({
       {/* Logo + titre de page active (compact, mobile-friendly) */}
       <div className="flex shrink-0 items-center gap-2">
         <Link
-          href="/dashboard"
+          href={adminHref}
           className="flex items-center gap-2 px-2 py-1 rounded-lg text-primary font-semibold tracking-tight text-sm"
           onClick={(e) => {
             e.preventDefault()
-            router.push("/dashboard")
+            router.push(adminHref)
           }}
         >
           <Image
@@ -252,7 +272,7 @@ export function DashboardTopBar({
             </nav>
             <div className="p-3 border-t border-border text-center space-y-2">
               <Link
-                href="/dashboard"
+                href={adminHref}
                 className="block text-xs font-medium text-primary hover:text-primary-strong"
                 onClick={() => setMobileOpen(false)}
               >

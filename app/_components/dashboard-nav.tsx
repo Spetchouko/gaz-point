@@ -26,10 +26,12 @@ export function DashboardNav({
   role,
   collapsed,
   onToggleCollapse,
+  permissions,
 }: {
   role: DashboardRole
   collapsed: boolean
   onToggleCollapse: () => void
+  permissions?: string[]
 }) {
   const pathname = usePathname()
   const router = useRouter()
@@ -37,11 +39,16 @@ export function DashboardNav({
   const user = session?.user as
     | { name?: string | null; email?: string | null }
     | undefined
-  const allSections = getDashboardNavSections(role)
+  const allSections = getDashboardNavSections(role, permissions)
 
-  const roleLabel = role === "vendor" ? "Vendeur" : "Usager"
+  const roleLabel =
+    role === "vendor"
+      ? "Vendeur"
+      : role === "admin" || role === "collaborateur"
+        ? "Administrateur"
+        : "Usager"
   const initial = user?.name?.charAt(0).toUpperCase() ?? "U"
-  const userName = user?.name ?? (role === "vendor" ? "Vendeur" : "Usager")
+  const userName = user?.name ?? roleLabel
 
   const showSubscriptionStatus = role === "vendor"
 
@@ -110,16 +117,18 @@ export function DashboardNav({
     })
   }
 
+  const adminHref = role === "admin" || role === "collaborateur" ? "/admin" : "/dashboard"
+
   return (
     <nav aria-label="Navigation du dashboard" className="flex h-full flex-col">
       {/* En-tête de la barre latérale : logo GazPoints + réduction */}
       <div className="flex h-14 items-center justify-between border-b border-border px-3">
         <Link
-          href="/dashboard"
+          href={adminHref}
           className="flex items-center gap-2 px-3"
           onClick={(e) => {
             e.preventDefault()
-            router.push("/dashboard")
+            router.push(adminHref)
           }}
         >
           <Image

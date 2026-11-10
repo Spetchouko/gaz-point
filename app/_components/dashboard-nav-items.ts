@@ -1,4 +1,5 @@
 import {
+  ArrowLeft,
   LayoutDashboard,
   Calendar,
   FileText,
@@ -7,6 +8,11 @@ import {
   MapPin,
   Cylinder,
   Shield,
+  Megaphone,
+  Settings,
+  Users,
+  Store,
+  BarChart3,
 } from "lucide-react"
 import type { ComponentType } from "react"
 
@@ -24,7 +30,7 @@ export type DashboardNavSection = {
   items: DashboardNavItem[]
 }
 
-export type DashboardRole = "client" | "vendor"
+export type DashboardRole = "client" | "vendor" | "admin" | "collaborateur"
 
 export function getClientNavSections(): DashboardNavSection[] {
   return [
@@ -94,9 +100,108 @@ export function getVendorNavSections(): DashboardNavSection[] {
   ]
 }
 
-export function getDashboardNavSections(role: DashboardRole): DashboardNavSection[] {
+export function getAdminDashboardNavSections(
+  role: "admin" | "collaborateur",
+  permissions: string[]
+): DashboardNavSection[] {
+  const sections: DashboardNavSection[] = []
+
+  // --- Navigation principale ---
+  const principal: DashboardNavItem[] = [
+    { href: "/admin", label: "Tableau de bord", icon: LayoutDashboard },
+    { href: "/", label: "Retour au site", icon: ArrowLeft },
+  ]
+
+  // --- Gestion du réseau ---
+  const gestion: DashboardNavItem[] = []
+  const access = (module: string, adminOnly = false) =>
+    role === "admin" || (!adminOnly && permissions.includes(module))
+
+  if (access("utilisateurs")) {
+    gestion.push({ href: "/admin/users", label: "Utilisateurs", icon: Users })
+  }
+  if (access("vendeurs")) {
+    gestion.push({ href: "/admin/vendeurs", label: "Vendeurs", icon: Store })
+    gestion.push({
+      href: "/admin/points-de-vente",
+      label: "Points de vente",
+      icon: Store,
+    })
+  }
+  if (role === "admin") {
+    gestion.push({
+      href: "/admin/collaborateurs",
+      label: "Collaborateurs",
+      icon: Shield,
+    })
+  }
+  if (access("disponibilites")) {
+    gestion.push({
+      href: "/admin/disponibilites",
+      label: "Disponibilités",
+      icon: Cylinder,
+    })
+  }
+
+  // --- Marketing & communication ---
+  const marketing: DashboardNavItem[] = []
+  if (access("marketing")) {
+    marketing.push({
+      href: "/admin/marketing",
+      label: "Publicités",
+      icon: Megaphone,
+    })
+  }
+  if (access("avis")) {
+    marketing.push({
+      href: "/admin/avis",
+      label: "Avis & témoignages",
+      icon: MessageSquare,
+    })
+  }
+
+  // --- Analyse ---
+  const analyse: DashboardNavItem[] = []
+  if (access("statistiques")) {
+    analyse.push({
+      href: "/admin/statistiques",
+      label: "Analyse des données",
+      icon: BarChart3,
+    })
+  }
+
+  // --- Compte & paramètres ---
+  const compte: DashboardNavItem[] = [
+    { href: "/admin/profil", label: "Mon profil", icon: User },
+    { href: "/admin/parametres", label: "Paramètres", icon: Settings },
+  ]
+
+  if (principal.length > 0) {
+    sections.push({ key: "principal", label: "Navigation", items: principal })
+  }
+  if (gestion.length > 0) {
+    sections.push({ key: "gestion", label: "Gestion du réseau", items: gestion })
+  }
+  if (marketing.length > 0) {
+    sections.push({ key: "marketing", label: "Marketing & communication", items: marketing })
+  }
+  if (analyse.length > 0) {
+    sections.push({ key: "analyse", label: "Analyse", items: analyse })
+  }
+  sections.push({ key: "compte", label: "Compte & paramètres", items: compte })
+
+  return sections
+}
+
+export function getDashboardNavSections(
+  role: DashboardRole,
+  permissions?: string[]
+): DashboardNavSection[] {
   if (role === "vendor") {
     return getVendorNavSections()
+  }
+  if (role === "admin" || role === "collaborateur") {
+    return getAdminDashboardNavSections(role, permissions ?? [])
   }
   return getClientNavSections()
 }
@@ -110,6 +215,9 @@ export function getVendorNavItems(): DashboardNavItem[] {
   return getVendorNavSections().flatMap((s) => s.items)
 }
 
-export function getDashboardNavItems(role: DashboardRole): DashboardNavItem[] {
-  return getDashboardNavSections(role).flatMap((s) => s.items)
+export function getDashboardNavItems(
+  role: DashboardRole,
+  permissions?: string[]
+): DashboardNavItem[] {
+  return getDashboardNavSections(role, permissions).flatMap((s) => s.items)
 }
