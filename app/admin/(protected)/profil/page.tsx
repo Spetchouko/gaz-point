@@ -23,11 +23,9 @@ export default async function AdminProfilPage() {
   const profile = rows[0]
   if (!profile) redirect("/connexion")
 
-  const role = (profile.role === "admin" || profile.role === "collaborateur") ? profile.role : "admin"
-
   return (
     <div className="space-y-8">
-      <AdminProfilEditor profile={profile} role={role} />
+      <AdminProfilEditor profile={profile} role={staff.role} />
     </div>
   )
 }

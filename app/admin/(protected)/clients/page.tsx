@@ -90,7 +90,7 @@ export default async function AdminClientsPage({
           { value: "inactive", label: "Inactifs" },
         ]}
         sortOptions={[
-          { value: "recent", label: "Plus rcent" },
+          { value: "recent", label: "Plus récentes" },
           { value: "oldest", label: "Plus anciens" },
         ]}
       />
@@ -104,7 +104,7 @@ export default async function AdminClientsPage({
               href={`?${new URLSearchParams({ ...{ q: q ?? "", status, sort }, page: String(pageNum - 1) }).toString()}`}
               className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors"
             >
-              Prcdent
+              Précédent
             </a>
           )}
           <span className="px-3 py-2 text-sm text-muted-foreground">

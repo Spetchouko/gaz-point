@@ -68,7 +68,7 @@ export function AdminClientsTable({
   if (rows.length === 0) {
     return (
       <div className="rounded-lg border bg-card p-8 text-center">
-        <p className="text-muted-foreground">Aucun client trouv.</p>
+        <p className="text-muted-foreground">Aucun client trouvé.</p>
       </div>
     )
   }
@@ -92,7 +92,7 @@ export function AdminClientsTable({
                 Statut
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">
-                Vrification
+                Vérification
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
                 Inscrit le
@@ -175,7 +175,7 @@ export function AdminClientsTable({
                         className="flex items-center gap-2"
                       >
                         <Power className="size-4" />
-                        {c.isActive ? "Dsactiver" : "Ractiver"}
+                        {c.isActive ? "Désactiver" : "Réactiver"}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className={cn("flex items-center gap-2 text-destructive focus:text-destructive")}
@@ -207,7 +207,7 @@ export function AdminClientsTable({
             <Button variant="ghost" onClick={() => setDeleteTarget(null)}>Annuler</Button>
             <Button variant="destructive" onClick={handleDelete}>
               <Trash2 className="size-4 mr-2" />
-              Supprimer dfinitivement
+              Supprimer définitivement
             </Button>
           </div>
         </DialogContent>

@@ -127,26 +127,26 @@ export default async function AdminPointsPage({
         </p>
       </header>
 
-<AdminSearchFilters
-          searchValue={q ?? ""}
-          statusValue={status}
-          sortValue={sort}
-          statusOptions={[
-            { value: "all", label: "Tous" },
-            { value: "with-vendor", label: "Avec vendeur" },
-            { value: "without-vendor", label: "Sans vendeur" },
-          ]}
-          sortOptions={[
-            { value: "recent", label: "Plus récents" },
-            { value: "oldest", label: "Plus anciens" },
-            { value: "name", label: "Par nom (A-Z)" },
-          ]}
-        />
+      <AdminSearchFilters
+        searchValue={q ?? ""}
+        statusValue={status}
+        sortValue={sort}
+        statusOptions={[
+          { value: "all", label: "Tous" },
+          { value: "with-vendor", label: "Avec vendeur" },
+          { value: "without-vendor", label: "Sans vendeur" },
+        ]}
+        sortOptions={[
+          { value: "recent", label: "Plus récents" },
+          { value: "oldest", label: "Plus anciens" },
+          { value: "name", label: "Par nom (A-Z)" },
+        ]}
+      />
 
-        <AdminPointsBoard
-          points={pointsWithData}
-          vendors={vendors.map((v) => ({ id: v.id, name: v.name }))}
-        />
+      <AdminPointsBoard
+        points={pointsWithData}
+        vendors={vendors.map((v) => ({ id: v.id, name: v.name }))}
+      />
 
       {totalPages > 1 && (
         <nav className="flex items-center justify-center gap-2" aria-label="Pagination">
