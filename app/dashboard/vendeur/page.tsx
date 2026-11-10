@@ -31,16 +31,6 @@ export default async function DashboardVendeurPage() {
     return <div>Accès réservé aux vendeurs.</div>
   }
 
-  // Check subscription status
-  const [subscription] = await db
-    .select()
-    .from(pointDeVente)
-    .where(eq(pointDeVente.vendorId, user.id))
-    .limit(1)
-
-  // If no subscription or not active, redirect to payment
-  // Note: vendorSubscription import would be needed, for now we skip the check
-
   // Get vendor's points de vente
   const points = await db
     .select()
