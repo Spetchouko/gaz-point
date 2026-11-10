@@ -7,6 +7,7 @@ import {
   index,
   integer,
   uniqueIndex,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 export type UserRole = "client" | "vendor" | "admin" | "collaborateur";
@@ -326,7 +327,7 @@ export const trafficEvent = pgTable(
   "traffic_event",
   {
     id: text("id").primaryKey(),
-    eventType: text("event_type").notNull(), // 'pageview' | 'signup' | 'signin'
+    eventType: text("event_type").notNull(), // 'pageview' | 'signup' | 'signin' | 'search_performed' | ...
     path: text("path"),
     referrer: text("referrer"),
     utmSource: text("utm_source"),
@@ -334,6 +335,10 @@ export const trafficEvent = pgTable(
     utmCampaign: text("utm_campaign"),
     userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
     consented: boolean("consented").default(false).notNull(),
+    // Identifiant de session anonyme pour regrouper les événements d'un même visiteur
+    sessionId: text("session_id"),
+    // Métadonnées strictement nécessaires (JSON), sans données personnelles sensibles
+    metadata: jsonb("metadata"),
     // Device & browser tracking
     userAgent: text("user_agent"),
     screenWidth: integer("screen_width"),
@@ -348,6 +353,8 @@ export const trafficEvent = pgTable(
     index("traffic_event_path_type_idx").on(table.path, table.eventType),
     index("traffic_event_user_id_idx").on(table.userId),
     index("traffic_event_created_at_path_idx").on(table.createdAt, table.path),
+    index("traffic_event_session_id_idx").on(table.sessionId),
+    index("traffic_event_event_type_created_idx").on(table.eventType, table.createdAt),
   ]
 )
 
@@ -492,12 +499,11 @@ export const paymentTransaction = pgTable(
 )
 
 export const relations = defineRelations(
-  { user, session, account, verification, pointDeVente, disponibilite, favori, recharge, adminAction, collaborateurPermission, publicite, trafficEvent, brand, avis, reservation, vendorSubscription, paymentTransaction },
+  { user, session, account, verification, pointDeVente, disponibilite, recharge, adminAction, collaborateurPermission, publicite, trafficEvent, brand, avis, reservation, vendorSubscription, paymentTransaction },
   (r) => ({
     user: {
       sessions: r.many.session(),
       accounts: r.many.account(),
-      favoris: r.many.favori(),
       recharges: r.many.recharge(),
       adminActions: r.many.adminAction(),
       avis: r.many.avis(),
@@ -525,7 +531,6 @@ export const relations = defineRelations(
         to: r.user.id,
       }),
       disponibilites: r.many.disponibilite(),
-      favoris: r.many.favori(),
       recharges: r.many.recharge(),
     },
     disponibilite: {

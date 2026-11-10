@@ -17,17 +17,18 @@ import {
   Cell,
 } from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 
-const COLORS = {
-  primary: "#16834a",
-  secondary: "hsl(217 91% 60%)",
-  warning: "hsl(35 90% 55%)",
-  destructive: "hsl(0 84% 60%)",
-  success: "#16834a",
-  info: "hsl(217 91% 60%)",
-}
+const CHART_COLORS = [
+  "#16834a",
+  "hsl(217 91% 60%)",
+  "hsl(35 90% 55%)",
+  "hsl(0 84% 60%)",
+  "hsl(142 70% 50%)",
+  "hsl(268 82% 56%)",
+]
 
-const RADIUS = [0, 0, 8, 8]
+const RADIUS: [number, number, number, number] = [0, 0, 8, 8]
 
 // ============================================================
 // KPI Card
@@ -47,7 +48,7 @@ export function KpiCard({
   value,
   subtitle,
   trend,
-  Icon: IconComponent,
+  icon: IconComponent,
   color = "bg-muted/10 text-muted-foreground border-border",
 }: KpiCardProps) {
   return (
@@ -55,7 +56,7 @@ export function KpiCard({
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
         {trend && (
-          <Badge variant={trend.value >= 0 ? "success" : "destructive"} className="text-xs">
+          <Badge variant={trend.value >= 0 ? "default" : "destructive"} className="text-xs">
             {trend.value >= 0 ? "↑" : "↓"} {Math.abs(trend.value)}% {trend.label}
           </Badge>
         )}
@@ -105,8 +106,8 @@ export function TrafficLineChart({ data }: { data: TrafficPoint[] }) {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="Visiteurs" stroke={COLORS.primary} strokeWidth={2} />
-              <Line type="monotone" dataKey="Sessions" stroke={COLORS.secondary} strokeWidth={2} />
+              <Line type="monotone" dataKey="Visiteurs" stroke="#16834a" strokeWidth={2} />
+              <Line type="monotone" dataKey="Sessions" stroke="hsl(217 91% 60%)" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -200,9 +201,9 @@ export function EvolutionLineChart({ data }: { data: EvolutionPoint[] }) {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="Clients" stroke={COLORS.primary} strokeWidth={2} />
-              <Line type="monotone" dataKey="Vendeurs" stroke={COLORS.secondary} strokeWidth={2} />
-              <Line type="monotone" dataKey="Vérifiés" stroke={COLORS.warning} strokeWidth={2} />
+              <Line type="monotone" dataKey="Clients" stroke="#16834a" strokeWidth={2} />
+              <Line type="monotone" dataKey="Vendeurs" stroke="hsl(217 91% 60%)" strokeWidth={2} />
+              <Line type="monotone" dataKey="Vérifiés" stroke="hsl(35 90% 55%)" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -235,7 +236,7 @@ export function TopPagesBarChart({ data }: { data: PageStat[] }) {
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="views" fill={COLORS.primary} radius={RADIUS} />
+              <Bar dataKey="views" fill="#16834a" radius={RADIUS} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -274,12 +275,12 @@ export function SourcesPieChart({ data }: { data: SourceStat[] }) {
                   outerRadius={100}
                   fill="#8884d8"
                   labelLine={false}
-                  label={({ name, percent }: any) => (
+                  label={({ name }: { name?: string }) => (
                     <text>{name}</text>
                   )}
                 >
                   {data.map((_, i) => (
-                    <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length] as string} />
+                    <Cell key={`cell-${i}`} fill={CHART_COLORS[i % CHART_COLORS.length] as string} />
                   ))}
                 </Pie>
               </PieChart>
@@ -288,7 +289,7 @@ export function SourcesPieChart({ data }: { data: SourceStat[] }) {
           <div className="ml-4 space-y-2">
             {data.map((d) => {
               const pct = total > 0 ? ((d.count / total) * 100).toFixed(0) : "0"
-              const color = COLORS[data.indexOf(d) % COLORS.length]
+              const color = CHART_COLORS[data.indexOf(d) % CHART_COLORS.length]
               return (
                 <div key={d.name} className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
@@ -327,7 +328,7 @@ export function DevicesPieChart({ data }: { data: DeviceStat[] }) {
               <PieChart>
                 <Pie data={data} dataKey="count" cx="50%" cy="50%" innerRadius={80} outerRadius={100}>
                   {data.map((_, i) => (
-                    <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length] as string} />
+                    <Cell key={`cell-${i}`} fill={CHART_COLORS[i % CHART_COLORS.length] as string} />
                   ))}
                 </Pie>
               </PieChart>
@@ -336,7 +337,7 @@ export function DevicesPieChart({ data }: { data: DeviceStat[] }) {
           <div className="space-y-2">
             {data.map((d) => {
               const pct = total > 0 ? ((d.count / total) * 100).toFixed(0) : "0"
-              const color = COLORS[data.indexOf(d) % COLORS.length]
+              const color = CHART_COLORS[data.indexOf(d) % CHART_COLORS.length]
               return (
                 <div key={d.name} className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />

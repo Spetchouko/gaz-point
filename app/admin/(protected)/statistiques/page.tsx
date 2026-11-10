@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import { requireAdmin } from "@/lib/session"
-import { resolveAnalyticsRange, ANALYTICS_PERIOD_KEYS } from "@/lib/publicite-analytics"
+import { resolveAnalyticsRange, ANALYTICS_PERIOD_KEYS, type AnalyticsPeriodKey } from "@/lib/publicite-analytics"
 import { AnalyticsDashboardClient } from "@/app/_components/analytics-dashboard-client"
 
 export const metadata: Metadata = {
@@ -23,7 +23,9 @@ export default async function AdminAnalyticsPage({
   const params = await searchParams
   const periodRaw = (params.period ?? "30") as string
   const period =
-    ANALYTICS_PERIOD_KEYS.includes(periodRaw as any) ? (periodRaw as any) : "30"
+    ANALYTICS_PERIOD_KEYS.includes(periodRaw as AnalyticsPeriodKey)
+      ? (periodRaw as AnalyticsPeriodKey)
+      : "30"
 
   const range = resolveAnalyticsRange(
     period,

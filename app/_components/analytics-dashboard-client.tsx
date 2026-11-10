@@ -17,7 +17,6 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import {
   KpiCard,
@@ -34,7 +33,6 @@ import {
   DevicesPieChart,
   type DeviceStat,
 } from "@/app/_components/analytics-charts"
-import { cn } from "@/lib/utils"
 
 type AnalyticsData = {
   period: { from: string; to: string }
@@ -165,7 +163,14 @@ export function AnalyticsDashboardClient({
   }, [period, from, to])
 
   useEffect(() => {
-    fetchData()
+    let cancelled = false
+    ;(async () => {
+      if (cancelled) return
+      await fetchData()
+    })()
+    return () => {
+      cancelled = true
+    }
   }, [fetchData])
 
   // ============================================================
@@ -371,77 +376,77 @@ export function AnalyticsDashboardClient({
               value={nf(kpis.acquisition.uniqueVisitors)}
               subtitle="Acquisition"
               trend={{ value: 0, label: "" }}
-              Icon={Users}
+              icon={Users}
               color="bg-info/10 text-info border-info/20"
             />
             <KpiCard
               title="Sessions"
               value={nf(kpis.acquisition.totalSessions)}
               subtitle="Acquisition"
-              Icon={Activity}
+              icon={Activity}
               color="bg-info/10 text-info border-info/20"
             />
             <KpiCard
               title="Nouveaux visiteurs"
               value={nf(kpis.acquisition.newVisitors)}
               subtitle="Acquisition"
-              Icon={UserCheck}
+              icon={UserCheck}
               color="bg-success/10 text-success border-success/20"
             />
             <KpiCard
               title="Visiteurs récurrents"
               value={nf(kpis.acquisition.returningVisitors)}
               subtitle="Acquisition"
-              Icon={Users}
+              icon={Users}
               color="bg-muted/10 text-muted-foreground border-border"
             />
             <KpiCard
               title="Inscriptions terminées"
               value={nf(kpis.conversion.signupsCompleted)}
               subtitle="Conversion"
-              Icon={UserCheck}
+              icon={UserCheck}
               color="bg-success/10 text-success border-success/20"
             />
             <KpiCard
               title="Inscriptions vendeurs"
               value={nf(kpis.conversion.sellerSignups)}
               subtitle="Conversion"
-              Icon={Store}
+              icon={Store}
               color="bg-warning/10 text-warning border-warning/20"
             />
             <KpiCard
               title="Taux visiteur → inscription"
               value={`${kpis.conversion.conversionVisitToSignup.toFixed(1)}%`}
               subtitle="Conversion"
-              Icon={TrendingUp}
+              icon={TrendingUp}
               color="bg-navy/10 text-navy border-navy/20"
             />
             <KpiCard
               title="Taux visiteur → client"
               value={`${kpis.conversion.conversionVisitToClient.toFixed(1)}%`}
               subtitle="Conversion"
-              Icon={UserX}
+              icon={UserX}
               color="bg-muted/10 text-muted-foreground border-border"
             />
             <KpiCard
               title="Taux visiteur → vendeur"
               value={`${kpis.conversion.conversionVisitToSeller.toFixed(1)}%`}
               subtitle="Conversion"
-              Icon={Store}
+              icon={Store}
               color="bg-warning/10 text-warning border-warning/20"
             />
             <KpiCard
               title="Points de vente"
               value={nf(kpis.business.totalPoints)}
               subtitle="Activité commerciale"
-              Icon={Cylinder}
+              icon={Cylinder}
               color="bg-warning/10 text-warning border-warning/20"
             />
             <KpiCard
               title="Recherches effectuées"
               value={nf(kpis.business.searchesCount)}
               subtitle="Activité commerciale"
-              Icon={Search}
+              icon={Search}
               color="bg-info/10 text-info border-info/20"
             />
           </div>

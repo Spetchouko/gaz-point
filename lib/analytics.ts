@@ -112,7 +112,7 @@ export async function trackEvent(payload: AnalyticsEventPayload): Promise<void> 
   const body: Record<string, unknown> = {
     eventType: payload.eventType,
     path: payload.path ?? window.location.pathname,
-    referrer: payload.referrer ?? document.referrer || undefined,
+    referrer: payload.referrer ?? document.referrer ?? undefined,
     sessionId: sid,
     ...(utmSource ? { utmSource } : {}),
     ...(utmMedium ? { utmMedium } : {}),
