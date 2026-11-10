@@ -33,6 +33,17 @@ export default async function AdminDashboardPage() {
   const now = new Date()
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 
+  // Helper : exécute une requête DB et retourne une valeur par défaut en cas d'échec,
+  // afin qu'une requête défaillante ne fasse pas planter l'ensemble du dashboard.
+  async function safeQuery<T>(query: Promise<T>, fallback: T): Promise<T> {
+    try {
+      return await query
+    } catch (e) {
+      console.error("[AdminDashboard] Requête échouée:", e)
+      return fallback
+    }
+  }
+
   const [
     totalAbonnes,
     totalVendeurs,
@@ -46,71 +57,104 @@ export default async function AdminDashboardPage() {
     recentDispos,
     recentActions,
   ] = await Promise.all([
-    db.select({ count: count() }).from(user).where(eq(user.role, "client")),
-    db.select({ count: count() }).from(user).where(eq(user.role, "vendor")),
+    safeQuery(
+      db.select({ count: count() }).from(user).where(eq(user.role, "client")),
+      [{ count: 0 }]
+    ),
+    safeQuery(
+      db.select({ count: count() }).from(user).where(eq(user.role, "vendor")),
+      [{ count: 0 }]
+    ),
     // Isolation : un collaborateur ne compte pas les comptes d'administration.
-    isAdmin
-      ? db.select({ count: count() }).from(user)
-      : db.select({ count: count() }).from(user).where(inArray(user.role, ["client", "vendor"])),
-    db.select({ count: count() }).from(pointDeVente),
-    db
-      .select({ count: count() })
-      .from(disponibilite)
-      .where(eq(disponibilite.status, "disponible")),
-    db
-      .select({ sum: sql<number>`COALESCE(SUM(${disponibilite.quantity}), 0)` })
-      .from(disponibilite)
-      .where(eq(disponibilite.status, "disponible")),
+    safeQuery(
+      isAdmin
+        ? db.select({ count: count() }).from(user)
+        : db
+            .select({ count: count() })
+            .from(user)
+            .where(inArray(user.role, ["client", "vendor"])),
+      [{ count: 0 }]
+    ),
+    safeQuery(db.select({ count: count() }).from(pointDeVente), [{ count: 0 }]),
+    safeQuery(
+      db
+        .select({ count: count() })
+        .from(disponibilite)
+        .where(eq(disponibilite.status, "disponible")),
+      [{ count: 0 }]
+    ),
+    safeQuery(
+      db
+        .select({ sum: sql<number>`COALESCE(SUM(${disponibilite.quantity}), 0)` })
+        .from(disponibilite)
+        .where(eq(disponibilite.status, "disponible")),
+      [{ sum: 0 }]
+    ),
     // Collaboration : on ne remonte que les utilisateurs (abonnés + vendeurs).
-    isAdmin
-      ? db
-          .select()
-          .from(user)
-          .where(gte(user.createdAt, sevenDaysAgo))
-          .orderBy(desc(user.createdAt))
-          .limit(5)
-      : db
-          .select()
-          .from(user)
-          .where(and(gte(user.createdAt, sevenDaysAgo), inArray(user.role, ["client", "vendor"])))
-          .orderBy(desc(user.createdAt))
-          .limit(5),
-    db
-      .select()
-      .from(user)
-      .where(and(eq(user.role, "vendor"), gte(user.createdAt, sevenDaysAgo)))
-      .orderBy(desc(user.createdAt))
-      .limit(5),
-    db
-      .select()
-      .from(pointDeVente)
-      .where(gte(pointDeVente.createdAt, sevenDaysAgo))
-      .orderBy(desc(pointDeVente.createdAt))
-      .limit(5),
-    db
-      .select()
-      .from(disponibilite)
-      .where(gte(disponibilite.createdAt, sevenDaysAgo))
-      .orderBy(desc(disponibilite.createdAt))
-      .limit(5),
+    safeQuery(
+      isAdmin
+        ? db
+            .select()
+            .from(user)
+            .where(gte(user.createdAt, sevenDaysAgo))
+            .orderBy(desc(user.createdAt))
+            .limit(5)
+        : db
+            .select()
+            .from(user)
+            .where(and(gte(user.createdAt, sevenDaysAgo), inArray(user.role, ["client", "vendor"])))
+            .orderBy(desc(user.createdAt))
+            .limit(5),
+      []
+    ),
+    safeQuery(
+      db
+        .select()
+        .from(user)
+        .where(and(eq(user.role, "vendor"), gte(user.createdAt, sevenDaysAgo)))
+        .orderBy(desc(user.createdAt))
+        .limit(5),
+      []
+    ),
+    safeQuery(
+      db
+        .select()
+        .from(pointDeVente)
+        .where(gte(pointDeVente.createdAt, sevenDaysAgo))
+        .orderBy(desc(pointDeVente.createdAt))
+        .limit(5),
+      []
+    ),
+    safeQuery(
+      db
+        .select()
+        .from(disponibilite)
+        .where(gte(disponibilite.createdAt, sevenDaysAgo))
+        .orderBy(desc(disponibilite.createdAt))
+        .limit(5),
+      []
+    ),
     // Les actions de l'administrateur principal ne sont jamais exposées aux collaborateurs.
-    isAdmin
-      ? db
-          .select({
-            id: adminAction.id,
-            targetType: adminAction.targetType,
-            targetId: adminAction.targetId,
-            action: adminAction.action,
-            details: adminAction.details,
-            createdAt: adminAction.createdAt,
-            adminName: user.name,
-            adminEmail: user.email,
-          })
-          .from(adminAction)
-          .innerJoin(user, eq(adminAction.adminId, user.id))
-          .orderBy(desc(adminAction.createdAt))
-          .limit(24)
-      : ([] as RecentActionRow[]),
+    safeQuery(
+      isAdmin
+        ? db
+            .select({
+              id: adminAction.id,
+              targetType: adminAction.targetType,
+              targetId: adminAction.targetId,
+              action: adminAction.action,
+              details: adminAction.details,
+              createdAt: adminAction.createdAt,
+              adminName: user.name,
+              adminEmail: user.email,
+            })
+            .from(adminAction)
+            .innerJoin(user, eq(adminAction.adminId, user.id))
+            .orderBy(desc(adminAction.createdAt))
+            .limit(24)
+        : Promise.resolve([] as RecentActionRow[]),
+      [] as RecentActionRow[]
+    ),
   ])
 
   const stats = {
