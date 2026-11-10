@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Dialog as SheetPrimitive } from "@base-ui/react/dialog"
 import { cn } from "cn"
+import { Slot } from "@radix-ui/react-slot"
 
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
@@ -14,8 +15,20 @@ function Sheet({ ...props }: SheetPrimitive.Root.Props) {
 function SheetTrigger({
   children,
   render,
+  asChild = false,
   ...props
-}: SheetPrimitive.Trigger.Props & { render?: React.ReactElement }) {
+}: SheetPrimitive.Trigger.Props & { render?: React.ReactElement; asChild?: boolean }) {
+  if (asChild) {
+    return (
+      <Slot>
+        <SheetPrimitive.Trigger
+          data-slot="sheet-trigger"
+          {...props}
+          render={render ?? (children as React.ReactElement)}
+        />
+      </Slot>
+    )
+  }
   return (
     <SheetPrimitive.Trigger
       data-slot="sheet-trigger"
