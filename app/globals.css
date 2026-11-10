@@ -80,8 +80,8 @@
   /* Arrondis */
   --radius-4xl: 2rem;
 
-  /* Hauteur du header unifiée (56px = 3.5rem = h-14) */
-  --header-height: 3.5rem;
+  /* Hauteur du header unifiée (48px = 3rem = h-12) */
+  --header-height: 3rem;
 }
 
 /* ------------------------------------------------------------------ */
@@ -261,23 +261,23 @@ img {
 /* Layout — Réservation d'espace pour header sticky                   */
 /* ------------------------------------------------------------------ */
 
-/* Utilitaire pour réserver l'espace du header (56px) sous le header sticky */
+/* Utilitaire pour réserver l'espace du header (48px) sous le header sticky */
 @utility pt-header {
   padding-top: var(--header-height);
 }
 
-/* Variante pour les pages avec header public (h-14) */
+/* Variante pour les pages avec header public (h-12 = 48px) */
 @utility pt-header-public {
   padding-top: var(--header-height);
 }
 
-/* Variante pour les dashboards (header h-14) */
+/* Variante pour les dashboards (header h-14 = 56px) */
 @utility pt-header-dashboard {
-  padding-top: var(--header-height);
+  padding-top: 3.5rem;
 }
 
 @utility pt-header-admin {
-  padding-top: var(--header-height);
+  padding-top: 3.5rem;
 }
 
 /* ------------------------------------------------------------------ */

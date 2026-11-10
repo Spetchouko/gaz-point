@@ -30,11 +30,11 @@ export function SettingsPopover() {
     <div ref={ref} className="relative inline-block">
       <Button
         variant="ghost"
-        size="icon"
+        size="icon-lg"
         aria-label={t("settings_appearance")}
         aria-expanded={open}
         aria-haspopup="true"
-        className="rounded-full cursor-pointer"
+        className="rounded-lg cursor-pointer"
         onClick={() => setOpen((o) => !o)}
       >
         <Settings className="size-5" />

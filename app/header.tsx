@@ -6,12 +6,11 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { LogIn, Menu, Shield, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import {
   Sheet,
   SheetTrigger,
   SheetContent,
-  SheetHeader,
-  SheetTitle,
 } from "@/components/ui/sheet"
 import {
   DropdownMenu,
@@ -33,12 +32,15 @@ const navLinks = [
   { href: "/contact", labelKey: "nav_contact" },
 ]
 
-// Outlook-style: compact top bar with menu bar styling
+// Compact top bar with modern styling
 const topBarClassName =
   "border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-50"
 
 const navLinkClassName =
   "relative inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-foreground transition-colors rounded-lg hover:bg-primary/10 hover:text-primary after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:origin-left after:scale-x-0 after:bg-primary after:transition-transform hover:after:scale-x-100 data-[state=active]:after:scale-x-100"
+
+const actionButtonClassName =
+  "inline-flex items-center justify-center gap-1.5 h-9 px-3.5 text-sm font-medium transition-colors rounded-lg cursor-pointer"
 
 export function Header() {
   const t = useTranslation()
@@ -50,11 +52,11 @@ export function Header() {
 
   return (
     <header className={topBarClassName}>
-      <div className="container mx-auto flex h-14 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto flex h-12 items-center gap-4 px-4 sm:px-6 lg:px-8">
         <Link
           href="/"
           onClick={closeMenu}
-          className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
+          className="flex items-center gap-2.5 transition-opacity hover:opacity-80 shrink-0"
         >
           <Image
             src="/brand/logo.png"
@@ -69,132 +71,144 @@ export function Header() {
           </span>
         </Link>
 
-        <nav aria-label="Navigation" className="hidden items-center justify-center gap-2 sm:gap-4 lg:flex">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={navLinkClassName}
-            >
-              {t(link.labelKey)}
-            </Link>
-          ))}
+        <nav
+          aria-label="Navigation principale"
+          className="flex-1 flex items-center justify-center"
+        >
+          <ul className="hidden items-center gap-1 sm:flex lg:gap-2" role="menubar">
+            {navLinks.map((link) => (
+              <li key={link.href} role="none">
+                <Link
+                  href={link.href}
+                  role="menuitem"
+                  className={navLinkClassName}
+                >
+                  {t(link.labelKey)}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {isAuthenticated ? (
             <UserMenu />
           ) : (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="hidden sm:flex gap-2 cursor-pointer">
-                  <UserPlus className="size-4" />
-                  <span>{t("nav_account")}</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link
-                    href="/inscription"
-                    className="flex items-center gap-2"
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "hidden sm:inline-flex gap-2",
+                      actionButtonClassName
+                    )}
                   >
                     <UserPlus className="size-4" />
-                    {t("nav_register")}
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link
-                    href="/connexion"
-                    className="flex items-center gap-2"
-                  >
-                    <LogIn className="size-4" />
-                    {t("nav_login")}
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link
-                    href="/admin/login"
-                    className="flex items-center gap-2"
-                  >
-                    <Shield className="size-4" />
-                    {t("nav_admin_login")}
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                    <span>{t("nav_account")}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/inscription"
+                      className="flex items-center gap-2"
+                    >
+                      <UserPlus className="size-4" />
+                      {t("nav_register")}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/connexion"
+                      className="flex items-center gap-2"
+                    >
+                      <LogIn className="size-4" />
+                      {t("nav_login")}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/admin/login"
+                      className="flex items-center gap-2"
+                    >
+                      <Shield className="size-4" />
+                      {t("nav_admin_login")}
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <SettingsPopover />
+            </>
           )}
 
-          <SettingsPopover />
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-            <SheetTrigger>
-              <button
-                type="button"
-                className="inline-flex size-9 items-center justify-center rounded-lg text-foreground transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 lg:hidden cursor-pointer"
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 rounded-lg lg:hidden"
+                aria-label={t("nav_menu")}
               >
                 <Menu className="size-5" />
-                <span className="sr-only">{t("nav_account")}</span>
-              </button>
+                <span className="sr-only">{t("nav_menu")}</span>
+              </Button>
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="flex w-[85vw] max-w-sm flex-col justify-between p-0"
+              className="flex w-[85vw] max-w-sm flex-col p-0"
             >
-              <div className="flex flex-col gap-2 p-4">
-                <span className="text-sm text-muted-foreground">
-                  {t("nav_home")} {t("nav_contact")}
-                </span>
-              </div>
-
-              <nav className="flex flex-col gap-1 p-4">
-                  {navLinks.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={closeMenu}
-                      aria-current={pathname === link.href ? "page" : undefined}
-                      className="rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
-                    >
-                      {t(link.labelKey)}
-                    </Link>
-                  ))}
-                  <div className="my-2 border-t border-border" />
-                  <div className="space-y-2">
-                    <p className="px-3 py-2 text-sm font-medium text-muted-foreground">
-                      {t("nav_account")}
-                    </p>
-                    {isAuthenticated ? (
-                      <UserMenu isMobile />
-                    ) : (
-                      <>
-                        <Link
-                          href="/inscription"
-                          onClick={closeMenu}
-                          className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
-                        >
-                          <UserPlus className="size-4" />
-                          S’inscrire
-                        </Link>
-                        <Link
-                          href="/connexion"
-                          onClick={closeMenu}
-                          className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
-                        >
-                          <LogIn className="size-4" />
-                          Se connecter
-                        </Link>
-                        <Link
-                          href="/admin/login"
-                          onClick={closeMenu}
-                          className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
-                        >
-                          <Shield className="size-4" />
-                          Connexion administrateur
-                        </Link>
-                      </>
-                    )}
-                  </div>
-                </nav>
+              <nav className="flex flex-col gap-1 p-4 flex-1 overflow-y-auto">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={closeMenu}
+                    aria-current={pathname === link.href ? "page" : undefined}
+                    className="rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
+                  >
+                    {t(link.labelKey)}
+                  </Link>
+                ))}
+                <div className="my-2 border-t border-border" />
+                <div className="space-y-2">
+                  <p className="px-3 py-2 text-sm font-medium text-muted-foreground">
+                    {t("nav_account")}
+                  </p>
+                  {isAuthenticated ? (
+                    <UserMenu isMobile />
+                  ) : (
+                    <>
+                      <Link
+                        href="/inscription"
+                        onClick={closeMenu}
+                        className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
+                      >
+                        <UserPlus className="size-4" />
+                        {t("nav_register")}
+                      </Link>
+                      <Link
+                        href="/connexion"
+                        onClick={closeMenu}
+                        className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
+                      >
+                        <LogIn className="size-4" />
+                        {t("nav_login")}
+                      </Link>
+                      <Link
+                        href="/admin/login"
+                        onClick={closeMenu}
+                        className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
+                      >
+                        <Shield className="size-4" />
+                        {t("nav_admin_login")}
+                      </Link>
+                    </>
+                  )}
+                </div>
+              </nav>
             </SheetContent>
           </Sheet>
         </div>
