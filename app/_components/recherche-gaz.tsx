@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import {
   AlertCircle,
   ChevronDown,
+  Cylinder,
   LocateFixed,
   MapPin,
   Phone,
@@ -380,27 +381,30 @@ export function RechercheGaz() {
       )}
 
       {results !== null && results.length === 0 && (
-        <div className="mt-5 bg-white border border-border rounded-2xl p-6 sm:p-8 shadow-sm">
-          <div className="flex items-center justify-center gap-2">
-            <Search className="size-10 text-primary" aria-hidden />
+        <div className="mt-5 flex flex-col items-center justify-center text-center bg-white border border-border rounded-2xl p-6 sm:p-10 shadow-sm">
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <Cylinder className="size-10 text-primary" aria-hidden />
           </div>
-          <h3 className="mt-4 text-base font-semibold text-foreground">
+          <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground mb-3">
             Aucun gaz disponible pour le moment
-          </h3>
-          <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
-            Nous vous invitons à réessayer un peu plus tard.
+          </h2>
+          <p className="text-base text-muted-foreground max-w-xs mx-auto leading-relaxed mb-6">
+            Nous n'avons actuellement aucune disponibilité correspondant à votre
+            recherche.
           </p>
-          <div className="mt-6">
-            <Button
-              type="button"
-              variant="default"
-              className="w-full sm:w-auto"
-              onClick={handleResetAndSearch}
-            >
-              <RefreshCw className="size-4 mr-2" />
-              Relancer la recherche
-            </Button>
-          </div>
+          <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed mb-8">
+            Nous vous invitons à réessayer un peu plus tard ou à relancer votre
+            recherche pour vérifier les nouvelles disponibilités.
+          </p>
+          <Button
+            type="button"
+            variant="default"
+            className="w-full sm:w-auto h-11"
+            onClick={handleRetry}
+          >
+            <RefreshCw className="size-4 mr-2" />
+            Relancer la recherche
+          </Button>
         </div>
       )}
 
