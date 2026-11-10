@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/app/_components/theme-provider";
 import { LangProvider } from "@/app/_components/lang-provider";
 import { RecherchePermanente } from "@/app/_components/recherche-permanente";
 import { ConsentBanner } from "@/app/_components/consent-banner";
+import { AnalyticsTracker } from "@/app/_components/analytics-tracker";
 import { LangUpdater } from "@/app/_components/lang-updater";
 import { PwaRegistration } from "@/app/_components/pwa-registration";
 import { PwaInstallPrompt } from "@/app/_components/pwa-install-prompt";
@@ -71,6 +72,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </ThemeProvider>
         <RecherchePermanente />
         <ConsentBanner />
+        <AnalyticsTracker />
         <PwaRegistration />
         <PwaInstallPrompt />
       </body>

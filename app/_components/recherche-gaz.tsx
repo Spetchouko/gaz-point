@@ -22,6 +22,7 @@ import {
   type ReservationResult,
 } from "@/app/_components/reservation-modal"
 import { ResultatRechercheCard } from "@/app/_components/cards"
+import { trackEvent } from "@/lib/analytics"
 
 export type SearchResult = {
   id: string
@@ -139,6 +140,13 @@ export function RechercheGaz() {
     setError(null)
     setResults(null)
 
+    // Événement analytics : recherche effectuée
+    trackEvent({
+      eventType: "search_performed",
+      path: "/api/recherche",
+      metadata: { brand, format, zone },
+    })
+
     try {
       const res = await fetch(`/api/recherche?${params.toString()}`)
       if (!res.ok) throw new Error("Recherche impossible")
@@ -177,6 +185,13 @@ export function RechercheGaz() {
       // Une réponse valide contenant zéro résultat est une recherche réussie,
       // et non une erreur : on l'affiche comme telle (pas de message d'erreur).
       setResults(searchedResults)
+
+      // Événement analytics : résultats de recherche consultés
+      trackEvent({
+        eventType: "search_results_viewed",
+        path: "/api/recherche",
+        metadata: { resultCount: searchedResults.length, brand, format, zone },
+      })
     } catch {
       setError(
         "La recherche n'a pas pu aboutir. Vérifiez votre connexion et réessayez."

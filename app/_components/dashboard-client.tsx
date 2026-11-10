@@ -12,7 +12,6 @@ import { MesReservations } from "@/app/_components/mes-reservations"
 type GlobalStats = {
   totalReservations: number
   activeReservations: number
-  totalFavorites: number
 }
 
 export function DashboardClient({
@@ -86,17 +85,6 @@ export function DashboardClient({
           >
             <p className="mt-1 text-xs text-muted-foreground uppercase tracking-wider">
               En attente de retrait
-            </p>
-          </DashboardSection>
-
-          <DashboardSection
-            title="Dépôts favoris"
-            icon={User}
-            count={globalStats.totalFavorites}
-            className="text-warning"
-          >
-            <p className="mt-1 text-xs text-muted-foreground uppercase tracking-wider">
-              Points de vente enregistrés
             </p>
           </DashboardSection>
         </div>

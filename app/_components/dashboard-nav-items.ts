@@ -1,7 +1,6 @@
 import {
   LayoutDashboard,
   Calendar,
-  Heart,
   FileText,
   MessageSquare,
   User,
@@ -39,7 +38,6 @@ export function getClientNavSections(): DashboardNavSection[] {
           label: "Mes réservations",
           icon: Calendar,
         },
-        { href: "/dashboard/favoris", label: "Mes favoris", icon: Heart },
         {
           href: "/dashboard/historique-codes",
           label: "Historique des codes",

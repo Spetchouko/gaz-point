@@ -7,6 +7,7 @@ import { db } from "@/db"
 import {
   disponibilite,
   pointDeVente,
+  trafficEvent,
   user as userTable,
   type AvailabilityStatus,
 } from "@/db/schema"
@@ -394,6 +395,23 @@ export async function upsertDisponibilite(
         source: role === "admin" ? "administration" : "vendeur",
       })
 
+      // Événement analytics : disponibilité publiée
+      try {
+        await db.insert(trafficEvent).values({
+          id: randomUUID(),
+          eventType: "availability_published",
+          path: "/dashboard/pro",
+          referrer: null,
+          utmSource: null,
+          utmMedium: null,
+          utmCampaign: null,
+          userId: user.id,
+          consented: true,
+        })
+      } catch {
+        // Ne pas bloquer la publication si le tracking échoue
+      }
+
       revalidatePath("/dashboard/pro")
       revalidatePath("/dashboard/vendeur")
       revalidatePath("/dashboard/vendeur/espace-pro")
@@ -449,6 +467,23 @@ export async function createPointDeVenteVendor(
     gasSaleEnabled: false,
     createdAt: new Date(),
   })
+
+  // Événement analytics : point de vente créé
+  try {
+    await db.insert(trafficEvent).values({
+      id: randomUUID(),
+      eventType: "sales_point_created",
+      path: "/dashboard/pro",
+      referrer: null,
+      utmSource: null,
+      utmMedium: null,
+      utmCampaign: null,
+      userId: user.id,
+      consented: true,
+    })
+  } catch {
+    // Ne pas bloquer la création si le tracking échoue
+  }
 
   revalidatePath("/dashboard/vendeur")
   revalidatePath("/dashboard/vendeur/points-de-vente")

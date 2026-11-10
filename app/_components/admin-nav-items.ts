@@ -101,7 +101,7 @@ export function getAdminNavSections(
   if (access(role, permissions, "statistiques")) {
     analyse.push({
       href: "/admin/statistiques",
-      label: "Statistiques",
+      label: "Analyse des données",
       icon: BarChart3,
     })
   }

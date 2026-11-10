@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { CheckCircle, AlertCircle, Loader2, Clock, Mail } from "lucide-react"
 
+import { trackEvent } from "@/lib/analytics"
+
 const CODE_LENGTH = 6
 const RESEND_COOLDOWN_SECONDS = 60
 
@@ -157,6 +159,8 @@ function ValidationEmailContent() {
       setSuccess(true)
       setError("")
       setNotice("")
+      // Événement analytics : email vérifié
+      trackEvent({ eventType: "email_verified", path: "/validation-email" })
       await new Promise((r) => setTimeout(r, 800))
       router.push(`/connexion?email=${encodeURIComponent(email)}`)
       router.refresh()

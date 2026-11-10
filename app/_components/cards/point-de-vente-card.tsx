@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { MapPin, Store, Phone, Plus, Heart, PencilLine, Trash2 } from "lucide-react"
+import { MapPin, Store, Phone, Plus, PencilLine, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -22,8 +22,6 @@ export type PointDeVenteCardProps = {
   address: string
   phone: string | null
   vendorName?: string | null
-  isFavorite?: boolean
-  onToggleFavorite?: () => void
   onView?: () => void
   onEdit?: () => void
   onDelete?: () => void
@@ -43,8 +41,6 @@ export function PointDeVenteCard({
   address,
   phone,
   vendorName,
-  isFavorite = false,
-  onToggleFavorite,
   onView,
   onEdit,
   onDelete,
@@ -90,30 +86,52 @@ export function PointDeVenteCard({
               className={cn(
                 "mt-0.5 shrink-0 whitespace-nowrap",
                 availabilityBadgeClass[status]
-              )}
-            >
+              )}>
               {availabilityLabel[status]}
             </Badge>
           )}
 
-          {isClientVariant && onToggleFavorite && (
+          {onView && (
             <Button
               variant="outline"
-              size="icon"
-              className="h-8 w-8 shrink-0 rounded-sm"
-              onClick={onToggleFavorite}
-              disabled={isPending}
-              aria-label={
-                isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"
-              }
+              size="sm"
+              onClick={onView}
+              className="flex-1 sm:flex-none rounded-sm gap-1.5"
             >
-              <Heart
-                className={cn(
-                  "size-4",
-                  isFavorite ? "fill-current text-destructive" : "text-muted-foreground"
-                )}
-                aria-hidden
-              />
+              <Plus className="size-3" /> Consulter
+            </Button>
+          )}
+
+          {onManageDispos && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onManageDispos}
+              className="flex-1 sm:flex-none rounded-sm gap-1.5"
+            >
+              <Plus className="size-3" /> Gérer les disponibilités
+            </Button>
+          )}
+
+          {variant === "vendor" && onEdit && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onEdit}
+              className="flex-1 sm:flex-none rounded-sm gap-1.5"
+            >
+              <PencilLine className="size-3" /> Modifier
+            </Button>
+          )}
+
+          {variant === "vendor" && onDelete && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={onDelete}
+              className="flex-1 sm:flex-none rounded-sm gap-1.5"
+            >
+              <Trash2 className="size-3" /> Supprimer
             </Button>
           )}
         </div>
@@ -152,29 +170,29 @@ export function PointDeVenteCard({
               <p className="font-medium text-foreground">{disposCount}</p>
             </div>
           )}
-        </div>
 
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {onView && (
-            <Button variant="outline" size="sm" onClick={onView} className="flex-1 sm:flex-none rounded-sm gap-1.5">
-              <Plus className="size-3" /> Consulter
-            </Button>
-          )}
-          {onManageDispos && (
-            <Button variant="outline" size="sm" onClick={onManageDispos} className="flex-1 sm:flex-none rounded-sm gap-1.5">
-              <Plus className="size-3" /> Gérer les disponibilités
-            </Button>
-          )}
-          {variant === "vendor" && onEdit && (
-            <Button variant="outline" size="sm" onClick={onEdit} className="flex-1 sm:flex-none rounded-sm gap-1.5">
-              <PencilLine className="size-3" /> Modifier
-            </Button>
-          )}
-          {variant === "vendor" && onDelete && (
-            <Button variant="destructive" size="sm" onClick={onDelete} className="flex-1 sm:flex-none rounded-sm gap-1.5">
-              <Trash2 className="size-3" /> Supprimer
-            </Button>
-          )}
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {onView && (
+              <Button variant="outline" size="sm" onClick={onView} className="flex-1 sm:flex-none rounded-sm gap-1.5">
+                <Plus className="size-3" /> Consulter
+              </Button>
+            )}
+            {onManageDispos && (
+              <Button variant="outline" size="sm" onClick={onManageDispos} className="flex-1 sm:flex-none rounded-sm gap-1.5">
+                <Plus className="size-3" /> Gérer les disponibilités
+              </Button>
+            )}
+            {variant === "vendor" && onEdit && (
+              <Button variant="outline" size="sm" onClick={onEdit} className="flex-1 sm:flex-none rounded-sm gap-1.5">
+                <PencilLine className="size-3" /> Modifier
+              </Button>
+            )}
+            {variant === "vendor" && onDelete && (
+              <Button variant="destructive" size="sm" onClick={onDelete} className="flex-1 sm:flex-none rounded-sm gap-1.5">
+                <Trash2 className="size-3" /> Supprimer
+              </Button>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

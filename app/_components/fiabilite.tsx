@@ -32,7 +32,7 @@ export function Fiabilite() {
 
             <div>
               <h3 className="font-heading text-xl font-bold tracking-tight text-foreground mb-5">
-                Qui met à jour l'information
+                Qui met &agrave; jour l&apos;information
               </h3>
 
               <div className="grid gap-3 sm:grid-cols-2">
@@ -50,7 +50,7 @@ export function Fiabilite() {
                   <span className="inline-flex size-10 items-center justify-center rounded-xl bg-sky text-navy shadow-md ring-1 ring-white/20 mb-3 group-hover:scale-105 transition-transform">
                     <Building2 className="size-4" />
                   </span>
-                  <p className="font-bold text-foreground">L'administration</p>
+                  <p className="font-bold text-foreground">L&apos;administration</p>
                   <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
                     Elle tient à jour les fiches officielles des points de
                     vente.

@@ -27,7 +27,7 @@ const document: LegalDocument = {
       id: "acces",
       title: "2. Accès et inscription",
       paragraphs: [
-        "L'accès au service est gratuit pour les usagers. La création d'un compte usager permet de sauvegarder des favoris, consulter l'historique d'achats et déposer des avis.",
+        "L'accès au service est gratuit pour les usagers. Consulter l'historique d'achats et déposer des avis.",
         "L'inscription comme vendeur est soumise à un abonnement mensuel de 5 000 FCFA. Elle donne accès à un tableau de bord pour publier et gérer les disponibilités de ses points de vente.",
         "L'inscription requiert une adresse email valide, un mot de passe et, pour les vendeurs, le nom du dépôt. La vérification de l'email est obligatoire avant toute connexion.",
         "Un même utilisateur ne peut pas créer plusieurs comptes pour le même rôle. Les comptes inactifs depuis plus de 24 mois peuvent être supprimés après notification.",
