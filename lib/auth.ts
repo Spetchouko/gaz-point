@@ -282,24 +282,23 @@ export const auth = betterAuth({
         session: {
             create: {
                 // Sécurité : un compte désactivé (isActive=false) ne peut pas se connecter
+                // Bloquer la connexion tant que l'email n'est pas vérifié.
+                // On lève une erreur explicite pour que Better Auth renvoie un message clair
+                // au lieu de bloquer silencieusement (ce qui donnait "Identifiants incorrects").
                 before: async (session: Record<string, unknown>) => {
                     const userId = String(session.userId ?? "")
                     if (!userId) return true
                     const [row] = await db
-                        .select({ isActive: schema.user.isActive })
+                        .select({ isActive: schema.user.isActive, emailVerified: schema.user.emailVerified })
                         .from(schema.user)
                         .where(eq(schema.user.id, userId))
                         .limit(1)
-                    if (!row || row.isActive === false) return false
-                    // Bloquer la connexion tant que l'email n'est pas vérifié.
-                    // (La création de session est ensuite interceptée par la vérification
-                    //  côté client via useSession + route protégée, mais ce garde added here.)
-                    const [userRow] = await db
-                        .select({ emailVerified: schema.user.emailVerified })
-                        .from(schema.user)
-                        .where(eq(schema.user.id, userId))
-                        .limit(1)
-                    if (userRow && userRow.emailVerified === false) return false
+                    if (!row || row.isActive === false) {
+                        throw new Error("Ce compte a été désactivé. Contactez le support.")
+                    }
+                    if (row.emailVerified === false) {
+                        throw new Error("Veuillez vérifier votre adresse email avant de vous connecter. Un code de vérification vous a été envoyé.")
+                    }
                     return true
                 },
                 after: async (session: Record<string, unknown>) => {
