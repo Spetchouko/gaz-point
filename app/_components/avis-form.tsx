@@ -20,6 +20,11 @@ export function AvisForm({
   defaultCity: string
   currentStatus: AvisStatus | null
 }) {
+  // useActionState gère la soumission serveur :
+  // - `state` contient le résultat (succès/erreur) de la dernière soumission
+  // - `pending` est vrai pendant l'envoi, ce qui désactive le bouton et
+  //   empêche les doubles soumissions
+  // - `formAction` est l'action à passer au formulaire
   const [state, formAction, pending] = useActionState<AvisActionResult | null, FormData>(
     submitAvis,
     null

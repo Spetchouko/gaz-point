@@ -1,10 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Activity, User } from "lucide-react"
-import { authClient } from "@/lib/auth-client"
-import { Button } from "@/components/ui/button"
+import { Activity } from "lucide-react"
 import { TrouverMonGaz } from "@/app/_components/trouver-mon-gaz"
 import { DashboardSection } from "@/app/_components/dashboard-section"
 import { MesReservations } from "@/app/_components/mes-reservations"
@@ -23,22 +19,12 @@ export function DashboardClient({
   clientEmail: string | null | undefined
   globalStats: GlobalStats
 }) {
-  const router = useRouter()
-  const { data: session } = authClient.useSession()
-
-  useEffect(() => {
-    if (session === null) {
-      router.push("/connexion")
-    }
-  }, [session, router])
-
-  // Pendant le chargement de la session côté client, on s'appuie sur les
-  // props transmises par le serveur (SSR) pour afficher immédiatement le
-  // contenu. Une fois la session résolue, si elle est null, on redirige.
-  if (session === null) {
-    return null
-  }
-
+  // Le contenu est rendu par le serveur (SSR) avec les props utilisateur.
+  // L'authentification est déjà vérifiée côté serveur par requireUser()
+  // dans la page /dashboard. Aucun redirection côté client n'est nécessaire :
+  // useSession() peut passer par un état null temporaire pendant l'hydratation
+  // après un rafraîchissement, ce qui provoquerait une redirection intempestive
+  // vers /connexion alors que la session est valide.
   const firstName = (clientName ?? "Usager").split(" ")[0]
 
   return (
