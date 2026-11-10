@@ -13,25 +13,30 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>
 }
 
+function detectStandalone(): boolean {
+  if (typeof window === "undefined") return false
+  return window.matchMedia("(display-mode: standalone)").matches ||
+    (window.navigator as unknown as StandaloneNavigator).standalone === true
+}
+
+function detectIOS(): boolean {
+  if (typeof window === "undefined") return false
+  const ua = navigator.userAgent
+  return /iPad|iPhone|iPod/.test(ua) && !ua.includes("MSStream")
+}
+
 
 export function PwaInstallPrompt() {
   const [show, setShow] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isIOS, setIsIOS] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isIOS, setIsIOS] = useState(detectIOS);
+  const [isStandalone, setIsStandalone] = useState(detectStandalone);
 
+  // Initialiser le thème du document immédiatement (évite le flash de thème par défaut)
   useEffect(() => {
-    // Détecter installation existante
-    const standalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as unknown as StandaloneNavigator)
-.standalone === true;
-    queueMicrotask(() => setIsStandalone(standalone));
-
-    // Détecter iOS
-    const ua = navigator.userAgent;
-    const ios = /iPad|iPhone|iPod/.test(ua) && !(ua as string).includes("MSStream");
-    setIsIOS(ios);
+    // Détecter installation existante (déjà détecté dans l'initialiseur)
+    // Ne pas afficher si déjà installé
+    if (isStandalone) return;
 
     // Vérifier si "Plus tard" a déjà été choisi
     const later = localStorage.getItem("gaz-pwa-later");
@@ -42,9 +47,6 @@ export function PwaInstallPrompt() {
         return;
       }
     }
-
-    // Ne pas afficher si déjà installé
-    if (standalone) return;
 
     // Événement beforeinstallprompt
     const handleBeforeInstall = (e: Event) => {
@@ -57,7 +59,7 @@ export function PwaInstallPrompt() {
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
     };
-  }, []);
+  }, [isStandalone]);
 
   // Afficher pour iOS après un court délai (si pas de beforeinstallprompt)
   useEffect(() => {

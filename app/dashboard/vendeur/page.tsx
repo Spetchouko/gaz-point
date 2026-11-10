@@ -170,6 +170,10 @@ export default async function DashboardVendeurPage() {
     ? onboardingRow.status !== "completed"
     : points.length === 0
 
+  // Un brouillon existe (inscrit par email) : le point finalisé reste éditable
+  // depuis la même modale, sans risque de doublon.
+  const canEditOnboarding = Boolean(onboardingRow)
+
   const onboardingInitial = {
     pointName: onboardingRow?.pointName ?? user.name ?? "",
     district: onboardingRow?.district ?? "",
@@ -212,6 +216,7 @@ export default async function DashboardVendeurPage() {
         pathwayStatus={pathwayStatus}
         bottlesByPoint={bottlesByPoint}
         needsOnboarding={needsOnboarding}
+        canEditOnboarding={canEditOnboarding}
         onboardingInitial={onboardingInitial}
       />
     </VendorLayout>

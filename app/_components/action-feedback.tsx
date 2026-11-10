@@ -33,14 +33,11 @@ export function ActionFeedback({
   errorText,
   className = "",
 }: ActionFeedbackProps) {
-  if (state === "idle") return null
-
-  let lang: "fr" | "en" = "fr"
-  try {
-    const ctx = useLang()
-    lang = ctx.lang
-  } catch {}
+  const ctx = useLang()
+  const lang = ctx.lang
   const isFr = lang === "fr"
+
+  if (state === "idle") return null
   // On affiche directement selon l'état avec les textes donnés
   if (state === "loading") {
     return (

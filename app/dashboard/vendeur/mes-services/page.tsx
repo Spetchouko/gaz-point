@@ -1,13 +1,11 @@
-import { useRouter } from "next/navigation"
-import { and, asc, count, eq, inArray } from "drizzle-orm"
+import { asc, eq, inArray } from "drizzle-orm"
 import type { Metadata } from "next"
+import Link from "next/link"
 import { db } from "@/db"
 import { pointDeVente, disponibilite } from "@/db/schema"
 import { VendorLayout } from "@/app/_components/vendor-layout"
 import { requirePro } from "@/lib/session"
-import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
   Card,
@@ -17,7 +15,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Store, MapPin } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { updatePointServices } from "../mes-bouteilles/actions"
 
 export const metadata: Metadata = {
@@ -26,10 +23,9 @@ export const metadata: Metadata = {
 
 export default async function MesServicesPage() {
   const { user, role } = await requirePro()
-  const router = useRouter()
 
   if (role !== "vendor") {
-    return <div>Accès réservé aux vendeurs.</div>
+    return <div>Accès r&eacute;serv&eacute; aux vendeurs.</div>
   }
 
   // Get vendor's points de vente with their services
@@ -78,11 +74,11 @@ export default async function MesServicesPage() {
         </h1>
 
         <p className="text-sm text-muted-foreground mb-6">
-          Configurez les services proposés à vos clients. Vous pouvez proposer
+          Configurez les services propos&eacute;s à vos clients. Vous pouvez proposer
           un, deux ou les trois services.
         </p>
 
-        {/* Service récapitulatif */}
+        {/* Service r&eacute;capitulatif */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           {/* Service 1 : Vente de bouteilles */}
           <div className="p-4 rounded-lg border border-info/30 bg-info/5 text-info">
@@ -97,9 +93,9 @@ export default async function MesServicesPage() {
           <div className="p-4 rounded-lg border border-success/30 bg-success/5 text-success">
             <div className="text-3xl font-bold text-success mb-1">🚚</div>
             <div>
-              <p className="font-medium">Livraison à domicile</p>
+              <p className="font-medium">Livraison &agrave; domicile</p>
               <p className="text-xs text-muted-foreground">
-                {points.length > 0 ? `Frais: ${points[0]?.deliveryFee || 0} FCFA` : "Non configuré"}
+                {points.length > 0 ? `Frais: ${points[0]?.deliveryFee || 0} FCFA` : "Non configur&eacute;"}
               </p>
             </div>
           </div>
@@ -108,9 +104,9 @@ export default async function MesServicesPage() {
           <div className="p-4 rounded-lg border border-warning/30 bg-warning/5 text-warning">
             <div className="text-3xl font-bold text-warning mb-1">𔄀</div>
             <div>
-              <p className="font-medium">Échange de bouteilles</p>
+              <p className="font-medium">&Eacute;change de bouteilles</p>
               <p className="text-xs text-muted-foreground">
-                {points.length > 0 ? `Marques: ${points[0]?.exchangeBrands?.join(", ") || "Non configuré"}` : "Non configuré"}
+                {points.length > 0 ? `Marques: ${points[0]?.exchangeBrands?.join(", ") || "Non configur&eacute;"}` : "Non configur&eacute;"}
               </p>
             </div>
           </div>
@@ -120,22 +116,23 @@ export default async function MesServicesPage() {
           <Card className="mb-6">
             <CardContent className="p-6 text-center">
               <p className="text-muted-foreground">
-                Aucun point de vente pour l'instant. Créez d'abord votre point
+                Aucun point de vente pour l&rsquo;instant. Cr&eacute;ez d&rsquo;abord votre point
                 de vente pour pouvoir configurer les services.
               </p>
-              <Button
-                variant="default"
-                onClick={() => router.push("/dashboard/vendeur/points-de-vente")}
-              >
-                Créer mon point de vente
-              </Button>
+              <Link href="/dashboard/vendeur/points-de-vente">
+                <Button variant="default">
+                  Cr&e9;&shy;er mon point de vente
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         ) : null}
 
         {/* Configuration par point de vente */}
         <form
-          action={(formData: FormData) => updatePointServices(null, formData)}
+          action={async (formData: FormData) => {
+            await updatePointServices(null, formData)
+          }}
           className="space-y-6"
         >
           {points.map((point) => (
@@ -170,7 +167,7 @@ export default async function MesServicesPage() {
                         checked={point.delivery || false}
                         className="size-4 rounded border-input text-primary focus:ring-primary/50"
                       />
-                      <span>Activer la livraison à domicile</span>
+                      <span>Activer la livraison &agrave; domicile</span>
                     </Label>
                   </div>
                   <div>
@@ -182,7 +179,7 @@ export default async function MesServicesPage() {
                         checked={point.gasSale || false}
                         className="size-4 rounded border-input text-primary focus:ring-primary/50"
                       />
-                      <span>Vente de bouteilles chargées</span>
+                      <span>Vente de bouteilles charg&eacute;es</span>
                     </Label>
                   </div>
                 </div>
@@ -197,7 +194,7 @@ export default async function MesServicesPage() {
                         checked={point.exchange || false}
                         className="size-4 rounded border-input text-primary focus:ring-primary/50"
                       />
-                      <span>Activer l'échange de bouteilles</span>
+                      <span>Activer l&rsquo;&eacute;change de bouteilles</span>
                     </Label>
                   </div>
                   <div>
@@ -218,7 +215,7 @@ export default async function MesServicesPage() {
                 {/* marques acceptées pour l'échange */}
                 <div className="mt-3">
                   <Label htmlFor={`exchange-brands-${point.id}`}>
-                    Marques acceptées pour l'échange
+                    Marques acceptées pour l&rsquo;&eacute;change
                   </Label>
                   <input
                     type="text"
@@ -235,7 +232,7 @@ export default async function MesServicesPage() {
 
                 <div className="mt-3">
                   <Label htmlFor={`exchange-formats-${point.id}`}>
-                    Grammages acceptés pour l'échange
+                    Grammages acceptés pour l&rsquo;&eacute;change
                   </Label>
                   <input
                     type="text"
@@ -253,7 +250,7 @@ export default async function MesServicesPage() {
                 {point.exchangeBrands && point.exchangeBrands.length > 0 && (
                   <div className="mt-3 p-3 rounded-lg border border-warning/30 bg-warning/5">
                     <p className="text-sm font-medium text-warning mb-2">
-                      Marques acceptées pour l'échange :
+                      Marques acceptées pour l&rsquo;&eacute;change :
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {point.exchangeBrands.map((brand) => (

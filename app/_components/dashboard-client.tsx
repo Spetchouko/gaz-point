@@ -32,11 +32,14 @@ export function DashboardClient({
     }
   }, [session, router])
 
-  if (!session?.user) {
+  // Pendant le chargement de la session côté client, on s'appuie sur les
+  // props transmises par le serveur (SSR) pour afficher immédiatement le
+  // contenu. Une fois la session résolue, si elle est null, on redirige.
+  if (session === null) {
     return null
   }
 
-  const firstName = clientName.split(" ")[0]
+  const firstName = (clientName ?? "Usager").split(" ")[0]
 
   return (
     <div className="min-h-screen bg-background">

@@ -208,7 +208,7 @@ function LoginPageContent() {
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     onBlur={() => setSubmitted(true)}
                     required
-                    
+                    className="pl-9"
                     disabled={loading}
                     aria-invalid={submitted && !!fieldErrors.email}
                     aria-describedby={submitted && fieldErrors.email ? "email-error" : undefined}
@@ -234,7 +234,7 @@ function LoginPageContent() {
                     onChange={(e) => handleInputChange("password", e.target.value)}
                     onBlur={() => setSubmitted(true)}
                     required
-                    className="pl-10 pr-10 h-11"
+                    className="pl-9 pr-10 h-11"
                     disabled={loading}
                     aria-invalid={submitted && !!fieldErrors.password}
                     aria-describedby={submitted && fieldErrors.password ? "password-error" : undefined}

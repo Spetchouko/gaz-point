@@ -1,4 +1,4 @@
-import { asc, count, eq, inArray, sum } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { db } from "@/db"
@@ -21,7 +21,6 @@ export const metadata: Metadata = {
 
 export default async function MesBouteillesPage() {
   const { user, role } = await requirePro()
-  const router = useRouter()
 
   if (role !== "vendor") {
     return <div>Accès réservé aux vendeurs.</div>
@@ -35,7 +34,7 @@ export default async function MesBouteillesPage() {
     })
     .from(pointDeVente)
     .where(eq(pointDeVente.vendorId, user.id))
-    .orderBy(asc(pointDeVente.name))
+    .orderBy(pointDeVente.name)
 
   const pointIds = points.map((point) => point.id)
 
@@ -52,8 +51,7 @@ export default async function MesBouteillesPage() {
           })
           .from(pointDeVenteBouteille)
           .innerJoin(brand, eq(pointDeVenteBouteille.brandId, brand.id))
-          .where(inArray(pointDeVenteBouteille.pointDeVenteId, pointIds))
-          .orderBy(asc(brand.name), asc(pointDeVenteBouteille.format))
+          .orderBy(brand.name, pointDeVenteBouteille.format)
       : []
 
   const bottlesByPoint = new Map<
@@ -79,19 +77,11 @@ export default async function MesBouteillesPage() {
 
   // Totaux scopeés au vendeur : nombre de références et quantité totale
   // réellement présente dans ses dépôts.
-  const [totals] =
-    pointIds.length > 0
-      ? await db
-          .select({
-            references: count(),
-            quantity: sum(pointDeVenteBouteille.quantity),
-          })
-          .from(pointDeVenteBouteille)
-          .where(inArray(pointDeVenteBouteille.pointDeVenteId, pointIds))
-      : [{ references: 0, quantity: null as string | null }]
-
-  const totalReferences = Number(totals?.references ?? 0)
-  const totalQuantity = Number(totals?.quantity ?? 0)
+  const totalReferences = bottleRows.length
+  const totalQuantity = bottleRows.reduce(
+    (sumQty, row) => sumQty + (row.quantity ?? 0),
+    0
+  )
 
   return (
     <VendorLayout
@@ -117,9 +107,11 @@ export default async function MesBouteillesPage() {
               </span>
             </p>
           </div>
-          <Button type="button" render={<Link href="/dashboard/vendeur" />}>
-            <Package className="size-4" /> Gérer mon inventaire
-          </Button>
+          <Link href="/dashboard/vendeur">
+            <Button type="button" variant="default">
+              <Package className="size-4" /> Gérer mon inventaire
+            </Button>
+          </Link>
         </div>
 
         {pointsWithBottles.length === 0 ? (
@@ -133,9 +125,11 @@ export default async function MesBouteillesPage() {
                 Finalisez votre point de vente pour commencer à gérer vos
                 bouteilles.
               </p>
-              <Button type="button" render={<Link href="/dashboard/vendeur" />}>
-                <Plus className="size-4" /> Finaliser mon point de vente
-              </Button>
+              <Link href="/dashboard/vendeur">
+                <Button type="button" variant="default">
+                  <Plus className="size-4" /> Finaliser mon point de vente
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         ) : (
@@ -176,15 +170,11 @@ export default async function MesBouteillesPage() {
                   {point.bottles.length === 0 ? (
                     <div className="p-4 text-center text-muted-foreground">
                       <p>Aucune bouteille enregistrée pour le moment</p>
-                      <Button
-                        type="button"
-                        variant="default"
-                        size="sm"
-                        className="mt-3"
-                        render={<Link href="/dashboard/vendeur" />}
-                      >
-                        <Plus className="size-4" /> Ajouter des bouteilles
-                      </Button>
+                      <Link href="/dashboard/vendeur">
+                        <Button type="button" variant="default" size="sm" className="mt-3">
+                          <Plus className="size-4" /> Ajouter des bouteilles
+                        </Button>
+                      </Link>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

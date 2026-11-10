@@ -23,46 +23,29 @@ export function DashboardSection({
   children,
   className = "",
 }: DashboardSectionProps) {
-  const [open, setOpen] = useState<boolean>(defaultOpen)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    queueMicrotask(() => setMounted(true))
+  const [open, setOpen] = useState<boolean>(() => {
     try {
       const raw = localStorage.getItem(storageKey)
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<Record<string, boolean>>
-        if (typeof parsed[title] === "boolean") setOpen(parsed[title])
+        if (typeof parsed[title] === "boolean") return parsed[title]
       }
     } catch {}
-  }, [title, storageKey])
+    return defaultOpen
+  })
 
   const toggle = useCallback(() => {
-    const next = !open
-    setOpen(next)
-    try {
-      const raw = localStorage.getItem(storageKey)
-      const parsed = raw ? (JSON.parse(raw) as Partial<Record<string, boolean>>) : {}
-      parsed[title] = next
-      localStorage.setItem(storageKey, JSON.stringify(parsed))
-    } catch {}
-  }, [open, title, storageKey])
-
-  if (!mounted) {
-    return (
-      <section className={cn("border rounded-xl bg-card shadow-sm overflow-hidden", className)} aria-label={title}>
-        <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground bg-muted/50" onClick={toggle} aria-expanded={defaultOpen}>
-          {Icon && <Icon className="size-4 text-primary shrink-0" />}
-          <span className="flex-1 text-left">{title}</span>
-          {count !== undefined && <span className="text-xs text-muted-foreground">{count}</span>}
-          <ChevronRight className="size-4 text-muted-foreground" />
-        </button>
-        <div className="hidden">
-          {children}
-        </div>
-      </section>
-    )
-  }
+    setOpen((prev) => {
+      const next = !prev
+      try {
+        const raw = localStorage.getItem(storageKey)
+        const parsed = raw ? (JSON.parse(raw) as Partial<Record<string, boolean>>) : {}
+        parsed[title] = next
+        localStorage.setItem(storageKey, JSON.stringify(parsed))
+      } catch {}
+      return next
+    })
+  }, [title, storageKey])
 
   return (
     <section className={cn("border rounded-xl bg-card shadow-sm overflow-hidden transition-all", className)} aria-label={title}>

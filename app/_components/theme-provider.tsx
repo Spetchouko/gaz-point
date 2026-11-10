@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
+import { createContext, useContext, useState, type ReactNode } from "react"
 import { initTheme, setTheme, type Theme } from "@/lib/theme"
 
 type ThemeContextType = {
@@ -11,17 +11,18 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType | null>(null)
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system")
-
-  useEffect(() => {
+  const [theme, setThemeState] = useState<Theme>(() => {
     try {
       const raw = localStorage.getItem("gaz-theme")
-      if (raw === "light" || raw === "dark" || raw === "system") {
-        queueMicrotask(() => setThemeState(raw))
-      }
+      if (raw === "light" || raw === "dark" || raw === "system") return raw
     } catch {}
+    return "system"
+  })
+
+  // Initialiser le thème du document immédiatement (évite le flash de thème par défaut)
+  if (typeof window !== "undefined") {
     initTheme()
-  }, [])
+  }
 
   const handleSet = (t: Theme) => {
     setThemeState(t)

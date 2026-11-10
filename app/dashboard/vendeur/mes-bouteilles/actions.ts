@@ -11,7 +11,6 @@ import {
   dedupeBrands,
   normalizeBrandName,
   normalizeFormat,
-  type VendorInventoryEntry,
 } from "@/lib/vendor-onboarding"
 
 export type BottleActionResult = {

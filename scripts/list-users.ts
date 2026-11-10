@@ -20,7 +20,7 @@ async function main() {
   console.log("USERS:", JSON.stringify(users, null, 1))
 
   const points = await db
-    .select({ id: pointDeVente.id, name: pointDeVente.name, userId: pointDeVente.userId })
+    .select({ id: pointDeVente.id, name: pointDeVente.name, userId: pointDeVente.vendorId })
     .from(pointDeVente)
     .limit(30)
   console.log("POINTS:", JSON.stringify(points, null, 1))

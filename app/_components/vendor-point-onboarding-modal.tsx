@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import {
@@ -100,22 +100,27 @@ export function VendorPointOnboardingModal({
   const [pending, setPending] = useState<null | "point" | "draft" | "finalize">(null)
   const [done, setDone] = useState(false)
 
-  // Réinitialise la modale à chaque ouverture pour reprendre l'état serveur
-  // (brouillon déjà enregistré après un rechargement ou une interruption).
+  // Réinitialise la modale à chaque ouverture (transition fermé → ouvert) pour
+  // reprendre l'état serveur : brouillon déjà enregistré après un rechargement
+  // ou une interruption. Un rafraîchissement pendant la saisie (ex: après la
+  // finalisation) ne réinitialise donc pas l'état affiché.
+  const wasOpenRef = useRef(false)
   useEffect(() => {
-    if (!open) return
-    setStep(1)
-    setDone(false)
-    setError(null)
-    setFieldErrors({})
-    setPending(null)
-    setPoint({
-      pointName: initial.pointName,
-      district: initial.district,
-      address: initial.address,
-      phone: initial.phone ?? "",
-    })
-    setRows(buildInitialInventory(initial.brands, initial.inventory))
+    if (open && !wasOpenRef.current) {
+      setStep(1)
+      setDone(false)
+      setError(null)
+      setFieldErrors({})
+      setPending(null)
+      setPoint({
+        pointName: initial.pointName,
+        district: initial.district,
+        address: initial.address,
+        phone: initial.phone ?? "",
+      })
+      setRows(buildInitialInventory(initial.brands, initial.inventory))
+    }
+    wasOpenRef.current = open
   }, [open, initial])
 
   const distinctBrands = useMemo(

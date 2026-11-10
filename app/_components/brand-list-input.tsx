@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Plus, Trash2, Cylinder, AlertCircle } from "lucide-react"
 import {
   dedupeBrands,
+  brandKey,
   MIN_VENDOR_BRANDS,
   MAX_VENDOR_BRANDS,
 } from "@/lib/vendor-onboarding"
@@ -86,10 +87,10 @@ export function BrandListInput({
       <ul className="space-y-2">
         {rows.map((value, index) => {
           const isDuplicate =
-            value.trim() &&
-            dedupeBrands(rows).filter(
-              (brand) => brand.toLowerCase() === value.trim().toLowerCase()
-            ).length > 0
+            !!value.trim() &&
+            rows
+              .slice(0, index)
+              .some((row) => brandKey(row) === brandKey(value))
           return (
             <li key={index} className="flex items-start gap-2">
               <div className="relative flex-1">

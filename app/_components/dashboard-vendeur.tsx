@@ -14,6 +14,7 @@ import {
   Truck,
   RotateCcw,
   Package,
+  Pencil,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -96,6 +97,7 @@ export function DashboardVendeur({
   pathwayStatus,
   bottlesByPoint,
   needsOnboarding,
+  canEditOnboarding,
   onboardingInitial,
 }: {
   vendorName: string
@@ -104,6 +106,7 @@ export function DashboardVendeur({
   pathwayStatus: PathwayStep[]
   bottlesByPoint: Map<string, Array<{ brand: string; format: string; quantity?: number }>>
   needsOnboarding: boolean
+  canEditOnboarding: boolean
   onboardingInitial: VendorOnboardingInitial
 }) {
   const router = useRouter()
@@ -199,7 +202,7 @@ export function DashboardVendeur({
             Gérez votre activité en quelques clics.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="default"
             className="flex items-center gap-2"
@@ -207,6 +210,15 @@ export function DashboardVendeur({
           >
             <Activity className="size-4" /> Trouver du gaz
           </Button>
+          {canEditOnboarding && !needsOnboarding && (
+            <Button
+              variant="outline"
+              className="flex items-center gap-2"
+              onClick={() => setIsOnboardingOpen(true)}
+            >
+              <Pencil className="size-4" /> Modifier mon point de vente
+            </Button>
+          )}
         </div>
       </div>
 
@@ -486,7 +498,7 @@ export function DashboardVendeur({
 
       {/* Modale de finalisation du point de vente */}
       <VendorPointOnboardingModal
-        open={needsOnboarding && isOnboardingOpen}
+        open={isOnboardingOpen}
         onOpenChange={setIsOnboardingOpen}
         vendorName={vendorName}
         initial={onboardingInitial}

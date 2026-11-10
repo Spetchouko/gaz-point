@@ -347,7 +347,7 @@ function InscriptionVendeurContent() {
                     onBlur={() => setSubmitted(true)}
                     required
                     minLength={6}
-                    className="pl-9 pr-10 h-11"
+                    className="pl-9 pr-10"
                     disabled={loading}
                     aria-invalid={submitted && !!fieldErrors.password}
                     aria-describedby={

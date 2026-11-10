@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
+import { createContext, useContext, useState, type ReactNode } from "react"
 
 type Lang = "fr" | "en"
 
@@ -14,13 +14,6 @@ export function LangProvider({ children }: { children: ReactNode }) {
     } catch {}
     return "fr"
   })
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("gaz-lang")
-      if (raw === "fr" || raw === "en") queueMicrotask(() => setLangState(raw))
-    } catch {}
-  }, [])
 
   const handleSet = (l: Lang) => {
     setLangState(l)
