@@ -3,45 +3,12 @@ import { drizzle } from "drizzle-orm/neon-http"
 import { requiredEnv } from "@/lib/env"
 
 /**
- * Résout l'URL de base de données pour le client Neon HTTP.
- *
- * `@neondatabase/serverless` avec `drizzle-orm/neon-http` nécessite une
- * URL HTTPS (endpoint HTTP de Neon), pas une chaîne de connexion
- * `postgresql://`. Si une chaîne PostgreSQL est fournie (ex. avec un hôte
- * `-pooler` réservé à la connexion TCP poolée), on en extrait l'hôte et
- * les identifiants pour reconstruire une URL `https://` utilisable par
- * l'API SQL HTTP de Neon.
+ * Le client Neon serverless (`@neondatabase/serverless`) accepte directement
+ * une chaîne de connexion PostgreSQL standard (`postgres://...` ou `postgresql://...`).
+ * Pas besoin de la convertir en URL HTTP.
  */
-function resolveNeonUrl(url: string): string {
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return url
-  }
-
-  try {
-    const parsed = new URL(url)
-    if (parsed.protocol !== "postgresql:") {
-      return url
-    }
-
-    let host = parsed.hostname
-    // L'hôte -pooler est pour la connexion TCP poolée (port 5432), non l'API HTTP
-    if (host.endsWith("-pooler")) {
-      host = host.replace("-pooler", "")
-    }
-
-    const auth =
-      parsed.username && parsed.password
-        ? `${parsed.username}:${parsed.password}@`
-        : ""
-
-    return `https://${auth}${host}`
-  } catch {
-    return url
-  }
-}
-
 function createDatabase() {
-  const url = resolveNeonUrl(requiredEnv("DATABASE_URL"))
+  const url = requiredEnv("DATABASE_URL")
   return drizzle({ client: neon(url) })
 }
 
