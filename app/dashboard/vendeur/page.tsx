@@ -46,12 +46,13 @@ export default async function DashboardVendeurPage() {
     .limit(1)
 
   // Get bottles for each point de vente (avec la quantité réelle en stock)
-  let bottlesByPoint = new Map<
-    string,
-    Array<{ brand: string; format: string; quantity: number }>
-  >()
+  // Utiliser un objet sérialisable (Record) au lieu d'une Map, car les Map ne
+  // peuvent pas être transmises d'un Server Component vers un Client Component
+  // (RSC). Une Map provoquerait une erreur d'hydratation et une page blanche.
+  const bottlesByPointObj: Record<string, Array<{ brand: string; format: string; quantity: number }>> = {}
   let inventoryQuantity = 0
   if (points.length > 0) {
+    const pointIds = points.map((p) => p.id)
     const bottleRows = await db
       .select({
         pointDeVenteId: pointDeVenteBouteille.pointDeVenteId,
@@ -61,11 +62,11 @@ export default async function DashboardVendeurPage() {
       })
       .from(pointDeVenteBouteille)
       .innerJoin(brand, eq(pointDeVenteBouteille.brandId, brand.id))
-      .where(inArray(pointDeVenteBouteille.pointDeVenteId, points.map((p) => p.id)))
+      .where(inArray(pointDeVenteBouteille.pointDeVenteId, pointIds))
     for (const row of bottleRows) {
-      const existing = bottlesByPoint.get(row.pointDeVenteId) ?? []
+      const existing = bottlesByPointObj[row.pointDeVenteId] ?? []
       existing.push({ brand: row.brand, format: row.format, quantity: row.quantity })
-      bottlesByPoint.set(row.pointDeVenteId, existing)
+      bottlesByPointObj[row.pointDeVenteId] = existing
       inventoryQuantity += row.quantity
     }
   }
@@ -73,7 +74,7 @@ export default async function DashboardVendeurPage() {
   // Compute pathway status
   const hasPointDeVente = points.length > 0
   const hasBottles = hasPointDeVente ? points.some((p) => {
-    const bottles = bottlesByPoint.get(p.id) ?? []
+    const bottles = bottlesByPointObj[p.id] ?? []
     return bottles.length > 0
   }) : false
   const hasDisponibilites = hasBottles ? (await Promise.all(
@@ -120,7 +121,7 @@ export default async function DashboardVendeurPage() {
     const isAvailable = effective === "disponible"
     const totalQty = dispoList.reduce((sum, d) => sum + (d.quantity ?? 0), 0)
 
-    const pointBottles = bottlesByPoint.get(point.id) ?? []
+    const pointBottles = bottlesByPointObj[point.id] ?? []
     const hasPointBottles = pointBottles.length > 0
 
     return {
@@ -204,7 +205,7 @@ export default async function DashboardVendeurPage() {
           pendingReservations: Number(pendingReservations[0]?.count ?? 0),
         }}
         pathwayStatus={pathwayStatus}
-        bottlesByPoint={bottlesByPoint}
+        bottlesByPoint={bottlesByPointObj}
         needsOnboarding={needsOnboarding}
         canEditOnboarding={canEditOnboarding}
         onboardingInitial={onboardingInitial}

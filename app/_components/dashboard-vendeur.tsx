@@ -104,7 +104,7 @@ export function DashboardVendeur({
   points: PointWithStats[]
   globalStats: GlobalStats
   pathwayStatus: PathwayStep[]
-  bottlesByPoint: Map<string, Array<{ brand: string; format: string; quantity?: number }>>
+  bottlesByPoint: Record<string, Array<{ brand: string; format: string; quantity?: number }>>
   needsOnboarding: boolean
   canEditOnboarding: boolean
   onboardingInitial: VendorOnboardingInitial
@@ -507,10 +507,10 @@ export function DashboardVendeur({
   )
 }
 
-function handleDeletePoint(pointId: string) {
+async function handleDeletePoint(pointId: string) {
   if (window.confirm("Êtes-vous sûr de vouloir supprimer ce point de vente ?")) {
     const formData = new FormData()
     formData.set("pointId", pointId)
-    // Would call deletePointDeVenteVendor, but need access to the function
+    await deletePointDeVenteVendor(null, formData)
   }
 }
