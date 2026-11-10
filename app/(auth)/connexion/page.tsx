@@ -48,8 +48,7 @@ function LoginPageContent() {
     const role = (session.user as { role?: string }).role
     const user = session.user as { role?: string; emailVerified?: boolean }
     
-    // For vendors: check if email is verified but subscription might not be active
-    // The dashboard will handle subscription check and redirect to payment if needed
+    // For vendors: subscription check removed - they can access dashboard without active subscription
     if (!explicitRedirect && isStaff(role)) {
       router.push("/admin")
     } else if (!explicitRedirect && role === "vendor") {

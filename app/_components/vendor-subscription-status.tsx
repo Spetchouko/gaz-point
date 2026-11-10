@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Calendar, AlertCircle, CheckCircle2, CreditCard, ExternalLink } from "lucide-react"
+import { Calendar, AlertCircle, CheckCircle2, CreditCard, ExternalLink, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -49,7 +49,33 @@ export function VendorSubscriptionStatus() {
   }
 
   if (!subscription) {
-    return null
+    return (
+      <div className="rounded-lg border bg-info/10 p-3 transition-colors">
+        <div className="flex items-start gap-2">
+          <div className="flex size-7 shrink-0 items-center justify-center rounded-lg text-info">
+            <Info className="size-3.5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-sm truncate text-info">
+              Abonnement optionnel
+            </p>
+            <p className="text-xs text-muted-foreground truncate mt-0.5">
+              Votre accès au tableau de bord est illimité. L'abonnement permet de soutenir la plateforme.
+            </p>
+          </div>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full mt-3 gap-1.5"
+          onClick={() => window.location.href = "/paiement/abonnement"}
+        >
+          <CreditCard className="size-3.5" />
+          Souscrire pour soutenir
+          <ExternalLink className="size-3" />
+        </Button>
+      </div>
+    )
   }
 
   const { status, isActive, currentPeriodEnd, lastPaymentAt, amount, currency } = subscription
@@ -78,12 +104,12 @@ export function VendorSubscriptionStatus() {
     if (status === "past_due") {
       return {
         label: "Paiement en retard",
-        description: "Veuillez renouveler votre abonnement",
+        description: "Veuillez renouveler votre abonnement pour continuer à soutenir la plateforme",
         icon: AlertCircle,
-        iconColor: "text-destructive",
-        bgColor: "bg-destructive/10",
-        borderColor: "border-destructive/20",
-        textColor: "text-destructive",
+        iconColor: "text-warning",
+        bgColor: "bg-warning/10",
+        borderColor: "border-warning/20",
+        textColor: "text-warning",
       }
     }
     if (status === "cancelled") {
@@ -99,12 +125,12 @@ export function VendorSubscriptionStatus() {
     }
     return {
       label: "Abonnement inactif",
-      description: "Souscrivez pour accéder au tableau de bord",
+      description: "Votre accès au tableau de bord n'est pas affecté. Souscrivez pour soutenir la plateforme.",
       icon: CreditCard,
-      iconColor: "text-warning",
-      bgColor: "bg-warning/10",
-      borderColor: "border-warning/20",
-      textColor: "text-warning",
+      iconColor: "text-info",
+      bgColor: "bg-info/10",
+      borderColor: "border-info/20",
+      textColor: "text-info",
     }
   }
 
@@ -143,7 +169,7 @@ export function VendorSubscriptionStatus() {
           onClick={() => window.location.href = "/paiement/abonnement"}
         >
           <CreditCard className="size-3.5" />
-          {status === "none" ? "Souscrire" : "Renouveler"}
+          {status === "none" ? "Souscrire pour soutenir" : "Renouveler le soutien"}
           <ExternalLink className="size-3" />
         </Button>
       )}
