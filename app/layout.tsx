@@ -6,6 +6,7 @@ import { LangProvider } from "@/app/_components/lang-provider";
 import { RecherchePermanente } from "@/app/_components/recherche-permanente";
 import { ConsentBanner } from "@/app/_components/consent-banner";
 import { AnalyticsTracker } from "@/app/_components/analytics-tracker";
+import InitScripts from "@/app/_components/init-scripts";
 import { LangUpdater } from "@/app/_components/lang-updater";
 import { PwaRegistration } from "@/app/_components/pwa-registration";
 import { PwaInstallPrompt } from "@/app/_components/pwa-install-prompt";
@@ -47,16 +48,19 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="fr"
+      data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
         <meta name="apple-mobile-web-app-title" content="GazPoints" />
-        <script
+        <template
+          id="gaz-theme-script"
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem("gaz-theme");if(t==="dark")document.documentElement.classList.add("dark");else if(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches)document.documentElement.classList.add("dark");else document.documentElement.classList.remove("dark");}catch(e){}})();`,
           }}
         />
-        <script
+        <template
+          id="gaz-lang-script"
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem("gaz-lang");if(t==="fr"||t==="en")document.documentElement.setAttribute("lang",t);}catch(e){}})();`,
           }}
@@ -73,6 +77,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <RecherchePermanente />
         <ConsentBanner />
         <AnalyticsTracker />
+        <InitScripts />
         <PwaRegistration />
         <PwaInstallPrompt />
       </body>

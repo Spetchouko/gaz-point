@@ -288,18 +288,18 @@ export default async function AdminDashboardPage() {
         )}
       </header>
 
-      <AdminDashboardSections
-        stats={stats}
-        recentActivity={
-          <AdminRecentActivity activities={recentActivity} canDelete={canDelete} />
-        }
-      />
+      <AdminDashboardSections stats={stats} />
 
       {/* Section : Recherche de gaz (même logique que le client) */}
       <section className="mt-8">
         <div className="rounded-xl border border-border bg-white p-6 shadow-sm">
           <TrouverMonGaz />
         </div>
+      </section>
+
+      {/* Section : Activités récentes — placée directement sous la recherche de gaz */}
+      <section className="mt-6">
+        <AdminRecentActivity activities={recentActivity} canDelete={canDelete} />
       </section>
     </div>
   )

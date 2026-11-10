@@ -49,11 +49,17 @@ export function AdminShell({
         />
 
         {/* Zone de travail : occupe toute la surface disponible */}
-        <main className="admin-workarea__main flex-1 overflow-auto">
-          <div className="admin-workarea__padding">{children}</div>
+        <main className="admin-workarea__main flex-1 overflow-auto flex flex-col">
+          <div className="admin-workarea__padding flex flex-1 flex-col">
+            {children}
+            {/* Footer unique de l'administration — identique au principe du dashboard client,
+                toujours placé tout en bas même avec un contenu court */}
+            <div className="mt-auto">
+              <MiniFooter copyrightText="© Tous droits réservés. Fait pour faciliter l'accès au gaz au Cameroun." />
+            </div>
+          </div>
         </main>
       </div>
-      <MiniFooter />
     </div>
   )
 }

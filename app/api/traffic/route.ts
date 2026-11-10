@@ -68,6 +68,8 @@ export async function POST(req: NextRequest) {
       utmMedium: clean(body.utmMedium, 100),
       utmCampaign: clean(body.utmCampaign, 100),
       userId: null,
+      sessionId: null,
+      metadata: null,
       consented: true,
       // Device & browser tracking
       userAgent: clean(body.userAgent, 500),

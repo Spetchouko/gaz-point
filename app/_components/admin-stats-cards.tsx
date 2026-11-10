@@ -219,32 +219,39 @@ const statCards = [
 
 export function AdminStatsCards({ stats }: { stats: Stats }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+    <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
       {statCards.map((card) => {
         const value = stats[card.key as keyof Stats] ?? 0
         const Icon = card.icon
+        const formattedValue = Number(value).toLocaleString("fr-FR")
         return (
           <Link
             key={card.key}
             href={card.href}
-            className="block rounded-xl border bg-card p-4 transition-colors hover:bg-muted/50 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+            className="block rounded-xl border bg-card p-3 transition-colors hover:bg-muted/50 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
           >
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+            <div className="flex items-center justify-between gap-2 min-w-0">
+              <div className="min-w-0 flex-1">
+                <p
+                  className="mb-0.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider leading-tight truncate"
+                  title={card.label}
+                >
                   {card.label}
                 </p>
-                <p className="text-xl font-bold tracking-tight text-foreground">
-                  {value.toLocaleString("fr-FR")}
+                <p
+                  className="text-xl font-bold leading-tight tracking-tight text-foreground truncate"
+                  title={formattedValue}
+                >
+                  {formattedValue}
                 </p>
               </div>
               <div
                 className={cn(
-                  "flex size-10 shrink-0 items-center justify-center rounded-xl border",
+                  "flex size-9 shrink-0 items-center justify-center rounded-lg border",
                   card.color
                 )}
               >
-                <Icon className="size-5" aria-hidden={true} />
+                <Icon className="size-4" aria-hidden={true} />
               </div>
             </div>
           </Link>

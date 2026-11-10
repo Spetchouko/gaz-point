@@ -43,11 +43,15 @@ export default function AdminLayout({
         />
 
         {/* Zone de travail : occupe toute la surface disponible */}
-        <main className="admin-workarea__main">
-          <div className="admin-workarea__padding">{children}</div>
+        <main className="admin-workarea__main flex flex-1 flex-col overflow-auto">
+          <div className="admin-workarea__padding flex flex-1 flex-col">
+            {children}
+            <div className="mt-auto">
+              <MiniFooter copyrightText="© Tous droits réservés. Fait pour faciliter l'accès au gaz au Cameroun." />
+            </div>
+          </div>
         </main>
       </div>
-      <MiniFooter />
     </div>
   )
 }

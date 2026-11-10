@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react"
 import Link from "next/link"
-import { UserPlus, Store, MapPin, Cylinder, ClipboardList, Trash2 } from "lucide-react"
+import { ChevronDown, ChevronUp, ClipboardList, Cylinder, MapPin, Store, Trash2, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -56,14 +56,21 @@ const filterOptions: { value: FilterKey; label: string }[] = [
 export function AdminRecentActivity({
   activities,
   canDelete,
+  initialLimit = 5,
 }: {
   activities: Activity[]
   canDelete: boolean
+  /** Nombre maximal d'événements affichés lorsque la liste est déroulée initialement (au départ elle reste réduite). */
+  initialLimit?: number
 }) {
   const [filter, setFilter] = useState<FilterKey>("all")
+  const [expanded, setExpanded] = useState(false)
   const [, startTransition] = useTransition()
 
-  const filtered = filter === "all" ? activities : activities.filter((a) => a.type === filter)
+  const filtered =
+    filter === "all" ? activities : activities.filter((a) => a.type === filter)
+  const visible = expanded ? filtered : filtered.slice(0, initialLimit)
+  const hiddenCount = Math.max(0, filtered.length - visible.length)
   const deletable = filtered.filter((a) => a.deletable && canDelete)
 
   const handleDelete = (activityId: string) => {
@@ -86,11 +93,11 @@ export function AdminRecentActivity({
 
   return (
     <Card>
-      <CardContent className="pt-0 space-y-4">
+      <CardContent className="pt-0 space-y-2">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-dashed">
-          <div className="w-full sm:w-56 py-3">
+          <div className="w-full sm:w-56 py-2">
             <Select value={filter} onValueChange={(v) => setFilter((v ?? "all") as FilterKey)}>
-              <SelectTrigger className="w-full h-9">
+              <SelectTrigger className="w-full h-9 text-sm">
                 <SelectValue placeholder="Filtrer par type" />
               </SelectTrigger>
               <SelectContent>
@@ -106,7 +113,7 @@ export function AdminRecentActivity({
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+              className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10 h-8"
               onClick={handleClearAll}
             >
               <Trash2 className="size-3.5" />
@@ -115,53 +122,83 @@ export function AdminRecentActivity({
           )}
         </div>
 
-        {filtered.length === 0 ? (
-          <p className="py-8 text-center text-muted-foreground">Aucune activité récente</p>
+        <div className="flex items-center justify-between gap-2 pt-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Activités récentes
+          </h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-primary"
+            onClick={() => setExpanded((prev) => !prev)}
+            aria-expanded={expanded}
+          >
+            {expanded ? (
+              <>
+                Réduire les activités
+                <ChevronUp className="size-3.5" aria-hidden />
+              </>
+            ) : (
+              <>
+                Voir toutes les activités
+                <ChevronDown className="size-3.5" aria-hidden />
+              </>
+            )}
+          </Button>
+        </div>
+
+        {visible.length === 0 ? (
+          <p className="py-6 text-center text-muted-foreground text-sm">Aucune activité récente</p>
         ) : (
-          <div className="divide-y divide-border">
-            {filtered.map((activity) => {
+          <div
+            className={cn(
+              "divide-y divide-border overflow-y-auto rounded-md",
+              expanded ? "max-h-96" : "max-h-52"
+            )}
+          >
+            {visible.map((activity) => {
               const config = typeConfig[activity.type]
               const Icon = config.icon
               return (
                 <div
                   key={activity.id}
-                  className="flex items-start gap-4 p-4 hover:bg-muted/50 transition-colors"
+                  className="flex items-start gap-3 p-3 hover:bg-muted/50 transition-colors"
                 >
                   <div
                     className={cn(
-                      "flex size-10 shrink-0 items-center justify-center rounded-lg",
+                      "flex size-9 shrink-0 items-center justify-center rounded-lg border",
                       config.color
                     )}
                   >
-                    <Icon className="size-5" aria-hidden />
+                    <Icon className="size-4" aria-hidden />
                   </div>
                   {activity.href ? (
                     <Link
                       href={activity.href}
                       className="group flex-1 min-w-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
-                      <p className="font-medium text-foreground transition-colors group-hover:text-primary">
+                      <p className="font-medium text-foreground leading-snug transition-colors group-hover:text-primary">
                         {activity.title}
                       </p>
-                      <p className="text-sm text-muted-foreground truncate">
+                      <p className="mt-0.5 text-sm text-muted-foreground truncate">
                         {activity.description}
                       </p>
-                      <p className="text-xs text-muted-foreground truncate">{activity.meta}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground truncate">{activity.meta}</p>
                     </Link>
                   ) : (
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground">{activity.title}</p>
-                      <p className="text-sm text-muted-foreground truncate">
+                      <p className="font-medium text-foreground leading-snug">{activity.title}</p>
+                      <p className="mt-0.5 text-sm text-muted-foreground truncate">
                         {activity.description}
                       </p>
-                      <p className="text-xs text-muted-foreground truncate">{activity.meta}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground truncate">{activity.meta}</p>
                     </div>
                   )}
-                  <div className="flex flex-col items-end gap-1 shrink-0">
+                  <div className="flex flex-col items-end gap-1 shrink-0 ml-auto pl-2">
                     <Badge variant="outline" className={config.color}>
                       {config.label}
                     </Badge>
-                    <time className="text-xs text-muted-foreground">
+                    <time className="text-[11px] text-muted-foreground whitespace-nowrap">
                       {formatDateTime(activity.date)}
                     </time>
                   </div>
@@ -180,6 +217,16 @@ export function AdminRecentActivity({
               )
             })}
           </div>
+        )}
+
+        {!expanded && hiddenCount > 0 && (
+          <button
+            type="button"
+            className="w-full rounded-md py-1.5 text-center text-[11px] font-medium text-muted-foreground transition-colors hover:text-primary"
+            onClick={() => setExpanded(true)}
+          >
+            … {hiddenCount} autre{hiddenCount > 1 ? "s" : ""} activité{hiddenCount > 1 ? "s" : ""} — Voir toutes les activités
+          </button>
         )}
       </CardContent>
     </Card>

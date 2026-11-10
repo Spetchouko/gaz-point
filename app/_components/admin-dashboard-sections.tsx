@@ -15,7 +15,6 @@ import {
   Shield,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { AdminRecentActivity } from "./admin-recent-activity"
 
 type Stat = {
   label: string
@@ -65,7 +64,6 @@ const statItems: Stat[] = [
 
 export function AdminDashboardSections({
   stats,
-  recentActivity,
 }: {
   stats?: {
     abonnes?: number
@@ -75,7 +73,6 @@ export function AdminDashboardSections({
     disponibilitesActives?: number
     bouteillesDisponibles?: number
   }
-  recentActivity?: React.ReactNode
 }) {
   const values: Stat[] = [
     { ...statItems[0], value: stats?.abonnes ?? 0 },
@@ -100,26 +97,41 @@ export function AdminDashboardSections({
   return (
     <div className="space-y-6">
       {/* Cartes statistiques — ligne pleine largeur */}
-      <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
         {values.map((s) => {
           const Icon = s.icon
+          const formattedValue = String(s.value).replace(
+            /\B(?=(\d{3})+(?!\d))/g,
+            " "
+          )
           return (
             <a
               key={s.label}
               href={`#${s.label.toLowerCase().replace(/\s/g, "-")}`}
-              className="block rounded-xl border bg-card p-4 transition-colors hover:bg-muted/50 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+              className="block rounded-xl border bg-card p-3 transition-colors hover:bg-muted/50 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
             >
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <div className="min-w-0 flex-1">
+                  <p
+                    className="mb-0.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider leading-tight truncate"
+                    title={s.label}
+                  >
                     {s.label}
                   </p>
-                  <p className="text-2xl font-bold tracking-tight text-foreground">
-                    {String(s.value).replace(/\B(?=(\d{3})+(?!\d))/g, " ")}
+                  <p
+                    className="text-xl font-bold leading-tight tracking-tight text-foreground truncate"
+                    title={formattedValue}
+                  >
+                    {formattedValue}
                   </p>
                 </div>
-                <div className={cn("flex size-10 shrink-0 items-center justify-center rounded-xl border", s.color)}>
-                  <Icon className="size-5" aria-hidden />
+                <div
+                  className={cn(
+                    "flex size-9 shrink-0 items-center justify-center rounded-lg border",
+                    s.color
+                  )}
+                >
+                  <Icon className="size-4" aria-hidden />
                 </div>
               </div>
             </a>
@@ -127,27 +139,15 @@ export function AdminDashboardSections({
         })}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-12">
-        {/* Activité récente — occupe les 2/3 sur grand écran */}
-        <div className="lg:col-span-8 space-y-3">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Activité récente
-            </h2>
-          </div>
-          {recentActivity ?? (
-            <AdminRecentActivity activities={[]} canDelete={false} />
-          )}
-        </div>
-
+      <div className="grid gap-4 lg:grid-cols-12">
         {/* Liens rapides — colonne latérale de 1/3 */}
-        <div className="lg:col-span-4 space-y-3">
+        <div className="lg:col-span-12 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               Accès rapides
             </h2>
           </div>
-          <div className="space-y-2 rounded-lg border bg-card p-4">
+          <div className="space-y-2 rounded-lg border bg-card p-3 sm:grid sm:grid-cols-2 sm:gap-2 sm:space-y-0">
             {quickLinks.map((l) => {
               const Icon = l.icon
               return (

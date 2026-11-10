@@ -62,6 +62,7 @@ export function Header() {
             width={20}
             height={20}
             className="h-5 w-5 object-contain shrink-0"
+            style={{ width: "auto", height: "auto" }}
           />
           <span className="font-heading text-lg font-bold tracking-tight text-foreground">
             GazPoints

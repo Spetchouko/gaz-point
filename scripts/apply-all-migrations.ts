@@ -1,10 +1,40 @@
 import "dotenv/config"
 import { neon } from "@neondatabase/serverless"
 
+/**
+ * Résout l'URL de base de données pour le client Neon HTTP (même logique que db/index.ts).
+ */
+function resolveNeonUrl(url: string): string {
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url
+  }
+
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol !== "postgresql:") {
+      return url
+    }
+
+    let host = parsed.hostname
+    if (host.endsWith("-pooler")) {
+      host = host.replace("-pooler", "")
+    }
+
+    const auth =
+      parsed.username && parsed.password
+        ? `${parsed.username}:${parsed.password}@`
+        : ""
+
+    return `https://${auth}${host}`
+  } catch {
+    return url
+  }
+}
+
 async function main() {
   const url = process.env.DATABASE_URL
   if (!url) { console.log("DATABASE_URL missing"); process.exit(1) }
-  const sql = neon(url)
+  const sql = neon(resolveNeonUrl(url))
 
   // 0016: traffic_event enrichment
   try { await sql.unsafe(`ALTER TABLE "traffic_event" ADD COLUMN IF NOT EXISTS "session_id" text;`); console.log("OK: traffic_event.session_id"); }
