@@ -1,83 +1,41 @@
 "use client"
 
-import { Suspense, useEffect } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ModernCard } from "@/app/_components/card-modern"
-import { PhoneInput } from "@/app/_components/phone-input"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { BrandListInput } from "@/app/_components/brand-list-input"
 import Link from "next/link"
-import { Mail, Lock, Store, Eye, EyeOff, ArrowLeft, AlertCircle } from "lucide-react"
+import {
+  Mail,
+  Lock,
+  Store,
+  Eye,
+  EyeOff,
+  ArrowLeft,
+  AlertCircle,
+  MapPin,
+  LocateFixed,
+} from "lucide-react"
 import Image from "next/image"
-import { useState } from "react"
+import { validateVendorSignupPayload } from "@/lib/vendor-onboarding"
 
 // === Mode de confirmation email ===
 const MODE_EMAIL = "email"
 
-/** Message d'erreur de l'adresse du dépôt (vide si valide). */
-function getBusinessAddressError(address: string): string | null {
-  return address.trim() ? null : "L'adresse du dépôt est requise."
-}
+type FieldKey = "pointName" | "email" | "password" | "district" | "address" | "brands"
 
-function validateEmail(email: string): string | null {
-  if (!email.trim()) return "L'email est requis."
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(email)) return "Format d'email invalide."
-
-  const domain = email.split("@")[1]?.toLowerCase()
-  if (
-    domain &&
-    [
-      "10minutemail.com",
-      "guerrillamail.com",
-      "mailinator.com",
-      "tempmail.com",
-      "throwawaymail.com",
-      "yopmail.com",
-      "trashmail.com",
-      "getnada.com",
-      "maildrop.cc",
-      "sharklasers.com",
-      "grr.la",
-      "spamgourmet.com",
-      "temp-mail.org",
-      "fakeinbox.com",
-      "dispostable.com",
-      "mintemail.com",
-    ].includes(domain)
-  ) {
-    return "Les emails temporaires ne sont pas autorisés."
-  }
-  return null
-}
-
-function validatePassword(password: string): string | null {
-  if (!password) return "Le mot de passe est requis."
-  if (password.length < 6) return "Le mot de passe doit contenir au moins 6 caractères."
-  return null
-}
-
-function validateBusinessName(name: string): string | null {
-  if (!name.trim()) return "Le nom du dépôt est requis."
-  if (name.trim().length < 2) return "Le nom du dépôt doit contenir au moins 2 caractères."
-  if (name.trim().length > 100) return "Le nom du dépôt ne doit pas dépasser 100 caractères."
-  return null
-}
-
-// -------------------------------------------------------------------
-// Page d'inscription vendeur — mode email uniquement
-// -------------------------------------------------------------------
 function InscriptionVendeurContent() {
   const router = useRouter()
   const { data: session } = authClient.useSession()
-  const role = "vendor"
 
   const searchRedirect = useSearchParams().get("redirect")
-  const redirectTo = searchRedirect ?? "/dashboard/pro"
+  const redirectTo = searchRedirect ?? "/dashboard/vendeur"
 
   useEffect(() => {
     if (session?.user) {
@@ -85,156 +43,139 @@ function InscriptionVendeurContent() {
     }
   }, [session, router, redirectTo])
 
-  // ---------- État du formulaire (phase 1 : création de compte) ----------
-  const [businessName, setBusinessName] = useState("")
+  // ---------- État du formulaire (création de compte + point de vente) ----------
+  const [pointName, setPointName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [district, setDistrict] = useState("")
+  const [address, setAddress] = useState("")
+  const [brands, setBrands] = useState<string[]>(["", "", "", "", ""])
+
   const [error, setError] = useState("")
-  const [fieldErrors, setFieldErrors] = useState<{
-    businessName?: string
-    email?: string
-    password?: string
-  }>({})
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldKey, string>>>({})
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
-  // ---------- Validation ----------
-  const validateForm = () => {
-    const businessNameError = validateBusinessName(businessName)
-    const emailError = validateEmail(email)
-    const passwordError = validatePassword(password)
-    const errors: {
-      businessName?: string
-      email?: string
-      password?: string
-    } = {}
-    if (businessNameError) errors.businessName = businessNameError
-    if (emailError) errors.email = emailError
-    if (passwordError) errors.password = passwordError
-    setFieldErrors(errors)
-    return Object.keys(errors).length === 0
+  const clearFieldError = (field: FieldKey) => {
+    setFieldErrors((prev) => ({ ...prev, [field]: undefined }))
+    if (error) setError("")
   }
 
-  // ---------- Submission ----------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitted(true)
+    setError("")
 
-    if (!validateForm()) {
+    // Mêmes règles que le serveur (lib/vendor-onboarding) : le message
+    // affiché est identique à celui renvoyé par l'API.
+    const validation = validateVendorSignupPayload({
+      name: pointName,
+      email,
+      password,
+      district,
+      address,
+      brands,
+    })
+
+    if (!validation.ok) {
+      if (validation.field) {
+        setFieldErrors({ [validation.field]: validation.message } as Partial<Record<FieldKey, string>>)
+      }
+      setError(validation.message)
       return
     }
 
-    setError("")
+    setFieldErrors({})
     setLoading(true)
 
+    const data = validation.data
+
     try {
-      // Nettoyer le numéro de téléphone (non utilisé en mode email)
-      const cleanPhoneNumber = ""
+      const res = await fetch("/api/vendor/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+          district: data.district,
+          address: data.address,
+          brands: data.brands,
+        }),
+      })
 
-      // Inscription mode email
-      const { error: signUpError } = await authClient.signUp.email({
-        name: businessName.trim(),
-        email: email.trim().toLowerCase(),
-        password,
-        phoneNumber: cleanPhoneNumber,
-        role,
-      } as Parameters<typeof authClient.signUp.email>[0])
+      const payload = (await res.json().catch(() => null)) as
+        | { ok?: boolean; error?: { message?: string; field?: string } }
+        | null
 
-      if (signUpError) {
-        console.error("[signup-vendeur] signUpError:", JSON.stringify(signUpError, null, 2))
-        const errorMessage =
-          signUpError.message ?? "Impossible de créer le compte."
-        if (
-          errorMessage.toLowerCase().includes("email") ||
-          errorMessage.toLowerCase().includes("already") ||
-          errorMessage.toLowerCase().includes("déjà") ||
-          errorMessage.toLowerCase().includes("exist")
-        ) {
-          setFieldErrors((prev) => ({ ...prev, email: "Cette adresse email est déjà utilisée. Essayez de vous connecter." }))
-        } else if (
-          errorMessage.toLowerCase().includes("password") ||
-          errorMessage.toLowerCase().includes("mot de passe")
-        ) {
-          setFieldErrors((prev) => ({ ...prev, password: errorMessage }))
-        } else if (
-          errorMessage.toLowerCase().includes("name") ||
-          errorMessage.toLowerCase().includes("nom")
-        ) {
-          setFieldErrors((prev) => ({ ...prev, businessName: errorMessage }))
-        } else {
-          setError(errorMessage)
+      if (!res.ok || !payload?.ok) {
+        const message =
+          payload?.error?.message ?? "Impossible de créer le compte vendeur."
+        const field = payload?.error?.field as FieldKey | undefined
+        if (field) {
+          setFieldErrors({ [field]: message })
         }
+        setError(message)
         setLoading(false)
         return
-      }
-
-      // === PHASE 2 : Rediriger vers la configuration du profil ===
-      // Le compte est créé. On envoie le code de vérification et on
-      // redirige vers la page de validation. Si l'envoi échoue, on affiche
-      // l'erreur à l'utilisateur au lieu de le laisser croire que l'email est parti.
-      const normalizedEmail = email.trim().toLowerCase()
-      let emailSent = false
-      try {
-        const res = await fetch("/api/auth/email-otp/send-verification", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: normalizedEmail, resend: false }),
-        })
-        if (res.ok) {
-          emailSent = true
-        } else {
-          const data = await res.json().catch(() => null)
-          console.error("[signup-vendeur] envoi du code échoué:", data?.error?.message ?? res.statusText)
-          setError(data?.error?.message ?? "L'envoi du code de vérification a échoué. Veuillez réessayer.")
-          setLoading(false)
-          return
-        }
-      } catch (sendErr) {
-        console.error("[signup-vendeur] envoi du code échoué (exception):", sendErr)
-        setError("L'envoi du code de vérification a échoué. Veuillez réessayer.")
-        setLoading(false)
-        return
-      }
-
-      if (emailSent) {
-        router.push(
-          `/validation-email?mode=${MODE_EMAIL}&email=${encodeURIComponent(normalizedEmail)}&redirect=${encodeURIComponent(
-            "/inscription/vendeur/configuration"
-          )}&sent=1`
-        )
-        router.refresh()
       }
     } catch (err) {
-      console.error("[signup-vendeur] catch error:", err)
-      setError("Une erreur inattendue est survenue. Veuillez réessayer.")
+      console.error("[signup-vendeur] erreur réseau:", err)
+      setError("Une erreur réseau est survenue. Veuillez réessayer.")
       setLoading(false)
+      return
     }
-  }
 
-  // ---------- Gestion des changements d'entrée ----------
-  const handleInputChange = (
-    field: "businessName" | "email" | "password",
-    value: string
-  ) => {
-    if (field === "businessName") setBusinessName(value)
-    if (field === "email") setEmail(value)
-    if (field === "password") setPassword(value)
-    if (fieldErrors[field]) {
-      setFieldErrors((prev) => ({ ...prev, [field]: undefined }))
+    // === Envoi du code de vérification (comportement OTP inchangé) ===
+    // Le brouillon du point de vente est déjà enregistré côté serveur : il n'est
+    // jamais perdu, même si l'envoi échoue ou si la page est rechargée.
+    try {
+      const res = await fetch("/api/auth/email-otp/send-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: data.email, resend: false }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        console.error(
+          "[signup-vendeur] envoi du code échoué:",
+          body?.error?.message ?? res.statusText
+        )
+        setError(
+          body?.error?.message ??
+            "L'envoi du code de vérification a échoué. Veuillez réessayer."
+        )
+        setLoading(false)
+        return
+      }
+    } catch (sendErr) {
+      console.error("[signup-vendeur] envoi du code échoué (exception):", sendErr)
+      setError("L'envoi du code de vérification a échoué. Veuillez réessayer.")
+      setLoading(false)
+      return
     }
-    if (error) setError("")
+
+    router.push(
+      `/validation-email?mode=${MODE_EMAIL}&email=${encodeURIComponent(
+        data.email
+      )}&redirect=${encodeURIComponent("/dashboard/vendeur")}&sent=1`
+    )
+    router.refresh()
   }
 
   const handleGoogle = async () => {
     document.cookie = `gazpoint_register_role=vendor; path=/; max-age=300`
-    await authClient.signIn.social({ provider: "google", callbackURL: "/dashboard/vendeur" })
+    await authClient.signIn.social({
+      provider: "google",
+      callbackURL: "/dashboard/vendeur",
+    })
   }
 
   return (
     <div className="min-h-screen bg-background px-4 py-8 flex items-center justify-center">
       <div className="w-full max-w-md">
-        {/* ---------- Retourn en arrière ---------- */}
+        {/* ---------- Retour en arrière ---------- */}
         <div className="mb-6">
           <Button
             render={<Link href="/inscription" />}
@@ -257,72 +198,134 @@ function InscriptionVendeurContent() {
               Créer un compte vendeur
             </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Remplissez vos informations pour commencer
+              Renseignez votre point de vente pour commencer
             </p>
           </CardHeader>
 
           <CardContent className="space-y-4">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="businessName">Nom du dépôt</Label>
+                <Label htmlFor="businessName">Nom du point de vente</Label>
                 <div className="relative">
                   <Store className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="businessName"
                     type="text"
-                    autoComplete="businessName"
+                    autoComplete="organization"
                     placeholder="Ex: Point Gaz Bonamoussadi"
-                    value={businessName}
-                    onChange={(e) => handleInputChange("businessName", e.target.value)}
+                    value={pointName}
+                    onChange={(e) => {
+                      setPointName(e.target.value)
+                      clearFieldError("pointName")
+                    }}
                     onBlur={() => setSubmitted(true)}
                     required
-                    
                     disabled={loading}
-                    aria-invalid={submitted && !!fieldErrors.businessName}
+                    className="pl-9"
+                    aria-invalid={submitted && !!fieldErrors.pointName}
                     aria-describedby={
-                      submitted && fieldErrors.businessName ? "businessName-error" : undefined
+                      submitted && fieldErrors.pointName ? "pointName-error" : undefined
                     }
                   />
                 </div>
-                {submitted && fieldErrors.businessName && (
-                  <p
-                    id="businessName-error"
-                    className="text-sm text-destructive"
-                    role="alert"
-                  >
-                    {fieldErrors.businessName}
+                {submitted && fieldErrors.pointName && (
+                  <p id="pointName-error" className="text-sm text-destructive" role="alert">
+                    {fieldErrors.pointName}
                   </p>
                 )}
               </div>
 
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="district">Quartier</Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="district"
+                      type="text"
+                      autoComplete="address-level3"
+                      placeholder="Ex: Bonamoussadi"
+                      value={district}
+                      onChange={(e) => {
+                        setDistrict(e.target.value)
+                        clearFieldError("district")
+                      }}
+                      onBlur={() => setSubmitted(true)}
+                      required
+                      disabled={loading}
+                      className="pl-9"
+                      aria-invalid={submitted && !!fieldErrors.district}
+                      aria-describedby={
+                        submitted && fieldErrors.district ? "district-error" : undefined
+                      }
+                    />
+                  </div>
+                  {submitted && fieldErrors.district && (
+                    <p id="district-error" className="text-sm text-destructive" role="alert">
+                      {fieldErrors.district}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      autoComplete="email"
+                      placeholder="votre@email.com"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value)
+                        clearFieldError("email")
+                      }}
+                      onBlur={() => setSubmitted(true)}
+                      required
+                      disabled={loading}
+                      className="pl-9"
+                      aria-invalid={submitted && !!fieldErrors.email}
+                      aria-describedby={
+                        submitted && fieldErrors.email ? "email-error" : undefined
+                      }
+                    />
+                  </div>
+                  {submitted && fieldErrors.email && (
+                    <p id="email-error" className="text-sm text-destructive" role="alert">
+                      {fieldErrors.email}
+                    </p>
+                  )}
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="address">Adresse (rue et repères)</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="votre@email.com"
-                    value={email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
+                  <LocateFixed className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                  <Textarea
+                    id="address"
+                    autoComplete="street-address"
+                    placeholder="Ex: Rue principale, en face de la pharmacie du carrefour"
+                    value={address}
+                    onChange={(e) => {
+                      setAddress(e.target.value)
+                      clearFieldError("address")
+                    }}
                     onBlur={() => setSubmitted(true)}
+                    rows={2}
                     required
-                    
                     disabled={loading}
-                    aria-invalid={submitted && !!fieldErrors.email}
+                    className="pl-9"
+                    aria-invalid={submitted && !!fieldErrors.address}
                     aria-describedby={
-                      submitted && fieldErrors.email ? "email-error" : undefined
+                      submitted && fieldErrors.address ? "address-error" : undefined
                     }
                   />
                 </div>
-                {submitted && fieldErrors.email && (
-                  <p
-                    id="email-error"
-                    className="text-sm text-destructive"
-                    role="alert"
-                  >
-                    {fieldErrors.email}
+                {submitted && fieldErrors.address && (
+                  <p id="address-error" className="text-sm text-destructive" role="alert">
+                    {fieldErrors.address}
                   </p>
                 )}
               </div>
@@ -337,11 +340,14 @@ function InscriptionVendeurContent() {
                     autoComplete="new-password"
                     placeholder="6 caractères minimum"
                     value={password}
-                    onChange={(e) => handleInputChange("password", e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value)
+                      clearFieldError("password")
+                    }}
                     onBlur={() => setSubmitted(true)}
                     required
                     minLength={6}
-                    className="pl-10 pr-10 h-11"
+                    className="pl-9 pr-10 h-11"
                     disabled={loading}
                     aria-invalid={submitted && !!fieldErrors.password}
                     aria-describedby={
@@ -353,66 +359,80 @@ function InscriptionVendeurContent() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     disabled={loading}
-                    aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                    aria-label={
+                      showPassword
+                        ? "Masquer le mot de passe"
+                        : "Afficher le mot de passe"
+                    }
                   >
                     {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </button>
                 </div>
                 {submitted && fieldErrors.password && (
-                  <p
-                    id="password-error"
-                    className="text-sm text-destructive"
-                    role="alert"
-                  >
+                  <p id="password-error" className="text-sm text-destructive" role="alert">
                     {fieldErrors.password}
                   </p>
                 )}
               </div>
 
-            {error && (
-              <div
-                className="rounded-md bg-destructive/10 p-3 text-sm text-destructive flex items-center gap-2"
-                role="alert"
-              >
-                <AlertCircle className="size-4 shrink-0" />
-                {error}
-              </div>
-            )}
-
-            <div className="mt-6 space-y-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase tracking-wider">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    Ou continuer avec
-                  </span>
-                </div>
-              </div>
-
-              <Button
-                variant="outline"
-                className="w-full gap-2 h-11"
-                onClick={handleGoogle}
-            >
-              <Image
-                src="https://www.svgrepo.com/show/475656/google-color.svg"
-                alt="Google"
-                width={16}
-                height={16}
-                className="size-4"
+              <BrandListInput
+                values={brands}
+                onChange={(next) => {
+                  setBrands(next)
+                  clearFieldError("brands")
+                }}
+                disabled={loading}
+                error={submitted ? fieldErrors.brands : undefined}
               />
-              Continuer avec Google
-            </Button>
-            </div>
 
-            <Button type="submit" className="w-full h-11" disabled={loading}>
-              {loading
-                ? "Création en cours..."
-                : "Créer un compte vendeur"}
-            </Button>
-          </form>
+              {error && (
+                <div
+                  className="rounded-md bg-destructive/10 p-3 text-sm text-destructive flex items-center gap-2"
+                  role="alert"
+                >
+                  <AlertCircle className="size-4 shrink-0" />
+                  {error}
+                </div>
+              )}
+
+              <div className="mt-6 space-y-6">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase tracking-wider">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Ou continuer avec
+                    </span>
+                  </div>
+                </div>
+
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 h-11"
+                  onClick={handleGoogle}
+                  disabled={loading}
+                >
+                  <Image
+                    src="https://www.svgrepo.com/show/475656/google-color.svg"
+                    alt="Google"
+                    width={16}
+                    height={16}
+                    className="size-4"
+                  />
+                  Continuer avec Google
+                </Button>
+              </div>
+
+              <Button type="submit" className="w-full h-11" disabled={loading}>
+                {loading ? "Création en cours..." : "Créer un compte vendeur"}
+              </Button>
+
+              <p className="text-center text-xs text-muted-foreground">
+                Votre point de vente sera créé après la vérification de votre
+                email.
+              </p>
+            </form>
           </CardContent>
         </ModernCard>
       </div>
@@ -420,164 +440,16 @@ function InscriptionVendeurContent() {
   )
 }
 
-// -------------------------------------------------------------------
-// Page de configuration du profil vendeur (phase 2)
-// -------------------------------------------------------------------
-function ConfigurationProfilVendeur() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const mode = searchParams.get("mode") || "email"
-  const emailParam = searchParams.get("email") || ""
-  const redirectFrom = searchParams.get("redirect") || "/inscription/vendeur"
-
-  // Pré-remplir l'email dans le formulaire
-  const [email, setEmail] = useState(emailParam)
-
-  useEffect(() => {
-    // Si un compte existe déjà, on redirige
-    const { data: session } = authClient.useSession()
-    if (session?.user) {
-      router.push("/dashboard/pro")
-    }
-  }, [email])
-
-  // ---------- État du formulaire ----------
-  const [businessAddress, setBusinessAddress] = useState("")
-  const [businessPhone, setBusinessPhone] = useState("")
-  const [businessDescription, setBusinessDescription] = useState("")
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
-
-  // ---------- Validation ----------
-  const validateConfigForm = () => {
-    const businessAddressError = getBusinessAddressError(businessAddress)
-    const businessPhoneError =
-      businessPhone.trim() && /^[\d\s\+\-\(\)]+$/.test(businessPhone)
-        ? null
-        : "Le numéro de téléphone semble invalide."
-    const errors: { businessAddress?: string; businessPhone?: string } = {}
-    if (businessAddressError) errors.businessAddress = businessAddressError
-    if (businessPhoneError) errors.businessPhone = businessPhoneError
-    return errors
-  }
-
-  // ---------- Submission ----------
-  const handleConfigSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-
-    const configErrors = validateConfigForm()
-    if (Object.keys(configErrors).length > 0) {
-      setError(
-        Object.values(configErrors)
-          .filter((e) => e)
-          .join(" <br> ")
-      )
-      setLoading(false)
-      return
-    }
-
-    try {
-      // Ici, on pourrait sauvegarder la configuration dans une API
-      // pour l'instant, on se contente de rediriger vers le dashboard
-      router.push("/dashboard/pro")
-    } catch (err) {
-      console.error("[config-profil] error:", err)
-      setError("Une erreur est survenue. Veuillez réessayer.")
-      setLoading(false)
-    }
-  }
-
-  return (
-    <div className="min-h-screen bg-background px-4 py-8 flex items-center justify-center">
-      <div className="w-full max-w-md">
-        <ModernCard className="shadow-sm">
-          <CardHeader className="text-center pb-2">
-            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-success/10 text-success ring-1 ring-success/20">
-              <Store className="size-6" />
-            </div>
-            <CardTitle className="text-xl font-bold">
-              Configuration du profil vendeur
-            </CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              Complétez vos informations de boutique
-            </p>
-          </CardHeader>
-
-          <CardContent className="p-6 space-y-4">
-            <form onSubmit={handleConfigSubmit} className="space-y-4">
-              <div className="space-y-3">
-                <Label htmlFor="businessAddress">Adresse du dépôt</Label>
-                <div className="relative">
-                  <Store className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="businessAddress"
-                    type="text"
-                    autoComplete="streetAddress"
-                    placeholder="Ex: Rue principale, Bonamoussadi"
-                    value={businessAddress}
-                    onChange={(e) => setBusinessAddress(e.target.value)}
-                    required
-                    
-                    disabled={loading}
-                  />
-                </div>
-                {error && getBusinessAddressError(businessAddress) && (
-                  <p className="text-sm text-destructive" role="alert">
-                    {getBusinessAddressError(businessAddress)}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-3">
-                <PhoneInput
-                  id="businessPhone"
-                  label="Téléphone"
-                  value={businessPhone ?? undefined}
-                  onChange={(normalized) => setBusinessPhone(normalized ?? "")}
-                  required
-                  
-                  disabled={loading}
-                />
-              </div>
-
-              <div className="space-y-3">
-                <Label htmlFor="businessDescription">Description</Label>
-                <div className="relative">
-                  <Store className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Textarea
-                    id="businessDescription"
-                    placeholder="Décrivez votre point de vente (horaires, spécialités...)"
-                    value={businessDescription}
-                    onChange={(e) => setBusinessDescription(e.target.value)}
-                    rows={3}
-                    className="pl-10 h-24 resize-y"
-                    disabled={loading}
-                  />
-                </div>
-              </div>
-
-              <Button type="submit" className="w-full h-11" disabled={loading}>
-                {loading ? "Enregistrement en cours..." : "Enregistrer la configuration"}
-              </Button>
-            </form>
-            </CardContent>
-        </ModernCard>
-      </div>
-    </div>
-  )
-}
-
-// -------------------------------------------------------------------
-// Pages principales
-// -------------------------------------------------------------------
 export default function InscriptionVendeurPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Chargement...</div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          Chargement...
+        </div>
+      }
+    >
       <InscriptionVendeurContent />
     </Suspense>
   )
 }
-
-// Exportation de la page de configuration pour usage dans validation-email
-export { ConfigurationProfilVendeur }

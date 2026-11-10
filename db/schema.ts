@@ -9,6 +9,7 @@ import {
   uniqueIndex,
   jsonb,
 } from "drizzle-orm/pg-core";
+import type { VendorInventoryEntry } from "@/lib/vendor-onboarding";
 
 export type UserRole = "client" | "vendor" | "admin" | "collaborateur";
 export type AvailabilityStatus = "disponible" | "a_confirmer" | "indisponible";
@@ -195,6 +196,13 @@ export const pointDeVenteBouteille = pgTable(
       .notNull()
       .references(() => brand.id, { onDelete: "cascade" }),
     format: text("format").notNull(), // ex: '6 kg', '12,5 kg', '15 kg'
+    // Quantité réelle présente dans le dépôt (inventaire, jamais fictive).
+    quantity: integer("quantity").default(0).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE */ new Date())
+      .notNull(),
   },
   (table) => [
     uniqueIndex("point_de_vente_bouteille_unique_idx").on(
@@ -204,6 +212,46 @@ export const pointDeVenteBouteille = pgTable(
     ),
     index("point_de_vente_bouteille_point_idx").on(table.pointDeVenteId),
     index("point_de_vente_bouteille_brand_idx").on(table.brandId),
+  ]
+);
+
+/**
+ * Brouillon d'inscription vendeur.
+ *
+ * Une seule ligne par vendeur (userId unique) : les informations saisies avant
+ * la vérification OTP sont conservées, puis reprises dans la modale de
+ * finalisation. Le point de vente public n'est créé qu'à la fin du parcours.
+ */
+export const vendorOnboarding = pgTable(
+  "vendor_onboarding",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .unique()
+      .references(() => user.id, { onDelete: "cascade" }),
+    pointName: text("point_name").notNull(),
+    district: text("district").notNull(),
+    address: text("address").notNull(),
+    phone: text("phone"),
+    brands: text("brands").array().default([]).notNull(),
+    inventory: jsonb("inventory")
+      .$type<VendorInventoryEntry[]>()
+      .default([])
+      .notNull(),
+    status: text("status").default("draft").notNull(), // 'draft' | 'completed'
+    pointDeVenteId: text("point_de_vente_id").references(() => pointDeVente.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("vendor_onboarding_status_idx").on(table.status),
+    index("vendor_onboarding_point_id_idx").on(table.pointDeVenteId),
   ]
 );
 
@@ -499,7 +547,7 @@ export const paymentTransaction = pgTable(
 )
 
 export const relations = defineRelations(
-  { user, session, account, verification, pointDeVente, disponibilite, recharge, adminAction, collaborateurPermission, publicite, trafficEvent, brand, avis, reservation, vendorSubscription, paymentTransaction },
+  { user, session, account, verification, pointDeVente, disponibilite, recharge, adminAction, collaborateurPermission, publicite, trafficEvent, brand, avis, reservation, vendorSubscription, paymentTransaction, pointDeVenteBouteille, vendorOnboarding },
   (r) => ({
     user: {
       sessions: r.many.session(),
@@ -512,6 +560,10 @@ export const relations = defineRelations(
         to: r.vendorSubscription.vendorId,
       }),
       paymentTransactions: r.many.paymentTransaction(),
+      vendorOnboarding: r.one.vendorOnboarding({
+        from: r.user.id,
+        to: r.vendorOnboarding.userId,
+      }),
     },
     session: {
       user: r.one.user({
@@ -532,6 +584,27 @@ export const relations = defineRelations(
       }),
       disponibilites: r.many.disponibilite(),
       recharges: r.many.recharge(),
+      bouteilles: r.many.pointDeVenteBouteille(),
+    },
+    pointDeVenteBouteille: {
+      point: r.one.pointDeVente({
+        from: r.pointDeVenteBouteille.pointDeVenteId,
+        to: r.pointDeVente.id,
+      }),
+      brand: r.one.brand({
+        from: r.pointDeVenteBouteille.brandId,
+        to: r.brand.id,
+      }),
+    },
+    vendorOnboarding: {
+      user: r.one.user({
+        from: r.vendorOnboarding.userId,
+        to: r.user.id,
+      }),
+      pointDeVente: r.one.pointDeVente({
+        from: r.vendorOnboarding.pointDeVenteId,
+        to: r.pointDeVente.id,
+      }),
     },
     disponibilite: {
       point: r.one.pointDeVente({

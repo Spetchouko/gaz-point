@@ -30,7 +30,18 @@ import {
 } from "@/app/dashboard/pro/actions"
 import { useRouter } from "next/navigation"
 import { PointDeVenteCard } from "@/app/_components/cards"
+import { VendorPointOnboardingModal } from "@/app/_components/vendor-point-onboarding-modal"
 import { usePathname } from "next/navigation"
+import type { VendorInventoryEntry } from "@/lib/vendor-onboarding"
+
+type VendorOnboardingInitial = {
+  pointName: string
+  district: string
+  address: string
+  phone: string | null
+  brands: string[]
+  inventory: VendorInventoryEntry[]
+}
 
 type DispoRow = {
   id: string
@@ -55,7 +66,7 @@ type PointWithStats = {
   totalQuantity: number
   lastUpdate: string | Date | null
   hasPointBottles: boolean
-  pointBottles: Array<{ brand: string; format: string }>
+  pointBottles: Array<{ brand: string; format: string; quantity?: number }>
 }
 
 type GlobalStats = {
@@ -84,15 +95,20 @@ export function DashboardVendeur({
   globalStats,
   pathwayStatus,
   bottlesByPoint,
+  needsOnboarding,
+  onboardingInitial,
 }: {
   vendorName: string
   points: PointWithStats[]
   globalStats: GlobalStats
   pathwayStatus: PathwayStep[]
-  bottlesByPoint: Map<string, Array<{ brand: string; format: string }>>
+  bottlesByPoint: Map<string, Array<{ brand: string; format: string; quantity?: number }>>
+  needsOnboarding: boolean
+  onboardingInitial: VendorOnboardingInitial
 }) {
   const router = useRouter()
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false)
   const [editingDispo, setEditingDispo] = useState<{
     dispo: PointWithStats["disponibilites"][0]
     pointId: string
@@ -122,6 +138,36 @@ export function DashboardVendeur({
           </p>
         </div>
       </header>
+
+      {/* Finalisation du point de vente (parcours vendeur) */}
+      {needsOnboarding && (
+        <section className="rounded-xl border border-primary/30 bg-primary/5 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                <Store className="size-5" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold leading-relaxed">
+                  Finalisez la création de votre point de vente pour commencer à
+                  gérer vos bouteilles.
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Vos informations saisies sont conservées : vous pouvez
+                  reprendre à tout moment.
+                </p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              onClick={() => setIsOnboardingOpen(true)}
+              className="shrink-0"
+            >
+              <CheckCircle2 className="size-4" /> Compléter mon point de vente
+            </Button>
+          </div>
+        </section>
+      )}
 
       {/* Chemin de progression */}
       <div className="mb-4 border-b border-border/20 pb-3">
@@ -188,11 +234,18 @@ export function DashboardVendeur({
                 disponibilités de gaz.
               </p>
               <Button
-                onClick={() => setIsFormOpen(true)}
+                onClick={() =>
+                  needsOnboarding
+                    ? setIsOnboardingOpen(true)
+                    : router.push("/dashboard/vendeur/points-de-vente")
+                }
                 className="mt-4 mt-auto"
                 variant="default"
               >
-                <Plus className="size-4" /> Ajouter un point de vente
+                <Plus className="size-4" />
+                {needsOnboarding
+                  ? "Compléter mon point de vente"
+                  : "Ajouter un point de vente"}
               </Button>
             </div>
           ) : (
@@ -430,6 +483,14 @@ export function DashboardVendeur({
           </div>
         </div>
       </section>
+
+      {/* Modale de finalisation du point de vente */}
+      <VendorPointOnboardingModal
+        open={needsOnboarding && isOnboardingOpen}
+        onOpenChange={setIsOnboardingOpen}
+        vendorName={vendorName}
+        initial={onboardingInitial}
+      />
     </div>
   )
 }

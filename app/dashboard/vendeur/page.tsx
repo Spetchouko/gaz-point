@@ -2,7 +2,15 @@ import { asc, count, desc, eq, and, inArray } from "drizzle-orm"
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { db } from "@/db"
-import { user, pointDeVente, disponibilite, brand, pointDeVenteBouteille, reservation } from "@/db/schema"
+import {
+  user,
+  pointDeVente,
+  disponibilite,
+  brand,
+  pointDeVenteBouteille,
+  reservation,
+  vendorOnboarding,
+} from "@/db/schema"
 import { DashboardVendeur } from "@/app/_components/dashboard-vendeur"
 import { VendorLayout } from "@/app/_components/vendor-layout"
 import { requirePro } from "@/lib/session"
@@ -40,22 +48,35 @@ export default async function DashboardVendeurPage() {
     .where(eq(pointDeVente.vendorId, user.id))
     .orderBy(asc(pointDeVente.name))
 
-  // Get bottles for each point de vente
-  let bottlesByPoint = new Map<string, Array<{ brand: string; format: string }>>()
+  // Brouillon d'onboarding du vendeur (une seule ligne par compte).
+  const [onboardingRow] = await db
+    .select()
+    .from(vendorOnboarding)
+    .where(eq(vendorOnboarding.userId, user.id))
+    .limit(1)
+
+  // Get bottles for each point de vente (avec la quantité réelle en stock)
+  let bottlesByPoint = new Map<
+    string,
+    Array<{ brand: string; format: string; quantity: number }>
+  >()
+  let inventoryQuantity = 0
   if (points.length > 0) {
     const bottleRows = await db
       .select({
         pointDeVenteId: pointDeVenteBouteille.pointDeVenteId,
         brand: brand.name,
         format: pointDeVenteBouteille.format,
+        quantity: pointDeVenteBouteille.quantity,
       })
       .from(pointDeVenteBouteille)
       .innerJoin(brand, eq(pointDeVenteBouteille.brandId, brand.id))
       .where(inArray(pointDeVenteBouteille.pointDeVenteId, points.map((p) => p.id)))
     for (const row of bottleRows) {
       const existing = bottlesByPoint.get(row.pointDeVenteId) ?? []
-      existing.push({ brand: row.brand, format: row.format })
+      existing.push({ brand: row.brand, format: row.format, quantity: row.quantity })
       bottlesByPoint.set(row.pointDeVenteId, existing)
+      inventoryQuantity += row.quantity
     }
   }
 
@@ -83,7 +104,6 @@ export default async function DashboardVendeurPage() {
   ]
 
   const dispoByPoint = new Map<string, DispoRow[]>()
-  let totalQuantity = 0
   let lastUpdate: Date | null = null
 
   if (points.length > 0) {
@@ -97,9 +117,6 @@ export default async function DashboardVendeurPage() {
       existing.push(report)
       dispoByPoint.set(report.pointId, existing)
 
-      if (report.status === "disponible" && report.quantity && report.quantity > 0) {
-        totalQuantity += report.quantity
-      }
       if (!lastUpdate || new Date(report.createdAt) > lastUpdate) {
         lastUpdate = new Date(report.createdAt)
       }
@@ -136,12 +153,30 @@ export default async function DashboardVendeurPage() {
   const globalStats = {
     totalPoints: points.length,
     totalDispos: pointsWithStats.reduce((sum, p) => sum + p.disponibilites.length, 0),
-    totalQuantity,
+    // Stock réel : somme des quantités d'inventaire du vendeur (aucune
+    // valeur fictive, aucun point d'un autre vendeur).
+    totalQuantity: inventoryQuantity,
     availablePoints: pointsWithStats.filter((p) => p.isAvailable).length,
     lastUpdate,
     hasPointDeVente,
     hasBottles,
     hasDisponibilites,
+  }
+
+  // L'onboarding est requis tant que le point de vente n'est pas finalisé.
+  // Un vendeur Google (sans brouillon) mais déjà doté d'un point de vente
+  // n'est pas relancé.
+  const needsOnboarding = onboardingRow
+    ? onboardingRow.status !== "completed"
+    : points.length === 0
+
+  const onboardingInitial = {
+    pointName: onboardingRow?.pointName ?? user.name ?? "",
+    district: onboardingRow?.district ?? "",
+    address: onboardingRow?.address ?? "",
+    phone: onboardingRow?.phone ?? null,
+    brands: onboardingRow?.brands ?? [],
+    inventory: onboardingRow?.inventory ?? [],
   }
 
   const [totalReservations, pendingReservations] = await Promise.all([
@@ -176,6 +211,8 @@ export default async function DashboardVendeurPage() {
         }}
         pathwayStatus={pathwayStatus}
         bottlesByPoint={bottlesByPoint}
+        needsOnboarding={needsOnboarding}
+        onboardingInitial={onboardingInitial}
       />
     </VendorLayout>
   )

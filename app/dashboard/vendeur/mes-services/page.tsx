@@ -1,3 +1,4 @@
+import { useRouter } from "next/navigation"
 import { and, asc, count, eq, inArray } from "drizzle-orm"
 import type { Metadata } from "next"
 import { db } from "@/db"
@@ -17,6 +18,7 @@ import {
 } from "@/components/ui/card"
 import { Store, MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { updatePointServices } from "../mes-bouteilles/actions"
 
 export const metadata: Metadata = {
   title: { absolute: "Mes services | GazPoints" },
@@ -24,12 +26,13 @@ export const metadata: Metadata = {
 
 export default async function MesServicesPage() {
   const { user, role } = await requirePro()
+  const router = useRouter()
 
   if (role !== "vendor") {
     return <div>Accès réservé aux vendeurs.</div>
   }
 
-  // Get vendor's points de vente with their disponibilites to understand services
+  // Get vendor's points de vente with their services
   const points = await db
     .select({
       id: pointDeVente.id,
@@ -113,65 +116,71 @@ export default async function MesServicesPage() {
           </div>
         </div>
 
-        {/* Configuration par point de vente */}
-        {points.map((point) => (
-          <Card
-            key={point.id}
-            className="mb-4 hover:shadow-sm transition-shadow"
-          >
-            <CardHeader className="flex flex-wrap items-start justify-between gap-2 pb-3">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Store className="size-4 text-primary" aria-hidden />
-                  {point.name}
-                </CardTitle>
-                <CardDescription className="mt-1 flex items-center gap-1.5">
-                  <MapPin className="size-3.5 shrink-0" aria-hidden />
-                  {point.district}
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">
-                  {totalDispoDelivery} dispo delivery, {totalDispoExchange} dispo exchange, {totalDispoGasSale} dispo gas sale
-                </span>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <form
-                className="grid gap-4 pt-4"
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  // Would handle service configuration
-                  toast.info("Configuration en cours...")
-                }}
+        {points.length === 0 ? (
+          <Card className="mb-6">
+            <CardContent className="p-6 text-center">
+              <p className="text-muted-foreground">
+                Aucun point de vente pour l'instant. Créez d'abord votre point
+                de vente pour pouvoir configurer les services.
+              </p>
+              <Button
+                variant="default"
+                onClick={() => router.push("/dashboard/vendeur/points-de-vente")}
               >
+                Créer mon point de vente
+              </Button>
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {/* Configuration par point de vente */}
+        <form
+          action={(formData: FormData) => updatePointServices(null, formData)}
+          className="space-y-6"
+        >
+          {points.map((point) => (
+            <Card key={point.id} className="mb-4 hover:shadow-sm transition-shadow">
+              <CardHeader className="flex flex-wrap items-start justify-between gap-2 pb-3">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Store className="size-4 text-primary" aria-hidden />
+                    {point.name}
+                  </CardTitle>
+                  <CardDescription className="mt-1 flex items-center gap-1.5">
+                    <MapPin className="size-3.5 shrink-0" aria-hidden />
+                    {point.district}
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    {totalDispoDelivery} dispo delivery, {totalDispoExchange} dispo exchange, {totalDispoGasSale} dispo gas sale
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <input type="hidden" name="pointId" value={point.id} />
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <Label htmlFor="delivery-{point.id}">
+                    <Label htmlFor={`delivery-${point.id}`}>
                       <input
                         type="checkbox"
                         id={`delivery-${point.id}`}
+                        name="deliveryEnabled"
                         checked={point.delivery || false}
                         className="size-4 rounded border-input text-primary focus:ring-primary/50"
-                        onChange={(e) => {
-                          // Would update point de vente delivery setting
-                          console.log("Livraison:", e.target.checked)
-                        }}
                       />
                       <span>Activer la livraison à domicile</span>
                     </Label>
                   </div>
                   <div>
-                    <Label htmlFor="gas-sale-{point.id}">
+                    <Label htmlFor={`gas-sale-${point.id}`}>
                       <input
                         type="checkbox"
                         id={`gas-sale-${point.id}`}
+                        name="gasSaleEnabled"
                         checked={point.gasSale || false}
                         className="size-4 rounded border-input text-primary focus:ring-primary/50"
-                        onChange={(e) => {
-                          // Would update point de vente gas sale setting
-                          console.log("Vente gaz:", e.target.checked)
-                        }}
                       />
                       <span>Vente de bouteilles chargées</span>
                     </Label>
@@ -180,101 +189,96 @@ export default async function MesServicesPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <Label htmlFor="exchange-{point.id}">
+                    <Label htmlFor={`exchange-${point.id}`}>
                       <input
                         type="checkbox"
                         id={`exchange-${point.id}`}
+                        name="exchangeEnabled"
                         checked={point.exchange || false}
                         className="size-4 rounded border-input text-primary focus:ring-primary/50"
-                        onChange={(e) => {
-                          // Would update point de vente exchange setting
-                          console.log("Échange:", e.target.checked)
-                        }}
                       />
                       <span>Activer l'échange de bouteilles</span>
                     </Label>
                   </div>
                   <div>
-                    <Label htmlFor="exchange-fee-{point.id}">
+                    <Label htmlFor={`delivery-fee-${point.id}`}>
+                      Frais de livraison (FCFA)
                       <input
                         type="number"
-                        id={`exchange-fee-${point.id}`}
+                        id={`delivery-fee-${point.id}`}
+                        name="deliveryFee"
                         value={point.deliveryFee || 0}
                         min={0}
                         className="w-full rounded-lg border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                        onChange={(e) => {
-                          // Would update exchange setting
-                          console.log("Frais échange:", e.target.value)
-                        }}
                       />
-                      <span>Frais d'échange (FCFA)</span>
                     </Label>
                   </div>
                 </div>
 
                 {/* marques acceptées pour l'échange */}
-                {point.exchangeBrands && point.exchangeBrands.length > 0 ? (
+                <div className="mt-3">
+                  <Label htmlFor={`exchange-brands-${point.id}`}>
+                    Marques acceptées pour l'échange
+                  </Label>
+                  <input
+                    type="text"
+                    id={`exchange-brands-${point.id}`}
+                    name="exchangeBrands"
+                    value={point.exchangeBrands?.join(", ") || ""}
+                    placeholder="Ex: Total, Tradex, Bocom (séparé par des virgules)"
+                    className="w-full rounded-lg border-input px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Séparer plusieurs marques par des virgules
+                  </p>
+                </div>
+
+                <div className="mt-3">
+                  <Label htmlFor={`exchange-formats-${point.id}`}>
+                    Grammages acceptés pour l'échange
+                  </Label>
+                  <input
+                    type="text"
+                    id={`exchange-formats-${point.id}`}
+                    name="exchangeFormats"
+                    value={point.exchangeFormats?.join(", ") || ""}
+                    placeholder="Ex: 6 kg, 12,5 kg, 15 kg (séparé par des virgules)"
+                    className="w-full rounded-lg border-input px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Séparer plusieurs grammages par des virgules
+                  </p>
+                </div>
+
+                {point.exchangeBrands && point.exchangeBrands.length > 0 && (
                   <div className="mt-3 p-3 rounded-lg border border-warning/30 bg-warning/5">
                     <p className="text-sm font-medium text-warning mb-2">
                       Marques acceptées pour l'échange :
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {point.exchangeBrands.map((brand) => (
-                        <span
-                          key={brand}
-                          className="px-2 py-1 text-xs rounded bg-warning/20 text-warning"
-                        >
+                        <span key={brand} className="px-2 py-1 text-xs rounded bg-warning/20 text-warning">
                           {brand}
                         </span>
                       ))}
                     </div>
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground mt-3">
-                    Aucune marque n'est sélectionnée pour l'échange
-                  </p>
                 )}
+              </CardContent>
+            </Card>
+          ))}
 
-                <div className="mt-3">
-                  <Label htmlFor="exchange-brands-{point.id}">
-                    <input
-                      type="text"
-                      id={`exchange-brands-${point.id}`}
-                      value={point.exchangeBrands?.join(", ") || ""}
-                      onChange={(e) => {
-                        // Would update exchange brands
-                        console.log("Nouvelles marques:", e.target.value)
-                      }}
-                      placeholder="Ex: Total, Tradex, Bocom (séparé par des virgules)"
-                      className="w-full rounded-lg border-input px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Séparer plusieurs marques par des virgules
-                    </p>
-                  </Label>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        ))}
-
-        {/* Bouton pour sauvegarder les configurations */}
-        <div className="mt-6 p-4 rounded-lg border border-border bg-white shadow-sm">
-          <p className="text-sm text-muted-foreground mb-3">
-            Vos configurations de services seront appliquées aux nouvelles disponibilités
-            et seront visibles dans la recherche cliente.
-          </p>
-          <Button
-            variant="default"
-            size="lg"
-            onClick={() => {
-              // Would save all service configurations
-              toast.success("Configurations sauvegardées avec succès")
-            }}
-          >
-            Enregistrer toutes les configurations
-          </Button>
-        </div>
+          {/* Bouton pour sauvegarder les configurations */}
+          <div className="mt-6 p-4 rounded-lg border border-border bg-white shadow-sm">
+            <p className="text-sm text-muted-foreground mb-3">
+              Vos configurations de services seront appliquées aux nouvelles disponibilités
+              et seront visibles dans la recherche cliente.
+            </p>
+            <Button variant="default" size="lg">
+              Enregistrer toutes les configurations
+            </Button>
+          </div>
+        </form>
       </div>
     </VendorLayout>
   )

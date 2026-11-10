@@ -1,10 +1,12 @@
-import { Suspense } from "react"
-import { ConfigurationProfilVendeur } from "../page"
+import { redirect } from "next/navigation"
 
+/**
+ * Ancienne étape « configuration du profil vendeur ».
+ *
+ * Les informations du point de vente sont désormais saisies à l'inscription
+ * puis finalisées depuis le dashboard vendeur. Ce chemin redirige simplement
+ * pour ne pas casser les anciens liens (et éviter un doublon de parcours).
+ */
 export default function ConfigurationProfilVendeurPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Chargement...</div>}>
-      <ConfigurationProfilVendeur />
-    </Suspense>
-  )
+  redirect("/dashboard/vendeur")
 }

@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { CheckCircle, AlertCircle, Loader2, Clock, Mail } from "lucide-react"
 
 import { trackEvent } from "@/lib/analytics"
+import { safeRedirect } from "@/lib/utils"
 
 const CODE_LENGTH = 6
 const RESEND_COOLDOWN_SECONDS = 60
@@ -22,6 +23,18 @@ function ValidationEmailContent() {
   const linkVerified = params.get("verified") === "1"
   const emailSentFromUrl = params.get("sent") === "1"
 
+  // Cible demandée par le parcours d'inscription (ex: /dashboard/vendeur pour
+  // un vendeur). Si absente, la page de connexion choisit selon le rôle.
+  const redirectTarget = safeRedirect(params.get("redirect"), "")
+
+  const connexionUrl = useCallback(() => {
+    const search = new URLSearchParams()
+    if (email) search.set("email", email)
+    if (redirectTarget) search.set("redirect", redirectTarget)
+    const query = search.toString()
+    return query ? `/connexion?${query}` : "/connexion"
+  }, [email, redirectTarget])
+
   const [code, setCode] = useState("")
   const [error, setError] = useState("")
   const [notice, setNotice] = useState(emailSentFromUrl ? "Un code de verification a ete envoye a votre adresse email." : "")
@@ -34,9 +47,9 @@ function ValidationEmailContent() {
 
   useEffect(() => {
     if (session?.user?.emailVerified) {
-      router.push(`/connexion?email=${encodeURIComponent(session.user.email ?? "")}`)
+      router.push(connexionUrl())
     }
-  }, [router, session])
+  }, [router, session, connexionUrl])
 
   useEffect(() => {
     if (linkVerified && email) {
@@ -45,14 +58,14 @@ function ValidationEmailContent() {
       setError("")
       setCode("")
       const timer = setTimeout(() => {
-        // Check if vendor by making a quick API call or use session
-        // For now, redirect to a page that will determine the right destination
-        router.push(`/connexion?email=${encodeURIComponent(email)}&redirect=auto`)
+        // Redirige vers la connexion en conservant la cible du parcours
+        // (ex: /dashboard/vendeur pour un vendeur).
+        router.push(connexionUrl())
         router.refresh()
       }, 800)
       return () => clearTimeout(timer)
     }
-  }, [linkVerified, email, router])
+  }, [linkVerified, email, router, connexionUrl])
 
   useEffect(() => {
     if (resendCooldown <= 0) return
@@ -162,13 +175,13 @@ function ValidationEmailContent() {
       // Événement analytics : email vérifié
       trackEvent({ eventType: "email_verified", path: "/validation-email" })
       await new Promise((r) => setTimeout(r, 800))
-      router.push(`/connexion?email=${encodeURIComponent(email)}`)
+      router.push(connexionUrl())
       router.refresh()
     } catch {
       setError("Une erreur inattendue est survenue. Veuillez reessayer.")
       setLoading(false)
     }
-  }, [loading, success, email, router])
+  }, [loading, success, email, router, connexionUrl])
 
   const renvoyerCode = async () => {
     if (resending || resendCooldown > 0) return

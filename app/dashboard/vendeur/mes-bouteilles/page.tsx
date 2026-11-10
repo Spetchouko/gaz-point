@@ -1,13 +1,11 @@
-import { and, asc, count, eq, inArray } from "drizzle-orm"
+import { asc, count, eq, inArray, sum } from "drizzle-orm"
 import type { Metadata } from "next"
+import Link from "next/link"
 import { db } from "@/db"
 import { pointDeVente, brand, pointDeVenteBouteille } from "@/db/schema"
 import { VendorLayout } from "@/app/_components/vendor-layout"
 import { requirePro } from "@/lib/session"
-import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
   Card,
   CardContent,
@@ -15,8 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Store, MapPin, Plus, Edit, X } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Store, MapPin, Plus, Package } from "lucide-react"
 
 export const metadata: Metadata = {
   title: { absolute: "Mes bouteilles | GazPoints" },
@@ -24,12 +21,13 @@ export const metadata: Metadata = {
 
 export default async function MesBouteillesPage() {
   const { user, role } = await requirePro()
+  const router = useRouter()
 
   if (role !== "vendor") {
     return <div>Accès réservé aux vendeurs.</div>
   }
 
-  // Get vendor's points de vente
+  // Points de vente du vendeur connecté uniquement (isolation entre vendeurs).
   const points = await db
     .select({
       id: pointDeVente.id,
@@ -39,37 +37,61 @@ export default async function MesBouteillesPage() {
     .where(eq(pointDeVente.vendorId, user.id))
     .orderBy(asc(pointDeVente.name))
 
-  // Get bottles for each point de vente
-  const pointsWithBottles = await Promise.all(
-    points.map(async (point) => {
-      const bottles = await db
-        .select({
-          id: pointDeVenteBouteille.id,
-          brandId: pointDeVenteBouteille.brandId,
-          format: pointDeVenteBouteille.format,
-          brand: brand.name,
-        })
-        .from(pointDeVenteBouteille)
-        .innerJoin(brand, eq(pointDeVenteBouteille.brandId, brand.id))
-        .where(eq(pointDeVenteBouteille.pointDeVenteId, point.id))
-        .orderBy(asc(brand.name))
+  const pointIds = points.map((point) => point.id)
 
-      return {
-        pointId: point.id,
-        pointName: point.name,
-        bottles: bottles.map((b) => ({
-          id: b.id,
-          brand: b.brand,
-          format: b.format,
-        })),
-      }
+  // Bouteilles de CHAQUE point du vendeur, avec la quantité réelle en stock.
+  const bottleRows =
+    pointIds.length > 0
+      ? await db
+          .select({
+            id: pointDeVenteBouteille.id,
+            pointDeVenteId: pointDeVenteBouteille.pointDeVenteId,
+            format: pointDeVenteBouteille.format,
+            quantity: pointDeVenteBouteille.quantity,
+            brand: brand.name,
+          })
+          .from(pointDeVenteBouteille)
+          .innerJoin(brand, eq(pointDeVenteBouteille.brandId, brand.id))
+          .where(inArray(pointDeVenteBouteille.pointDeVenteId, pointIds))
+          .orderBy(asc(brand.name), asc(pointDeVenteBouteille.format))
+      : []
+
+  const bottlesByPoint = new Map<
+    string,
+    Array<{ id: string; brand: string; format: string; quantity: number }>
+  >()
+  for (const row of bottleRows) {
+    const list = bottlesByPoint.get(row.pointDeVenteId) ?? []
+    list.push({
+      id: row.id,
+      brand: row.brand,
+      format: row.format,
+      quantity: row.quantity,
     })
-  )
+    bottlesByPoint.set(row.pointDeVenteId, list)
+  }
 
-  const [totalBottles] = await db
-    .select({ count: count() })
-    .from(pointDeVenteBouteille)
-    .innerJoin(brand, eq(pointDeVenteBouteille.brandId, brand.id))
+  const pointsWithBottles = points.map((point) => ({
+    pointId: point.id,
+    pointName: point.name,
+    bottles: bottlesByPoint.get(point.id) ?? [],
+  }))
+
+  // Totaux scopeés au vendeur : nombre de références et quantité totale
+  // réellement présente dans ses dépôts.
+  const [totals] =
+    pointIds.length > 0
+      ? await db
+          .select({
+            references: count(),
+            quantity: sum(pointDeVenteBouteille.quantity),
+          })
+          .from(pointDeVenteBouteille)
+          .where(inArray(pointDeVenteBouteille.pointDeVenteId, pointIds))
+      : [{ references: 0, quantity: null as string | null }]
+
+  const totalReferences = Number(totals?.references ?? 0)
+  const totalQuantity = Number(totals?.quantity ?? 0)
 
   return (
     <VendorLayout
@@ -78,161 +100,122 @@ export default async function MesBouteillesPage() {
       vendorEmail={user.email}
     >
       <div className="p-6">
-        <h1 className="text-2xl font-bold tracking-tight mb-6">
-          Mes bouteilles
-        </h1>
-
-        <div className="mb-6">
-          <p className="text-sm text-muted-foreground mb-3">
-            Enregistrez les marques et grammages de bouteilles présents dans votre dépôt.
-          </p>
-          <p className="text-primary font-medium">
-            Total enregistrées: {totalBottles.count}
-          </p>
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Mes bouteilles</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Marques et grammages présents dans vos dépôts, avec la quantité
+              réelle en stock.
+            </p>
+            <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-medium text-primary">
+              <span>
+                Références enregistrées : {totalReferences}
+              </span>
+              <span>
+                Quantité totale en stock : {totalQuantity} bouteille
+                {totalQuantity > 1 ? "s" : ""}
+              </span>
+            </p>
+          </div>
+          <Button type="button" render={<Link href="/dashboard/vendeur" />}>
+            <Package className="size-4" /> Gérer mon inventaire
+          </Button>
         </div>
 
-        {pointsWithBottles.map((point, pointIndex) => (
-          <Card key={point.pointId} className="mb-4 hover:shadow-sm transition-shadow">
-            <CardHeader className="flex flex-wrap items-start justify-between gap-2 pb-3">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Store className="size-4 text-primary" aria-hidden />
-                  {point.pointName}
-                </CardTitle>
-                <CardDescription className="mt-1 flex items-center gap-1.5">
-                  <MapPin className="size-3.5 shrink-0" aria-hidden />
-                  {pointsWithBottles.length > 1 ? `Point de vente ${pointIndex + 1}` : ""}
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">
-                  {point.bottles.length} bouteille{point.bottles.length !== 1 ? "s" : ""}
-                </span>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {point.bottles.length === 0 ? (
-                <div className="p-4 text-center text-muted-foreground">
-                  <span className="flex size-6 items-center justify-center rounded-full bg-primary/10 text-primary mb-2">
-                    <Plus className="size-4" />
-                  </span>
-                  <p>Aucune bouteille enregistrée pour le moment</p>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => window.location.href = "/dashboard/vendeur"}
-                  >
-                    <Plus className="size-4" /> Créer votre première bouteille
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  {point.bottles.map((bottle) => (
-                    <div
-                      key={bottle.id}
-                      className="p-3 rounded-lg border border-border bg-muted/50"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-primary">{bottle.brand}</span>
-                        <span className="text-sm text-muted-foreground">-</span>
-                        <span className="font-mono">{bottle.format}</span>
-                      </div>
-                      <div className="mt-2 flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label="Modifier"
-                          className="p-1"
-                          onClick={() => {
-                            // Edit logic would go here
-                          }}
-                        >
-                          <Edit className="size-4" />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          aria-label="Supprimer"
-                          className="p-1"
-                          onClick={() => {
-                            // Delete logic would go here
-                            // Could call an API to delete the bottle
-                            console.log("Supprimer bouteille:", bottle.id)
-                          }}
-                        >
-                          <X className="size-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+        {pointsWithBottles.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+              <span className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <Store className="size-5" />
+              </span>
+              <p className="font-medium">Aucun point de vente enregistré</p>
+              <p className="max-w-md text-sm text-muted-foreground">
+                Finalisez votre point de vente pour commencer à gérer vos
+                bouteilles.
+              </p>
+              <Button type="button" render={<Link href="/dashboard/vendeur" />}>
+                <Plus className="size-4" /> Finaliser mon point de vente
+              </Button>
             </CardContent>
           </Card>
-        ))}
-
-        {/* Formulaire d'ajout de bouteille */}
-        <Card className="mt-6 p-6">
-          <CardHeader>
-            <CardTitle>Ajouter une nouvelle bouteille</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form
-              className="grid gap-4"
-              onSubmit={(e) => {
-                e.preventDefault()
-                const formData = new FormData(e.currentTarget)
-                const brandName = String(formData.get("brand") ?? "").trim()
-                const format = String(formData.get("format") ?? "").trim()
-
-                if (!brandName || !format) {
-                  toast.error("Veuillez remplir tous les champs")
-                  return
-                }
-
-                // Check for duplicate
-                // Table point_de_vente_bouteille non définie dans le schéma —
-                // vérification de doublon différée à l'implémentation réelle
-
-                // In a real implementation, we'd need to:
-                // 1. Resolve or create the brand entry
-                // 2. Insert into point_de_vente_bouteille
-                // 3. Revalidate and show success
-
-                toast.success("Bouteille enregistrée avec succès")
-              }}
-            >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="brand">Marque de bouteille</Label>
-                  <Input
-                    id="brand"
-                    type="text"
-                    placeholder="Ex: Total, Tradex, Bocom, Neptune, SCTM"
-                    required
-                    className="w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="format">Grammage</Label>
-                  <Input
-                    id="format"
-                    type="text"
-                    placeholder="Ex: 6 kg, 12,5 kg, 15 kg"
-                    required
-                    className="w-full rounded-lg border border-input px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="ghost" onClick={() => window.history.back()}>
-                  Annuler
-                </Button>
-                <Button type="submit" className="ml-auto">Enregistrer</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+        ) : (
+          pointsWithBottles.map((point, pointIndex) => {
+            const pointQuantity = point.bottles.reduce(
+              (sumQty, bottle) => sumQty + bottle.quantity,
+              0
+            )
+            return (
+              <Card
+                key={point.pointId}
+                className="mb-4 hover:shadow-sm transition-shadow"
+              >
+                <CardHeader className="flex flex-wrap items-start justify-between gap-2 pb-3">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Store className="size-4 text-primary" aria-hidden />
+                      {point.pointName}
+                    </CardTitle>
+                    <CardDescription className="mt-1 flex items-center gap-1.5">
+                      <MapPin className="size-3.5 shrink-0" aria-hidden />
+                      {pointsWithBottles.length > 1
+                        ? `Point de vente ${pointIndex + 1}`
+                        : "Votre dépôt"}
+                    </CardDescription>
+                  </div>
+                  <div className="text-right text-sm text-muted-foreground">
+                    <p>
+                      {point.bottles.length} référence
+                      {point.bottles.length !== 1 ? "s" : ""}
+                    </p>
+                    <p className="font-medium text-primary">
+                      {pointQuantity} bouteille{pointQuantity > 1 ? "s" : ""}
+                    </p>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  {point.bottles.length === 0 ? (
+                    <div className="p-4 text-center text-muted-foreground">
+                      <p>Aucune bouteille enregistrée pour le moment</p>
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="sm"
+                        className="mt-3"
+                        render={<Link href="/dashboard/vendeur" />}
+                      >
+                        <Plus className="size-4" /> Ajouter des bouteilles
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {point.bottles.map((bottle) => (
+                        <div
+                          key={bottle.id}
+                          className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/50 p-3"
+                        >
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="truncate font-medium text-primary">
+                                {bottle.brand}
+                              </span>
+                              <span className="text-sm text-muted-foreground">
+                                —
+                              </span>
+                              <span className="font-mono">{bottle.format}</span>
+                            </div>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {bottle.quantity} en stock
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })
+        )}
       </div>
     </VendorLayout>
   )

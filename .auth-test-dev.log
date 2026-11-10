@@ -1,0 +1,258 @@
+$ next dev
+▲ Next.js 16.3.7 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://10.255.255.254:3000
+- Environments: .env
+✓ Ready in 605ms
+✓ Running next.config.ts took 169ms
+- Experiments (use with caution):
+  · serverActions
+
+ GET /api/auth/get-session 200 in 1393ms (next.js: 1284ms, application-code: 110ms)
+[2m2026-11-10T06:35:21.032Z[0m [31mERROR[0m [1m[Better Auth]:[0m DrizzleQueryError Error [DrizzleQueryError]: Failed query: select "id", "name", "email", "email_verified", "phone_number", "phone_verified", "phone_number_verified", "role", "image", "is_active", "must_change_password", "approval_status", "approval_requested_at", "approval_processed_at", "approval_processed_by", "rejection_reason", "created_at", "updated_at" from "user" where "user"."email" = $1
+params: nobody@example.com
+    at async handleAuthPost (app/api/auth/[...all]/route.ts:36:12)
+  34 |
+  35 |   try {
+> 36 |     return await handler.POST(req);
+     |            ^
+  37 |   } catch (error) {
+  38 |     console.error("[Better Auth] Handler error:", {
+  39 |       path, {
+  query: 'select "id", "name", "email", "email_verified", "phone_number", "phone_verified", "phone_number_verified", "role", "image", "is_active", "must_change_password", "approval_status", "approval_requested_at", "approval_processed_at", "approval_processed_by", "rejection_reason", "created_at", "updated_at" from "user" where "user"."email" = $1',
+  params: [ 'nobody@example.com' ],
+  [cause]: Error [NeonDbError]: Error connecting to database: TypeError: fetch failed
+      at async handleAuthPost (app/api/auth/[...all]/route.ts:36:12)
+    34 |
+    35 |   try {
+  > 36 |     return await handler.POST(req);
+       |            ^
+    37 |   } catch (error) {
+    38 |     console.error("[Better Auth] Handler error:", {
+    39 |       path, {
+    severity: undefined,
+    code: undefined,
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: undefined,
+    line: undefined,
+    routine: undefined,
+    sourceError: [TypeError: fetch failed] { [cause]: [AggregateError] }
+  }
+}
+# SERVER_ERROR:  Error [DrizzleQueryError]: Failed query: select "id", "name", "email", "email_verified", "phone_number", "phone_verified", "phone_number_verified", "role", "image", "is_active", "must_change_password", "approval_status", "approval_requested_at", "approval_processed_at", "approval_processed_by", "rejection_reason", "created_at", "updated_at" from "user" where "user"."email" = $1
+params: nobody@example.com
+    at async handleAuthPost (app/api/auth/[...all]/route.ts:36:12)
+  34 |
+  35 |   try {
+> 36 |     return await handler.POST(req);
+     |            ^
+  37 |   } catch (error) {
+  38 |     console.error("[Better Auth] Handler error:", {
+  39 |       path, {
+  query: 'select "id", "name", "email", "email_verified", "phone_number", "phone_verified", "phone_number_verified", "role", "image", "is_active", "must_change_password", "approval_status", "approval_requested_at", "approval_processed_at", "approval_processed_by", "rejection_reason", "created_at", "updated_at" from "user" where "user"."email" = $1',
+  params: [ 'nobody@example.com' ],
+  [cause]: Error [NeonDbError]: Error connecting to database: TypeError: fetch failed
+      at async handleAuthPost (app/api/auth/[...all]/route.ts:36:12)
+    34 |
+    35 |   try {
+  > 36 |     return await handler.POST(req);
+       |            ^
+    37 |   } catch (error) {
+    38 |     console.error("[Better Auth] Handler error:", {
+    39 |       path, {
+    severity: undefined,
+    code: undefined,
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: undefined,
+    line: undefined,
+    routine: undefined,
+    sourceError: [TypeError: fetch failed] { [cause]: [AggregateError] }
+  }
+}
+ POST /api/auth/sign-in/email 500 in 3.2s (next.js: 19ms, application-code: 3.2s)
+[2m2026-11-10T06:35:21.359Z[0m [31mERROR[0m [1m[Better Auth]:[0m DrizzleQueryError Error [DrizzleQueryError]: Failed query: select "id", "name", "email", "email_verified", "phone_number", "phone_verified", "phone_number_verified", "role", "image", "is_active", "must_change_password", "approval_status", "approval_requested_at", "approval_processed_at", "approval_processed_by", "rejection_reason", "created_at", "updated_at" from "user" where "user"."email" = $1
+params: petchouko@gmail.com
+    at async handleAuthPost (app/api/auth/[...all]/route.ts:36:12)
+  34 |
+  35 |   try {
+> 36 |     return await handler.POST(req);
+     |            ^
+  37 |   } catch (error) {
+  38 |     console.error("[Better Auth] Handler error:", {
+  39 |       path, {
+  query: 'select "id", "name", "email", "email_verified", "phone_number", "phone_verified", "phone_number_verified", "role", "image", "is_active", "must_change_password", "approval_status", "approval_requested_at", "approval_processed_at", "approval_processed_by", "rejection_reason", "created_at", "updated_at" from "user" where "user"."email" = $1',
+  params: [ 'petchouko@gmail.com' ],
+  [cause]: Error [NeonDbError]: Error connecting to database: TypeError: fetch failed
+      at async handleAuthPost (app/api/auth/[...all]/route.ts:36:12)
+    34 |
+    35 |   try {
+  > 36 |     return await handler.POST(req);
+       |            ^
+    37 |   } catch (error) {
+    38 |     console.error("[Better Auth] Handler error:", {
+    39 |       path, {
+    severity: undefined,
+    code: undefined,
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: undefined,
+    line: undefined,
+    routine: undefined,
+    sourceError: [TypeError: fetch failed] { [cause]: [AggregateError] }
+  }
+}
+# SERVER_ERROR:  Error [DrizzleQueryError]: Failed query: select "id", "name", "email", "email_verified", "phone_number", "phone_verified", "phone_number_verified", "role", "image", "is_active", "must_change_password", "approval_status", "approval_requested_at", "approval_processed_at", "approval_processed_by", "rejection_reason", "created_at", "updated_at" from "user" where "user"."email" = $1
+params: petchouko@gmail.com
+    at async handleAuthPost (app/api/auth/[...all]/route.ts:36:12)
+  34 |
+  35 |   try {
+> 36 |     return await handler.POST(req);
+     |            ^
+  37 |   } catch (error) {
+  38 |     console.error("[Better Auth] Handler error:", {
+  39 |       path, {
+  query: 'select "id", "name", "email", "email_verified", "phone_number", "phone_verified", "phone_number_verified", "role", "image", "is_active", "must_change_password", "approval_status", "approval_requested_at", "approval_processed_at", "approval_processed_by", "rejection_reason", "created_at", "updated_at" from "user" where "user"."email" = $1',
+  params: [ 'petchouko@gmail.com' ],
+  [cause]: Error [NeonDbError]: Error connecting to database: TypeError: fetch failed
+      at async handleAuthPost (app/api/auth/[...all]/route.ts:36:12)
+    34 |
+    35 |   try {
+  > 36 |     return await handler.POST(req);
+       |            ^
+    37 |   } catch (error) {
+    38 |     console.error("[Better Auth] Handler error:", {
+    39 |       path, {
+    severity: undefined,
+    code: undefined,
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: undefined,
+    line: undefined,
+    routine: undefined,
+    sourceError: [TypeError: fetch failed] { [cause]: [AggregateError] }
+  }
+}
+ POST /api/auth/sign-in/email 500 in 3.2s (next.js: 67ms, application-code: 3.1s)
+[2m2026-11-10T06:37:11.063Z[0m [31mERROR[0m [1m[Better Auth]:[0m DrizzleQueryError Error [DrizzleQueryError]: Failed query: select "id", "name", "email", "email_verified", "phone_number", "phone_verified", "phone_number_verified", "role", "image", "is_active", "must_change_password", "approval_status", "approval_requested_at", "approval_processed_at", "approval_processed_by", "rejection_reason", "created_at", "updated_at" from "user" where "user"."email" = $1
+params: nobody@example.com
+    at async handleAuthPost (app/api/auth/[...all]/route.ts:36:12)
+  34 |
+  35 |   try {
+> 36 |     return await handler.POST(req);
+     |            ^
+  37 |   } catch (error) {
+  38 |     console.error("[Better Auth] Handler error:", {
+  39 |       path, {
+  query: 'select "id", "name", "email", "email_verified", "phone_number", "phone_verified", "phone_number_verified", "role", "image", "is_active", "must_change_password", "approval_status", "approval_requested_at", "approval_processed_at", "approval_processed_by", "rejection_reason", "created_at", "updated_at" from "user" where "user"."email" = $1',
+  params: [ 'nobody@example.com' ],
+  [cause]: Error [NeonDbError]: Error connecting to database: TypeError: fetch failed
+      at async handleAuthPost (app/api/auth/[...all]/route.ts:36:12)
+    34 |
+    35 |   try {
+  > 36 |     return await handler.POST(req);
+       |            ^
+    37 |   } catch (error) {
+    38 |     console.error("[Better Auth] Handler error:", {
+    39 |       path, {
+    severity: undefined,
+    code: undefined,
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: undefined,
+    line: undefined,
+    routine: undefined,
+    sourceError: [TypeError: fetch failed] { [cause]: [AggregateError] }
+  }
+}
+# SERVER_ERROR:  Error [DrizzleQueryError]: Failed query: select "id", "name", "email", "email_verified", "phone_number", "phone_verified", "phone_number_verified", "role", "image", "is_active", "must_change_password", "approval_status", "approval_requested_at", "approval_processed_at", "approval_processed_by", "rejection_reason", "created_at", "updated_at" from "user" where "user"."email" = $1
+params: nobody@example.com
+    at async handleAuthPost (app/api/auth/[...all]/route.ts:36:12)
+  34 |
+  35 |   try {
+> 36 |     return await handler.POST(req);
+     |            ^
+  37 |   } catch (error) {
+  38 |     console.error("[Better Auth] Handler error:", {
+  39 |       path, {
+  query: 'select "id", "name", "email", "email_verified", "phone_number", "phone_verified", "phone_number_verified", "role", "image", "is_active", "must_change_password", "approval_status", "approval_requested_at", "approval_processed_at", "approval_processed_by", "rejection_reason", "created_at", "updated_at" from "user" where "user"."email" = $1',
+  params: [ 'nobody@example.com' ],
+  [cause]: Error [NeonDbError]: Error connecting to database: TypeError: fetch failed
+      at async handleAuthPost (app/api/auth/[...all]/route.ts:36:12)
+    34 |
+    35 |   try {
+  > 36 |     return await handler.POST(req);
+       |            ^
+    37 |   } catch (error) {
+    38 |     console.error("[Better Auth] Handler error:", {
+    39 |       path, {
+    severity: undefined,
+    code: undefined,
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: undefined,
+    line: undefined,
+    routine: undefined,
+    sourceError: [TypeError: fetch failed] { [cause]: [AggregateError] }
+  }
+}
+ POST /api/auth/sign-in/email 500 in 3.5s (next.js: 40ms, application-code: 3.4s)
+[2m2026-11-10T06:40:03.925Z[0m [33mWARN[0m [1m[Better Auth]:[0m User not found
+ POST /api/auth/sign-in/email 401 in 709ms (next.js: 21ms, application-code: 688ms)
+[2m2026-11-10T06:40:09.962Z[0m [33mWARN[0m [1m[Better Auth]:[0m Invalid password
+ POST /api/auth/sign-in/email 401 in 6.0s (next.js: 3ms, application-code: 6.0s)

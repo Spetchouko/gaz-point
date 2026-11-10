@@ -74,6 +74,9 @@ export const contactRateLimiter = RateLimiter.ipOnly(5, 60 * 60 * 1000)
 /** Email OTP send limiter: max 5 verification sends per hour per IP address. */
 export const verificationSendRateLimiter = RateLimiter.ipOnly(5, 60 * 60 * 1000)
 
+/** Vendor signup limiter: max 10 account creations per hour per IP address. */
+export const vendorSignupRateLimiter = RateLimiter.ipOnly(10, 60 * 60 * 1000)
+
 function getClientIp(req: Request): string {
   const ip =
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
