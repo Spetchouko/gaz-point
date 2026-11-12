@@ -12,7 +12,7 @@ export function Fiabilite() {
             <div>
               <Badge
                 variant="secondary"
-                className="inline-flex h-6 px-3 text-xs font-semibold uppercase tracking-[0.14em] bg-white shadow-xs ring-1 ring-background/80 mb-4"
+                className="inline-flex h-6 px-3 text-xs font-semibold uppercase tracking-[0.14em] bg-background shadow-xs ring-1 ring-background/80 mb-4"
               >
                 <Building2 className="mr-1.5 size-3.5" />
                 Fiabilité des informations
@@ -36,8 +36,8 @@ export function Fiabilite() {
               </h3>
 
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="group rounded-2xl bg-gradient-to-br from-white to-mint/30 border border-primary/10 p-5 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5">
-                  <span className="inline-flex size-10 items-center justify-center rounded-xl bg-mint text-primary-strong shadow-md ring-1 ring-white/20 mb-3 group-hover:scale-105 transition-transform">
+                <div className="group rounded-2xl bg-gradient-to-br from-background to-mint/30 border border-primary/10 p-5 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5">
+                  <span className="inline-flex size-10 items-center justify-center rounded-xl bg-mint text-primary-strong shadow-md ring-1 ring-border/40 mb-3 group-hover:scale-105 transition-transform">
                     <Store className="size-4" />
                   </span>
                   <p className="font-bold text-foreground">Les vendeurs</p>
@@ -46,8 +46,8 @@ export function Fiabilite() {
                   </p>
                 </div>
 
-                <div className="group rounded-2xl bg-gradient-to-br from-white to-sky/20 border border-primary/10 p-5 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5">
-                  <span className="inline-flex size-10 items-center justify-center rounded-xl bg-sky text-navy shadow-md ring-1 ring-white/20 mb-3 group-hover:scale-105 transition-transform">
+                <div className="group rounded-2xl bg-gradient-to-br from-background to-sky/20 border border-primary/10 p-5 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5">
+                  <span className="inline-flex size-10 items-center justify-center rounded-xl bg-sky text-navy shadow-md ring-1 ring-border/40 mb-3 group-hover:scale-105 transition-transform">
                     <Building2 className="size-4" />
                   </span>
                   <p className="font-bold text-foreground">L&apos;administration</p>
@@ -59,7 +59,7 @@ export function Fiabilite() {
               </div>
             </div>
 
-            <div className="rounded-3xl bg-gradient-to-br from-mint/30 to-white border border-primary/15 p-6 md:p-8 shadow-xl shadow-primary/5">
+            <div className="rounded-3xl bg-gradient-to-br from-mint/30 to-background border border-primary/15 p-6 md:p-8 shadow-xl shadow-primary/5">
               <h4 className="font-heading text-xl font-extrabold tracking-tight text-foreground mb-3">
                 Ce que GazPoints ne te promet pas
               </h4>
@@ -79,7 +79,7 @@ export function Fiabilite() {
           </div>
 
           {/* Image droite — pleine, moderne avec aspect-ratio réservé */}
-          <div className="order-1 lg:order-2 relative w-full overflow-hidden rounded-3xl shadow-2xl ring-4 ring-white/10 lg:sticky lg:top-24 aspect-[4/3] sm:aspect-[3/2] lg:aspect-[16/9]">
+          <div className="order-1 lg:order-2 relative w-full overflow-hidden rounded-3xl shadow-2xl ring-4 ring-border/20 lg:sticky lg:top-24 aspect-[4/3] sm:aspect-[3/2] lg:aspect-[16/9]">
             <div
               className="absolute inset-0 bg-cover bg-center bg-no-repeat rounded-3xl"
               style={{

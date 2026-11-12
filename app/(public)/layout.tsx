@@ -1,4 +1,3 @@
-import { Header } from "@/app/header";
 import { Footer } from "@/app/_components/footer";
 
 export default function PublicLayout({
@@ -8,7 +7,6 @@ export default function PublicLayout({
 }) {
   return (
     <main className="flex-1">
-      <Header />
       {children}
       <Footer />
     </main>

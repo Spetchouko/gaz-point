@@ -25,7 +25,7 @@ const engagements = [
     icon: Ban,
     title: "Aucune promesse en trop",
     description:
-      "Nous ne garantissons pas qu'une bouteille restera disponible jusqu'à ton arrivée. Nous montrons ce qui a été signalé, et quand.",
+      "Nous ne garantissons pas qu'une bouteille restera disponible jusqu'à votre arrivée. Nous montrons ce qui a été signalé, et quand.",
   },
 ]
 

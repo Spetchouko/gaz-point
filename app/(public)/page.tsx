@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { Hero } from "@/app/hero"
 import { Acces } from "@/app/_components/acces"
 import { Benefices } from "@/app/_components/benefices"
@@ -7,15 +8,61 @@ import { Fiabilite } from "@/app/_components/fiabilite"
 import { Solution } from "@/app/_components/solution"
 import { Storytelling } from "@/app/_components/storytelling"
 import { Temoignages } from "@/app/_components/temoignages"
+import { FloatingSearchButton } from "@/app/_components/search-floating-button"
 import { PubliciteCarousel, type PubliciteBannerData } from "@/app/_components/publicite-banner"
 import { getPublicitesForSlot } from "@/lib/publicite"
 import { getApprovedAvis, type AvisPublic } from "@/lib/avis"
 import { errorMessage } from "@/lib/errors"
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://www.gazpoints.com"
+
 // Les publicités et les avis proviennent de la base de données : la page est
 // rendue à la demande pour ne pas figer ces données au moment du build (et
 // pour que `next build` n'exige pas une base accessible).
 export const dynamic = "force-dynamic"
+
+export const metadata: Metadata = {
+  title: "GazPoints - Trouvez du gaz près de chez vous",
+  description:
+    "Vérifiez la disponibilité des bouteilles de gaz près de chez vous au Cameroun. Points de vente, distance, numéro du vendeur. Évitez les déplacements inutiles.",
+  keywords: [
+    "disponibilité gaz Cameroun",
+    "où trouver bouteille gaz Douala",
+    "point de vente gaz proximité",
+    "recherche bouteille gaz",
+    "disponibilité bouteille gaz 12,5 kg",
+    "dépôt de gaz Douala",
+    "gaz domestique Cameroun",
+  ],
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: `${SITE_URL}/`,
+    siteName: "GazPoints",
+    title: "GazPoints - Trouvez du gaz près de chez vous",
+    description:
+      "Vérifiez la disponibilité des bouteilles de gaz près de chez vous au Cameroun.",
+    images: [
+      {
+        url: `${SITE_URL}/brand/hero.webp`,
+        width: 1200,
+        height: 630,
+        alt: "GazPoints - Trouvez du gaz près de chez vous",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "GazPoints - Trouvez du gaz près de chez vous",
+    description:
+      "Vérifiez la disponibilité des bouteilles de gaz près de chez vous.",
+    images: [`${SITE_URL}/brand/hero.webp`],
+  },
+  alternates: {
+    canonical: `${SITE_URL}/`,
+  },
+}
 
 export default async function Home() {
   // Les bannières sont décoratives : une panne du marketing ne doit jamais
@@ -64,6 +111,7 @@ export default async function Home() {
       <Temoignages avis={avis} />
       <Acces />
       <CtaFinal />
+      <FloatingSearchButton />
     </>
   )
 }

@@ -35,7 +35,7 @@ export function QRCodeDisplay({ qrCodeDataUrl, reservationCode, className }: QRC
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           QR Code de la réservation
         </p>
-        <div className="bg-white p-4 rounded-lg border border-border shadow-sm inline-block">
+        <div className="bg-background p-4 rounded-lg border border-border shadow-sm inline-block">
           <img
             src={qrCodeDataUrl}
             alt={`QR Code réservation ${reservationCode}`}

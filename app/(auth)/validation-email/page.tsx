@@ -37,7 +37,7 @@ function ValidationEmailContent() {
 
   const [code, setCode] = useState("")
   const [error, setError] = useState("")
-  const [notice, setNotice] = useState(emailSentFromUrl ? "Un code de verification a ete envoye a votre adresse email." : "")
+  const [notice, setNotice] = useState(emailSentFromUrl ? "Un code de vérification a été envoyé à votre adresse email." : "")
   const [success, setSuccess] = useState(linkVerified)
   const [loading, setLoading] = useState(false)
   const [resending, setResending] = useState(false)
@@ -145,7 +145,7 @@ function ValidationEmailContent() {
     const otp = value.trim()
     if (loading || success) return
     if (!email) {
-      setError("Session expiree. Veuillez recommencer la verification.")
+      setError("Session expirée. Veuillez recommencer la vérification.")
       return
     }
     if (otp.length !== CODE_LENGTH) {
@@ -178,7 +178,7 @@ function ValidationEmailContent() {
       router.push(connexionUrl())
       router.refresh()
     } catch {
-      setError("Une erreur inattendue est survenue. Veuillez reessayer.")
+      setError("Une erreur inattendue est survenue. Veuillez réessayer.")
       setLoading(false)
     }
   }, [loading, success, email, router, connexionUrl])
@@ -186,7 +186,7 @@ function ValidationEmailContent() {
   const renvoyerCode = async () => {
     if (resending || resendCooldown > 0) return
     if (!email) {
-      setError("Session expiree. Veuillez recommencer la verification.")
+      setError("Session expirée. Veuillez recommencer la vérification.")
       return
     }
     setResending(true)
@@ -205,22 +205,22 @@ function ValidationEmailContent() {
       if (!res.ok || data?.error) {
         setError(
           data?.error?.message ??
-            "Impossible de renvoyer le code. Reessayez dans un instant."
+            "Impossible de renvoyer le code. Réessayez dans un instant."
         )
         const retryAfter = Number(data?.error?.retryAfter)
         if (Number.isFinite(retryAfter) && retryAfter > 0) {
           setResendCooldown(retryAfter)
         }
         setResending(false)
-        setNotice("Code de verification envoye a votre adresse email.")
+        setNotice("Code de vérification envoyé à votre adresse email.")
         return
       }
-      setNotice("Un nouveau code de verification a ete envoye a votre adresse e-mail.")
+      setNotice("Un nouveau code de vérification a été envoyé à votre adresse email.")
       setCode("")
       setResendCooldown(RESEND_COOLDOWN_SECONDS)
-      setNotice("Code de verification envoye a votre adresse email.")
+      setNotice("Code de vérification envoyé à votre adresse email.")
     } catch {
-      setError("Une erreur inattendue est survenue. Veuillez reessayer.")
+      setError("Une erreur inattendue est survenue. Veuillez réessayer.")
     }
     setResending(false)
   }
@@ -233,10 +233,10 @@ function ValidationEmailContent() {
             <CardHeader className="mb-6 text-center">
               <CheckCircle className="size-8 text-primary mx-auto mb-3" />
               <h2 className="text-2xl font-bold tracking-tight text-foreground">
-                Email verifie
+                Email vérifié
               </h2>
               <p className="mt-1 text-sm text-muted-foreground text-center">
-                Votre adresse email a ete confirmee avec succes.
+                Votre adresse email a été confirmée avec succès.
               </p>
             </CardHeader>
             <CardContent className="text-center">
@@ -257,10 +257,10 @@ function ValidationEmailContent() {
           <CardHeader className="mb-6 text-center">
             <Mail className="size-8 text-primary mx-auto mb-3" />
             <h2 className="text-2xl font-bold tracking-tight text-foreground">
-              Confirmation email
+              Vérification de l'adresse email
             </h2>
             <p className="mt-1 text-sm text-muted-foreground text-center">
-              Verifiez votre adresse email{" "}
+              Vérifiez votre adresse email{" "}
               {email && <span className="font-medium">{email}</span>}
             </p>
           </CardHeader>
@@ -298,7 +298,7 @@ function ValidationEmailContent() {
                     }}
                     disabled={loading || !email}
                     className="w-10 h-12 rounded-lg border border-border text-center text-2xl font-bold text-foreground focus:border-primary focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
-                    aria-label={`Chiffre ${i + 1} du code de verification`}
+                    aria-label={`Chiffre ${i + 1} du code de vérification`}
                   />
                 ))}
               </div>
@@ -311,7 +311,7 @@ function ValidationEmailContent() {
                 {loading ? (
                   <>
                     <Loader2 className="size-4 mr-2 animate-spin" />
-                    Verification en cours…
+                    Vérification en cours…
                   </>
                 ) : (
                   "Confirmer le code email"
@@ -336,7 +336,7 @@ function ValidationEmailContent() {
                     onClick={renvoyerCode}
                     className="text-sm text-primary hover:underline font-medium"
                   >
-                    Vous n&apos;avez pas reçu le code ? Renvoyer un code
+                    Vous n'avez pas reçu le code ? Renvoyer un code
                   </button>
                 )}
               </div>

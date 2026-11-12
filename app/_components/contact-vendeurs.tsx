@@ -39,8 +39,8 @@ export function ContactVendeurs() {
               </h2>
 
               <p className="mt-4 text-pretty text-base text-muted-foreground">
-                Crée ton compte Vendeur, renseigne ton dépôt et ton numéro de
-                téléphone : tu publies tes stocks en direct et tu reçois les
+                Créez votre compte Vendeur, renseignez votre dépôt et votre numéro de
+                téléphone : vous publiez vos stocks en direct et vous recevez les
                 appels des clients.
               </p>
 
@@ -97,9 +97,9 @@ export function ContactVendeurs() {
                     href="/connexion"
                     className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
                   >
-                    Connecte-toi
+                    Connectez-vous
                   </Link>{" "}
-                  pour gérer ton espace.
+                  pour gérer votre espace.
                 </p>
               </CardContent>
             </Card>

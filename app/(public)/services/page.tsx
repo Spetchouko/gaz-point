@@ -1,9 +1,32 @@
 import type { Metadata } from "next"
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://www.gazpoints.com"
+
 export const metadata: Metadata = {
   title: "Services | GazPoints",
   description:
-    "Informations sur les services GazPoints : abonnement usager, espace vendeur, support technique, et FAQ.",
+    "Informations sur les services GazPoints : abonnement usager gratuit à vie, espace vendeur à 5 000 FCFA/mois, support technique, et FAQ rapide pour trouver du gaz au Cameroun.",
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: `${SITE_URL}/services`,
+    siteName: "GazPoints",
+    title: "Services | GazPoints",
+    description:
+      "Découvrez tous les services GazPoints pour trouver du gaz près de chez vous au Cameroun.",
+    images: [
+      {
+        url: `${SITE_URL}/brand/hero.webp`,
+        width: 1200,
+        height: 630,
+        alt: "Services GazPoints",
+      },
+    ],
+  },
+  alternates: {
+    canonical: `${SITE_URL}/services`,
+  },
 }
 
 export default function Services() {

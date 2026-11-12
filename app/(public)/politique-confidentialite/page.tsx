@@ -1,11 +1,32 @@
 import type { Metadata } from "next"
 import { PageLegale, type LegalDocument } from "@/app/_components/page-legale"
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://www.gazpoints.com"
+
 export const metadata: Metadata = {
   title: { absolute: "Politique de confidentialité | GazPoints" },
   description:
     "Politique de confidentialité de GazPoints : données collectées, finalités, base légale, conservation, sécurité, droits des utilisateurs et coordonnées du responsable de traitement.",
   robots: "index, follow",
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: `${SITE_URL}/politique-confidentialite`,
+    siteName: "GazPoints",
+    title: "Politique de confidentialité | GazPoints",
+    images: [
+      {
+        url: `${SITE_URL}/brand/hero.webp`,
+        width: 1200,
+        height: 630,
+        alt: "Politique de confidentialité GazPoints",
+      },
+    ],
+  },
+  alternates: {
+    canonical: `${SITE_URL}/politique-confidentialite`,
+  },
 }
 
 const document: LegalDocument = {
@@ -80,7 +101,7 @@ const document: LegalDocument = {
         },
         {
           term: "Journal d'audit des actions d'administration",
-          value: "Oblégation légale / intérêt légitime (responsabilité, sécurité).",
+          value: "Obligation légale / intérêt légitime (responsabilité, sécurité).",
         },
       ],
     },

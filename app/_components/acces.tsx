@@ -126,7 +126,7 @@ export function Acces() {
           {/* Profil 2 : Vendeur / Responsable dépôt */}
           <div className="relative h-full">
             {/* Top Tag (hors du Card pour ne pas être coupé par overflow-hidden) */}
-            <div className="absolute -top-3.5 right-5 z-10 flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary-foreground shadow-sm ring-1 ring-white">
+            <div className="absolute -top-3.5 right-5 z-10 flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary-foreground shadow-sm ring-1 ring-border">
               <Crown className="size-3" />
               Professionnel
             </div>

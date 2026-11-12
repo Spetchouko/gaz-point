@@ -5,123 +5,61 @@ import Link from "next/link"
 import { Separator } from "@/components/ui/separator"
 import { useTranslation } from "@/lib/i18n"
 
-type FooterColumn = {
-  title: string
-  items: { label?: string; labelKey?: string; href: string }[]
-}
-
 export function Footer() {
   const t = useTranslation()
 
-  // Section 1: Identité GazPoints
-  const identity: FooterColumn = {
-    title: "footer_identity",
-    items: [
-      { label: "GazPoints", href: "/" },
-      {
-        label: t("footer_tagline"),
-        href: "/",
-      },
-    ],
-  }
+  // Raccourcis de navigation essentiels
+  const shortcuts = [
+    { label: "Accueil", href: "/" },
+    { label: "Comment ça marche ?", href: "/#comment-ca-marche" },
+    { label: "Trouver mon gaz", href: "/" },
+    { label: "FAQ", href: "/#faq" },
+    { label: "À propos", href: "/a-propos" },
+    { label: "Contact", href: "/contact" },
+  ]
 
-  // Section 2: Navigation
-  const navigation: FooterColumn = {
-    title: "footer_navigation",
-    items: [
-      { labelKey: "nav_home", href: "/" },
-      { labelKey: "nav_how", href: "/#comment-ca-marche" },
-      { labelKey: "nav_faq", href: "/#faq" },
-      { labelKey: "nav_about", href: "/a-propos" },
-      { labelKey: "nav_contact", href: "/contact" },
-    ],
-  }
-
-  // Section 3: Espace Utilisateur
-  const userSpace: FooterColumn = {
-    title: "footer_user_space",
-    items: [
-      { label: "Créer un compte", href: "/inscription" },
-      { label: "Se connecter", href: "/connexion" },
-      { label: "Espace vendeur", href: "/dashboard/vendeur" },
-      { label: "Devenir vendeur", href: "/devenir-vendeur" },
-    ],
-  }
-
-  // Section 4: Informations et Legal
-  const legal: FooterColumn = {
-    title: "footer_legal",
-    items: [
-      { label: "Mentions légales", href: "/mentions-legales" },
-      { label: "Politique de confidentialité", href: "/politique-confidentialite" },
-      { label: "Conditions d'utilisation", href: "/cgu" },
-      { label: "Conditions de vente", href: "/cgv" },
-      { label: "Politique cookies", href: "/politique-cookies" },
-    ],
-  }
+  // Pages légales — uniquement les trois liens essentiels
+  const legalPages = [
+    { label: "Mentions légales", href: "/mentions-legales" },
+    { label: "Confidentialité", href: "/politique-confidentialite" },
+    { label: "CGU", href: "/cgu" },
+  ]
 
   return (
     <footer className="bg-mint border-t border-border">
-      <div className="container mx-auto max-w-7xl px-4 py-16 md:py-20 lg:py-24">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8 lg:grid-cols-4 lg:gap-8">
-          {/* Section 1: Logo et présentation GazPoints */}
-          <div className="space-y-4">
-            <Link href="/" className="inline-flex items-center gap-2">
-              <Image
-                src="/brand/logo.png"
-                alt="GazPoints"
-                width={24}
-                height={24}
-                className="h-6 w-6 object-contain shrink-0"
-              />
-              <span className="font-heading text-lg font-bold tracking-tight text-foreground">GazPoints</span>
-            </Link>
-            <p className="text-sm text-muted-foreground">
-              {t("footer_tagline")}
-            </p>
-            <p className="text-xs text-muted-foreground/60">
-              Douala, Cameroun
-            </p>
-          </div>
+      <div className="container mx-auto max-w-5xl px-4 py-12 md:py-16 lg:py-20">
+        {/* Section 1: Logo GazPoints complet, centré */}
+        <div className="flex flex-col items-center gap-4 text-center mb-10">
+          <Link href="/" className="flex items-center gap-2 shrink-0">
+            <Image
+              src="/brand/logo.png"
+              alt="GazPoints"
+              width={24}
+              height={24}
+              className="size-5 object-contain shrink-0"
+              style={{ width: "auto", height: "auto" }}
+            />
+            <span className="font-heading text-lg font-bold tracking-tight text-foreground">
+              GazPoints
+            </span>
+          </Link>
+          <p className="text-sm text-muted-foreground leading-relaxed max-w-md">
+            {t("footer_tagline")}
+          </p>
+        </div>
 
-          {/* Section 2: Navigation */}
-          <div>
-            <h3 className="font-semibold text-sm text-muted-foreground mb-4">
-              Navigation
-            </h3>
-            <ul className="space-y-2">
-              {[
-                { labelKey: "nav_home", href: "/" },
-                { labelKey: "nav_how", href: "/#comment-ca-marche" },
-                { labelKey: "nav_faq", href: "/#faq" },
-                { labelKey: "nav_about", href: "/a-propos" },
-                { labelKey: "nav_contact", href: "/contact" },
-              ].map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    {t(item.labelKey)}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+        <div className="border-t border-border my-8 md:my-12"></div>
 
-          {/* Section 3: Informations sur les utilisateurs */}
-          <div>
-            <h3 className="font-semibold text-sm text-muted-foreground mb-4">
-              Espace Utilisateur
+        {/* Sections 2-3: Raccourcis et Pages légales - centrées et compactes */}
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:gap-10">
+          {/* Section 2: Raccourcis */}
+          <div className="flex flex-col items-center space-y-3">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">
+              {t("footer_navigation")}
             </h3>
-            <ul className="space-y-2">
-              {[
-                { label: "Créer un compte", href: "/inscription" },
-                { label: "Se connecter", href: "/connexion" },
-                { label: "Espace vendeur", href: "/dashboard/vendeur" },
-                { label: "Devenir vendeur", href: "/devenir-vendeur" },
-              ].map((item) => (
-                <li key={item.href}>
+            <ul className="space-y-2 text-center">
+              {shortcuts.map((item) => (
+                <li key={`${item.label}-${item.href}`}>
                   <Link
                     href={item.href}
                     className="text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -133,19 +71,13 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Section 4: Contact et mentions légales */}
-          <div>
-            <h3 className="font-semibold text-sm text-muted-foreground mb-4">
-              Informations légales
+          {/* Section 3: Pages légales */}
+          <div className="flex flex-col items-center space-y-3">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">
+              Pages légales
             </h3>
-            <ul className="space-y-2">
-              {[
-                { label: "Mentions légales", href: "/mentions-legales" },
-                { label: "Politique de confidentialité", href: "/politique-confidentialite" },
-                { label: "Conditions d'utilisation", href: "/cgu" },
-                { label: "Conditions de vente", href: "/cgv" },
-                { label: "Politique cookies", href: "/politique-cookies" },
-              ].map((item) => (
+            <ul className="space-y-2 text-center">
+              {legalPages.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
@@ -160,16 +92,14 @@ export function Footer() {
         </div>
 
         {/* Ligne de séparation avant le copyright */}
-        <div className="border-t border-border my-12 md:my-16">
-          <Separator orientation="horizontal" className="my-4" />
-        </div>
+        <div className="border-t border-border my-8 md:my-10"></div>
 
-        {/* Dernière ligne du footer */}
-        <div className="container mx-auto max-w-7xl px-4 py-6 md:px-6 lg:px-8 text-center">
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} GazPoints. Tous droits réservés.
+        {/* Dernière ligne du footer - copyright + phrase, centrée */}
+        <div className="py-4 md:px-6 lg:px-8 text-center">
+          <p className="text-xs text-muted-foreground mb-1">
+            © {new Date().getFullYear()} GazPoints. {t("footer_rights")}
           </p>
-          <p className="text-xs text-muted-foreground mt-2">
+          <p className="text-xs text-muted-foreground">
             Fait pour faciliter l'accès au gaz au Cameroun.
           </p>
         </div>

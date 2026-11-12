@@ -53,7 +53,7 @@ export function Solution() {
       <div className="container mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
           {/* Image à gauche — pleine section avec aspect-ratio réservé */}
-          <div className="relative w-full overflow-hidden rounded-3xl shadow-2xl ring-4 ring-white/10 aspect-[4/3] sm:aspect-[3/2] lg:aspect-[16/9]">
+          <div className="relative w-full overflow-hidden rounded-3xl shadow-2xl ring-4 ring-border/20 aspect-[4/3] sm:aspect-[3/2] lg:aspect-[16/9]">
             <div
               className="absolute inset-0 bg-cover bg-center bg-no-repeat rounded-3xl"
               style={{
@@ -92,7 +92,7 @@ export function Solution() {
                   className="transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-sm p-0"
                 >
                   <CardHeader className="p-3 pb-2">
-                    <span className="flex size-9 items-center justify-center rounded-xl bg-white text-primary shadow-sm ring-1 ring-border">
+                    <span className="flex size-9 items-center justify-center rounded-xl bg-background text-primary shadow-sm ring-1 ring-border">
                       <step.icon className="size-4" />
                     </span>
                     <CardTitle className="mt-2 text-sm font-bold leading-snug">

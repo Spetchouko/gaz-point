@@ -1,85 +1,76 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { ThemeProvider } from "@/app/_components/theme-provider";
-import { LangProvider } from "@/app/_components/lang-provider";
-import { RecherchePermanente } from "@/app/_components/recherche-permanente";
-import { ConsentBanner } from "@/app/_components/consent-banner";
-import { AnalyticsTracker } from "@/app/_components/analytics-tracker";
-import InitScripts from "@/app/_components/init-scripts";
-import { LangUpdater } from "@/app/_components/lang-updater";
-import { PwaRegistration } from "@/app/_components/pwa-registration";
-import { PwaInstallPrompt } from "@/app/_components/pwa-install-prompt";
+import './globals.css';
+import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
+import LayoutClient from '@/app/layout-client';
+import { LangProvider } from '@/app/_components/lang-provider';
+import { PublicHeader } from '@/app/_components/public-header';
+import { PublicFooter } from '@/app/_components/public-footer';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-  display: "optional",
-  preload: true,
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-  display: "optional",
-  preload: true,
-});
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.gazpoints.com';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
-  ),
-  title: "GazPoints - Trouve ton gaz avant de te déplacer",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    template: '%s | GazPoints',
+    default: 'GazPoints - Trouvez du gaz près de chez vous',
+  },
   description:
-    "Vérifie la disponibilité des bouteilles de gaz près de chez toi. Évite les déplacements inutiles, économise temps et argent. Trouve le bon point de vente en 2 min.",
+    'Vérifiez la disponibilité des bouteilles de gaz près de chez vous. Points de vente, distance, numéro du vendeur. Évitez les déplacements inutiles au Cameroun.',
   keywords: [
-    "gaz bouteilles",
-    "points de vente gaz",
-    "disponibilité gaz",
-    "trouver gaz près de moi",
-    "livraison gaz",
-    "gaz domestique",
-    "bouteille gaz prix",
-    "gaz butane propane",
+    'disponibilité gaz Cameroun',
+    'où trouver bouteille gaz Douala',
+    'point de vente gaz proximité',
+    'recherche bouteille gaz',
+    'disponibilité bouteille gaz 12,5 kg',
+    'dépôt de gaz Douala',
+    'gaz domestique Cameroun',
+    'GazPoints',
   ],
+  authors: [{ name: 'GazPoints', url: SITE_URL }],
+  creator: 'GazPoints',
+  publisher: 'GazPoints',
+  robots: 'index, follow',
+  openGraph: {
+    type: 'website',
+    locale: 'fr_FR',
+    url: SITE_URL,
+    siteName: 'GazPoints',
+    title: 'GazPoints - Trouvez du gaz près de chez vous',
+    description:
+      'Vérifiez la disponibilité des bouteilles de gaz près de chez vous. Points de vente, distance, numéro du vendeur.',
+    images: [
+      {
+        url: '/brand/hero.webp',
+        width: 1200,
+        height: 630,
+        alt: 'GazPoints - Trouvez du gaz près de chez vous',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'GazPoints - Trouvez du gaz près de chez vous',
+    description:
+      'Vérifiez la disponibilité des bouteilles de gaz près de chez vous.',
+    images: ['/brand/hero.webp'],
+  },
+  verification: {
+    google: process.env.GOOGLE_SEARCH_CONSOLE_VERIFICATION || undefined,
+  },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: ReactNode }) {
+  const role = 'client';
   return (
-    <html
-      lang="fr"
-      data-scroll-behavior="smooth"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <head>
-        <meta name="apple-mobile-web-app-title" content="GazPoints" />
-        <template
-          id="gaz-theme-script"
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("gaz-theme");if(t==="dark")document.documentElement.classList.add("dark");else if(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches)document.documentElement.classList.add("dark");else document.documentElement.classList.remove("dark");}catch(e){}})();`,
-          }}
-        />
-        <template
-          id="gaz-lang-script"
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("gaz-lang");if(t==="fr"||t==="en")document.documentElement.setAttribute("lang",t);}catch(e){}})();`,
-          }}
-        />
-        <link rel="manifest" href="/manifest.json" />
-      </head>
-      <body className="min-h-full flex flex-col">
-        <ThemeProvider>
+    <html lang="fr">
+      <body>
+        <LayoutClient role={role}>
           <LangProvider>
-            <LangUpdater />
+            <PublicHeader />
             {children}
+            <PublicFooter />
           </LangProvider>
-        </ThemeProvider>
-        <RecherchePermanente />
-        <ConsentBanner />
-        <AnalyticsTracker />
-        <InitScripts />
-        <PwaRegistration />
-        <PwaInstallPrompt />
+        </LayoutClient>
       </body>
     </html>
   );

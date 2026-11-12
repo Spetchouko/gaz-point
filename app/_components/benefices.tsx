@@ -13,32 +13,32 @@ const benefits = [
   {
     icon: MapPinOff,
     title: "Moins de déplacements inutiles",
-    description: "Tu ne fais plus le tour de plusieurs points de vente pour rien.",
+    description: "Vous ne faites plus le tour de plusieurs points de vente pour rien.",
   },
   {
     icon: PiggyBank,
     title: "Moins d'argent pour le transport",
-    description: "Tu économises le taxi, la moto et l'essence.",
+    description: "Vous économisez le taxi, la moto et l'essence.",
   },
   {
     icon: Timer,
-    title: "Tu gagnes du temps",
+    title: "Vous gagnez du temps",
     description: "Deux minutes de recherche au lieu d'une demi-journée.",
   },
   {
     icon: Compass,
-    title: "Tu sais où chercher",
-    description: "Tu vas droit au bon endroit, sans errer dans les quartiers.",
+    title: "Vous savez où chercher",
+    description: "Vous allez droit au bon endroit, sans errer dans les quartiers.",
   },
   {
     icon: PackageCheck,
-    title: "Tu connais la disponibilité",
-    description: "Tu sais s'il reste du gaz avant de quitter la maison.",
+    title: "Vous connaissez la disponibilité",
+    description: "Vous savez s'il reste du gaz avant de quitter la maison.",
   },
   {
     icon: Store,
-    title: "Tu trouves plus facilement un point de vente",
-    description: "Le bon commerce, près de chez toi.",
+    title: "Vous trouvez plus facilement un point de vente",
+    description: "Le bon commerce, près de chez vous.",
   },
 ]
 
@@ -54,16 +54,16 @@ export function Benefices() {
                 variant="secondary"
                 className="h-5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
               >
-                Ce que ça t&apos;apporte
+                Ce que ça vous apporte
               </Badge>
 
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-                Avant de partir, <span className="text-primary">tu décides</span>
+                Avant de partir, <span className="text-primary">vous décidez</span>
               </h2>
 
               <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
-                GazPoints ne te vend pas juste une information : il t&apos;aide à
-                choisir où aller, avant de te déplacer.
+                GazPoints ne vous vend pas juste une information : il vous aide à
+                choisir où aller, avant de vous déplacer.
               </p>
             </div>
 
@@ -71,7 +71,7 @@ export function Benefices() {
               {benefits.map((benefit) => (
                 <Card
                   key={benefit.title}
-                  className="p-3 rounded-xl border border-border bg-white shadow-sm transition-all hover:shadow-md hover:border-primary/20"
+                  className="p-3 rounded-xl border border-border bg-background shadow-sm transition-all hover:shadow-md hover:border-primary/20"
                 >
                   <CardHeader>
                     <span className="flex size-9 items-center justify-center rounded-xl bg-mint text-primary-strong ring-1 ring-primary/20">
@@ -94,7 +94,7 @@ export function Benefices() {
           </div>
 
           {/* Image à droite — pleine section avec aspect-ratio réservé */}
-          <div className="relative w-full overflow-hidden rounded-2xl shadow-2xl ring-2 ring-white/10 lg:sticky lg:top-20 aspect-[4/3] sm:aspect-[3/2] lg:aspect-[16/9]">
+          <div className="relative w-full overflow-hidden rounded-2xl shadow-2xl ring-2 ring-border/20 lg:sticky lg:top-20 aspect-[4/3] sm:aspect-[3/2] lg:aspect-[16/9]">
             <div
               className="absolute inset-0 bg-cover bg-center bg-no-repeat rounded-2xl"
               style={{

@@ -94,12 +94,12 @@ export function Equipe() {
 
         <p className="mx-auto mt-10 flex max-w-3xl flex-wrap items-center justify-center gap-2 text-sm text-muted-foreground">
           <Mail className="size-4 shrink-0" aria-hidden />
-          Tu es point de vente et tu veux apparaître sur GazPoints ?{" "}
+          Vous êtes point de vente et vous voulez apparaître sur GazPoints ?{" "}
           <Link
             href="/inscription"
             className="font-medium text-foreground underline underline-offset-4 transition-colors hover:text-primary"
           >
-            Crée ton espace vendeur
+            Créer votre espace vendeur
           </Link>
           , écris-nous à{" "}
           <a

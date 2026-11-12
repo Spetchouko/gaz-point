@@ -21,14 +21,14 @@ const painPoints = [
     time: "07:30",
     title: "Le départ à l'aveugle",
     description:
-      "Ton gaz se coupe en pleine préparation. Tu sors la bouteille vide et tu pars faire le tour du quartier sans certitude.",
+      "Votre gaz se coupe en pleine préparation. Vous sortez la bouteille vide et vous partez faire le tour du quartier sans certitude.",
   },
   {
     icon: AlertTriangle,
     time: "08:15",
     title: "Dépôts fermés ou en rupture",
     description:
-      "Premier point fermé, deuxième en rupture de ta marque habituelle. La frustration monte et le temps défile.",
+      "Premier point fermé, deuxième en rupture de votre marque habituelle. La frustration monte et le temps défile.",
   },
   {
     icon: Banknote,
@@ -57,7 +57,7 @@ export function Storytelling() {
 
           <h2 className="mt-4 text-2xl sm:text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
             La galère du matin où <br className="hidden sm:inline" />
-            <span className="text-primary">ton gaz est fini</span>.
+            <span className="text-primary">votre gaz est fini</span>.
           </h2>
 
           <p className="mt-3 text-base sm:text-lg text-muted-foreground">
@@ -71,7 +71,7 @@ export function Storytelling() {
           {painPoints.map((item, idx) => (
             <Card
               key={item.title}
-              className="p-3 sm:p-4 rounded-xl border border-border bg-white shadow-sm transition-all hover:shadow-md hover:border-primary/20"
+              className="p-3 sm:p-4 rounded-xl border border-border bg-background shadow-sm transition-all hover:shadow-md hover:border-primary/20"
             >
               <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
                 <span className="flex size-8 sm:size-10 items-center justify-center rounded-xl bg-destructive/10 text-destructive ring-1 ring-destructive/20">
@@ -103,7 +103,7 @@ export function Storytelling() {
         </div>
 
         {/* Bilan & Résolution */}
-        <Card className="mx-auto mt-6 max-w-4xl rounded-xl border border-border bg-white p-5 shadow-sm ring-1 ring-border">
+        <Card className="mx-auto mt-6 max-w-4xl rounded-xl border border-border bg-background p-5 shadow-sm ring-1 ring-border">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-2">
               <Badge variant="destructive" className="h-4 w-fit font-semibold">
@@ -113,7 +113,7 @@ export function Storytelling() {
                 Argent dépensé en transport, matinée gâchée et repas retardé.
               </h4>
               <p className="text-sm text-muted-foreground">
-                Personne ne t’avait prévenu des ruptures de stock avant ton
+                Personne ne vous avait prévenu des ruptures de stock avant votre
                 déplacement.
               </p>
             </div>

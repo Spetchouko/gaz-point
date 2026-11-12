@@ -10,7 +10,7 @@ import {
   brandKey,
   MIN_VENDOR_BRANDS,
   MAX_VENDOR_BRANDS,
-} from "@/lib/vendor-onboarding"
+} from "@/lib/vendor-brands"
 
 /**
  * Saisie dynamique d'une liste de marques de bouteilles distinctes.

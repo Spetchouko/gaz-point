@@ -9,7 +9,7 @@ import {
   uniqueIndex,
   jsonb,
 } from "drizzle-orm/pg-core";
-import type { VendorInventoryEntry } from "@/lib/vendor-onboarding";
+import type { VendorInventoryEntry } from "@/lib/vendor-types";
 
 export type UserRole = "client" | "vendor" | "admin" | "collaborateur";
 export type AvailabilityStatus = "disponible" | "a_confirmer" | "indisponible";

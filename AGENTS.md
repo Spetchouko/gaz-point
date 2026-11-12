@@ -102,3 +102,17 @@ A task is complete only when its intended functionality is implemented, security
 - Ne jamais modifier les identifiants, mots de passe, clés API, secrets de session ou paramètres de connexion existants.
 - Si une variable d'environnement semble manquer, signaler son nom sans révéler sa valeur et demander une intervention distincte.
 - Vérifier que les fichiers d'environnement sont correctement exclus de Git et que les secrets ne sont pas exposés par le code client.
+
+## 9. Charte éditoriale — Règles permanentes de rédaction français
+
+Tous les nouveaux composants, dashboards, formulaires et fonctionnalités doivent respecter la charte éditoriale (`docs/CHARTE-EDITORIALE.md`). Règles obligatoires :
+
+- **Langue** : français (fr-FR), registre professionnel simple et naturel
+- **Pronom** : vouvoiement systématique (`vous`, jamais `tu`)
+- **Ponctuation** : espace avant `: ; ! ? ;`, apostrophe typographique `'` (pas `&apos;`), accents obligatoires sur majuscules (`À`, `É`, `È`, `Ç`, `Ô`)
+- **Terminologie** : `usager` (pas `client`/`utilisateur`), `vendeur` (pas `professionnel`), `Se connecter` (pas `Connexion`), `Créer un compte` (pas `S'inscrire`), `Disponibilité` (pas `Stock`)
+- **Boutons** : verbe à l'impératif, 3 mots max, sans point final (`Se connecter`, `Créer un compte`, `Envoyer`, `Modifier`, `Supprimer`, `Annuler`, `Rechercher du gaz`)
+- **Devise** : `FCFA` avec espace insécurisée (`5 000 FCFA`)
+- **Téléphone** : `+237 690 12 34 56`
+
+**Règle absolue : aucun nouveau composant, dashboard, module, formulaire ou fonctionnalité ne doit être développé sans respecter cette charte.**

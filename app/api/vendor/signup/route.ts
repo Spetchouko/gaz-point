@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/db"
 import { user, vendorOnboarding } from "@/db/schema"
 import { vendorSignupRateLimiter } from "@/lib/rate-limit"
-import { validateVendorSignupPayload } from "@/lib/vendor-onboarding"
+import { validateVendorSignupPayload } from "@/lib/vendor-signup-validation"
 
 /**
  * Inscription vendeur en une seule requête serveur :

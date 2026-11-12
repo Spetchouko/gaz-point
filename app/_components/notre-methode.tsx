@@ -26,7 +26,7 @@ const sources = [
     icon: MessageCircleQuestion,
     title: "Les signalements des habitants",
     description:
-      "Tu peux signaler un point qui n'existe plus ou une information fausse. Ça nous aide à corriger la carte.",
+      "Vous pouvez signaler un point qui n'existe plus ou une information fausse. Cela nous aide à corriger la carte.",
   },
 ]
 
@@ -43,7 +43,7 @@ export function NotreMethode() {
           </Badge>
 
           <h2 className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            D’où vient l’information que tu vois
+            D'où vient l'information que vous voyez
           </h2>
 
           <p className="mt-5 text-pretty text-base text-muted-foreground sm:text-lg">

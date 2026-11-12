@@ -1,11 +1,32 @@
 import type { Metadata } from "next"
 import { PageLegale, type LegalDocument } from "@/app/_components/page-legale"
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://www.gazpoints.com"
+
 export const metadata: Metadata = {
   title: { absolute: "Conditions générales de vente | GazPoints" },
   description:
     "Conditions générales de vente de l'abonnement vendeur GazPoints (5 000 FCFA/mois) : souscription, paiement, résiliation, remboursement, obligations des parties et service après-vente.",
   robots: "index, follow",
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: `${SITE_URL}/cgv`,
+    siteName: "GazPoints",
+    title: "Conditions générales de vente | GazPoints",
+    images: [
+      {
+        url: `${SITE_URL}/brand/hero.webp`,
+        width: 1200,
+        height: 630,
+        alt: "CGV GazPoints",
+      },
+    ],
+  },
+  alternates: {
+    canonical: `${SITE_URL}/cgv`,
+  },
 }
 
 const document: LegalDocument = {

@@ -23,7 +23,7 @@ import {
   LocateFixed,
 } from "lucide-react"
 import Image from "next/image"
-import { validateVendorSignupPayload } from "@/lib/vendor-onboarding"
+import { validateVendorSignupPayload } from "@/lib/vendor-signup-validation"
 
 // === Mode de confirmation email ===
 const MODE_EMAIL = "email"
