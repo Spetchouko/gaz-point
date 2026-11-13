@@ -24,7 +24,7 @@ import {
 import { useAuthModal } from "@/lib/auth-context";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
-import { Footer } from "@/app/_components/footer";
+import { DashboardFooter } from "@/app/_components/dashboard/dashboard-footer";
 import { cn } from "@/lib/utils";
 
 const CLIENT_NAV_ITEMS = [
@@ -439,7 +439,7 @@ export function DashboardClientLayout({
         </main>
 
         {/* Footer public */}
-        <Footer />
+        <DashboardFooter />
       </div>
     </div>
   );

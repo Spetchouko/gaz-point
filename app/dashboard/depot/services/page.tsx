@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic"
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { AlertCircle, CheckCircle2, RotateCcw, Truck, Package } from "lucide-react"
+import { AlertCircle, CheckCircle2, RotateCcw, Truck, Package, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -93,7 +93,7 @@ export default function ServicesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Save className="size-8 animate-spin text-muted-foreground" />
+        <RotateCcw className="size-8 animate-spin text-muted-foreground" />
       </div>
     )
   }

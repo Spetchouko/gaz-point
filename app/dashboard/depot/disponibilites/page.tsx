@@ -253,7 +253,13 @@ export default function DisponibilitesPage() {
                 variant="outline"
                 size="sm"
               >
-                {adding ? "Annuler" : <Plus className="size-3 mr-2" /> Ajouter}
+                {adding ? (
+                  "Annuler"
+                ) : (
+                  <>
+                    <Plus className="size-3 mr-2" /> Ajouter
+                  </>
+                )}
               </Button>
             </div>
 
