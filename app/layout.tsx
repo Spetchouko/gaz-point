@@ -11,6 +11,7 @@ import { LangUpdater } from "@/app/_components/lang-updater";
 import { NavigationLoader } from "@/app/_components/navigation-loader";
 import { PwaRegistration } from "@/app/_components/pwa-registration";
 import { PwaInstallPrompt } from "@/app/_components/pwa-install-prompt";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -75,6 +76,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ConsentBanner />
         <PwaRegistration />
         <PwaInstallPrompt />
+        <SpeedInsights />
       </body>
     </html>
   );
