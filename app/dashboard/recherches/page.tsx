@@ -20,10 +20,7 @@ import { Input } from "@/components/ui/input";
 import { formats } from "@/app/_components/donnees-demo";
 import { authClient } from "@/lib/auth-client";
 import type { AvailabilityStatus } from "@/db/schema";
-import {
-  ReservationModal,
-  type ReservationResult,
-} from "@/app/_components/reservation-modal";
+import { ReservationModal } from "@/app/_components/reservation-modal";
 import { ResultatRechercheCard } from "@/app/_components/cards/resultat-recherche-card";
 import { trackEvent } from "@/lib/analytics";
 
@@ -69,7 +66,7 @@ export function RechercheGaz() {
 
   const handleReserve = async (
     amountType: "reservation" | "consigne"
-  ): Promise<ReservationResult> => {
+  ): Promise<{ checkoutUrl: string; reservationCode: string } | null> => {
     if (!reservationPoint) {
       throw new Error("Aucun point sélectionné");
     }
@@ -93,16 +90,8 @@ export function RechercheGaz() {
     }
 
     return {
-      code: data.reservation.code,
-      expiresAt: data.reservation.expiresAt,
-      amount: data.reservation.amount,
-      amountType: data.reservation.amountType,
-      brand: data.reservation.brand,
-      format: data.reservation.format,
-      quantity: data.reservation.quantity,
-      pointName: data.reservation.pointName,
-      pointDistrict: data.reservation.pointDistrict,
-      reservedAt: data.reservation.reservedAt,
+      checkoutUrl: data.payment.checkoutUrl,
+      reservationCode: data.reservation.code,
     };
   };
 
@@ -395,8 +384,13 @@ export function RechercheGaz() {
           open={!!reservationPoint}
           onClose={closeReservationModal}
           point={reservationPoint}
-          onConfirm={handleReserve}
+          onConfirm={async (amountType) => {
+            return handleReserve(amountType)
+          }}
           defaultAmountType={defaultAmountType}
+          onPaymentRedirect={(checkoutUrl) => {
+            window.location.href = checkoutUrl
+          }}
         />
       )}
     </>

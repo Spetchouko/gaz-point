@@ -72,8 +72,9 @@ export function DashboardClientLayout({
   const { isAuthenticated, openAuthModal } = useAuthModal();
   const { data: session } = authClient.useSession();
   const user = session?.user as
-    | { name?: string | null; email?: string | null; image?: string | null }
+    | { name?: string | null; email?: string | null; image?: string | null; role?: string | null }
     | undefined;
+  const isVendor = user?.role === "vendor";
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(3);
 
@@ -195,6 +196,42 @@ export function DashboardClientLayout({
               </Link>
             );
           })}
+          {isVendor && (
+            <>
+              <Link
+                key="/dashboard/reservations/vendor"
+                href="/dashboard/reservations/vendor"
+                onClick={() => setSidebarOpen(false)}
+                aria-current={pathname === "/dashboard/reservations/vendor" || pathname.startsWith("/dashboard/reservations/vendor") ? "page" : undefined}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  pathname === "/dashboard/reservations/vendor" || pathname.startsWith("/dashboard/reservations/vendor")
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  sidebarCollapsed && "justify-center px-2"
+                )}
+              >
+                <Calendar className={cn("size-4 shrink-0", sidebarCollapsed && "mx-auto")} aria-hidden />
+                {!sidebarCollapsed && <span>Réservations dépôt</span>}
+              </Link>
+              <Link
+                key="/dashboard/reservations/verify"
+                href="/dashboard/reservations/verify"
+                onClick={() => setSidebarOpen(false)}
+                aria-current={pathname === "/dashboard/reservations/verify" ? "page" : undefined}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  pathname === "/dashboard/reservations/verify"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  sidebarCollapsed && "justify-center px-2"
+                )}
+              >
+                <Search className={cn("size-4 shrink-0", sidebarCollapsed && "mx-auto")} aria-hidden />
+                {!sidebarCollapsed && <span>Vérifier un code</span>}
+              </Link>
+            </>
+          )}
         </nav>
 
         {/* Footer with user info and logout */}
@@ -283,7 +320,7 @@ export function DashboardClientLayout({
         <header className="hidden lg:sticky lg:top-0 lg:z-10 lg:flex lg:h-14 lg:items-center lg:justify-between lg:border-b lg:border-border lg:bg-card/80 lg:backdrop-blur-md lg:px-6 lg:px-8">
           <div className="flex items-center gap-4">
             <span className="text-sm font-medium text-muted-foreground">
-              Espace Client
+              {isVendor ? "Espace Vendeur" : "Espace Client"}
             </span>
           </div>
           <div className="flex items-center gap-4">

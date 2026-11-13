@@ -296,19 +296,19 @@ export function DashboardOverview() {
             {/* Quick actions */}
             <section aria-labelledby="quick-actions-heading">
               <h2 id="quick-actions-heading" className="sr-only">Actions rapides</h2>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 <Link href="/dashboard/recherches" className="group">
                   <Card className={cn("border border-border shadow-sm rounded-lg transition-all hover:shadow-md hover:border-primary/50", "group")}>
-                    <CardContent className="pt-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                          <Search className="size-5" />
+                    <CardContent className="pt-3 pb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors active:bg-primary active:text-primary-foreground">
+                          <Search className="size-4" />
                         </div>
                         <div className="min-w-0">
                           <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors text-sm">
                             Rechercher du gaz
                           </h3>
-                          <p className="text-xs text-muted-foreground line-clamp-2">
+                          <p className="text-xs text-muted-foreground">
                             Trouver des bouteilles disponibles près de chez vous
                           </p>
                         </div>
@@ -319,16 +319,16 @@ export function DashboardOverview() {
 
                 <Link href="/dashboard/reservations" className="group">
                   <Card className={cn("border border-border shadow-sm rounded-lg transition-all hover:shadow-md hover:border-primary/50", "group")}>
-                    <CardContent className="pt-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-green/10 text-green group-hover:bg-green group-hover:text-green-foreground transition-colors">
-                          <Calendar className="size-5" />
+                    <CardContent className="pt-3 pb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors active:bg-primary active:text-primary-foreground">
+                          <Calendar className="size-4" />
                         </div>
                         <div className="min-w-0">
-                          <h3 className="font-semibold text-foreground group-hover:text-green transition-colors text-sm">
+                          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors text-sm">
                             Mes réservations
                           </h3>
-                          <p className="text-xs text-muted-foreground line-clamp-2">
+                          <p className="text-xs text-muted-foreground">
                             Voir et gérer vos réservations en cours
                           </p>
                         </div>
@@ -339,16 +339,16 @@ export function DashboardOverview() {
 
                 <Link href="/dashboard/historique" className="group">
                   <Card className={cn("border border-border shadow-sm rounded-lg transition-all hover:shadow-md hover:border-primary/50", "group")}>
-                    <CardContent className="pt-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue/10 text-blue group-hover:bg-blue group-hover:text-blue-foreground transition-colors">
-                          <History className="size-5" />
+                    <CardContent className="pt-3 pb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors active:bg-primary active:text-primary-foreground">
+                          <History className="size-4" />
                         </div>
                         <div className="min-w-0">
-                          <h3 className="font-semibold text-foreground group-hover:text-blue transition-colors text-sm">
+                          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors text-sm">
                             Historique
                           </h3>
-                          <p className="text-xs text-muted-foreground line-clamp-2">
+                          <p className="text-xs text-muted-foreground">
                             Consulter vos recherches et achats
                           </p>
                         </div>
@@ -359,16 +359,16 @@ export function DashboardOverview() {
 
                 <Link href="/dashboard/profil" className="group">
                   <Card className={cn("border border-border shadow-sm rounded-lg transition-all hover:shadow-md hover:border-primary/50", "group")}>
-                    <CardContent className="pt-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-purple/10 text-purple group-hover:bg-purple group-hover:text-purple-foreground transition-colors">
-                          <User className="size-5" />
+                    <CardContent className="pt-3 pb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors active:bg-primary active:text-primary-foreground">
+                          <User className="size-4" />
                         </div>
                         <div className="min-w-0">
-                          <h3 className="font-semibold text-foreground group-hover:text-purple transition-colors text-sm">
+                          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors text-sm">
                             Mon profil
                           </h3>
-                          <p className="text-xs text-muted-foreground line-clamp-2">
+                          <p className="text-xs text-muted-foreground">
                             Gérer vos informations personnelles
                           </p>
                         </div>
