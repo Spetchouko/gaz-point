@@ -74,7 +74,7 @@ export function Faq() {
           </Badge>
 
           <h2 className="mt-6 text-balance font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            Tu as une question&nbsp;?
+            Vous avez une question&nbsp;?
           </h2>
           <p className="mt-4 text-pretty text-base text-muted-foreground">
             Tout comprendre sur les profils Usagers, Vendeurs et le

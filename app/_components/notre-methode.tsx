@@ -26,7 +26,7 @@ const sources = [
     icon: MessageCircleQuestion,
     title: "Les signalements des habitants",
     description:
-      "Vous pouvez signaler un point qui n'existe plus ou une information fausse. Cela nous aide à corriger la carte.",
+      "Vous pouvez signaler un point qui n'existe plus ou une information fausse. Ça nous aide à corriger la carte.",
   },
 ]
 

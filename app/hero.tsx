@@ -6,9 +6,9 @@ import { RechercheGaz } from "@/app/_components/recherche-gaz"
 import { PubliciteCarousel, type PubliciteBannerData } from "@/app/_components/publicite-banner"
 
 const benefits = [
-  "Vérifie la disponibilité avant de partir",
-  "Trouve un point de vente proche",
-  "Évite les déplacements inutiles",
+  "Vérifiez la disponibilité avant de partir",
+  "Trouvez un point de vente proche",
+  "Évitez les déplacements inutiles",
 ]
 
 export function Hero({
@@ -36,7 +36,7 @@ export function Hero({
         <div className="mx-auto max-w-3xl">
           <Badge
             variant="secondary"
-            className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em] bg-white text-primary border border-primary/20 shadow-sm"
+            className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em] bg-card text-primary border border-primary/20 shadow-sm"
           >
             Vérifiez d’abord où il y en a
           </Badge>
@@ -47,7 +47,7 @@ export function Hero({
           </h1>
 
           <p className="mt-3 text-lg sm:text-xl text-white max-w-2xl mx-auto leading-relaxed drop-shadow-sm">
-            GazPoints te montre les points de vente de gaz près de chez toi, avec la
+            GazPoints vous montre les points de vente de gaz près de chez vous, avec la
             disponibilité, la distance et le numéro du vendeur.
           </p>
         </div>
@@ -84,7 +84,7 @@ export function Hero({
           {benefits.map((benefit) => (
             <li
               key={benefit}
-              className="flex items-start gap-2 text-left text-sm text-foreground bg-white rounded-sm px-3 py-2 shadow-sm border border-border"
+              className="flex items-start gap-2 text-left text-sm text-foreground bg-card rounded-sm px-3 py-2 shadow-sm border border-border"
             >
               <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
                 <Check className="size-3" />

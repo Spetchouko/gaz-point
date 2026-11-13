@@ -1,11 +1,10 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   AlertCircle,
   ChevronDown,
-  Cylinder,
   LocateFixed,
   MapPin,
   Phone,
@@ -24,32 +23,44 @@ import {
 } from "@/app/_components/reservation-modal"
 import { ResultatRechercheCard } from "@/app/_components/cards/resultat-recherche-card"
 import { trackEvent } from "@/lib/analytics"
-import {
-  SEARCH_BOTTLE_FORMATS,
-  SEARCH_BRANDS,
-  SearchCriteria,
-  SearchError,
-  SearchState,
-  createSearchError,
-  fetchDisponibiliteServices,
-  mapSearchResponse,
-  searchGas,
-  validateSearchCriteria,
-  type SearchResult,
-} from "@/lib/search"
+import { searchService } from "@/lib/search-service"
+import type { SearchResponse } from "@/lib/search-service"
+
+export type SearchResult = {
+  id: string
+  name: string
+  district: string
+  address: string
+  phone: string | null
+  brands: string[]
+  formats: string[]
+  status: AvailabilityStatus | null
+  note: string | null
+  quantity: number | null
+  price: number | null
+  format: string | null
+  brand: string | null
+  expiresAt: string | null
+  updatedAt: string | null
+  updatedBy: string | null
+  source: string | null
+  stale: boolean
+  expired: boolean
+  disponibiliteId: string
+  // Services
+  hasDelivery: boolean
+  hasExchange: boolean
+  hasGasSale: boolean
+  deliveryFee: number | null
+}
 
 /**
  * Bloc de recherche de gaz : formulaire (marque / format / zone),
  * résultats en direct et réservation. Partagé entre la page
  * d'accueil (hero) et le dashboard client.
  *
- * Cette version utilise une couche de service dédiée (`lib/search.ts`)
- * qui prépare la connexion future avec un backend. Tant que le backend
- * n'est pas développé, les routes Next.js internes sont utilisées.
- *
  * Chaque recherche interroge réellement l'API (et donc la base de données).
  * Aucun résultat mis en cache n'est affiché sans avoir été actualisé.
- * Aucun résultat fictif n'est jamais affiché.
  */
 export function RechercheGaz() {
   const router = useRouter()
@@ -58,14 +69,11 @@ export function RechercheGaz() {
   const [format, setFormat] = useState("")
   const [zone, setZone] = useState("")
   const [locationLabel, setLocationLabel] = useState<string | null>(null)
-
-  // État de recherche géré par la couche de service
-  const [searchState, setSearchState] = useState<SearchState>({ kind: "idle" })
+  const [results, setResults] = useState<SearchResult[] | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [reservationPoint, setReservationPoint] = useState<SearchResult | null>(null)
   const [defaultAmountType, setDefaultAmountType] = useState<"reservation" | "consigne">("reservation")
-
-  // AbortController pour annuler les requêtes en cours
-  const abortControllerRef = useRef<AbortController | null>(null)
 
   const handleReserve = async (
     amountType: "reservation" | "consigne"
@@ -116,18 +124,8 @@ export function RechercheGaz() {
   }
 
   /**
-   * Annule toute recherche en cours avant d'en lancer une nouvelle.
-   */
-  const cancelPendingSearch = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort()
-      abortControllerRef.current = null
-    }
-  }
-
-  /**
-   * Effectue la recherche via la couche de service.
-   * Gère l'annulation, les timeouts, et transforme la réponse.
+   * Effectue réellement la recherche auprès de l'API (base de données).
+   * Utilisé par le formulaire et par les boutons "Relancer / Réessayer".
    */
   const runSearch = useCallback(async () => {
     if (!session?.user) {
@@ -135,30 +133,15 @@ export function RechercheGaz() {
       return
     }
 
-    const criteria: SearchCriteria = {}
-    if (brand) criteria.brand = brand
-    if (format) criteria.format = format
-    if (zone) criteria.zone = zone
+    const criteria = searchService.normalizeCriteria({
+      brand: brand || undefined,
+      format: format || undefined,
+      zone: zone || undefined,
+    })
 
-    // Validation des critères avant envoi
-    const validation = validateSearchCriteria(criteria)
-    if (!validation.ok) {
-      setSearchState({
-        kind: "error",
-        error: createSearchError(validation.message, {
-          code: "VALIDATION_ERROR",
-          statusCode: 400,
-        }),
-      })
-      return
-    }
-
-    // Annuler toute recherche précédente
-    cancelPendingSearch()
-    const controller = new AbortController()
-    abortControllerRef.current = controller
-
-    setSearchState({ kind: "searching" })
+    setLoading(true)
+    setError(null)
+    setResults(null)
 
     // Événement analytics : recherche effectuée
     trackEvent({
@@ -168,56 +151,23 @@ export function RechercheGaz() {
     })
 
     try {
-      const response = await searchGas(criteria, controller.signal)
+      const response: SearchResponse = await searchService.search(criteria)
 
-      // Récupérer les données de service (livraison, échange, gaz sale, frais)
-      const disponibiliteIds = response.results
-        .filter((r) => r.disponibiliteId)
-        .map((r) => r.disponibiliteId)
-      let serviceMap: Map<
-        string,
-        { delivery: boolean; exchange: boolean; gasSale: boolean; price: number | null }
-      > = new Map()
-
-      if (disponibiliteIds.length > 0) {
-        serviceMap = await fetchDisponibiliteServices(disponibiliteIds, controller.signal)
-      }
-
-      // Vérifier que la requête n'a pas été annulée entre-temps
-      if (controller.signal.aborted) return
-
-      // Mapper la réponse vers le format attendu par l'interface
-      const mappedResults = mapSearchResponse(response, serviceMap)
-
-      if (mappedResults.length === 0) {
-        setSearchState({ kind: "empty" })
-      } else {
-        setSearchState({ kind: "success", results: mappedResults, total: response.total })
-      }
+      setResults(response.results as SearchResult[])
 
       // Événement analytics : résultats de recherche consultés
       trackEvent({
         eventType: "search_results_viewed",
         path: "/api/recherche",
-        metadata: { resultCount: mappedResults.length, brand, format, zone },
+        metadata: { resultCount: response.count, brand, format, zone },
       })
-    } catch (err) {
-      // Vérifier que l'erreur n'est pas due à une annulation
-      if (controller.signal.aborted) return
-
-      const searchError =
-        err instanceof Error && (err as SearchError).code
-          ? (err as SearchError)
-          : createSearchError(
-              err instanceof Error ? err.message : "Erreur inconnue lors de la recherche",
-              { code: "SEARCH_UNKNOWN_ERROR" }
-            )
-
-      setSearchState({ kind: "error", error: searchError })
+    } catch {
+      setError(
+        "La recherche n'a pas pu aboutir. Vérifiez votre connexion et réessayez."
+      )
+      setResults(null)
     } finally {
-      if (abortControllerRef.current === controller) {
-        abortControllerRef.current = null
-      }
+      setLoading(false)
     }
   }, [brand, format, zone, session, router])
 
@@ -235,33 +185,18 @@ export function RechercheGaz() {
     setFormat("")
     setZone("")
     setLocationLabel(null)
-    setSearchState({ kind: "idle" })
+    setError(null)
+    setResults(null)
     runSearch()
   }
 
-  // Helper pour extraire les données d'affichage depuis l'état de recherche
-  const getResults = (): SearchResult[] => {
-    if (searchState.kind === "success") return searchState.results
-    return []
-  }
-
-  const getTotal = (): number => {
-    if (searchState.kind === "success") return searchState.total
-    return 0
-  }
-
-  const isLoading = searchState.kind === "searching"
-  const hasError = searchState.kind === "error"
-  const errorMessage = hasError ? searchState.error.message : null
-  const hasResults = searchState.kind === "success" && searchState.results.length > 0
-  const isEmpty = searchState.kind === "empty"
-
   return (
     <>
-      <Card className="p-4 sm:p-6 rounded-xl border border-border bg-background shadow-sm">
+      <div id="recherche-gaz" />
+      <Card className="p-4 sm:p-6 rounded-xl border border-border bg-card shadow-sm">
         <form onSubmit={handleSubmit} className="space-y-4">
           <p className="font-heading text-lg md:text-xl lg:text-2xl font-extrabold tracking-tight text-foreground leading-snug">
-            Quelle bouteille tu cherches&nbsp;?
+            Quelle bouteille cherchez-vous&nbsp;?
           </p>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -296,7 +231,7 @@ export function RechercheGaz() {
                 className="mt-1.5 h-12 w-full rounded-xl border border-input bg-background px-3 pr-10 text-sm text-foreground appearance-none pr-12 select-none outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 <option value="">Tous les formats</option>
-                {SEARCH_BOTTLE_FORMATS.map((item) => (
+                {formats.map((item) => (
                   <option key={item} value={item}>
                     {item}
                   </option>
@@ -350,27 +285,27 @@ export function RechercheGaz() {
           <Button
             type="submit"
             className="h-12 w-full rounded-xl border border-input bg-primary px-4 text-base font-medium text-primary-foreground transition-colors hover:bg-primary-strong focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-ring/50 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isLoading}
+            disabled={loading}
           >
             <Search className="size-4 mr-2" />
-            {isLoading ? "Recherche…" : "Trouver du gaz"}
+            {loading ? "Recherche…" : "Trouver du gaz"}
           </Button>
         </form>
       </Card>
 
-      {isLoading && (
+      {loading && (
         <div className="mt-4 flex items-center justify-center gap-2 text-sm text-white">
           <Search className="size-4 animate-spin text-white" aria-hidden />
           <span className="text-white">Recherche des disponibilités en cours…</span>
         </div>
       )}
 
-      {hasError && (
-        <div className="mt-5 bg-background border border-border rounded-2xl p-6 sm:p-8 shadow-sm">
+      {error && (
+        <div className="mt-5 bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-sm">
           <div className="flex items-center justify-center gap-2">
             <AlertCircle className="size-6 text-destructive" aria-hidden />
           </div>
-          <p className="mt-3 text-sm text-destructive text-center">{errorMessage}</p>
+          <p className="mt-3 text-sm text-destructive text-center">{error}</p>
           <div className="mt-6 flex justify-center">
             <Button
               type="button"
@@ -384,14 +319,14 @@ export function RechercheGaz() {
         </div>
       )}
 
-      {hasResults && (
+      {results !== null && results.length > 0 && (
         <div className="mt-5">
           <h3 className="text-center font-heading text-base sm:text-lg font-semibold text-foreground">
-            {getTotal()} point{getTotal() > 1 ? "s" : ""} trouvé{getTotal() > 1 ? "s" : ""}
+            {results.length} point{results.length > 1 ? "s" : ""} trouvé{results.length > 1 ? "s" : ""}
           </h3>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {getResults().map((point) => (
+            {results.map((point) => (
               <ResultatRechercheCard
                 key={point.id}
                 id={point.id}
@@ -414,26 +349,21 @@ export function RechercheGaz() {
         </div>
       )}
 
-      {isEmpty && (
-        <div className="mt-5 flex flex-col items-center justify-center text-center bg-background border border-border rounded-2xl p-6 sm:p-10 shadow-sm">
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <Cylinder className="size-10 text-primary" aria-hidden />
+      {results !== null && results.length === 0 && (
+        <div className="mt-5 flex flex-col items-center justify-center text-center bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-sm">
+          <div className="flex justify-center mb-2">
+            <Search className="size-10 text-primary" aria-hidden />
           </div>
-          <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground mb-3">
-            Aucun gaz disponible pour le moment. Nous vous invitons à réessayer un peu plus tard.
-          </h2>
-          <p className="text-base text-muted-foreground max-w-xs mx-auto leading-relaxed mb-6">
-            Nous n'avons actuellement aucune disponibilité correspondant à votre
-            recherche.
+          <p className="font-bold text-foreground whitespace-nowrap text-base sm:text-sm mb-2">
+            Aucun gaz disponible pour le moment.
           </p>
-          <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed mb-8">
-            Nous vous invitons à réessayer un peu plus tard ou à relancer votre
-            recherche pour vérifier les nouvelles disponibilités.
+          <p className="text-sm text-muted-foreground whitespace-nowrap mb-6">
+            Nous vous invitons à réessayer un peu plus tard.
           </p>
           <Button
             type="button"
             variant="default"
-            className="w-full sm:w-auto h-11"
+            className="w-full sm:w-auto h-11 mt-3 sm:mt-0"
             onClick={handleRetry}
           >
             <RefreshCw className="size-4 mr-2" />

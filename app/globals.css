@@ -312,22 +312,29 @@ img {
 }
 
 .dark {
-  --color-background: #0a0f14;
-  --color-foreground: #e8ebe9;
-  --color-card: #10141a;
-  --color-card-foreground: #e8ebe9;
-  --color-popover: #10141a;
-  --color-popover-foreground: #e8ebe9;
-  --color-muted: #131820;
-  --color-muted-foreground: #a3a9ad;
-  --color-border: #1a2230;
-  --color-input: #1a2230;
+  /* Fond principal — vert profond */
+  --color-background: #101713;
+  --color-foreground: #F4F7F4;
+
+  /* Cartes et popovers — vert soutenu */
+  --color-card: #1B2A21;
+  --color-card-foreground: #F4F7F4;
+  --color-popover: #1B2A21;
+  --color-popover-foreground: #F4F7F4;
+
+  /* Muted et bordures — vert très sombre */
+  --color-muted: #17231C;
+  --color-muted-foreground: #B8C5BB;
+  --color-border: #35483B;
+  --color-input: #35483B;
   --color-ring: #16834a;
+
+  /* États — verts ajustés */
   --color-primary: #16834a;
   --color-primary-strong: #1f9b5c;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #131820;
-  --color-secondary-foreground: #e8ebe9;
+  --color-secondary: #17231C;
+  --color-secondary-foreground: #F4F7F4;
   --color-success: #17804a;
   --color-success-strong: #1f9b5c;
   --color-success-foreground: #ffffff;
@@ -340,6 +347,8 @@ img {
   --color-destructive: #b42318;
   --color-destructive-strong: #d62828;
   --color-destructive-foreground: #ffffff;
+
+  /* Fonds alternés — sombres et cohérents */
   --color-mint: #0f1a14;
   --color-sky: #0f1520;
   --color-sand: #111418;

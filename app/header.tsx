@@ -4,14 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import {
-  LogIn,
-  Menu,
-  UserPlus,
-  X,
-  Sun,
-  User,
-} from "lucide-react"
+import { LogIn, Menu, Sun, UserPlus, X, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
@@ -40,12 +33,12 @@ const navLinks = [
 
 export function Header() {
   const t = useTranslation()
-  const { theme, setTheme } = useTheme()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
   const closeMenu = () => setMobileMenuOpen(false)
   const { data: session } = authClient.useSession()
   const isAuthenticated = !!session?.user
+  const { theme, setTheme } = useTheme()
 
   // Green brand background for the header
   const headerClassName =
@@ -56,8 +49,8 @@ export function Header() {
 
   return (
     <header className={headerClassName}>
-      <div className="container mx-auto flex h-14 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        {/* Logo à gauche - toujours visible */}
+      <div className="container mx-auto flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8">
+        {/* Logo à gauche dans un cercle blanc */}
         <Link
           href="/"
           onClick={closeMenu}
@@ -78,7 +71,7 @@ export function Header() {
           </span>
         </Link>
 
-        {/* Navigation principale - desktop uniquement */}
+        {/* Navigation principale - alignée à droite sur desktop, masquée sur mobile */}
         <nav
           aria-label="Navigation principale"
           className="hidden flex-1 flex items-center justify-end lg:flex"
@@ -98,71 +91,71 @@ export function Header() {
           </ul>
         </nav>
 
-        {/* Actions utilisateur - desktop uniquement */}
-        <div className="hidden lg:flex items-center gap-2 shrink-0">
-          {isAuthenticated ? (
-            <UserMenu />
-          ) : (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-10 w-10 rounded-lg text-white"
-                  aria-label="Mon compte"
-                >
-                  <User className="size-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem asChild>
-                  <Link
-                    href="/connexion"
-                    className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-foreground hover:bg-muted transition-colors"
+        {/* Actions utilisateur / Menu mobile */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="hidden sm:flex items-center gap-2 shrink-0">
+            {isAuthenticated ? (
+              <UserMenu />
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t("nav_account")}
+                    className={cn(
+                      "hidden sm:inline-flex text-white/90 hover:text-white",
+                      "rounded-lg cursor-pointer"
+                    )}
                   >
-                    <LogIn className="size-4" />
-                    Se connecter
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link
-                    href="/inscription"
-                    className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-foreground hover:bg-muted transition-colors"
-                  >
-                    <UserPlus className="size-4" />
-                    Créer un compte
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-10 w-10 rounded-lg text-white"
-            onClick={() => {
-              setTheme(theme === "light" ? "dark" : "light")
-            }}
-            aria-label="Changer de thème"
-            aria-pressed={theme === "dark"}
-          >
-            <Sun className="size-5" />
-          </Button>
-        </div>
+                    <User className="size-4" />
+                    <span className="absolute top-1 right-1 size-2 rounded-full bg-primary text-white text-[10px] leading-none">
+                      +
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 bg-background">
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/connexion"
+                      className="flex items-center gap-2 text-foreground"
+                    >
+                      <LogIn className="size-4" />
+                      {t("nav_login")}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/inscription"
+                      className="flex items-center gap-2 text-foreground"
+                    >
+                      <UserPlus className="size-4" />
+                      {t("nav_register")}
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
 
-        {/* Bouton menu hamburger mobile uniquement */}
-        <div className="flex items-center gap-2 shrink-0 lg:hidden">
-          <Sheet
-            open={mobileMenuOpen}
-            onOpenChange={setMobileMenuOpen}
-          >
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={t("nav_theme")}
+              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+              className="hidden sm:inline-flex rounded-lg cursor-pointer text-white/90 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <Sun className="size-4" />
+            </Button>
+          </div>
+
+          {/* Bouton menu hamburger mobile */}
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-10 w-10 rounded-lg text-white"
+                className="h-10 w-10 rounded-lg lg:hidden text-white"
                 aria-label={t("nav_menu")}
-                aria-expanded={mobileMenuOpen}
               >
                 {mobileMenuOpen ? (
                   <X className="size-5" />
@@ -176,76 +169,68 @@ export function Header() {
               side="right"
               className="flex w-[85vw] max-w-sm flex-col p-0 bg-background overflow-hidden"
             >
-              <div className="flex flex-col p-4 gap-6">
-                <nav
-                  className="flex flex-col gap-1 overflow-y-auto max-h-[60vh]"
-                  aria-label="Menu mobile"
+              <nav className="flex flex-col gap-1 p-4 flex-1 overflow-y-auto">
+                {/* Section 1: Navigation principale */}
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={closeMenu}
+                    aria-current={pathname === link.href ? "page" : undefined}
+                    className={cn(
+                      "rounded-lg px-3 py-3 text-base font-medium transition-colors",
+                      pathname === link.href
+                        ? "bg-primary/10 text-primary border-l-2 border-primary pl-2"
+                        : "text-foreground hover:bg-primary hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
+                    )}
+                  >
+                    {t(link.labelKey)}
+                  </Link>
+                ))}
+
+                <div className="my-2 border-t border-border" />
+
+                {/* Section 2: Compte */}
+                <div className="space-y-2">
+                  <p className="px-3 py-2 text-sm font-medium text-muted-foreground">
+                    Votre compte
+                  </p>
+                  {isAuthenticated ? (
+                    <UserMenu isMobile />
+                  ) : (
+                    <>
+                      <Link
+                        href="/connexion"
+                        onClick={closeMenu}
+                        className="flex items-center gap-2 rounded-lg px-3 py-3 text-base font-medium transition-colors text-foreground hover:bg-primary hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
+                      >
+                        <LogIn className="size-4" />
+                        Se connecter
+                      </Link>
+                      <Link
+                        href="/inscription"
+                        onClick={closeMenu}
+                        className="flex items-center gap-2 rounded-lg px-3 py-3 text-base font-medium transition-colors text-foreground hover:bg-primary hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
+                      >
+                        <UserPlus className="size-4" />
+                        Créer un compte
+                      </Link>
+                    </>
+                  )}
+                </div>
+
+                <div className="my-2 border-t border-border" />
+
+                {/* Section 3: Apparence */}
+                <button
+                  onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+                  aria-label={t("nav_theme")}
+                  className="flex items-center gap-2 rounded-lg px-3 py-3 text-base font-medium transition-colors text-foreground hover:bg-primary hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground cursor-pointer"
                 >
-                  {/* Liens de navigation publique */}
-                  {navLinks.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={closeMenu}
-                      aria-current={pathname === link.href ? "page" : undefined}
-                      className="rounded-lg px-3 py-3 text-base font-medium text-foreground transition-colors hover:bg-muted"
-                    >
-                      {t(link.labelKey)}
-                    </Link>
-                  ))}
-
-                  <div className="my-2 border-t border-border" />
-
-                  {/* Section COMPTE */}
-                  <div className="space-y-2 px-3">
-                    <p className="px-2 py-1 text-sm font-medium text-muted-foreground">
-                      {t("nav_account")}
-                    </p>
-                    {isAuthenticated ? (
-                      <UserMenu />
-                    ) : (
-                      <>
-                        <Link
-                          href="/connexion"
-                          onClick={closeMenu}
-                          className="flex items-center gap-2 rounded-lg px-3 py-3 text-base font-medium text-foreground transition-colors hover:bg-muted"
-                        >
-                          <LogIn className="size-4" />
-                          Se connecter
-                        </Link>
-                        <Link
-                          href="/inscription"
-                          onClick={closeMenu}
-                          className="flex items-center gap-2 rounded-lg px-3 py-3 text-base font-medium text-foreground transition-colors hover:bg-muted"
-                        >
-                          <UserPlus className="size-4" />
-                          Créer un compte
-                        </Link>
-                        </>
-                      )}
-                  </div>
-
-                  <div className="my-2 border-t border-border" />
-
-                  {/* Section APPARENCE — basculement clair / sombre uniquement */}
-                  <div className="px-3">
-                    <button
-                      onClick={() => {
-                        setTheme(theme === "light" ? "dark" : "light")
-                        closeMenu()
-                      }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-3 text-base font-medium text-foreground transition-colors hover:bg-muted"
-                    >
-                      <Sun className="size-4" />
-                      <span>
-                        {theme === "light"
-                          ? "Passer en mode sombre"
-                          : "Passer en mode clair"}
-                      </span>
-                    </button>
-                  </div>
-                </nav>
-              </div>
+                  <Sun className="size-5" />
+                  <span>Changer de thème</span>
+                </button>
+              </nav>
             </SheetContent>
           </Sheet>
         </div>

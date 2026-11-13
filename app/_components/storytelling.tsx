@@ -10,10 +10,10 @@ import {
   Footprints,
   Sparkles,
 } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useTrouverGaz } from "@/lib/use-trouver-gaz"
 
 const painPoints = [
   {
@@ -40,7 +40,7 @@ const painPoints = [
 ]
 
 export function Storytelling() {
-  const handleAction = useTrouverGaz()
+  const router = useRouter()
 
   return (
     <section className="w-full bg-sand py-12 md:py-16">
@@ -71,7 +71,7 @@ export function Storytelling() {
           {painPoints.map((item, idx) => (
             <Card
               key={item.title}
-              className="p-3 sm:p-4 rounded-xl border border-border bg-background shadow-sm transition-all hover:shadow-md hover:border-primary/20"
+              className="p-3 sm:p-4 rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md hover:border-primary/20"
             >
               <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
                 <span className="flex size-8 sm:size-10 items-center justify-center rounded-xl bg-destructive/10 text-destructive ring-1 ring-destructive/20">
@@ -103,7 +103,7 @@ export function Storytelling() {
         </div>
 
         {/* Bilan & Résolution */}
-        <Card className="mx-auto mt-6 max-w-4xl rounded-xl border border-border bg-background p-5 shadow-sm ring-1 ring-border">
+        <Card className="mx-auto mt-6 max-w-4xl rounded-xl border border-border bg-card p-5 shadow-sm ring-1 ring-border">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-2">
               <Badge variant="destructive" className="h-4 w-fit font-semibold">
@@ -113,8 +113,7 @@ export function Storytelling() {
                 Argent dépensé en transport, matinée gâchée et repas retardé.
               </h4>
               <p className="text-sm text-muted-foreground">
-                Personne ne vous avait prévenu des ruptures de stock avant votre
-                déplacement.
+                Personne ne vous avait prévenu des ruptures de stock avant votre déplacement.
               </p>
             </div>
 
@@ -146,7 +145,7 @@ export function Storytelling() {
           <Button
             size="lg"
             className="h-12 w-full rounded-xl border border-input bg-primary px-8 text-base font-medium text-primary-foreground transition-colors hover:bg-primary-strong focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-ring/50 cursor-pointer"
-            onClick={handleAction}
+            onClick={() => router.push("/?#recherche-gaz")}
           >
             Trouver mon gaz maintenant
             <ArrowRight className="size-4" />

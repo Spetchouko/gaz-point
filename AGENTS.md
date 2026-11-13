@@ -103,16 +103,12 @@ A task is complete only when its intended functionality is implemented, security
 - Si une variable d'environnement semble manquer, signaler son nom sans révéler sa valeur et demander une intervention distincte.
 - Vérifier que les fichiers d'environnement sont correctement exclus de Git et que les secrets ne sont pas exposés par le code client.
 
-## 9. Charte éditoriale — Règles permanentes de rédaction français
+<!-- BEGIN:nextjs-agent-rules -->
 
-Tous les nouveaux composants, dashboards, formulaires et fonctionnalités doivent respecter la charte éditoriale (`docs/CHARTE-EDITORIALE.md`). Règles obligatoires :
+# This is NOT the Next.js you know
 
-- **Langue** : français (fr-FR), registre professionnel simple et naturel
-- **Pronom** : vouvoiement systématique (`vous`, jamais `tu`)
-- **Ponctuation** : espace avant `: ; ! ? ;`, apostrophe typographique `'` (pas `&apos;`), accents obligatoires sur majuscules (`À`, `É`, `È`, `Ç`, `Ô`)
-- **Terminologie** : `usager` (pas `client`/`utilisateur`), `vendeur` (pas `professionnel`), `Se connecter` (pas `Connexion`), `Créer un compte` (pas `S'inscrire`), `Disponibilité` (pas `Stock`)
-- **Boutons** : verbe à l'impératif, 3 mots max, sans point final (`Se connecter`, `Créer un compte`, `Envoyer`, `Modifier`, `Supprimer`, `Annuler`, `Rechercher du gaz`)
-- **Devise** : `FCFA` avec espace insécurisée (`5 000 FCFA`)
-- **Téléphone** : `+237 690 12 34 56`
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 
-**Règle absolue : aucun nouveau composant, dashboard, module, formulaire ou fonctionnalité ne doit être développé sans respecter cette charte.**
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

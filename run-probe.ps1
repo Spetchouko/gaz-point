@@ -1,0 +1,1 @@
+wsl -d Ubuntu-24.04 -e bash -c "cd /home/solomon/gaz-point && npx tsx scripts/probe-schema.ts"

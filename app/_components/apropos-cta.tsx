@@ -30,7 +30,7 @@ export function AproposCta() {
 
           <div className="mt-10 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center">
             <Button
-              render={<Link href="/#trouver-du-gaz" />}
+              render={<Link href="/?#recherche-gaz" />}
               nativeButton={false}
               size="lg"
               className="h-12 w-full gap-2 bg-primary-foreground px-6 text-base text-primary hover:bg-primary-foreground/90 sm:w-auto cursor-pointer"

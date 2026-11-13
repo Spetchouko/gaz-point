@@ -27,7 +27,7 @@ const sujets = [
   {
     objet: "Question générale",
     description:
-      "Comprendre le service, savoir si GazPoints couvre ton quartier, ou demander une précision.",
+      "Comprendre le service, savoir si GazPoints couvre votre quartier, ou demander une précision.",
   },
   {
     objet: "Signalement",
@@ -42,7 +42,7 @@ const sujets = [
   {
     objet: "Données personnelles",
     description:
-      "Accès, rectification ou suppression de tes données. Objet à utiliser en priorité.",
+      "Accès, rectification ou suppression de vos données. Objet à utiliser en priorité.",
   },
   {
     objet: "Facturation",
@@ -82,7 +82,7 @@ export function ContactForm() {
 
       if (!response.ok) {
         setStatut("erreur")
-        setErreur(data?.error ?? "L'envoi a échoué. Réessaie plus tard.")
+        setErreur(data?.error ?? "L'envoi a échoué. Réessayez plus tard.")
         return
       }
 
@@ -93,7 +93,7 @@ export function ContactForm() {
       setMessage("")
     } catch {
       setStatut("erreur")
-      setErreur("Impossible d'envoyer le message. Vérifie ta connexion.")
+      setErreur("Impossible d'envoyer le message. Vérifiez votre connexion.")
     }
   }
 
@@ -116,7 +116,7 @@ export function ContactForm() {
 
           <p className="mt-4 text-pretty text-base text-muted-foreground sm:text-lg">
             Un objet clair, c’est une réponse en quelques heures au lieu de
-            plusieurs jours. Tu n’as aucun compte à créer.
+            plusieurs jours. Vous n’avez aucun compte à créer.
           </p>
         </div>
 
@@ -135,7 +135,7 @@ export function ContactForm() {
                 <Alert className="border-success/20 bg-success/5 text-success *:data-[slot=alert-description]:text-success">
                   <AlertTitle>Message envoyé</AlertTitle>
                   <AlertDescription>
-                    Merci ! Ta demande est bien reçue, nous te répondons par
+                    Merci ! Votre demande est bien reçue, nous vous répondons par
                     email sous 48 h ouvrées.
                   </AlertDescription>
                 </Alert>
@@ -151,7 +151,7 @@ export function ContactForm() {
                         autoComplete="name"
                         value={nom}
                         onChange={(event) => setNom(event.target.value)}
-                        placeholder="Ton nom complet"
+                        placeholder="Votre nom complet"
                       />
                     </div>
 
@@ -165,7 +165,7 @@ export function ContactForm() {
                         autoComplete="email"
                         value={email}
                         onChange={(event) => setEmail(event.target.value)}
-                        placeholder="ton@email.com"
+                        placeholder="votre@email.com"
                       />
                     </div>
                   </div>
@@ -177,7 +177,7 @@ export function ContactForm() {
                       onValueChange={(value) => setObjet(value ?? "")}
                     >
                       <SelectTrigger id="contact-objet" className="w-full">
-                        <SelectValue placeholder="Choisis un objet" />
+                        <SelectValue placeholder="Choisissez un objet" />
                       </SelectTrigger>
                       <SelectContent>
                         {sujets.map((sujet) => (
@@ -199,7 +199,7 @@ export function ContactForm() {
                       maxLength={5000}
                       value={message}
                       onChange={(event) => setMessage(event.target.value)}
-                      placeholder="Décris ta demande en quelques lignes…"
+                      placeholder="Décrivez votre demande en quelques lignes…"
                     />
                   </div>
 
@@ -255,7 +255,7 @@ export function ContactForm() {
 
               <p className="flex items-start gap-2 rounded-lg bg-muted/60 p-3 text-xs leading-relaxed text-muted-foreground">
                 <Mail className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-                Tu préfères ton propre client email ? Écris directement à{" "}
+                Vous préférez votre propre client email ? Écris directement à{" "}
                 <a
                   href="mailto:gazpoints@gmail.com"
                   className="font-medium text-foreground underline underline-offset-4 hover:text-primary"

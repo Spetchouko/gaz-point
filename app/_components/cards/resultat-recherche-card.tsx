@@ -56,7 +56,7 @@ export function ResultatRechercheCard({
     <Card
       key={id}
       className={cn(
-        "border border-border rounded-xl bg-background shadow-sm hover:shadow-md transition-all duration-200 group",
+        "border border-border rounded-xl bg-card shadow-sm hover:shadow-md transition-all duration-200 group",
         className
       )}
     >

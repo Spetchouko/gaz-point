@@ -18,11 +18,11 @@ export function TrouverMonGaz() {
         </Badge>
 
         <h2 className="mt-6 text-balance font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-          Tu cherches le gaz où&nbsp;?
+          Cherchez-vous le gaz où&nbsp;?
         </h2>
 
         <p className="mt-5 text-pretty text-base text-muted-foreground sm:text-lg">
-          Renseigne ta bouteille et ta zone pour trouver les points de vente
+          Renseignez votre bouteille et votre zone pour trouver les points de vente
           disponibles en direct.
         </p>
       </div>

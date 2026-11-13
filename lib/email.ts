@@ -117,14 +117,14 @@ function buildVerificationHtml({
   expiresInMinutes: number
   verificationLink?: string
 }): string {
-  const codeSpaced = code.split("").join(" ") // espaces fins pour lisibilité
+  const codeSpaced = code.split("").join(" ") // espaces fins pour lisibilite
   const linkSection = verificationLink
     ? `
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
       <tr>
         <td align="center" style="padding: 24px 0;">
           <a href="${verificationLink}" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:600;padding:14px 28px;border-radius:8px;font-size:16px;letter-spacing:0.3px;">
-            Vérifier mon adresse email
+            Verifier mon adresse email
           </a>
         </td>
       </tr>
@@ -138,7 +138,7 @@ function buildVerificationHtml({
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vérifiez votre adresse email - GazPoints</title>
+  <title>Verifiez votre adresse email - GazPoints</title>
 </head>
 <body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
@@ -158,10 +158,10 @@ function buildVerificationHtml({
           <!-- Corps -->
           <tr>
             <td style="padding:32px 24px;color:#1f2937;">
-              <h1 style="margin:0 0 12px;font-size:22px;font-weight:700;color:#111827;text-align:center;">Vérifiez votre adresse email</h1>
+              <h1 style="margin:0 0 12px;font-size:22px;font-weight:700;color:#111827;text-align:center;">Verifiez votre adresse email</h1>
               <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;text-align:center;">
                 Bienvenue sur GazPoints ! Nous sommes heureux de vous accueillir.
-                Pour sécuriser votre compte, veuillez confirmer votre adresse email.
+                Pour securiser votre compte, veuillez confirmer votre adresse email.
               </p>
               <!-- Code OTP -->
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
@@ -185,14 +185,14 @@ function buildVerificationHtml({
               ${linkSection}
               <p style="margin:24px 0 0;font-size:13px;color:#6b7280;text-align:center;line-height:1.6;">
                 Ce code et ce lien sont personnels. Ne les partagez avec personne.<br>
-                Si vous n'avez pas créé de compte sur GazPoints, ignorez cet email.
+                Si vous n'avez pas cree de compte sur GazPoints, ignorez cet email.
               </p>
             </td>
           </tr>
           <!-- Pied de page -->
           <tr>
             <td style="background:#f9fafb;padding:24px;border-top:1px solid #e5e7eb;">
-              <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#111827;text-align:center;">L'équipe GazPoints</p>
+              <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#111827;text-align:center;">L'equipe GazPoints</p>
               <p style="margin:0 0 4px;font-size:12px;color:#6b7280;text-align:center;">Trouvez votre bouteille de gaz avant de vous deplacer.</p>
               <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">Contact : gazpoints@gmail.com</p>
             </td>
@@ -230,10 +230,10 @@ Ce code expire dans ${expiresInMinutes} minutes.
 ${verificationLink ? `Ou verifiez directement en cliquant ici : ${verificationLink}\n` : ""}
 
 Ce code et ce lien sont personnels. Ne les partagez avec personne.
-Si vous n'avez pas créé de compte sur GazPoints, ignorez cet email.
+Si vous n'avez pas cree de compte sur GazPoints, ignorez cet email.
 
 ---
-L'équipe GazPoints
+L'equipe GazPoints
 Trouvez votre bouteille de gaz avant de vous deplacer.
 Contact : gazpoints@gmail.com
   `
@@ -255,7 +255,7 @@ export async function sendVerificationEmail({
   const info = await transporter.sendMail({
     from: `"GazPoints" <${smtpUser}>`,
     to: email,
-    subject: `Vérifiez votre adresse email – GazPoints`,
+    subject: `Verifiez votre adresse email – GazPoints`,
     text,
     html,
   })
@@ -279,7 +279,7 @@ export async function sendVerificationEmailResend({
   const info = await transporter.sendMail({
     from: `"GazPoints" <${smtpUser}>`,
     to: email,
-    subject: `Nouveau code de vérification GazPoints : ${code}`,
+    subject: `Nouveau code de verification GazPoints : ${code}`,
     text,
     html,
   })
@@ -297,10 +297,10 @@ export async function sendVendorApprovalResultEmail({
   const transporter = getTransporter()
 
   const recipient = vendorName?.trim() || "vendeur"
-  const title = approved ? "GazPoints — Compte vendeur approuvé" : "GazPoints — Compte vendeur refusé"
+  const title = approved ? "GazPoints — Compte vendeur approuve" : "GazPoints — Compte vendeur refuse"
   const intro = approved
-    ? "Bonne nouvelle ! Votre compte vendeur a été approuvé. Vous pouvez désormais gérer vos points de vente et vos disponibilités depuis votre espace vendeur."
-    : "Après examen de votre demande, votre compte vendeur n'a pas été approuvé pour le moment."
+    ? "Bonne nouvelle ! Votre compte vendeur a ete approuve. Vous pouvez desormais gerer vos points de vente et vos disponibilites depuis votre espace vendeur."
+    : "Apres examen de votre demande, votre compte vendeur n'a pas ete approuve pour le moment."
   const reasonBlock = !approved && rejectionReason
     ? `
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
@@ -313,7 +313,7 @@ export async function sendVendorApprovalResultEmail({
         </table>
       `
     : ""
-  const actionLabel = approved ? "Accéder à mon espace vendeur" : "Accéder à mon espace"
+  const actionLabel = approved ? "Acceder a mon espace vendeur" : "Acceder a mon espace"
 
   const html = `
 <!DOCTYPE html>
@@ -347,13 +347,13 @@ export async function sendVendorApprovalResultEmail({
                 <a href="${adminDashboardUrl}" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 24px;border-radius:8px;font-size:14px;">${actionLabel}</a>
               </div>
               <p style="margin:24px 0 0;font-size:13px;color:#6b7280;text-align:center;line-height:1.6;">
-                Si vous avez des questions, contactez notre équipe depuis GazPoints.
+                Si vous avez des questions, contactez notre equipe depuis GazPoints.
               </p>
             </td>
           </tr>
           <tr>
             <td style="background:#f9fafb;padding:24px;border-top:1px solid #e5e7eb;">
-              <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">L'équipe GazPoints</p>
+              <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">L'equipe GazPoints</p>
             </td>
           </tr>
         </table>
@@ -374,7 +374,7 @@ ${!approved && rejectionReason ? `\nMotif : ${rejectionReason}\n` : ""}
 ${actionLabel} : ${adminDashboardUrl}
 
 ---
-L'équipe GazPoints
+L'equipe GazPoints
   `
 
   await transporter.sendMail({
@@ -496,8 +496,8 @@ function buildNewConsignationHtml({
           </tr>
           <tr>
             <td style="background:#f9fafb;padding:24px;border-top:1px solid #e5e7eb;">
-              <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#111827;text-align:center;">L'équipe GazPoints</p>
-              <p style="margin:0;font-size:12px;color:#6b7280;text-align:center;">Trouvez votre bouteille de gaz avant de vous déplacer.</p>
+              <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#111827;text-align:center;">L'equipe GazPoints</p>
+              <p style="margin:0;font-size:12px;color:#6b7280;text-align:center;">Trouvez votre bouteille de gaz avant de vous deplacer.</p>
               <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">www.gazpoints.com</p>
             </td>
           </tr>
@@ -543,7 +543,7 @@ Connectez-vous à votre dashboard vendeur pour consulter les informations et pr�
 
 Merci de faire confiance à GazPoints.
 
-L'équipe GazPoints
+L'equipe GazPoints
 www.gazpoints.com
   `
 }

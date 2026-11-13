@@ -35,7 +35,7 @@ export function ContactVendeurs() {
               </div>
 
               <h2 className="mt-6 text-balance text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                Tu vends du gaz et tu n’apparais pas encore sur GazPoints ?
+                Vendez-vous du gaz et n’apparaissez pas encore sur GazPoints ?
               </h2>
 
               <p className="mt-4 text-pretty text-base text-muted-foreground">
@@ -63,7 +63,7 @@ export function ContactVendeurs() {
                 size="lg"
                 className="mt-8 h-12 w-full gap-2 px-6 text-base sm:w-auto"
               >
-                Créer mon espace vendeur
+                Créer un compte Vendeur
                 <ArrowRight className="size-4" />
               </Button>
             </div>
@@ -71,7 +71,7 @@ export function ContactVendeurs() {
             <Card className="h-full bg-background/80 shadow-none">
               <CardHeader>
                 <CardTitle className="text-base">
-                  Ce que ça change pour toi
+                  Ce que cela change pour vous
                 </CardTitle>
               </CardHeader>
               <CardContent>

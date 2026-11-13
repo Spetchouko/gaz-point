@@ -46,7 +46,7 @@ export function Benefices() {
   return (
     <section className="w-full bg-background py-12 md:py-16">
       <div className="container mx-auto px-4">
-        <div className="grid gap-8 md:gap-12 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 lg:items-center">
           {/* Image en haut — pleine section avec aspect-ratio réservé */}
           <div className="relative w-full overflow-hidden rounded-2xl shadow-2xl ring-2 ring-black/20 aspect-[4/3] sm:aspect-[3/2] lg:aspect-[16/9]">
             <div

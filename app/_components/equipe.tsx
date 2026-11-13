@@ -99,7 +99,7 @@ export function Equipe() {
             href="/inscription"
             className="font-medium text-foreground underline underline-offset-4 transition-colors hover:text-primary"
           >
-            Créer votre espace vendeur
+            Créez votre espace vendeur
           </Link>
           , écris-nous à{" "}
           <a

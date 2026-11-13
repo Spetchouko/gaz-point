@@ -1,39 +1,18 @@
 import type { Metadata } from "next"
 import { PageLegale, type LegalDocument } from "@/app/_components/page-legale"
 
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://www.gazpoints.com"
-
 export const metadata: Metadata = {
   title: { absolute: "Conditions générales d'utilisation | GazPoints" },
   description:
     "Conditions générales d'utilisation de GazPoints : règles d'accès au service, responsabilités des usagers et des vendeurs, modération, propriété intellectuelle et limites de responsabilité.",
   robots: "index, follow",
-  openGraph: {
-    type: "website",
-    locale: "fr_FR",
-    url: `${SITE_URL}/cgu`,
-    siteName: "GazPoints",
-    title: "Conditions générales d'utilisation | GazPoints",
-    images: [
-      {
-        url: `${SITE_URL}/brand/hero.webp`,
-        width: 1200,
-        height: 630,
-        alt: "CGU GazPoints",
-      },
-    ],
-  },
-  alternates: {
-    canonical: `${SITE_URL}/cgu`,
-  },
 }
 
 const document: LegalDocument = {
   eyebrow: "Conditions d'utilisation",
   title: "Conditions d'utilisation",
   intro:
-    "En naviguant sur GazPoints ou en créant un compte, vous acceptez ces conditions. Si vous n'êtes pas d'accord, merci de ne pas utiliser le service.",
+    "En naviguant sur GazPoints ou en créant un compte, vous acceptez ces conditions. Si vous ne êtes pas d'accord, merci de ne pas utiliser le service.",
   updated: "13 mars 2026",
   sections: [
     {

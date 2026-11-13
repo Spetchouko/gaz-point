@@ -15,7 +15,7 @@ const canaux = [
     href: "mailto:gazpoints@gmail.com",
     value: "gazpoints@gmail.com",
     description:
-      "Le canal principal. C'est ici que tu nous écris pour tout le reste.",
+      "Le canal principal. C'est ici que vous nous écrivez pour tout le reste.",
     note: "Réponse sous 48 h ouvrées.",
   },
   {

@@ -25,7 +25,7 @@ export function ContactHero() {
           </h1>
 
           <p className="mt-6 max-w-xl text-pretty text-base text-muted-foreground sm:text-lg">
-            Un formulaire, un email ou un appel : choisis le canal qui te convient.
+            Un formulaire, un email ou un appel : choisissez le canal qui vous convient.
             Aucun compte à créer pour nous écrire.
           </p>
 

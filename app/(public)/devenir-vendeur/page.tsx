@@ -4,33 +4,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Store, ShieldCheck, TrendingUp, BarChart3 } from "lucide-react"
 
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://www.gazpoints.com"
-
 export const metadata: Metadata = {
   title: { absolute: "Devenir Vendeur | GazPoints" },
-  description:
-    "Devenez vendeur partenaire GazPoints et publiez vos disponibilités de gaz à Douala. Abonnement vendeur à 5 000 FCFA/mois, badge certifié, visibilité prioritaire auprès des clients.",
-  openGraph: {
-    type: "website",
-    locale: "fr_FR",
-    url: `${SITE_URL}/devenir-vendeur`,
-    siteName: "GazPoints",
-    title: "Devenir Vendeur | GazPoints",
-    description:
-      "Rejoignez le réseau de vendeurs GazPoints au Cameroun et augmentez vos ventes de gaz domestique.",
-    images: [
-      {
-        url: `${SITE_URL}/brand/hero.webp`,
-        width: 1200,
-        height: 630,
-        alt: "Devenir vendeur GazPoints",
-      },
-    ],
-  },
-  alternates: {
-    canonical: `${SITE_URL}/devenir-vendeur`,
-  },
 }
 
 export default function DevenirVendeurPage() {
