@@ -25,6 +25,7 @@ import { useAuthModal } from "@/lib/auth-context";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { DashboardFooter } from "@/app/_components/dashboard/dashboard-footer";
+import { ScrollToTop } from "@/app/_components/dashboard/scroll-to-top";
 import { cn } from "@/lib/utils";
 
 const CLIENT_NAV_ITEMS = [
@@ -440,6 +441,9 @@ export function DashboardClientLayout({
 
         {/* Footer public */}
         <DashboardFooter />
+
+        {/* Bouton flottant retour en haut */}
+        <ScrollToTop />
       </div>
     </div>
   );
