@@ -40,6 +40,7 @@ export const user = pgTable("user", {
     .defaultNow()
     .$onUpdate(() => /* @__PURE */ new Date())
     .notNull(),
+  lastLoginAt: timestamp("last_login_at"),
   },
   (table) => [index("user_role_created_at_idx").on(table.role, table.createdAt)],
 );

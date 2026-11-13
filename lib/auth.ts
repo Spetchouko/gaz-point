@@ -302,6 +302,16 @@ export const auth = betterAuth({
                     return true
                 },
                 after: async (session: Record<string, unknown>) => {
+                    const userId = String(session.userId ?? "")
+                    // Enregistrer la date et heure de la dernière connexion réussie.
+                    try {
+                        await db
+                            .update(schema.user)
+                            .set({ lastLoginAt: new Date() })
+                            .where(eq(schema.user.id, userId))
+                    } catch (e) {
+                        console.error("user last_login_at update failed", e)
+                    }
                     // Connexion réelle : journalisée pour les statistiques de trafic
                     try {
                         await db.insert(schema.trafficEvent).values({
@@ -312,7 +322,7 @@ export const auth = betterAuth({
                             utmSource: null,
                             utmMedium: null,
                             utmCampaign: null,
-                            userId: String(session.userId ?? ""),
+                            userId: userId,
                             consented: false,
                         })
                     } catch (e) {
