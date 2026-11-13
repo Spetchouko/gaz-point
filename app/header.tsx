@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { LogIn, Menu, Sun, UserPlus, X, User } from "lucide-react"
+import { LogIn, Menu, Sun, X, UserPlus, UserRound, UserRoundPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
@@ -110,10 +110,7 @@ export function Header() {
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
                     )}
                   >
-                    <User className="size-4" />
-                    <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-primary text-white text-[10px] leading-none">
-                      +
-                    </span>
+                    <UserRoundPlus className="size-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48 bg-background">

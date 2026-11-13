@@ -415,12 +415,12 @@ function LoginPageContent() {
             <svg viewBox="0 0 800 600" className="w-full h-full" aria-hidden="true">
               <defs>
                 <linearGradient id="gasGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" style="stop-color:#16834a;stop-opacity:1" />
-                  <stop offset="100%" style="stop-color:#0e5c34;stop-opacity:1" />
+                  <stop offset="0%" style={{ stopColor: "#16834a", stopOpacity: 1 }} />
+                  <stop offset="100%" style={{ stopColor: "#0e5c34", stopOpacity: 1 }} />
                 </linearGradient>
                 <linearGradient id="pinGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" style="stop-color:#174a7e;stop-opacity:1" />
-                  <stop offset="100%" style="stop-color:#103657;stop-opacity:1" />
+                  <stop offset="0%" style={{ stopColor: "#174a7e", stopOpacity: 1 }} />
+                  <stop offset="100%" style={{ stopColor: "#103657", stopOpacity: 1 }} />
                 </linearGradient>
               </defs>
               <circle cx="620" cy="-80" r="200" fill="#eaf5ee" opacity="0.6" />
