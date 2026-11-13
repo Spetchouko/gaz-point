@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
@@ -73,6 +74,8 @@ export function DashboardClientLayout({
   const user = session?.user as
     | { name?: string | null; email?: string | null; image?: string | null }
     | undefined;
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(3);
 
   const isActive = (href: string) =>
     href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
@@ -89,18 +92,41 @@ export function DashboardClientLayout({
     }
   };
 
-  const initials = user?.name
-    ?.split(" ")
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("")
-    .slice(0, 2);
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      alert("Veuillez sélectionner une image valide.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("L'image ne doit pas dépasser 5 Mo.");
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setAvatarUrl(url);
+  };
+
+  const getUserAvatar = () => {
+    if (avatarUrl) return avatarUrl;
+    if (user?.image) return user.image;
+    return null;
+  };
+
+  const getUserInitials = () => {
+    return user?.name
+      ?.split(" ")
+      .map((part) => part.charAt(0).toUpperCase())
+      .join("")
+      .slice(0, 2) || "U";
+  };
 
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar - Desktop */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex h-full flex-col bg-card border-r border-border transition-all duration-300 ease-in-out lg:relative lg:z-auto",
+          "fixed inset-y-0 left-0 z-40 flex h-full flex-col bg-card border-r border-border transition-all duration-300 ease-in-out",
           sidebarCollapsed ? "w-16" : "w-64",
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
@@ -113,18 +139,24 @@ export function DashboardClientLayout({
             sidebarCollapsed && "justify-center px-0"
           )}
         >
-          {!sidebarCollapsed && (
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-2 font-bold text-lg"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <span className="text-sm font-semibold">GP</span>
-              </span>
-              <span className="text-primary font-bold tracking-tight">GazPoints</span>
-            </Link>
-          )}
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2 font-bold text-lg"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Image
+                src="/brand/logo.png"
+                alt="GazPoints"
+                width={24}
+                height={24}
+                className="h-5 w-5 object-contain"
+              />
+            </span>
+            {!sidebarCollapsed && (
+              <span className="font-bold text-lg tracking-tight">GazPoints</span>
+            )}
+          </Link>
           <button
             type="button"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -167,9 +199,19 @@ export function DashboardClientLayout({
 
         {/* Footer with user info and logout */}
         <div className={cn("border-t border-border p-3 space-y-2", sidebarCollapsed && "px-1")}>
-          <div className={cn("flex items-center gap-3 rounded-lg px-2.5 py-2", sidebarCollapsed && "justify-center")}>
+          <div className={cn("flex items-center gap-3 rounded-lg px-3 py-2", sidebarCollapsed && "justify-center")}>
             <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-              {initials || "U"}
+              {getUserAvatar() ? (
+                <Image
+                  src={getUserAvatar()!}
+                  alt="Avatar utilisateur"
+                  width={32}
+                  height={32}
+                  className="size-8 rounded-full object-cover"
+                />
+              ) : (
+                <span className="text-sm font-semibold">{getUserInitials()}</span>
+              )}
             </span>
             {!sidebarCollapsed && (
               <div className="min-w-0">
@@ -216,7 +258,13 @@ export function DashboardClientLayout({
             onClick={() => setSidebarOpen(false)}
           >
             <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <span className="text-sm font-semibold">GP</span>
+              <Image
+                src="/brand/logo.png"
+                alt="GazPoints"
+                width={24}
+                height={24}
+                className="h-5 w-5 object-contain"
+              />
             </span>
             <span className="text-primary font-bold tracking-tight">GazPoints</span>
           </Link>
@@ -240,12 +288,37 @@ export function DashboardClientLayout({
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 rounded-lg px-3 py-2 bg-primary/10 text-primary text-sm font-medium">
-              <span className="size-8 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                {initials || "U"}
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                {getUserAvatar() ? (
+                  <Image
+                    src={getUserAvatar()!}
+                    alt="Avatar utilisateur"
+                    width={24}
+                    height={24}
+                    className="size-6 rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="text-xs font-semibold">{getUserInitials()}</span>
+                )}
               </span>
               <span className="hidden sm:block font-medium">
                 {user?.name || "Utilisateur"}
               </span>
+            </div>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard/notifications")}
+                className="flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                aria-label="Notifications"
+              >
+                <Bell className="size-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 size-2.5 rounded-full bg-destructive text-white text-[10px] leading-none">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </button>
             </div>
             <button
               type="button"
