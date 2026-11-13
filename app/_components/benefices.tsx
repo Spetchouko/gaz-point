@@ -46,9 +46,20 @@ export function Benefices() {
   return (
     <section className="w-full bg-background py-12 md:py-16">
       <div className="container mx-auto px-4">
-        <div className="grid lg:grid-cols-2 gap-8 md:gap-16 items-start">
-          {/* Contenu à gauche — centré et resserré */}
-          <div className="lg:pl-8 xl:pl-14 space-y-4">
+        <div className="grid gap-8 md:gap-12 items-start">
+          {/* Image en haut — pleine section avec aspect-ratio réservé */}
+          <div className="relative w-full overflow-hidden rounded-2xl shadow-2xl ring-2 ring-black/20 aspect-[4/3] sm:aspect-[3/2] lg:aspect-[16/9]">
+            <div
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat rounded-2xl"
+              style={{
+                backgroundImage: 'url("/brand/kill.png")',
+              }}
+              aria-hidden="true"
+            />
+          </div>
+
+          {/* Cartes en dessous — centrées et resserrées */}
+          <div className="space-y-4">
             <div className="space-y-2">
               <Badge
                 variant="secondary"
@@ -91,17 +102,6 @@ export function Benefices() {
                 </Card>
               ))}
             </div>
-          </div>
-
-          {/* Image à droite — pleine section avec aspect-ratio réservé */}
-          <div className="relative w-full overflow-hidden rounded-2xl shadow-2xl ring-2 ring-black/20 lg:sticky lg:top-20 aspect-[4/3] sm:aspect-[3/2] lg:aspect-[16/9]">
-            <div
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat rounded-2xl"
-              style={{
-                backgroundImage: 'url("/brand/kill.png")',
-              }}
-              aria-hidden="true"
-            />
           </div>
         </div>
       </div>
