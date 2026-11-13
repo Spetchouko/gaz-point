@@ -1,0 +1,108 @@
+$ next build
+▲ Next.js 16.3.7 (Turbopack)
+✓ Running next.config.ts took 47ms
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+- Experiments (use with caution):
+  · serverActions
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 40s
+  Running TypeScript ...
+  Finished TypeScript in 28.7s ...
+  Collecting page data using 1 worker ...
+  Generating static pages using 1 worker (0/74) ...
+  Generating static pages using 1 worker (18/74) 
+  Generating static pages using 1 worker (36/74) 
+  Generating static pages using 1 worker (55/74) 
+✓ Generating static pages using 1 worker (74/74) in 1847ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ○ /a-propos
+├ ƒ /admin
+├ ƒ /admin/avis
+├ ƒ /admin/clients
+├ ƒ /admin/clients/[id]
+├ ƒ /admin/collaborateurs
+├ ƒ /admin/collaborateurs/[id]
+├ ƒ /admin/disponibilites
+├ ○ /admin/login
+├ ƒ /admin/marketing
+├ ƒ /admin/parametres
+├ ƒ /admin/points-de-vente
+├ ƒ /admin/points-de-vente/[id]
+├ ƒ /admin/profil
+├ ƒ /admin/statistiques
+├ ƒ /admin/users
+├ ƒ /admin/users/[id]
+├ ƒ /admin/vendeurs
+├ ƒ /admin/vendeurs/[id]
+├ ƒ /api/admin/vendors/approvals
+├ ƒ /api/admin/vendors/approve
+├ ƒ /api/admin/vendors/reject
+├ ƒ /api/ads/event
+├ ƒ /api/auth/[...all]
+├ ƒ /api/auth/email-otp/send-verification
+├ ƒ /api/auth/email-otp/test-email
+├ ƒ /api/auth/email-otp/verify-email
+├ ƒ /api/auth/email-otp/verify-link
+├ ƒ /api/contact
+├ ƒ /api/marketing/schedule
+├ ƒ /api/recherche
+├ ƒ /api/reservation/cancel
+├ ƒ /api/reservation/collect
+├ ƒ /api/reservation/create
+├ ƒ /api/reservation/my
+├ ƒ /api/reservation/scan
+├ ƒ /api/reservation/vendor
+├ ƒ /api/reservation/verify
+├ ƒ /api/traffic
+├ ○ /apple-icon.png
+├ ƒ /avis
+├ ○ /cgu
+├ ○ /cgv
+├ ○ /connexion
+├ ○ /contact
+├ ƒ /dashboard
+├ ƒ /dashboard/favoris
+├ ƒ /dashboard/historique-codes
+├ ƒ /dashboard/pro
+├ ƒ /dashboard/reservations
+├ ƒ /dashboard/vendeur
+├ ƒ /dashboard/vendeur/autour-de-moi
+├ ○ /dashboard/vendeur/consignations
+├ ƒ /dashboard/vendeur/disponibilites
+├ ƒ /dashboard/vendeur/espace-pro
+├ ƒ /dashboard/vendeur/points-de-vente
+├ ƒ /dashboard/vendeur/profil
+├ ƒ /dashboard/vendeur/reservations
+├ ○ /devenir-vendeur
+├ ○ /icon0.svg
+├ ○ /icon1.png
+├ ○ /inscription
+├ ○ /inscription/usager
+├ ○ /inscription/vendeur
+├ ○ /inscription/vendeur/configuration
+├ ○ /manifest.json
+├ ○ /mentions-legales
+├ ƒ /mes-commandes
+├ ƒ /mes-favoris
+├ ○ /mot-de-passe-oublie
+├ ○ /mot-de-passe-temporaire
+├ ○ /opengraph-image
+├ ○ /politique-confidentialite
+├ ○ /politique-cookies
+├ ƒ /profil
+├ ○ /services
+└ ○ /validation-email
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
