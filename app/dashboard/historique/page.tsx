@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Search, Calendar, Package, MapPin, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -41,6 +42,8 @@ export default function HistoriquePage() {
   const [activeTab, setActiveTab] = useState<"searches" | "reservations">("searches");
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFilter, setDateFilter] = useState<string>("all");
+
+  const router = useRouter();
 
   const searchHistory: SearchHistoryItem[] = [
     { id: "1", brand: "Total", format: "12,5 kg", zone: "Bonamoussadi", resultsCount: 3, searchedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() },
@@ -100,7 +103,7 @@ export default function HistoriquePage() {
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="border border-border shadow-sm rounded-lg">
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
@@ -124,7 +127,7 @@ export default function HistoriquePage() {
                 <SelectItem value="year">Cette année</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => alert("Export de l'historique en cours...")}>
               <Download className="size-4 mr-2" />
               Exporter
             </Button>
@@ -150,7 +153,7 @@ export default function HistoriquePage() {
               })
               .map((item) => (
                 <Link key={item.id} href="/dashboard/recherches" className="group">
-                  <Card className="transition-all hover:shadow-md hover:border-primary/50">
+                  <Card className="border border-border shadow-sm rounded-lg transition-all hover:shadow-md hover:border-primary/50">
                     <CardContent className="pt-4">
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-4 min-w-0 flex-1">
@@ -175,7 +178,10 @@ export default function HistoriquePage() {
                           <p className="text-xs text-muted-foreground">
                             {formatDateShort(item.searchedAt)}
                           </p>
-                          <Button variant="ghost" size="sm" className="group-hover:bg-primary group-hover:text-primary-foreground">
+                          <Button variant="ghost" size="sm" onClick={(e) => {
+                            e.preventDefault();
+                            router.push("/dashboard/recherches");
+                          }} className="group-hover:bg-primary group-hover:text-primary-foreground">
                             <Search className="size-3 mr-1" /> Refaire
                           </Button>
                         </div>
@@ -194,7 +200,7 @@ export default function HistoriquePage() {
           <div className="space-y-3">
             {reservationHistory.map((res) => (
               <Link key={res.id} href={`/dashboard/reservations/${res.id}`} className="group">
-                <Card className="transition-all hover:shadow-md hover:border-primary/50">
+                <Card className="border border-border shadow-sm rounded-lg transition-all hover:shadow-md hover:border-primary/50">
                   <CardContent className="pt-4">
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-4 min-w-0 flex-1">

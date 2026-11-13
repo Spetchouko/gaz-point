@@ -27,14 +27,14 @@ export default function NotificationsPage() {
   const [filterRead, setFilterRead] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const notifications: Notification[] = [
+  const [notifications, setNotifications] = useState<Notification[]>([
     { id: "1", type: "reservation", title: "Réservation confirmée", message: "Votre réservation GP-2024-001234 a été confirmée chez Total Bonamoussadi.", read: false, createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), link: "/dashboard/reservations" },
     { id: "2", type: "availability", title: "Nouvelle disponibilité", message: "Total Bonamoussadi a maintenant des bouteilles 12,5 kg disponibles.", read: true, createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), link: "/dashboard/recherches" },
     { id: "3", type: "system", title: "Mise à jour du service", message: "Une nouvelle version de l'application est disponible avec des améliorations.", read: false, createdAt: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString() },
     { id: "4", type: "promo", title: "Offre spéciale", message: "Profitez de -10% sur vos réservations cette semaine.", read: true, createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), link: "/dashboard/recherches" },
     { id: "5", type: "reservation", title: "Réservation expirée", message: "Votre réservation GP-2024-001230 a expiré sans être récupérée.", read: true, createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), link: "/dashboard/reservations" },
     { id: "6", type: "availability", title: "Stock mis à jour", message: "Bocom Makepe a mis à jour son stock de bouteilles 6 kg.", read: false, createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(), link: "/dashboard/recherches" },
-  ];
+  ]);
 
   const filteredNotifications = notifications
     .filter((n) => {
@@ -73,14 +73,14 @@ export default function NotificationsPage() {
           <p className="text-muted-foreground">Restez informé de vos réservations et des nouveautés</p>
         </div>
         {notifications.filter((n) => !n.read).length > 0 && (
-          <Button variant="outline" size="sm" className="text-sm">
+          <Button variant="outline" size="sm" className="text-sm" onClick={() => setNotifications(notifications.map((n) => ({ ...n, read: true })))}>
             <Check className="size-3 mr-1" /> Marquer tout comme lu
           </Button>
         )}
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="border border-border shadow-sm rounded-lg">
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
@@ -121,7 +121,7 @@ export default function NotificationsPage() {
       {/* Notifications list */}
       <div className="space-y-3">
         {filteredNotifications.length === 0 ? (
-          <Card>
+          <Card className="border border-border shadow-sm rounded-lg">
             <CardContent className="py-12 text-center">
               <Bell className="size-12 mx-auto text-muted-foreground/50" />
               <h3 className="mt-4 font-semibold">Aucune notification</h3>
@@ -138,7 +138,7 @@ export default function NotificationsPage() {
               <Link key={notif.id} href={notif.link || "#"} className="group">
                 <Card
                   className={cn(
-                    "transition-all hover:shadow-md",
+                    "border border-border shadow-sm rounded-lg transition-all hover:shadow-md",
                     notif.read ? "" : "border-primary/30 bg-primary/5"
                   )}
                 >

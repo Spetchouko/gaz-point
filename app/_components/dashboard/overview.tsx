@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Search,
   Calendar,
@@ -198,6 +199,8 @@ export function DashboardOverview() {
     "overview"
   );
 
+  const router = useRouter();
+
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return "—";
     const date = new Date(dateString);
@@ -293,19 +296,19 @@ export function DashboardOverview() {
             {/* Quick actions */}
             <section aria-labelledby="quick-actions-heading">
               <h2 id="quick-actions-heading" className="sr-only">Actions rapides</h2>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Link href="/dashboard/recherches" className="group">
-                  <Card className={cn("transition-all hover:shadow-md hover:border-primary/50", "group")}>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center gap-4">
-                        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                          <Search className="size-6" />
+                  <Card className={cn("border border-border shadow-sm rounded-lg transition-all hover:shadow-md hover:border-primary/50", "group")}>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                          <Search className="size-5" />
                         </div>
-                        <div>
-                          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors text-sm">
                             Rechercher du gaz
                           </h3>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-xs text-muted-foreground line-clamp-2">
                             Trouver des bouteilles disponibles près de chez vous
                           </p>
                         </div>
@@ -315,17 +318,17 @@ export function DashboardOverview() {
                 </Link>
 
                 <Link href="/dashboard/reservations" className="group">
-                  <Card className={cn("transition-all hover:shadow-md hover:border-primary/50", "group")}>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center gap-4">
-                        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-green/10 text-green group-hover:bg-green group-hover:text-green-foreground transition-colors">
-                          <Calendar className="size-6" />
+                  <Card className={cn("border border-border shadow-sm rounded-lg transition-all hover:shadow-md hover:border-primary/50", "group")}>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-green/10 text-green group-hover:bg-green group-hover:text-green-foreground transition-colors">
+                          <Calendar className="size-5" />
                         </div>
-                        <div>
-                          <h3 className="font-semibold text-foreground group-hover:text-green transition-colors">
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-foreground group-hover:text-green transition-colors text-sm">
                             Mes réservations
                           </h3>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-xs text-muted-foreground line-clamp-2">
                             Voir et gérer vos réservations en cours
                           </p>
                         </div>
@@ -335,18 +338,18 @@ export function DashboardOverview() {
                 </Link>
 
                 <Link href="/dashboard/historique" className="group">
-                  <Card className={cn("transition-all hover:shadow-md hover:border-primary/50", "group")}>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center gap-4">
-                        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-blue/10 text-blue group-hover:bg-blue group-hover:text-blue-foreground transition-colors">
-                          <History className="size-6" />
+                  <Card className={cn("border border-border shadow-sm rounded-lg transition-all hover:shadow-md hover:border-primary/50", "group")}>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue/10 text-blue group-hover:bg-blue group-hover:text-blue-foreground transition-colors">
+                          <History className="size-5" />
                         </div>
-                        <div>
-                          <h3 className="font-semibold text-foreground group-hover:text-blue transition-colors">
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-foreground group-hover:text-blue transition-colors text-sm">
                             Historique
                           </h3>
-                          <p className="text-sm text-muted-foreground">
-                            Consulter votre historique de recherches et achats
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            Consulter vos recherches et achats
                           </p>
                         </div>
                       </div>
@@ -355,17 +358,17 @@ export function DashboardOverview() {
                 </Link>
 
                 <Link href="/dashboard/profil" className="group">
-                  <Card className={cn("transition-all hover:shadow-md hover:border-primary/50", "group")}>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center gap-4">
-                        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-purple/10 text-purple group-hover:bg-purple group-hover:text-purple-foreground transition-colors">
-                          <User className="size-6" />
+                  <Card className={cn("border border-border shadow-sm rounded-lg transition-all hover:shadow-md hover:border-primary/50", "group")}>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-purple/10 text-purple group-hover:bg-purple group-hover:text-purple-foreground transition-colors">
+                          <User className="size-5" />
                         </div>
-                        <div>
-                          <h3 className="font-semibold text-foreground group-hover:text-purple transition-colors">
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-foreground group-hover:text-purple transition-colors text-sm">
                             Mon profil
                           </h3>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-xs text-muted-foreground line-clamp-2">
                             Gérer vos informations personnelles
                           </p>
                         </div>
@@ -390,7 +393,7 @@ export function DashboardOverview() {
               <div className="grid gap-4 sm:grid-cols-2">
                 {recentSearches.slice(0, 4).map((search) => (
                   <Link key={search.id} href={`/dashboard/recherches?search=${search.id}`} className="group">
-                    <Card className={cn("transition-all hover:shadow-md hover:border-primary/50", "group")}>
+                    <Card className={cn("border border-border shadow-sm rounded-lg transition-all hover:shadow-md hover:border-primary/50", "group")}>
                       <CardContent className="pt-6">
                         <div className="flex items-start justify-between gap-4">
                           <div className="min-w-0 flex-1">
@@ -445,7 +448,7 @@ export function DashboardOverview() {
               <div className="space-y-3">
                 {reservations.filter(r => r.status === "confirmed").slice(0, 3).map((res) => (
                   <Link key={res.id} href={`/dashboard/reservations?res=${res.id}`} className="group">
-                    <Card className={cn("transition-all hover:shadow-md hover:border-primary/50", "group")}>
+                    <Card className={cn("border border-border shadow-sm rounded-lg transition-all hover:shadow-md hover:border-primary/50", "group")}>
                       <CardContent className="pt-4">
                         <div className="flex items-center justify-between gap-4">
                           <div className="flex items-center gap-4">
@@ -486,7 +489,7 @@ export function DashboardOverview() {
             <div className="grid gap-4 sm:grid-cols-2">
               {recentSearches.map((search) => (
                 <Link key={search.id} href={`/dashboard/recherches?search=${search.id}`} className="group">
-                  <Card className={cn("transition-all hover:shadow-md hover:border-primary/50", "group")}>
+                  <Card className={cn("border border-border shadow-sm rounded-lg transition-all hover:shadow-md hover:border-primary/50", "group")}>
                     <CardContent className="pt-6">
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0 flex-1">
@@ -538,7 +541,15 @@ export function DashboardOverview() {
                             Maj : {formatDate(search.updatedAt)}
                           </p>
                           <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" className="group-hover:bg-primary group-hover:text-primary-foreground">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                router.push("/dashboard/recherches");
+                              }}
+                              className="group-hover:bg-primary group-hover:text-primary-foreground"
+                            >
                               <Search className="size-3 mr-1" /> Rechercher
                             </Button>
                             <ExternalLink className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -564,7 +575,7 @@ export function DashboardOverview() {
             <div className="space-y-3">
               {reservations.map((res) => (
                 <Link key={res.id} href={`/dashboard/reservations?res=${res.id}`} className="group">
-                  <Card className={cn("transition-all hover:shadow-md hover:border-primary/50", "group")}>
+                  <Card className={cn("border border-border shadow-sm rounded-lg transition-all hover:shadow-md hover:border-primary/50", "group")}>
                     <CardContent className="pt-4">
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-4 min-w-0 flex-1">
@@ -622,7 +633,14 @@ export function DashboardOverview() {
               <h2 id="all-notifications-heading" className="text-lg font-semibold">
                 Notifications
               </h2>
-              <Button variant="ghost" size="sm" className="text-sm">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-sm"
+                onClick={() => {
+                  setNotifications((notifs) => notifs.map((n) => ({ ...n, read: true })));
+                }}
+              >
                 Marquer tout comme lu
               </Button>
             </div>
@@ -631,7 +649,7 @@ export function DashboardOverview() {
                 <Link key={notif.id} href={notif.link || "#"} className="group">
                   <Card
                     className={cn(
-                      "transition-all hover:shadow-md",
+                      "border border-border shadow-sm rounded-lg transition-all hover:shadow-md",
                       notif.read ? "" : "border-primary/30 bg-primary/5"
                     )}
                   >

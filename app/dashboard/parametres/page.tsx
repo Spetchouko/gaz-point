@@ -80,7 +80,7 @@ export default function ParametresPage() {
       </div>
 
       {/* Notifications */}
-      <Card>
+      <Card className="border border-border shadow-sm rounded-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bell className="size-5 text-primary" />
@@ -137,7 +137,7 @@ export default function ParametresPage() {
       </Card>
 
       {/* Appearance */}
-      <Card>
+      <Card className="border border-border shadow-sm rounded-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Palette className="size-5 text-primary" />
@@ -204,7 +204,7 @@ export default function ParametresPage() {
       </Card>
 
       {/* Security */}
-      <Card>
+      <Card className="border border-border shadow-sm rounded-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="size-5 text-primary" />
@@ -241,7 +241,7 @@ export default function ParametresPage() {
       </Card>
 
       {/* Danger Zone */}
-      <Card className="border-destructive/50">
+      <Card className="border border-border shadow-sm rounded-lg border-destructive/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-destructive">
             <Trash2 className="size-5" />

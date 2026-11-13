@@ -153,7 +153,7 @@ export default function ProfilPage() {
       </div>
 
       {/* Profile info */}
-      <Card>
+      <Card className="border border-border shadow-sm rounded-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <User className="size-5 text-primary" />
@@ -288,7 +288,7 @@ export default function ProfilPage() {
       </Card>
 
       {/* Password change */}
-      <Card>
+      <Card className="border border-border shadow-sm rounded-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Lock className="size-5 text-primary" />
@@ -367,7 +367,7 @@ export default function ProfilPage() {
       </Card>
 
       {/* Account info */}
-      <Card>
+      <Card className="border border-border shadow-sm rounded-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings className="size-5 text-primary" />
