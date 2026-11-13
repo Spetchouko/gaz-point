@@ -105,11 +105,13 @@ export function Header() {
                     aria-label={t("nav_account")}
                     className={cn(
                       "hidden sm:inline-flex text-white/90 hover:text-white",
-                      "rounded-lg cursor-pointer"
+                      "rounded-lg cursor-pointer relative",
+                      "hover:bg-white/10 transition-colors",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
                     )}
                   >
                     <User className="size-4" />
-                    <span className="absolute top-1 right-1 size-2 rounded-full bg-primary text-white text-[10px] leading-none">
+                    <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-primary text-white text-[10px] leading-none">
                       +
                     </span>
                   </Button>

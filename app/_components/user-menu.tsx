@@ -46,7 +46,12 @@ export function UserMenu({ isMobile = false }: UserMenuProps) {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className={cn("gap-2 h-9 px-3", isMobile && "w-full justify-start py-2.5 text-left")}
+          className={cn(
+            "gap-2 h-9 px-3",
+            isMobile && "w-full justify-start py-2.5 text-left",
+            "hover:bg-white/10 transition-colors",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          )}
         >
           <Avatar className="size-8 flex items-center justify-center" data-size={avatarSize}>
             <UserRound className="size-4" />

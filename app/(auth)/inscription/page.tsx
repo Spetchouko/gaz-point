@@ -8,7 +8,7 @@ import { ModernCard } from "@/app/_components/card-modern"
 import { User, Store } from "lucide-react"
 import Link from "next/link"
 
-const CARD_HEIGHT = "max-h-[250px]"
+const CARD_HEIGHT = "max-h-[320px]"
 
 function setRegisterRoleCookie(role: "user" | "vendor") {
   const roleKey = role === "user" ? "client" : "vendor"
@@ -31,52 +31,54 @@ export default function InscriptionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background px-4 py-8 flex items-center justify-center">
-      <div className="w-full max-w-6xl px-4">
-
-        {/* Titre en haut */}
+    <div className="min-h-screen bg-background px-4 py-12 flex flex-col items-center justify-center">
+      <div className="w-full max-w-5xl mx-auto space-y-10">
+        {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground mb-1">
-            Créer un compte
+          <div className="inline-flex items-center justify-center size-12 rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20 mb-4">
+            <User className="size-6" />
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground mb-3">
+            Rejoignez GazPoints
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Choisissez votre profil et commencez.
+          <p className="text-lg text-muted-foreground leading-relaxed max-w-md mx-auto">
+            Créez votre compte et profitez d’un accès simplifié aux services GazPoints.
           </p>
         </div>
 
-        {/* Cartes */}
-        <div className="grid max-w-140 mx-auto gap-4 md:grid-cols-2">
-
-          {/* Carte Usager - Bleu clair */}
+        {/* Role selection cards */}
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Client card */}
           <ModernCard
             className={cn(
               CARD_HEIGHT,
-              "flex flex-col items-center rounded-xl bg-info/5 border-info/20 hover:border-info/40 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 cursor-pointer p-4",
+              "flex flex-col items-center p-8 rounded-2xl border border-border bg-white dark:bg-background shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer",
               selectedRole === "user"
-                ? "border-info ring-2 ring-info/20 bg-info/10"
-                : ""
+                ? "border-primary ring-2 ring-primary/20 bg-primary/5"
+                : "hover:border-primary/40"
             )}
             onClick={handleUsager}
             onKeyDown={(e) => e.key === "Enter" && handleUsager()}
             role="button"
             tabIndex={0}
-            aria-label="Compte usager"
+            aria-label="Compte client"
           >
-            <div className="relative mb-3 shrink-0">
-              <div className="size-12 rounded-full bg-info/10 flex items-center justify-center mx-auto border border-info/20">
-                <User className="size-5 text-info" />
+            <div className="mb-6 shrink-0">
+              <div className="size-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                <User className="size-6 text-primary" />
               </div>
               {selectedRole === "user" && (
-                <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 size-3 rounded-full bg-info ring-2 ring-background" />
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 size-4 rounded-full bg-primary ring-2 ring-background" />
               )}
             </div>
-            <h3 className="font-heading text-sm font-semibold text-info mb-1">Compte usager</h3>
-            <p className="text-xs text-info/80 text-center mb-4 leading-snug px-1 flex-1">
-              Trouvez facilement les disponibilités de gaz près de vous.
+            <h3 className="font-heading text-lg font-semibold text-foreground mb-2">Compte client</h3>
+            <p className="text-sm text-muted-foreground text-center leading-relaxed px-4">
+              Trouvez facilement les disponibilités de gaz près de chez vous.
+              Évitez les déplacements inutiles.
             </p>
             <Button
               type="button"
-              className="w-full px-5 py-2 text-sm font-medium bg-info hover:bg-info-strong text-white"
+              className="mt-6 w-full px-8 py-3 text-sm font-medium bg-primary hover:bg-primary-strong text-white shadow-sm hover:shadow-md"
               onClick={(e) => {
                 e.stopPropagation()
                 handleUsager()
@@ -87,14 +89,14 @@ export default function InscriptionPage() {
             </Button>
           </ModernCard>
 
-          {/* Carte Vendeur - Vert/Émeraude clair */}
+          {/* Vendor card */}
           <ModernCard
             className={cn(
               CARD_HEIGHT,
-              "flex flex-col items-center rounded-xl bg-success/5 border-success/20 hover:border-success/40 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 cursor-pointer p-4",
+              "flex flex-col items-center p-8 rounded-2xl border border-border bg-white dark:bg-background shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer",
               selectedRole === "vendor"
-                ? "border-success ring-2 ring-success/20 bg-success/10"
-                : ""
+                ? "border-primary ring-2 ring-primary/20 bg-primary/5"
+                : "hover:border-primary/40"
             )}
             onClick={handleVendor}
             onKeyDown={(e) => e.key === "Enter" && handleVendor()}
@@ -102,21 +104,22 @@ export default function InscriptionPage() {
             tabIndex={0}
             aria-label="Compte vendeur"
           >
-            <div className="relative mb-3 shrink-0">
-              <div className="size-12 rounded-full bg-success/10 flex items-center justify-center mx-auto border border-success/20">
-                <Store className="size-5 text-success" />
+            <div className="mb-6 shrink-0">
+              <div className="size-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                <Store className="size-6 text-primary" />
               </div>
               {selectedRole === "vendor" && (
-                <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 size-3 rounded-full bg-success ring-2 ring-background" />
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 size-4 rounded-full bg-primary ring-2 ring-background" />
               )}
             </div>
-            <h3 className="font-heading text-sm font-semibold text-success mb-1">Compte vendeur</h3>
-            <p className="text-xs text-success/80 text-center mb-4 leading-snug px-1 flex-1">
+            <h3 className="font-heading text-lg font-semibold text-foreground mb-2">Compte vendeur</h3>
+            <p className="text-sm text-muted-foreground text-center leading-relaxed px-4">
               Publiez et gérez la disponibilité de vos bouteilles de gaz.
+              Attirez plus de clients.
             </p>
             <Button
               type="button"
-              className="w-full px-5 py-2 text-sm font-medium bg-success hover:bg-success-strong text-white"
+              className="mt-6 w-full px-8 py-3 text-sm font-medium bg-primary hover:bg-primary-strong text-white shadow-sm hover:shadow-md"
               onClick={(e) => {
                 e.stopPropagation()
                 handleVendor()
@@ -126,11 +129,10 @@ export default function InscriptionPage() {
               Continuer
             </Button>
           </ModernCard>
-
         </div>
 
-        {/* Bas de page */}
-        <div className="mt-8 flex flex-col items-center gap-2 text-center">
+        {/* Footer links */}
+        <div className="mt-10 flex flex-col items-center gap-3 text-center">
           <Link
             href="/connexion?redirect=/dashboard"
             className="text-sm text-primary hover:underline font-medium"
@@ -144,7 +146,6 @@ export default function InscriptionPage() {
             Retour à l’accueil
           </Link>
         </div>
-
       </div>
     </div>
   )
