@@ -1,25 +1,28 @@
 "use client";
-
-import { DashboardAdminLayout } from "@/app/_components/dashboard/admin-layout";
-import { redirect } from "next/navigation";
-import { authClient } from "@/lib/auth-client";
 import { useEffect, useState } from "react";
+import { DashboardAdminLayout } from "@/app/_components/dashboard/admin-layout";
+import { authClient } from "@/lib/auth-client";
+import { redirect } from "next/navigation";
 
 export default function DashboardAdminLayoutWrapper({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { data: session, status } = authClient.useSession();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const { data: session } = authClient.useSession();
 
   useEffect(() => {
-    const user = session?.user as { role?: string | null } | undefined;
-    if (user && user.role !== "admin") {
-      redirect("/dashboard");
+    if (status !== "loading") {
+      if (!session?.user) {
+        redirect("/connexion");
+      } else if ((session.user as { role?: string }).role !== "admin") {
+        redirect("/dashboard");
+      } else {
+        setIsAdmin(true);
+      }
     }
-    setIsAdmin(user?.role === "admin");
-  }, [session?.user]);
+  }, [session, status]);
 
   if (isAdmin === null) {
     return null;
