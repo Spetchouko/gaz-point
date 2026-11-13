@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { User, Mail, Phone, Lock, Save, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { User, Mail, Phone, Lock, Save, AlertCircle, CheckCircle2, Loader2, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
