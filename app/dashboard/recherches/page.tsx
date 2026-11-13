@@ -23,6 +23,7 @@ import type { AvailabilityStatus } from "@/db/schema";
 import { ReservationModal } from "@/app/_components/reservation-modal";
 import { ResultatRechercheCard } from "@/app/_components/cards/resultat-recherche-card";
 import { trackEvent } from "@/lib/analytics";
+import { Spinner, ButtonSpinner } from "@/app/_components/spinner";
 
 export type SearchResult = {
   id: string;
@@ -289,15 +290,24 @@ export function RechercheGaz() {
             className="h-12 w-full rounded-xl border border-input bg-primary px-4 text-base font-medium text-primary-foreground transition-colors hover:bg-primary-strong focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-ring/50 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={loading}
           >
-            <Search className="size-4 mr-2" />
-            {loading ? "Recherche…" : "Trouver du gaz"}
+            {loading ? (
+              <>
+                <ButtonSpinner />
+                Recherche…
+              </>
+            ) : (
+              <>
+                <Search className="size-4 mr-2" />
+                Trouver du gaz
+              </>
+            )}
           </Button>
         </form>
       </Card>
 
       {loading && (
         <div className="mt-4 flex items-center justify-center gap-2 text-sm text-white">
-          <Search className="size-4 animate-spin text-white" aria-hidden />
+          <Spinner size="md" />
           <span className="text-white">Recherche des disponibilités en cours…</span>
         </div>
       )}

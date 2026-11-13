@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import { useState } from "react";
-import { Bell, Shield, Palette, Globe, Key, Trash2, Save, AlertCircle, CheckCircle2, Loader2, Moon, Sun, Monitor, Search, Check, Download } from "lucide-react";
+import { Bell, Shield, Palette, Globe, Key, Trash2, Save, AlertCircle, CheckCircle2, Moon, Sun, Monitor, Search, Check, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -15,6 +15,7 @@ import { authClient } from "@/lib/auth-client";
 import { useTheme } from "@/app/_components/theme-provider";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Spinner, PageLoading, ButtonSpinner } from "@/app/_components/spinner";
 
 export default function ParametresPage() {
   const { data: session } = authClient.useSession();
@@ -63,11 +64,7 @@ export default function ParametresPage() {
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <p className="text-muted-foreground">Chargement...</p>
-        </div>
-      </div>
+      <PageLoading />
     );
   }
 
@@ -127,7 +124,10 @@ export default function ParametresPage() {
 
             <Button type="submit" disabled={saving === "notifications"} className="w-full sm:w-auto">
               {saving === "notifications" ? (
-                <> <Loader2 className="size-4 mr-2 animate-spin" /> Enregistrement... </>
+                <>
+                  <ButtonSpinner />
+                  Enregistrement...
+                </>
               ) : (
                 <> <Save className="size-4 mr-2" /> Enregistrer les préférences </>
               )}

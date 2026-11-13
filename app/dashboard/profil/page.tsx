@@ -13,11 +13,11 @@ import {
   Save,
   AlertCircle,
   CheckCircle2,
-  Loader2,
   Settings,
   Eye,
   EyeOff,
 } from "lucide-react";
+import { Spinner, PageLoading, ButtonSpinner } from "@/app/_components/spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -301,12 +301,7 @@ export default function ProfilPage() {
 
   if (loadingProfile || !sessionUser) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <Loader2 className="size-8 animate-spin text-muted-foreground mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">Chargement…</p>
-        </div>
-      </div>
+      <PageLoading />
     );
   }
 
@@ -467,7 +462,7 @@ export default function ProfilPage() {
               <Button type="submit" disabled={saving} className="w-full sm:w-auto">
                 {saving ? (
                   <>
-                    <Loader2 className="size-4 mr-2 animate-spin" />
+                    <ButtonSpinner />
                     Enregistrement...
                   </>
                 ) : (
@@ -591,7 +586,7 @@ export default function ProfilPage() {
             <Button type="submit" disabled={changingPassword} className="w-full sm:w-auto">
               {changingPassword ? (
                 <>
-                  <Loader2 className="size-4 mr-2 animate-spin" />
+                  <ButtonSpinner />
                   Modification...
                 </>
               ) : (

@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { BrandListInput } from "@/app/_components/brand-list-input"
 import Link from "next/link"
+import { PageLoading } from "@/app/_components/spinner"
 import {
   Mail,
   Lock,
@@ -442,13 +443,7 @@ function InscriptionVendeurContent() {
 
 export default function InscriptionVendeurPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          Chargement...
-        </div>
-      }
-    >
+    <Suspense fallback={<PageLoading />}>
       <InscriptionVendeurContent />
     </Suspense>
   )

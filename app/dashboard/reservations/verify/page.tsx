@@ -6,6 +6,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { Search, CheckCircle2, AlertCircle, Clock, Package, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { ButtonSpinner } from "@/app/_components/spinner"
 import {
   Card,
   CardContent,
@@ -179,7 +180,7 @@ export default function VerifyCodePage() {
             <Button type="submit" disabled={verifying || code.length !== 10} className="w-full">
               {verifying ? (
                 <span className="flex items-center gap-2">
-                  <Package className="size-4 animate-spin" />
+                  <ButtonSpinner />
                   Vérification…
                 </span>
               ) : (
@@ -292,7 +293,7 @@ export default function VerifyCodePage() {
               >
                 {collecting ? (
                   <span className="flex items-center gap-2">
-                    <Package className="size-4 animate-spin" />
+                    <ButtonSpinner />
                     Confirmation…
                   </span>
                 ) : (

@@ -11,6 +11,7 @@ import Link from "next/link"
 import { Lock, Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
 import { useCallback, useState } from "react"
 import Image from "next/image"
+import { ButtonSpinner } from "@/app/_components/spinner"
 
 function validatePassword(password: string): string | null {
   if (!password) return "Le mot de passe est requis."
@@ -237,7 +238,7 @@ function ResetPasswordPageContent() {
             )}
 
             <Button type="submit" className="w-full" disabled={loading || !token}>
-              {loading ? <Loader2 className="size-4 mr-2 animate-spin" /> : "Réinitialiser le mot de passe"}
+              {loading ? <ButtonSpinner /> : "Réinitialiser le mot de passe"}
             </Button>
           </form>
         </CardContent>

@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation"
 import { AlertCircle, CheckCircle2, Plus, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Spinner } from "@/app/_components/spinner"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -284,7 +285,7 @@ export default function DepotPage() {
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
-                    <Save className="size-4 animate-spin" />
+                    <Spinner size="sm" />
                     Enregistrement…
                   </span>
                 ) : (

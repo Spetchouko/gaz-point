@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, CheckCircle2, ArrowRight, Shield, Mail, Clock } from "lucide-react"
 import Link from "next/link"
+import { Spinner, PageLoading, ButtonSpinner } from "@/app/_components/spinner"
 
 function PaiementSuccesPageContent() {
   const router = useRouter()
@@ -98,7 +99,7 @@ function PaiementSuccesPageContent() {
           <CardHeader className="text-center pb-2">
             {status === "verifying" && (
               <>
-                <Loader2 className="mx-auto mb-4 size-12 text-primary animate-spin" />
+                <Spinner size="lg" />
                 <CardTitle className="text-xl font-bold">Vérification en cours</CardTitle>
               </>
             )}
@@ -259,7 +260,7 @@ function PaiementSuccesPageContent() {
 
               {status === "verifying" && (
                 <Button className="w-full h-11" disabled>
-                  <Loader2 className="size-4 mr-2 animate-spin" />
+                  <ButtonSpinner />
                   Vérification…
                 </Button>
               )}
@@ -279,11 +280,7 @@ export default function PaiementSuccesPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
-          <div className="animate-pulse">
-            <Loader2 className="size-8 text-primary mx-auto" />
-          </div>
-        </div>
+        <PageLoading />
       }
     >
       <PaiementSuccesPageContent />

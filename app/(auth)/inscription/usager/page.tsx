@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, AlertCircle, Loader2 } from "lucide-react"
 import Image from "next/image"
+import { ButtonSpinner, Spinner, PageLoading } from "@/app/_components/spinner"
 import { useState } from "react"
 
 const MODE_EMAIL = "email"
@@ -368,7 +369,7 @@ function InscriptionUsagerContent() {
               )}
 
               <Button type="submit" className="w-full h-11" disabled={loading}>
-                {loading ? (<><Loader2 className="size-4 mr-2 animate-spin" />Création en cours...</>) : "Créer mon compte usager"}
+                {loading ? (<><ButtonSpinner />Création en cours...</>) : "Créer mon compte usager"}
               </Button>
             </form>
 
@@ -409,7 +410,7 @@ function InscriptionUsagerContent() {
 
 export default function InscriptionUsagerPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Chargement...</div>}>
+    <Suspense fallback={<PageLoading />}>
       <InscriptionUsagerContent />
     </Suspense>
   )

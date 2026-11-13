@@ -7,6 +7,7 @@ import { changeTemporaryPassword } from "@/lib/auth-actions"
 import type { ActionResult } from "@/lib/action-result"
 import { Button } from "@/components/ui/button"
 import { PasswordField } from "@/components/ui/password-field"
+import { ButtonSpinner } from "@/app/_components/spinner"
 import { AlertCircle, CheckCircle2, Loader2, Lock } from "lucide-react"
 import {
   Dialog,
@@ -191,7 +192,7 @@ export default function MotDePasseTemporairePage() {
               disabled={isPending || Boolean(feedback?.ok)}
             >
               {isPending ? (
-                <Loader2 className="size-4 mr-2 animate-spin" />
+                <ButtonSpinner />
               ) : feedback?.ok ? (
                 "Mot de passe modifié"
               ) : (

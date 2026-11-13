@@ -12,13 +12,13 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import {
-  Loader2,
   CreditCard,
   Smartphone,
   Shield,
   AlertCircle,
   CheckCircle2,
 } from "lucide-react"
+import { Spinner, PageLoading, ButtonSpinner } from "@/app/_components/spinner"
 import Link from "next/link"
 import Image from "next/image"
 
@@ -85,7 +85,7 @@ function PaiementAbonnementPageContent() {
       <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
         <Card className="w-full max-w-md">
           <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
-            <Loader2 className="size-8 text-primary animate-spin" />
+            <Spinner size="lg" />
             <p className="text-muted-foreground">Redirection vers GeniusPay...</p>
           </CardContent>
         </Card>
@@ -191,7 +191,7 @@ function PaiementAbonnementPageContent() {
               >
                 {loading ? (
                   <>
-                    <Loader2 className="size-4 mr-2 animate-spin" />
+                    <ButtonSpinner />
                     Initialisation…
                   </>
                 ) : (
@@ -246,11 +246,7 @@ export default function PaiementAbonnementPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
-          <div className="animate-pulse">
-            <Loader2 className="size-8 text-primary mx-auto" />
-          </div>
-        </div>
+        <PageLoading />
       }
     >
       <PaiementAbonnementPageContent />

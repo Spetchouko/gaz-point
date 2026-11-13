@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { XCircle, RefreshCw, AlertCircle, Shield, Mail, Smartphone, CreditCard } from "lucide-react"
 import Link from "next/link"
+import { Spinner, PageLoading, ButtonSpinner } from "@/app/_components/spinner"
 
 type ErrorType = "failed" | "cancelled" | "expired" | "unknown"
 
@@ -128,10 +129,7 @@ function PaiementEchecPageContent() {
               >
                 {loading ? (
                   <>
-                    <svg className="size-4 mr-2 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
-                      <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
-                    </svg>
+                    <ButtonSpinner />
                     Redirection...
                   </>
                 ) : (
@@ -177,14 +175,7 @@ export default function PaiementEchecPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
-          <div className="animate-pulse">
-            <svg className="size-8 text-primary mx-auto animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
-              <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
-            </svg>
-          </div>
-        </div>
+        <PageLoading />
       }
     >
       <PaiementEchecPageContent />

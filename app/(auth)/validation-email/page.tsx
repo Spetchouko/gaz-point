@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { CheckCircle, AlertCircle, Loader2, Clock, Mail } from "lucide-react"
 
-import { trackEvent } from "@/lib/analytics"
+import { Spinner, ButtonSpinner } from "@/app/_components/spinner"
 import { safeRedirect } from "@/lib/utils"
 
 const CODE_LENGTH = 6
@@ -310,7 +310,7 @@ function ValidationEmailContent() {
               >
                 {loading ? (
                   <>
-                    <Loader2 className="size-4 mr-2 animate-spin" />
+                    <ButtonSpinner />
                     Verification en cours…
                   </>
                 ) : (
@@ -321,7 +321,7 @@ function ValidationEmailContent() {
               <div className="text-center min-h-6">
                 {resending ? (
                   <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-                    <Loader2 className="size-3.5 animate-spin" />
+                    <Spinner size="sm" />
                     Envoi…
                   </span>
                 ) : resendCooldown > 0 ? (

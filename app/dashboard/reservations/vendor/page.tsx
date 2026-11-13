@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Calendar, Filter, Search, Package, Clock, CheckCircle2, AlertCircle, ChevronDown, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Spinner } from "@/app/_components/spinner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -215,7 +216,7 @@ export default function VendorReservationsPage() {
 
       {loading && !error && (
         <div className="flex items-center justify-center py-12">
-          <Package className="size-8 animate-spin text-muted-foreground" />
+          <Spinner size="lg" />
         </div>
       )}
 

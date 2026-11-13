@@ -16,6 +16,7 @@ import {
   Clock,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Spinner } from "@/app/_components/spinner"
 import {
   Card,
   CardContent,
@@ -125,7 +126,7 @@ export default function VendeurPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <RefreshCw className="size-8 animate-spin text-muted-foreground" />
+        <Spinner size="lg" />
       </div>
     )
   }
