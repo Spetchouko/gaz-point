@@ -17,6 +17,9 @@ import {
   LogOut,
   Menu,
   X,
+  Store,
+  Package,
+  Truck,
 } from "lucide-react";
 import { useAuthModal } from "@/lib/auth-context";
 import { authClient } from "@/lib/auth-client";
@@ -24,7 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Footer } from "@/app/_components/footer";
 import { cn } from "@/lib/utils";
 
-const DASHBOARD_NAV_ITEMS = [
+const CLIENT_NAV_ITEMS = [
   {
     href: "/dashboard",
     label: "Vue d'ensemble",
@@ -59,6 +62,44 @@ const DASHBOARD_NAV_ITEMS = [
     href: "/dashboard/parametres",
     label: "Paramètres",
     icon: Settings,
+  },
+] as const;
+
+const VENDOR_NAV_ITEMS = [
+  {
+    href: "/dashboard/vendeur",
+    label: "Vue d'ensemble",
+    icon: LayoutDashboard,
+  },
+  {
+    href: "/dashboard/depot",
+    label: "Mon dépôt",
+    icon: Store,
+  },
+  {
+    href: "/dashboard/depot/disponibilites",
+    label: "Mes disponibilités",
+    icon: Package,
+  },
+  {
+    href: "/dashboard/depot/services",
+    label: "Mes services",
+    icon: Truck,
+  },
+  {
+    href: "/dashboard/depot/reservations",
+    label: "Mes réservations",
+    icon: Calendar,
+  },
+  {
+    href: "/dashboard/historique",
+    label: "Historique",
+    icon: History,
+  },
+  {
+    href: "/dashboard/profil",
+    label: "Mon profil",
+    icon: User,
   },
 ] as const;
 
@@ -176,7 +217,7 @@ export function DashboardClientLayout({
 
         {/* Navigation items */}
         <nav className="flex-1 overflow-y-auto p-2 space-y-1" aria-label="Navigation principale">
-          {DASHBOARD_NAV_ITEMS.map((item) => {
+          {(isVendor ? VENDOR_NAV_ITEMS : CLIENT_NAV_ITEMS).map((item) => {
             const active = isActive(item.href);
             const Icon = item.icon;
             return (
