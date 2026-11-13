@@ -21,6 +21,7 @@ import {
 import { useAuthModal } from "@/lib/auth-context";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
+import { Footer } from "@/app/_components/footer";
 import { cn } from "@/lib/utils";
 
 const DASHBOARD_NAV_ITEMS = [
@@ -396,14 +397,8 @@ export function DashboardClientLayout({
           </div>
         </main>
 
-        {/* Footer */}
-        <footer className="border-t border-border bg-card py-4 px-4 sm:px-6 lg:px-8">
-          <div className="container mx-auto text-center text-sm text-muted-foreground">
-            <p>
-              © {new Date().getFullYear()} GazPoints — Fait pour faciliter l'accès au gaz
-            </p>
-          </div>
-        </footer>
+        {/* Footer public */}
+        <Footer />
       </div>
     </div>
   );
