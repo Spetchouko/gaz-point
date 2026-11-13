@@ -54,7 +54,7 @@ export function Benefices() {
                 variant="secondary"
                 className="h-5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
               >
-                Ce que ça vous apporte
+                Ce que cela vous apporte
               </Badge>
 
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
@@ -71,7 +71,7 @@ export function Benefices() {
               {benefits.map((benefit) => (
                 <Card
                   key={benefit.title}
-                  className="p-3 rounded-xl border border-border bg-background shadow-sm transition-all hover:shadow-md hover:border-primary/20"
+                  className="p-3 rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md hover:border-primary/20"
                 >
                   <CardHeader>
                     <span className="flex size-9 items-center justify-center rounded-xl bg-mint text-primary-strong ring-1 ring-primary/20">
@@ -94,7 +94,7 @@ export function Benefices() {
           </div>
 
           {/* Image à droite — pleine section avec aspect-ratio réservé */}
-          <div className="relative w-full overflow-hidden rounded-2xl shadow-2xl ring-2 ring-border/20 lg:sticky lg:top-20 aspect-[4/3] sm:aspect-[3/2] lg:aspect-[16/9]">
+          <div className="relative w-full overflow-hidden rounded-2xl shadow-2xl ring-2 ring-black/20 lg:sticky lg:top-20 aspect-[4/3] sm:aspect-[3/2] lg:aspect-[16/9]">
             <div
               className="absolute inset-0 bg-cover bg-center bg-no-repeat rounded-2xl"
               style={{
