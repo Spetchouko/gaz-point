@@ -33,13 +33,6 @@ export function DashboardOverview() {
             Gérez vos recherches, vos réservations et consultez votre historique.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button asChild className="w-full sm:w-auto">
-            <Link href="/dashboard/recherches">
-              <Search className="size-4 mr-2" /> Rechercher du gaz
-            </Link>
-          </Button>
-        </div>
       </div>
 
       {/* Accès rapide */}
@@ -50,11 +43,11 @@ export function DashboardOverview() {
             <Card className={cn("border border-border shadow-sm rounded-lg transition-all hover:shadow-md hover:border-primary/50", "group")}>
               <CardContent className="pt-5 pb-5">
                 <div className="flex items-center gap-3">
-                  <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                  <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground active:bg-primary active:text-primary-foreground transition-colors">
                     <Search className="size-6" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                    <h3 className="font-semibold text-foreground group-hover:text-primary active:text-primary transition-colors">
                       Rechercher du gaz
                     </h3>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -69,11 +62,11 @@ export function DashboardOverview() {
             <Card className={cn("border border-border shadow-sm rounded-lg transition-all hover:shadow-md hover:border-primary/50", "group")}>
               <CardContent className="pt-5 pb-5">
                 <div className="flex items-center gap-3">
-                  <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-green/10 text-green group-hover:bg-green group-hover:text-green-foreground transition-colors">
+                  <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-green/10 text-green group-hover:bg-green group-hover:text-green-foreground active:bg-green active:text-green-foreground transition-colors">
                     <Calendar className="size-6" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="font-semibold text-foreground group-hover:text-green transition-colors">
+                    <h3 className="font-semibold text-foreground group-hover:text-green active:text-green transition-colors">
                       Mes réservations
                     </h3>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -88,11 +81,11 @@ export function DashboardOverview() {
             <Card className={cn("border border-border shadow-sm rounded-lg transition-all hover:shadow-md hover:border-primary/50", "group")}>
               <CardContent className="pt-5 pb-5">
                 <div className="flex items-center gap-3">
-                  <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-blue/10 text-blue group-hover:bg-blue group-hover:text-blue-foreground transition-colors">
+                  <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-green/10 text-green group-hover:bg-green group-hover:text-green-foreground active:bg-green active:text-green-foreground transition-colors">
                     <Package className="size-6" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="font-semibold text-foreground group-hover:text-blue transition-colors">
+                    <h3 className="font-semibold text-foreground group-hover:text-green active:text-green transition-colors">
                       Mon historique
                     </h3>
                     <p className="text-xs text-muted-foreground mt-1">
