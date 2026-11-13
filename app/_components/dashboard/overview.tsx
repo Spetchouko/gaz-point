@@ -289,7 +289,7 @@ export function DashboardOverview() {
       </div>
 
       {/* Tab content */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Overview tab */}
         {activeTab === "overview" && (
           <>
@@ -381,8 +381,8 @@ export function DashboardOverview() {
 
             {/* Recent searches */}
             <section aria-labelledby="recent-searches-heading">
-              <div className="flex items-center justify-between mb-4">
-                <h2 id="recent-searches-heading" className="text-lg font-semibold">
+              <div className="flex items-center justify-between mb-3">
+                <h2 id="recent-searches-heading" className="text-base font-semibold">
                   Recherches récentes
                 </h2>
                 <Link href="/dashboard/recherches" className="text-sm text-primary hover:underline flex items-center gap-1">
@@ -390,32 +390,32 @@ export function DashboardOverview() {
                   <ArrowRight className="size-3" />
                 </Link>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 {recentSearches.slice(0, 4).map((search) => (
                   <Link key={search.id} href={`/dashboard/recherches?search=${search.id}`} className="group">
                     <Card className={cn("border border-border shadow-sm rounded-lg transition-all hover:shadow-md hover:border-primary/50", "group")}>
-                      <CardContent className="pt-6">
-                        <div className="flex items-start justify-between gap-4">
+                      <CardContent className="pt-4">
+                        <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                              <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors text-sm truncate">
                                 {search.name}
                               </h3>
                               {getStatusBadge(search.status)}
                             </div>
-                            <p className="mt-1 text-sm text-muted-foreground flex items-center gap-1.5 truncate">
-                              <MapPin className="size-3.5 shrink-0" />
+                            <p className="mt-1 text-xs text-muted-foreground flex items-center gap-1.5 truncate">
+                              <MapPin className="size-3 shrink-0" />
                               {search.district} — {search.address}
                             </p>
                             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                               {search.brand && (
                                 <Badge variant="secondary" className="text-xs">
-                                  <Package className="size-2.5 mr-1" /> {search.brand}
+                                  <Package className="size-2 mr-1" /> {search.brand}
                                 </Badge>
                               )}
                               {search.format && (
                                 <Badge variant="outline" className="text-xs">
-                                  <Package className="size-2.5 mr-1" /> {search.format}
+                                  <Package className="size-2 mr-1" /> {search.format}
                                 </Badge>
                               )}
                             </div>
@@ -424,7 +424,7 @@ export function DashboardOverview() {
                             <p className="text-xs text-muted-foreground">
                               Maj : {formatDate(search.updatedAt)}
                             </p>
-                            <ExternalLink className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                            <ExternalLink className="size-3 text-muted-foreground group-hover:text-primary transition-colors" />
                           </div>
                         </div>
                       </CardContent>
@@ -436,8 +436,8 @@ export function DashboardOverview() {
 
             {/* Upcoming reservations */}
             <section aria-labelledby="upcoming-reservations-heading">
-              <div className="flex items-center justify-between mb-4">
-                <h2 id="upcoming-reservations-heading" className="text-lg font-semibold">
+              <div className="flex items-center justify-between mb-3">
+                <h2 id="upcoming-reservations-heading" className="text-base font-semibold">
                   Réservations à venir
                 </h2>
                 <Link href="/dashboard/reservations" className="text-sm text-primary hover:underline flex items-center gap-1">
@@ -445,26 +445,26 @@ export function DashboardOverview() {
                   <ArrowRight className="size-3" />
                 </Link>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {reservations.filter(r => r.status === "confirmed").slice(0, 3).map((res) => (
                   <Link key={res.id} href={`/dashboard/reservations?res=${res.id}`} className="group">
                     <Card className={cn("border border-border shadow-sm rounded-lg transition-all hover:shadow-md hover:border-primary/50", "group")}>
-                      <CardContent className="pt-4">
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-4">
-                            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                              <Package className="size-6" />
+                      <CardContent className="pt-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                              <Package className="size-5" />
                             </div>
                             <div>
                               <p className="font-medium text-foreground">{res.brand} {res.format}</p>
-                              <p className="text-sm text-muted-foreground">
+                              <p className="text-xs text-muted-foreground">
                                 {res.pointName} — {res.pointDistrict}
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3 shrink-0">
+                          <div className="flex items-center gap-2 shrink-0">
                             <Badge variant="default">{res.status === "confirmed" ? "Confirmée" : res.status}</Badge>
-                            <p className="text-sm text-muted-foreground whitespace-nowrap">
+                            <p className="text-xs text-muted-foreground whitespace-nowrap">
                               Expire : {formatDate(res.expiresAt)}
                             </p>
                           </div>

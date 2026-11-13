@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useAuthModal } from "@/lib/auth-context";
 import { authClient } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const DASHBOARD_NAV_ITEMS = [
@@ -124,12 +125,12 @@ export function DashboardClientLayout({
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar - Desktop */}
+      {/* Sidebar - Desktop (positionnée à droite) */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex h-full flex-col bg-card border-r border-border transition-all duration-300 ease-in-out",
+          "fixed inset-y-0 right-0 z-40 flex h-full flex-col bg-card border-l border-border transition-all duration-300 ease-in-out",
           sidebarCollapsed ? "w-16" : "w-64",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          sidebarOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
         )}
         aria-label="Navigation du dashboard"
       >
@@ -162,7 +163,7 @@ export function DashboardClientLayout({
             type="button"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             aria-label={sidebarCollapsed ? "Étendre le menu" : "Réduire le menu"}
-            className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+            className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             {sidebarCollapsed ? (
               <ChevronRight className="size-4" aria-hidden />
@@ -286,7 +287,7 @@ export function DashboardClientLayout({
       )}
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0 lg:ml-0">
+      <div className="flex-1 flex flex-col min-w-0 lg:mr-64">
         {/* Top bar - Mobile menu button */}
         <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-border bg-card/80 backdrop-blur-md px-4 sm:px-6 lg:px-8 lg:hidden">
           <Link
@@ -322,6 +323,26 @@ export function DashboardClientLayout({
             <span className="text-sm font-medium text-muted-foreground">
               {isVendor ? "Espace Vendeur" : "Espace Client"}
             </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push("/dashboard/recherches")}
+              className="text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
+              aria-label="Nouvelle recherche"
+            >
+              <Search className="size-4" /> Recherche
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push("/dashboard/reservations")}
+              className="text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
+              aria-label="Mes réservations"
+            >
+              <Calendar className="size-4" /> Réservations
+            </Button>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 rounded-lg px-3 py-2 bg-primary/10 text-primary text-sm font-medium">
