@@ -1,11 +1,26 @@
 import type { Metadata } from "next"
 import { PageLegale, type LegalDocument } from "@/app/_components/page-legale"
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://www.gazpoints.com"
+
 export const metadata: Metadata = {
   title: { absolute: "Politique de confidentialité | GazPoints" },
   description:
-    "Politique de confidentialité de GazPoints : données collectées, finalités, base légale, conservation, sécurité, droits des utilisateurs et coordonnées du responsable de traitement.",
-  robots: "index, follow",
+    "Politique de confidentialité de GazPoints : données collectées, finalités, base légale, conservation, sécurité, droits des utilisateurs et coordonnées du responsable de traitement à Douala, Cameroun.",
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: `${SITE_URL}/politique-confidentialite`,
+    siteName: "GazPoints",
+    title: "Politique de confidentialité | GazPoints",
+    description: "Politique de confidentialité de GazPoints : données collectées, finalités, base légale, conservation, sécurité, droits des utilisateurs et coordonnées du responsable de traitement.",
+  },
+  twitter: {
+    card: "summary",
+    title: "Politique de confidentialité | GazPoints",
+    description: "Politique de confidentialité de GazPoints : données collectées, finalités, base légale, conservation, sécurité, droits des utilisateurs et coordonnées du responsable de traitement.",
+  },
 }
 
 const document: LegalDocument = {

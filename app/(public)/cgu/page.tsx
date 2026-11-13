@@ -5,6 +5,19 @@ export const metadata: Metadata = {
   title: { absolute: "Conditions générales d'utilisation | GazPoints" },
   description:
     "Conditions générales d'utilisation de GazPoints : règles d'accès au service, responsabilités des usagers et des vendeurs, modération, propriété intellectuelle et limites de responsabilité.",
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: "https://www.gazpoints.com/cgu",
+    siteName: "GazPoints",
+    title: "Conditions générales d'utilisation | GazPoints",
+    description: "Conditions générales d'utilisation de GazPoints : règles d'accès au service, responsabilités des usagers et des vendeurs, modération, propriété intellectuelle et limites de responsabilité.",
+  },
+  twitter: {
+    card: "summary",
+    title: "Conditions générales d'utilisation | GazPoints",
+    description: "Conditions générales d'utilisation de GazPoints : règles d'accès au service, responsabilités des usagers et des vendeurs, modération, propriété intellectuelle et limites de responsabilité.",
+  },
   robots: "index, follow",
 }
 

@@ -30,6 +30,11 @@ export type ReservationResult = {
   qrCode?: string
 }
 
+export type ReservationPaymentResult = {
+  checkoutUrl: string
+  reservationCode: string
+}
+
 type PointData = {
   id: string
   name: string
@@ -50,14 +55,16 @@ export function ReservationModal({
   point,
   onConfirm,
   defaultAmountType,
+  onPaymentRedirect,
 }: {
   open: boolean
   onClose: () => void
   point: PointData | null
   onConfirm: (
     amountType: "reservation" | "consigne"
-  ) => Promise<ReservationResult | void>
+  ) => Promise<ReservationResult | ReservationPaymentResult | void>
   defaultAmountType?: "reservation" | "consigne"
+  onPaymentRedirect?: (checkoutUrl: string) => void
 }) {
   const [amountType, setAmountType] = useState<"reservation" | "consigne">(defaultAmountType ?? "reservation")
   const [loading, setLoading] = useState(false)
@@ -72,11 +79,20 @@ export function ReservationModal({
 
     try {
       const result = await onConfirm(amountType)
-      if (result) {
-        setSuccess(result)
-      } else {
+      if (!result) {
         setError("La réservation n'a pas pu être confirmée.")
+        return
       }
+      // Si le résultat contient une URL de checkout, rediriger vers le paiement
+      if ("checkoutUrl" in result && result.checkoutUrl) {
+        if (onPaymentRedirect) {
+          onPaymentRedirect(result.checkoutUrl)
+        } else {
+          window.location.href = result.checkoutUrl
+        }
+        return
+      }
+      setSuccess(result)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur lors de la réservation")
     } finally {

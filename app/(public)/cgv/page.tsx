@@ -5,6 +5,19 @@ export const metadata: Metadata = {
   title: { absolute: "Conditions générales de vente | GazPoints" },
   description:
     "Conditions générales de vente de l'abonnement vendeur GazPoints (5 000 FCFA/mois) : souscription, paiement, résiliation, remboursement, obligations des parties et service après-vente.",
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: "https://www.gazpoints.com/cgv",
+    siteName: "GazPoints",
+    title: "Conditions générales de vente | GazPoints",
+    description: "Conditions générales de vente de l'abonnement vendeur GazPoints (5 000 FCFA/mois) : souscription, paiement, résiliation, remboursement, obligations des parties et service après-vente.",
+  },
+  twitter: {
+    card: "summary",
+    title: "Conditions générales de vente | GazPoints",
+    description: "Conditions générales de vente de l'abonnement vendeur GazPoints (5 000 FCFA/mois) : souscription, paiement, résiliation, remboursement, obligations des parties et service après-vente.",
+  },
   robots: "index, follow",
 }
 

@@ -1,39 +1,34 @@
-import { MetadataRoute } from "next"
-
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://www.gazpoints.com"
+import { MetadataRoute } from 'next'
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
-      userAgent: "*",
+      userAgent: '*',
       allow: [
-        "/",
-        "/a-propos",
-        "/contact",
-        "/services",
-        "/devenir-vendeur",
-        "/cgu",
-        "/cgv",
-        "/politique-confidentialite",
-        "/politique-cookies",
-        "/mentions-legales",
+        '/',
+        '/a-propos',
+        '/contact',
+        '/services',
+        '/devenir-vendeur',
+        '/cgu',
+        '/cgv',
+        '/mentions-legales',
+        '/politique-confidentialite',
+        '/politique-cookies',
+        '/inscription',
+        '/connexion',
       ],
       disallow: [
-        "/admin",
-        "/dashboard",
-        "/api",
-        "/_next",
-        "/connexion",
-        "/inscription",
-        "/mot-de-passe-oublie",
-        "/mot-de-passe-temporaire",
-        "/paiement",
-        "/validation-email",
-        "/profil",
-        "/mes-commandes",
+        '/dashboard/',
+        '/api/',
+        '/auth/',
+        '/_next/',
+        '/inscription/vendeur/configuration',
+        '/paiement/',
+        '/mot-de-passe/',
+        '/validation-email',
       ],
     },
-    sitemap: `${SITE_URL}/sitemap.xml`,
+    sitemap: 'https://www.gazpoints.com/sitemap.xml',
   }
 }

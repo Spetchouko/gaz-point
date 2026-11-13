@@ -66,7 +66,7 @@ export function RechercheGaz() {
   const router = useRouter()
   const { data: session } = authClient.useSession()
   const [brand, setBrand] = useState("")
-  const [format, setFormat] = useState("")
+  const [format, setFormat] = useState("12,5 kg")
   const [zone, setZone] = useState("")
   const [locationLabel, setLocationLabel] = useState<string | null>(null)
   const [results, setResults] = useState<SearchResult[] | null>(null)
@@ -231,11 +231,19 @@ export function RechercheGaz() {
                 className="mt-1.5 h-12 w-full rounded-xl border border-input bg-background px-3 pr-10 text-sm text-foreground appearance-none pr-12 select-none outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 <option value="">Tous les formats</option>
-                {formats.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
+                {formats.map((item) => {
+                  const badge =
+                    item === "12,5 kg"
+                      ? " ★ Le plus recherché"
+                      : item === "6 kg"
+                      ? " ★ Très recherché"
+                      : ""
+                  return (
+                    <option key={item} value={item}>
+                      {item}{badge}
+                    </option>
+                  )
+                })}
               </select>
               <ChevronDown
                 className="pointer-events-none absolute right-3 bottom-3.5 size-4 text-muted-foreground"

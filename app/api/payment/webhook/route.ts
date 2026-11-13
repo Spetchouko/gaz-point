@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
-import { vendorSubscription, paymentTransaction } from "@/db/schema"
-import { eq } from "drizzle-orm"
+import { vendorSubscription, paymentTransaction, reservation, disponibilite } from "@/db/schema"
+import { eq, and, sql } from "drizzle-orm"
 import { verifyWebhook, isPaymentCompletedEvent, isPaymentFailedEvent, extractVendorIdFromMetadata } from "@/lib/geniuspay-webhook"
 import { getPayment } from "@/lib/geniuspay"
 
@@ -90,11 +90,22 @@ export async function POST(req: NextRequest) {
       .set(updateData)
       .where(eq(paymentTransaction.id, transaction.id))
     
-    // Handle subscription activation/deactivation based on event
-    if (isPaymentCompletedEvent(event)) {
-      await handlePaymentSuccess(vendorId, reference, verifiedStatus)
-    } else if (isPaymentFailedEvent(event)) {
-      await handlePaymentFailure(vendorId, reference, event)
+    // Détermination du type de paiement via les métadonnées
+    const paymentType = metadata?.type ?? "vendor_subscription"
+
+    // Handle activation/désactivation selon le type de paiement
+    if (paymentType === "reservation") {
+      if (isPaymentCompletedEvent(event)) {
+        await handleReservationPaymentSuccess(reference, verifiedStatus)
+      } else if (isPaymentFailedEvent(event)) {
+        await handleReservationPaymentFailure(reference, event)
+      }
+    } else {
+      if (isPaymentCompletedEvent(event)) {
+        await handlePaymentSuccess(vendorId, reference, verifiedStatus)
+      } else if (isPaymentFailedEvent(event)) {
+        await handlePaymentFailure(vendorId, reference, event)
+      }
     }
     
     return NextResponse.json({ received: true })
@@ -164,4 +175,125 @@ async function handlePaymentFailure(vendorId: string, reference: string, event: 
   }
   
   console.log(`[payment/webhook] Payment failed (${event}) for vendor: ${vendorId}`)
+}
+
+/**
+ * Confirme une réservation après succès de paiement.
+ * Passe le statut de "pending" à "confirmed" uniquement si la réservation
+ * existe encore et n'a pas déjà été traitée (évite les doubles confirmations).
+ */
+async function handleReservationPaymentSuccess(reference: string, status: string) {
+  if (status !== "completed") {
+    console.log(`[payment/webhook] Reservation payment not completed, status: ${status}`)
+    return
+  }
+
+  const [transaction] = await db
+    .select({ metadata: paymentTransaction.metadata })
+    .from(paymentTransaction)
+    .where(eq(paymentTransaction.geniuspayReference, reference))
+    .limit(1)
+
+  if (!transaction) {
+    console.error(`[payment/webhook] Transaction not found for reference: ${reference}`)
+    return
+  }
+
+  let meta: Record<string, string> = {}
+  try {
+    meta = JSON.parse(transaction.metadata ?? "{}")
+  } catch {
+    console.error(`[payment/webhook] Invalid metadata for transaction: ${reference}`)
+    return
+  }
+
+  const reservationId = meta.reservation_id
+  if (!reservationId) {
+    console.error(`[payment/webhook] No reservation_id in metadata for reference: ${reference}`)
+    return
+  }
+
+  // Mise à jour conditionnelle : seule une réservation "pending" peut passer en "confirmed"
+  const [updated] = await db
+    .update(reservation)
+    .set({ status: "confirmed", updatedAt: new Date() })
+    .where(and(eq(reservation.id, reservationId), eq(reservation.status, "pending")))
+    .returning({ id: reservation.id, pointId: reservation.pointId })
+
+  if (updated) {
+    console.log(`[payment/webhook] Reservation confirmed: ${reservationId}`)
+  } else {
+    console.log(`[payment/webhook] Reservation not in pending state or already processed: ${reservationId}`)
+  }
+}
+
+/**
+ * Annule une réservation après échec de paiement et libère le stock réservé.
+ */
+async function handleReservationPaymentFailure(reference: string, event: string) {
+  const [transaction] = await db
+    .select({ metadata: paymentTransaction.metadata })
+    .from(paymentTransaction)
+    .where(eq(paymentTransaction.geniuspayReference, reference))
+    .limit(1)
+
+  if (!transaction) {
+    console.error(`[payment/webhook] Transaction not found for reference: ${reference}`)
+    return
+  }
+
+  let meta: Record<string, string> = {}
+  try {
+    meta = JSON.parse(transaction.metadata ?? "{}")
+  } catch {
+    console.error(`[payment/webhook] Invalid metadata for transaction: ${reference}`)
+    return
+  }
+
+  const reservationId = meta.reservation_id
+  if (!reservationId) {
+    console.error(`[payment/webhook] No reservation_id in metadata for reference: ${reference}`)
+    return
+  }
+
+  // Récupère les infos de réservation avant annulation (pour libérer le stock)
+  const [res] = await db
+    .select({
+      id: reservation.id,
+      disponibiliteId: reservation.disponibiliteId,
+      quantity: reservation.quantity,
+      status: reservation.status,
+    })
+    .from(reservation)
+    .where(eq(reservation.id, reservationId))
+    .limit(1)
+
+  if (!res) {
+    console.error(`[payment/webhook] Reservation not found: ${reservationId}`)
+    return
+  }
+
+  if (res.status === "collected" || res.status === "cancelled") {
+    console.log(`[payment/webhook] Reservation already ${res.status}, skipping failure handling: ${reservationId}`)
+    return
+  }
+
+  // Annulation conditionnelle (pending → cancelled uniquement)
+  const [cancelled] = await db
+    .update(reservation)
+    .set({ status: "cancelled", cancelledAt: new Date(), updatedAt: new Date() })
+    .where(and(eq(reservation.id, reservationId), eq(reservation.status, "pending")))
+    .returning({ id: reservation.id })
+
+  if (cancelled && res.disponibiliteId) {
+    // Libération du stock réservé
+    await db
+      .update(disponibilite)
+      .set({
+        reservedQuantity: sql`GREATEST(0, ${disponibilite.reservedQuantity} - ${res.quantity})`,
+        updatedAt: new Date(),
+      })
+      .where(eq(disponibilite.id, res.disponibiliteId))
+    console.log(`[payment/webhook] Reservation cancelled and stock released: ${reservationId} (event: ${event})`)
+  }
 }

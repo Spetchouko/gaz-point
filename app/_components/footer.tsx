@@ -120,7 +120,7 @@ export function Footer() {
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} GazPoints. Tous droits réservés.
           </p>
-          <p className="text-xs text-muted-foreground mt-2">
+          <p className="text-xs text-muted-foreground mt-1">
             Fait pour faciliter l’accès au gaz au Cameroun.
           </p>
         </div>

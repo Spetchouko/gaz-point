@@ -1,11 +1,26 @@
 import type { Metadata } from "next"
 import { PageLegale, type LegalDocument } from "@/app/_components/page-legale"
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://www.gazpoints.com"
+
 export const metadata: Metadata = {
   title: { absolute: "Politique relative aux cookies | GazPoints" },
   description:
     "Politique cookies de GazPoints : liste des cookies et traceurs utilisés, leurs finalités, durées, et comment gérer vos préférences via le bandeau de consentement ou les paramètres de votre navigateur.",
-  robots: "index, follow",
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: `${SITE_URL}/politique-cookies`,
+    siteName: "GazPoints",
+    title: "Politique relative aux cookies | GazPoints",
+    description: "Politique cookies de GazPoints : liste des cookies et traceurs utilisés, leurs finalités, durées, et comment gérer vos préférences.",
+  },
+  twitter: {
+    card: "summary",
+    title: "Politique relative aux cookies | GazPoints",
+    description: "Politique cookies de GazPoints : liste des cookies et traceurs utilisés, leurs finalités, durées, et comment gérer vos préférences.",
+  },
 }
 
 const document: LegalDocument = {

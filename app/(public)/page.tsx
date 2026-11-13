@@ -11,11 +11,34 @@ import { PubliciteCarousel, type PubliciteBannerData } from "@/app/_components/p
 import { getPublicitesForSlot } from "@/lib/publicite"
 import { getApprovedAvis, type AvisPublic } from "@/lib/avis"
 import { errorMessage } from "@/lib/errors"
+import { WebPageJsonLd } from "@/app/_components/json-ld"
+import type { Metadata } from "next"
 
 // Les publicités et les avis proviennent de la base de données : la page est
 // rendue à la demande pour ne pas figer ces données au moment du build (et
 // pour que `next build` n'exige pas une base accessible).
 export const dynamic = "force-dynamic"
+
+export const metadata: Metadata = {
+  title: "GazPoints – Trouvez votre bouteille de gaz au Cameroun",
+  description: "GazPoints est la plateforme qui vous permet de rechercher et de vérifier la disponibilité des bouteilles de gaz auprès des points de vente au Cameroun. Trouvez le gaz près de chez vous sans vous déplacer inutilement.",
+  keywords: [
+    "gaz bouteille disponibilité Cameroun",
+    "trouver gaz Douala",
+    "point de vente gaz Cameroun",
+    "bouteille gaz 6 kg 12,5 kg",
+    "gaz domestique Cameroun",
+    "GazPoints",
+  ],
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: "https://www.gazpoints.com/",
+    siteName: "GazPoints",
+    title: "GazPoints – Trouvez votre bouteille de gaz au Cameroun",
+    description: "GazPoints est la plateforme qui vous permet de rechercher et de vérifier la disponibilité des bouteilles de gaz auprès des points de vente au Cameroun.",
+  },
+}
 
 export default async function Home() {
   // Les bannières sont décoratives : une panne du marketing ne doit jamais
@@ -54,6 +77,11 @@ export default async function Home() {
 
   return (
     <>
+      <WebPageJsonLd
+        name="GazPoints – Trouvez votre bouteille de gaz au Cameroun"
+        description="GazPoints est la plateforme qui vous permet de rechercher et de vérifier la disponibilité des bouteilles de gaz auprès des points de vente au Cameroun."
+        url="https://www.gazpoints.com/"
+      />
       <Hero searchPublicites={searchPublicites} />
       <PubliciteCarousel publicites={heroPublicites} className="py-8 md:py-12" />
       <Storytelling />
