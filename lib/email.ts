@@ -585,3 +585,50 @@ export async function sendNewConsignationEmail({
   assertMailAccepted(info, vendorEmail)
   return info
 }
+
+/**
+ * Construit l'URL de réinitialisation de mot de passe.
+ */
+export function buildPasswordResetLink(token: string): string {
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
+  return `${base.replace(/\/$/, "")}/mot-de-passe-temporaire?token=${encodeURIComponent(token)}`
+}
+
+export interface PasswordResetEmailParams {
+  email: string
+  token: string
+  resetLink: string
+  expiresInMinutes: number
+}
+
+/**
+ * Envoie l'e-mail de réinitialisation de mot de passe.
+ */
+export async function sendPasswordResetEmail({
+  email,
+  resetLink,
+  expiresInMinutes,
+}: PasswordResetEmailParams): Promise<void> {
+  const transporter = getTransporter()
+  const html = `
+    <h2>Réinitialisation de votre mot de passe GazPoints</h2>
+    <p>Vous avez demandé une réinitialisation de votre mot de passe.</p>
+    <p>
+      <a href="${resetLink}" style="background:#16834a;color:#fff;padding:10px 20px;text-decoration:none;border-radius:4px;">
+        Réinitialiser mon mot de passe
+      </a>
+    </p>
+    <p>Ce lien expire dans ${expiresInMinutes} minutes.</p>
+    <p>Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.</p>
+  `
+  const text = `Réinitialisation de votre mot de passe GazPoints\n\nLien : ${resetLink}\nCe lien expire dans ${expiresInMinutes} minutes.\nSi vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.`
+
+  const info = await transporter.sendMail({
+    from: `"GazPoints" <${smtpUser}>`,
+    to: email,
+    subject: "Réinitialisation de votre mot de passe – GazPoints",
+    text,
+    html,
+  })
+  assertMailAccepted(info, email)
+}

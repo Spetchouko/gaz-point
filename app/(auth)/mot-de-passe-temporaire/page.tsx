@@ -41,13 +41,13 @@ export default function MotDePasseTemporairePage() {
   // Vérifier que l'utilisateur est authentifié et doit changer son mot de passe
   useEffect(() => {
     if (!user) {
-      router.push("/connexion")
+      router.push("/connexion-admin")
       return
     }
     // Si ce n'est pas un collaborateur avec mot de passe temporaire, rediriger normalement
     if (!(user.role === "collaborateur" && user.mustChangePassword === true)) {
       const role = user.role
-      router.push(role === "admin" || role === "collaborateur" ? "/admin" : "/dashboard")
+      router.push(role === "admin" ? "/dashboard/admin" : "/dashboard/collaborateur")
       return
     }
     // Garder le modal ouvert (impossible de le fermer avant validation)
@@ -83,7 +83,7 @@ export default function MotDePasseTemporairePage() {
 
       if (result.ok) {
         setTimeout(() => {
-          router.push("/admin")
+          router.push("/dashboard/collaborateur")
           router.refresh()
         }, 1000)
       }

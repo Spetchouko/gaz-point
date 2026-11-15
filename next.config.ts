@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  serverExternalPackages: ["@neondatabase/serverless"],
   experimental: {
     // Les publicités acceptent des images jusqu'à 5 Mo (limite vérifiée côté
     // serveur dans lib/publicite-config.ts). Le formulaire transmet l'image

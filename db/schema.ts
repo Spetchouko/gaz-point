@@ -505,6 +505,29 @@ export const vendorSubscription = pgTable(
   ]
 )
 
+export const notification = pgTable("notification", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  type: text("type").notNull(), // 'reservation' | 'availability' | 'system' | 'promo' | 'admin'
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  link: text("link"), // optionnel : URL de destination au clic
+  read: boolean("read").default(false).notNull(),
+  archived: boolean("archived").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE */ new Date())
+    .notNull(),
+}, (table) => [
+  index("notification_user_id_idx").on(table.userId),
+  index("notification_read_idx").on(table.read),
+  index("notification_archived_idx").on(table.archived),
+  index("notification_user_created_idx").on(table.userId, table.createdAt),
+]);
+
 export const paymentTransaction = pgTable(
   "payment_transaction",
   {
@@ -548,7 +571,7 @@ export const paymentTransaction = pgTable(
 )
 
 export const relations = defineRelations(
-  { user, session, account, verification, pointDeVente, disponibilite, recharge, adminAction, collaborateurPermission, publicite, trafficEvent, brand, avis, reservation, vendorSubscription, paymentTransaction, pointDeVenteBouteille, vendorOnboarding },
+  { user, session, account, verification, pointDeVente, disponibilite, recharge, adminAction, collaborateurPermission, publicite, trafficEvent, brand, avis, reservation, vendorSubscription, paymentTransaction, pointDeVenteBouteille, vendorOnboarding, notification },
   (r) => ({
     user: {
       sessions: r.many.session(),
@@ -561,6 +584,10 @@ export const relations = defineRelations(
         to: r.vendorSubscription.vendorId,
       }),
       paymentTransactions: r.many.paymentTransaction(),
+      notifications: r.many.notification({
+        from: r.user.id,
+        to: r.notification.userId,
+      }),
       vendorOnboarding: r.one.vendorOnboarding({
         from: r.user.id,
         to: r.vendorOnboarding.userId,
@@ -682,6 +709,12 @@ export const relations = defineRelations(
     paymentTransaction: {
       vendor: r.one.user({
         from: r.paymentTransaction.vendorId,
+        to: r.user.id,
+      }),
+    },
+    notification: {
+      user: r.one.user({
+        from: r.notification.userId,
         to: r.user.id,
       }),
     },

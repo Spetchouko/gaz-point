@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic"
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { Search, Package, AlertCircle, ArrowLeft } from "lucide-react"
+import { Search, Package, AlertCircle, ArrowLeft, Clock, User, Truck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { Spinner } from "@/app/_components/spinner"
+import { toast } from "sonner"
 
 interface AdminDisponibilite {
   id: string
@@ -27,8 +28,10 @@ interface AdminDisponibilite {
   quantity: number | null
   reservedQuantity: number | null
   price: number | null
+  note: string | null
   createdAt: string
   updatedAt: string
+  expiresAt: string | null
   pointId: string
   vendorId: string
   pointName: string | null
@@ -37,12 +40,31 @@ interface AdminDisponibilite {
   vendorEmail: string | null
 }
 
+const statusLabel = (status: string) => {
+  switch (status) {
+    case "disponible": return "Disponible"
+    case "indisponible": return "Indisponible"
+    case "a_confirmer": return "À confirmer"
+    default: return status
+  }
+}
+
+const statusVariant = (status: string) => {
+  switch (status) {
+    case "disponible": return "default"
+    case "indisponible": return "destructive"
+    case "a_confirmer": return "outline"
+    default: return "outline"
+  }
+}
+
 export default function AdminDisponibilitesPage() {
   const [filterStatus, setFilterStatus] = useState<string>("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [disponibilites, setDisponibilites] = useState<AdminDisponibilite[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     let cancelled = false
@@ -77,6 +99,30 @@ export default function AdminDisponibilitesPage() {
     }
   }, [filterStatus, searchQuery])
 
+  const updateStatus = async (id: string, status: string) => {
+    setSaving((prev) => new Set([...prev, id]))
+    try {
+      const res = await fetch(`/api/admin/disponibilites/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      })
+      if (!res.ok) throw new Error("Échec de la modification")
+      setDisponibilites((prev) =>
+        prev.map((d) => (d.id === id ? { ...d, status } : d))
+      )
+      toast.success("Disponibilité mise à jour avec succès")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur lors de la modification")
+    } finally {
+      setSaving((prev) => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
+    }
+  }
+
   const filteredDisponibilites = disponibilites.filter((d) => {
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
@@ -88,24 +134,6 @@ export default function AdminDisponibilitesPage() {
     }
     return true
   })
-
-  const statusLabel = (status: string) => {
-    switch (status) {
-      case "disponible": return "Disponible"
-      case "indisponible": return "Indisponible"
-      case "a_confirmer": return "À confirmer"
-      default: return status
-    }
-  }
-
-  const statusVariant = (status: string) => {
-    switch (status) {
-      case "disponible": return "default"
-      case "indisponible": return "destructive"
-      case "a_confirmer": return "outline"
-      default: return "outline"
-    }
-  }
 
   if (loading) {
     return (
@@ -139,11 +167,10 @@ export default function AdminDisponibilitesPage() {
         <CardHeader>
           <CardTitle>Toutes les disponibilités</CardTitle>
           <CardDescription>
-            Consultez les disponibilités publiées par les vendeurs
+            Consultez et modifiez les disponibilités publiées par les vendeurs
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Filters */}
           <div className="grid gap-3 sm:grid-cols-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -167,7 +194,6 @@ export default function AdminDisponibilitesPage() {
             </Select>
           </div>
 
-          {/* Disponibilites list */}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -178,7 +204,7 @@ export default function AdminDisponibilitesPage() {
                   <th className="text-left py-3 px-4">Statut</th>
                   <th className="text-left py-3 px-4">Prix</th>
                   <th className="text-left py-3 px-4">Quantité</th>
-                  <th className="text-right py-3 px-4">Mis à jour</th>
+                  <th className="text-right py-3 px-4">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -196,6 +222,9 @@ export default function AdminDisponibilitesPage() {
                           <Package className="size-4 text-muted-foreground shrink-0" />
                           <div>
                             <p className="font-medium text-foreground">{d.brand} {d.format}</p>
+                            {d.note && (
+                              <p className="text-xs text-muted-foreground">{d.note}</p>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -222,13 +251,25 @@ export default function AdminDisponibilitesPage() {
                       </td>
                       <td className="py-3 px-4 text-muted-foreground">
                         {d.quantity != null ? d.quantity : "—"}
+                        {d.reservedQuantity != null && d.reservedQuantity > 0 && (
+                          <span className="text-xs text-muted-foreground ml-1">({d.reservedQuantity} rés.)</span>
+                        )}
                       </td>
-                      <td className="py-3 px-4 text-muted-foreground text-xs">
-                        {new Date(d.updatedAt).toLocaleDateString("fr-FR", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                        })}
+                      <td className="py-3 px-4 text-right">
+                        <Select
+                          value={d.status}
+                          onValueChange={(value) => updateStatus(d.id, value)}
+                          disabled={saving.has(d.id)}
+                        >
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue placeholder={statusLabel(d.status)} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="disponible">Disponible</SelectItem>
+                            <SelectItem value="indisponible">Indisponible</SelectItem>
+                            <SelectItem value="a_confirmer">À confirmer</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </td>
                     </tr>
                   ))

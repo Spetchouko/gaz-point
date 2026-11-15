@@ -2,12 +2,12 @@ import { NextResponse } from "next/server"
 import { db } from "@/db"
 import { user, pointDeVente } from "@/db/schema"
 import { eq, inArray, desc, count } from "drizzle-orm"
-import { getAdminUser } from "@/lib/session"
+import { requireModuleApi } from "@/lib/session"
 
 export async function GET(req: Request) {
   try {
-    const admin = await getAdminUser()
-    if (!admin) {
+    const staff = await requireModuleApi("vendeurs")
+    if (!staff) {
       return NextResponse.json({ error: "Accès réservé à l'administration" }, { status: 403 })
     }
 

@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
 import { user } from "@/db/schema"
-import { eq, count, desc, ilike, or } from "drizzle-orm"
-import { requireAdmin } from "@/lib/session"
+import { eq, count, desc, ilike, or, and } from "drizzle-orm"
+import { requireModuleApi } from "@/lib/session"
 
 export async function GET(req: NextRequest) {
   try {
-    const admin = await requireAdmin()
-    if (!admin) {
+    const staff = await requireModuleApi("utilisateurs")
+    if (!staff) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 })
     }
 

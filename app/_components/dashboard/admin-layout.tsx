@@ -21,6 +21,7 @@ import {
   Store,
   Package,
   Truck,
+  Shield,
 } from "lucide-react";
 import { useAuthModal } from "@/lib/auth-context";
 import { authClient } from "@/lib/auth-client";
@@ -31,47 +32,76 @@ import { cn } from "@/lib/utils";
 
 const ADMIN_NAV_ITEMS = [
   {
+    key: "overview",
     href: "/dashboard/admin",
     label: "Vue d'ensemble",
     icon: LayoutDashboard,
+    requiredPermission: null, // Always visible
   },
   {
+    key: "utilisateurs",
     href: "/dashboard/admin/utilisateurs",
     label: "Gestion des utilisateurs",
     icon: Users,
+    requiredPermission: "utilisateurs",
   },
   {
+    key: "collaborateurs",
+    href: "/dashboard/admin/collaborateurs",
+    label: "Gestion des collaborateurs",
+    icon: Shield,
+    requiredPermission: "collaborateurs",
+  },
+  {
+    key: "vendeurs",
     href: "/dashboard/admin/vendeurs",
     label: "Gestion des vendeurs",
     icon: Store,
+    requiredPermission: "vendeurs",
   },
   {
+    key: "reservations",
     href: "/dashboard/admin/reservations",
     label: "Gestion des réservations",
     icon: Calendar,
+    requiredPermission: "reservations",
   },
   {
+    key: "disponibilites",
     href: "/dashboard/admin/disponibilites",
     label: "Disponibilités",
     icon: Package,
+    requiredPermission: "disponibilites",
   },
   {
+    key: "publicite",
     href: "/dashboard/admin/publicite",
     label: "Annonces & publicités",
     icon: Truck,
+    requiredPermission: "publicite",
   },
   {
+    key: "profil",
     href: "/dashboard/admin/profil",
     label: "Mon profil",
     icon: User,
+    requiredPermission: null, // Always visible
   },
 ] as const;
 
+interface DashboardAdminLayoutProps {
+  children: React.ReactNode;
+  permissions: Set<string>;
+}
+
 export function DashboardAdminLayout({
   children,
-}: {
-  children: React.ReactNode;
-}) {
+  permissions,
+}: DashboardAdminLayoutProps) {
+  // Filter nav items based on permissions
+  const allowedNavItems = ADMIN_NAV_ITEMS.filter(
+    (item) => item.requiredPermission === null || permissions.has(item.requiredPermission)
+  );
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const pathname = usePathname();
@@ -180,12 +210,12 @@ export function DashboardAdminLayout({
 
         {/* Navigation items */}
         <nav className="flex-1 overflow-y-auto p-2 space-y-1" aria-label="Navigation principale">
-          {ADMIN_NAV_ITEMS.map((item) => {
+          {allowedNavItems.map((item) => {
             const active = isActive(item.href);
             const Icon = item.icon;
             return (
               <Link
-                key={item.href}
+                key={item.key}
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
                 aria-current={active ? "page" : undefined}

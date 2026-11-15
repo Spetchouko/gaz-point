@@ -15,7 +15,7 @@ import {
   lt,
   desc,
 } from "drizzle-orm"
-import { requireAdmin } from "@/lib/session"
+import { requireModuleApi } from "@/lib/session"
 
 /**
  * API d'agrégation analytics pour le dashboard administrateur.
@@ -34,8 +34,8 @@ function endOfDayLocal(date: Date): Date {
 
 export async function GET(req: Request) {
   try {
-    const admin = await requireAdmin()
-    if (!admin) {
+    const staff = await requireModuleApi("statistiques")
+    if (!staff) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 })
     }
 

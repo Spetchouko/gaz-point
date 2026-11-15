@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic"
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { Search, Calendar, AlertCircle, ArrowLeft, Package } from "lucide-react"
+import { Search, Calendar, AlertCircle, ArrowLeft, Package, Truck, User, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { Spinner } from "@/app/_components/spinner"
+import { toast } from "sonner"
 
 interface AdminReservation {
   id: string
@@ -42,12 +43,35 @@ interface AdminReservation {
   pointDistrict: string | null
 }
 
+const statusLabel = (status: string) => {
+  switch (status) {
+    case "confirmed": return "Confirmée"
+    case "collected": return "Récupérée"
+    case "cancelled": return "Annulée"
+    case "pending": return "En attente"
+    case "expired": return "Expirée"
+    default: return status
+  }
+}
+
+const statusVariant = (status: string) => {
+  switch (status) {
+    case "confirmed": return "default"
+    case "collected": return "secondary"
+    case "cancelled": return "destructive"
+    case "pending": return "outline"
+    case "expired": return "destructive"
+    default: return "outline"
+  }
+}
+
 export default function AdminReservationsPage() {
   const [filterStatus, setFilterStatus] = useState<string>("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [reservations, setReservations] = useState<AdminReservation[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     let cancelled = false
@@ -82,6 +106,30 @@ export default function AdminReservationsPage() {
     }
   }, [filterStatus, searchQuery])
 
+  const updateStatus = async (id: string, status: string) => {
+    setSaving((prev) => new Set([...prev, id]))
+    try {
+      const res = await fetch(`/api/admin/reservations/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      })
+      if (!res.ok) throw new Error("Échec de la modification")
+      setReservations((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, status } : r))
+      )
+      toast.success("Réservation mise à jour avec succès")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur lors de la modification")
+    } finally {
+      setSaving((prev) => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
+    }
+  }
+
   const filteredReservations = reservations.filter((r) => {
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
@@ -95,36 +143,11 @@ export default function AdminReservationsPage() {
     return true
   })
 
-  const statusLabel = (status: string) => {
-    switch (status) {
-      case "confirmed": return "Confirmée"
-      case "collected": return "Récupérée"
-      case "cancelled": return "Annulée"
-      case "pending": return "En attente"
-      case "expired": return "Expirée"
-      default: return status
-    }
-  }
-
-  const statusVariant = (status: string) => {
-    switch (status) {
-      case "confirmed": return "default"
-      case "collected": return "secondary"
-      case "cancelled": return "destructive"
-      case "pending": return "outline"
-      case "expired": return "destructive"
-      default: return "outline"
-    }
-  }
-
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "—"
     return new Date(dateString).toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
     })
   }
 
@@ -160,11 +183,10 @@ export default function AdminReservationsPage() {
         <CardHeader>
           <CardTitle>Toutes les réservations</CardTitle>
           <CardDescription>
-            Consultez et filtrez toutes les réservations de la plateforme
+            Consultez, filtrez et modifiez le statut de toutes les réservations
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Filters */}
           <div className="grid gap-3 sm:grid-cols-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -190,7 +212,6 @@ export default function AdminReservationsPage() {
             </Select>
           </div>
 
-          {/* Reservations list */}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -257,12 +278,21 @@ export default function AdminReservationsPage() {
                         {formatDate(r.reservedAt)}
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <Link
-                          href={`/dashboard/admin/reservations/${r.id}`}
-                          className="text-primary hover:underline text-sm"
+                        <Select
+                          value={r.status}
+                          onValueChange={(value) => updateStatus(r.id, value)}
+                          disabled={saving.has(r.id)}
                         >
-                          Voir détails
-                        </Link>
+                          <SelectTrigger className="w-[130px]">
+                            <SelectValue placeholder={statusLabel(r.status)} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">En attente</SelectItem>
+                            <SelectItem value="confirmed">Confirmée</SelectItem>
+                            <SelectItem value="collected">Récupérée</SelectItem>
+                            <SelectItem value="cancelled">Annulée</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </td>
                     </tr>
                   ))
