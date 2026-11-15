@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic"
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import {
   User,
   Mail,
@@ -34,6 +35,7 @@ import { authClient } from "@/lib/auth-client"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Spinner } from "@/app/_components/spinner"
+import { optimizeImageFile } from "@/lib/image-utils"
 
 type UserProfile = {
   id: string
@@ -77,6 +79,11 @@ export default function AdminProfilPage() {
     type: "success" | "error"
     text: string
   } | null>(null)
+
+  // Avatar
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [avatarUploading, setAvatarUploading] = useState(false)
 
   const [firstNameError, setFirstNameError] = useState<string | null>(null)
   const [lastNameError, setLastNameError] = useState<string | null>(null)
@@ -206,6 +213,87 @@ export default function AdminProfilPage() {
       toast.error("Erreur lors de la mise à jour")
     } finally {
       setSaving(false)
+    }
+  }
+
+  // ---------- Téléversement de l'avatar ----------
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith("image/")) {
+      setProfileMessage({
+        type: "error",
+        text: "Ce fichier n'est pas une image reconnue.",
+      })
+      return
+    }
+
+    setAvatarUploading(true)
+    setProfileMessage(null)
+
+    try {
+      const result = await optimizeImageFile(file)
+      if (!result.ok) {
+        setProfileMessage({ type: "error", text: result.error })
+        return
+      }
+
+      setAvatarPreview(result.dataUrl)
+      setAvatarFile(file)
+
+      // Envoyer au serveur
+      const res = await fetch("/api/user/avatar", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: result.dataUrl }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Erreur lors du téléversement")
+
+      setProfile((prev) => (prev ? { ...prev, image: result.dataUrl } : prev))
+      setProfileMessage({
+        type: "success",
+        text: "Photo de profil mise à jour.",
+      })
+      toast.success("Avatar mis à jour")
+    } catch {
+      setProfileMessage({
+        type: "error",
+        text: "Échec du téléversement de la photo. Réessayez.",
+      })
+    } finally {
+      setAvatarUploading(false)
+      e.target.value = ""
+    }
+  }
+
+  const handleRemoveAvatar = async () => {
+    setAvatarUploading(true)
+    setProfileMessage(null)
+
+    try {
+      const res = await fetch("/api/user/avatar", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ remove: true }),
+      })
+
+      if (!res.ok) throw new Error("Erreur lors de la suppression")
+
+      setAvatarPreview(null)
+      setAvatarFile(null)
+      setProfile((prev) => (prev ? { ...prev, image: null } : prev))
+      setProfileMessage({ type: "success", text: "Photo de profil supprimée." })
+      toast.success("Avatar supprimé")
+    } catch {
+      setProfileMessage({
+        type: "error",
+        text: "Échec de la suppression de la photo. Réessayez.",
+      })
+    } finally {
+      setAvatarUploading(false)
     }
   }
 
@@ -401,6 +489,59 @@ export default function AdminProfilPage() {
                   />
                 </div>
                 {phoneError && <p className="text-xs text-destructive">{phoneError}</p>}
+              </div>
+
+              {/* Avatar upload */}
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="avatar">Photo de profil</Label>
+                <div className="flex flex-col items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0 overflow-hidden border border-primary/20 relative">
+                      {avatarPreview || userProfile.image ? (
+                        <Image
+                          src={avatarPreview || userProfile.image!}
+                          alt="Photo de profil"
+                          width={64}
+                          height={64}
+                          className="size-16 object-cover"
+                        />
+                      ) : (
+                        <span className="text-sm font-semibold">{getUserInitials()}</span>
+                      )}
+                      {avatarUploading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                          <Spinner size="sm" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-2 text-center">
+                      <p className="text-xs text-muted-foreground">Photo de profil</p>
+                      <label
+                        className="cursor-pointer text-sm text-primary underline underline-offset-4 hover:text-primary-dark disabled:opacity-50 disabled:pointer-events-none"
+                      >
+                        Choisir une image
+                      </label>
+                    </div>
+                  </div>
+                  <input
+                    id="avatar"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleAvatarChange}
+                    disabled={avatarUploading || saving}
+                    className="hidden"
+                  />
+                  {(avatarPreview || userProfile.image) && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveAvatar}
+                      disabled={avatarUploading || saving}
+                      className="text-xs text-destructive underline underline-offset-4 hover:text-destructive disabled:opacity-50"
+                    >
+                      Supprimer la photo
+                    </button>
+                  )}
+                </div>
               </div>
 
               {profileMessage && (

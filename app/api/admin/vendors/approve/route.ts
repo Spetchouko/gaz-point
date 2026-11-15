@@ -4,6 +4,7 @@ import { user } from "@/db/schema"
 import { eq } from "drizzle-orm"
 import { requireModuleApi } from "@/lib/session"
 import { sendVendorApprovalResultEmail } from "@/lib/email"
+import { createNotification, buildNotificationLink } from "@/lib/notifications"
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,6 +50,19 @@ export async function POST(req: NextRequest) {
         updatedAt: new Date(),
       })
       .where(eq(user.id, vendor.id))
+
+    // Créer notification pour le vendeur
+    try {
+      await createNotification({
+        userId: vendor.id,
+        type: "system",
+        title: "Compte vendeur approuvé",
+        message: "Votre compte vendeur a été approuvé par l'administration. Vous pouvez maintenant accéder à votre espace vendeur.",
+        link: buildNotificationLink("admin", vendor.id, "profil"),
+      })
+    } catch {
+      // Ignorer les erreurs de notification
+    }
 
     // Send approval email to vendor
     const adminDashboardUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://gazpoints.com"}/dashboard/vendeur`

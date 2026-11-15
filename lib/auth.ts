@@ -14,6 +14,7 @@ import {
 import { sendVerificationEmail } from "@/lib/email";
 import { recordConversionFromHeaders } from "@/lib/publicite-attribution";
 import { isBuildPhase, optionalEnv } from "@/lib/env";
+import { createNotification, buildNotificationLink } from "@/lib/notifications";
 
 // Valeurs utilisées uniquement pendant `next build` et en développement.
 // En production (`next start`), l'absence de configuration lève une erreur
@@ -263,6 +264,27 @@ export const auth = betterAuth({
                         })
                     } catch (e) {
                         console.error("publicite signup conversion failed", e)
+                    }
+                    
+                    // Notifier les administrateurs de la nouvelle inscription
+                    try {
+                        const [admins] = await db
+                          .select({ id: schema.user.id })
+                          .from(schema.user)
+                          .where(eq(schema.user.role, "admin"))
+                          .limit(10)
+                        
+                        for (const admin of admins) {
+                          await createNotification({
+                            userId: admin.id,
+                            type: "admin",
+                            title: "Nouvel utilisateur inscrit",
+                            message: `Un nouvel utilisateur (${user.name ?? user.email}) s'est inscrit sur la plateforme.`,
+                            link: buildNotificationLink("admin", String(user.id ?? ""), "admin"),
+                          })
+                        }
+                    } catch {
+                      // Ignorer les erreurs de notification
                     }
                 },
             },

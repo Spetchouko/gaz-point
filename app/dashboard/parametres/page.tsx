@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import { useState } from "react";
-import { Bell, Shield, Palette, Globe, Key, Trash2, Save, AlertCircle, CheckCircle2, Moon, Sun, Monitor, Search, Check, Download } from "lucide-react";
+import { Bell, Shield, Palette, Trash2, Save, AlertCircle, CheckCircle2, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -27,7 +27,6 @@ export default function ParametresPage() {
     push: true,
     reservation: true,
     availability: true,
-    promo: false,
     system: true,
   });
 
@@ -93,7 +92,6 @@ export default function ParametresPage() {
               {[
                 { key: "reservation", label: "Réservations", description: "Confirmations, rappels et expirations" },
                 { key: "availability", label: "Disponibilités", description: "Nouvelles bouteilles près de chez vous" },
-                { key: "promo", label: "Promotions", description: "Offres spéciales et codes promo" },
                 { key: "system", label: "Système", description: "Mises à jour et maintenance" },
               ].map((item) => (
                 <div key={item.key} className="flex items-center justify-between">
@@ -151,16 +149,15 @@ export default function ParametresPage() {
           <form onSubmit={(e) => { e.preventDefault(); handleSave("appearance"); }} className="space-y-6">
             <div>
               <h3 className="font-medium mb-3">Thème</h3>
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 {[
                   { value: "light", label: "Clair", icon: <Sun className="size-5" />, desc: "Interface claire" },
                   { value: "dark", label: "Sombre", icon: <Moon className="size-5" />, desc: "Interface sombre" },
-                  { value: "system", label: "Système", icon: <Monitor className="size-5" />, desc: "Suivre le système" },
                 ].map((item) => (
                   <button
                     key={item.value}
                     type="button"
-                    onClick={() => { setTheme(item.value as "light" | "dark" | "system"); handleSave("appearance"); }}
+                    onClick={() => { setTheme(item.value as "light" | "dark"); handleSave("appearance"); }}
                     className={cn(
                       "relative flex flex-col items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all",
                       theme === item.value

@@ -591,7 +591,7 @@ export async function sendNewConsignationEmail({
  */
 export function buildPasswordResetLink(token: string): string {
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
-  return `${base.replace(/\/$/, "")}/mot-de-passe-temporaire?token=${encodeURIComponent(token)}`
+  return `${base.replace(/\/$/, "")}/mot-de-passe-oublie?token=${encodeURIComponent(token)}`
 }
 
 export interface PasswordResetEmailParams {

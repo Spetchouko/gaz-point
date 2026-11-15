@@ -107,7 +107,7 @@ export function DashboardAdminLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { isAuthenticated, openAuthModal } = useAuthModal();
-  const { data: session } = authClient.useSession();
+  const { data: session, status } = authClient.useSession();
   const user = session?.user as
     | { name?: string | null; email?: string | null; image?: string | null; role?: string | null }
     | undefined;
@@ -156,6 +156,10 @@ export function DashboardAdminLayout({
       .map((part) => part.charAt(0).toUpperCase())
       .join("")
       .slice(0, 2) || "U";
+  };
+
+  const handleProfileClick = () => {
+    router.push("/dashboard/admin/profil");
   };
 
   return (
@@ -237,8 +241,10 @@ export function DashboardAdminLayout({
         {/* Footer with user info and logout */}
         <div className={cn("border-t border-border p-3 space-y-2", sidebarCollapsed && "px-1")}>
           <div className={cn("flex items-center gap-3 rounded-lg px-3 py-2", sidebarCollapsed && "justify-center")}>
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-              {getUserAvatar() ? (
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary cursor-pointer" onClick={handleProfileClick}>
+              {status === "loading" ? (
+                <div className="animate-pulse rounded-full bg-muted" />
+              ) : getUserAvatar() ? (
                 <Image
                   src={getUserAvatar()!}
                   alt="Avatar utilisateur"
@@ -247,17 +253,26 @@ export function DashboardAdminLayout({
                   className="size-8 rounded-full object-cover"
                 />
               ) : (
-                <span className="text-sm font-semibold">{getUserInitials()}</span>
+                <User className="size-5 text-primary" aria-hidden="true" />
               )}
             </span>
             {!sidebarCollapsed && (
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-foreground">
-                  {user?.name || "Administrateur"}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {user?.email || "admin@gazpoints.com"} — Administrateur
-                </p>
+              <div className="min-w-0 cursor-pointer" onClick={handleProfileClick}>
+                {status === "loading" ? (
+                  <div className="space-y-2">
+                    <div className="h-4 w-24 bg-muted rounded animate-pulse" />
+                    <div className="h-3 w-32 bg-muted/50 rounded animate-pulse" />
+                  </div>
+                ) : (
+                  <>
+                    <p className="truncate text-sm font-medium text-foreground hover:text-primary transition-colors">
+                      {user?.name}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {user?.email} — {(user?.role ?? "client") === "admin" ? "Administrateur" : ""}
+                    </p>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -269,6 +284,7 @@ export function DashboardAdminLayout({
               sidebarCollapsed && "justify-center px-1"
             )}
             aria-label="Se déconnecter"
+            disabled={status === "loading"}
           >
             <LogOut className={cn("size-4 shrink-0", sidebarCollapsed && "mx-auto")} aria-hidden />
             {!sidebarCollapsed && <span>Déconnexion</span>}
@@ -324,23 +340,29 @@ export function DashboardAdminLayout({
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 rounded-lg px-3 py-2 bg-primary/10 text-primary text-sm font-medium">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                {getUserAvatar() ? (
-                  <Image
-                    src={getUserAvatar()!}
-                    alt="Avatar utilisateur"
-                    width={24}
-                    height={24}
-                    className="size-6 rounded-full object-cover"
-                  />
-                ) : (
-                  <span className="text-xs font-semibold">{getUserInitials()}</span>
-                )}
-              </span>
-              <span className="hidden sm:block font-medium">
-                {user?.name || "Utilisateur"}
-              </span>
+            <div className="flex items-center gap-3 rounded-lg px-3 py-2 bg-primary/10 text-primary text-sm font-medium cursor-pointer" onClick={handleProfileClick}>
+              {status === "loading" ? (
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted animate-pulse" />
+              ) : (
+                <>
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    {getUserAvatar() ? (
+                      <Image
+                        src={getUserAvatar()!}
+                        alt="Avatar utilisateur"
+                        width={24}
+                        height={24}
+                        className="size-6 rounded-full object-cover"
+                      />
+                    ) : (
+                      <User className="size-5 text-primary" aria-hidden="true" />
+                    )}
+                  </span>
+                  <span className="hidden sm:block font-medium hover:text-primary-foreground transition-colors">
+                    {user?.name}
+                  </span>
+                </>
+              )}
             </div>
             <div className="relative">
               <button

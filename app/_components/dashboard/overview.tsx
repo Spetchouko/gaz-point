@@ -1,25 +1,19 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Search, Calendar, Package } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { authClient } from "@/lib/auth-client";
 
 export function DashboardOverview() {
-  const router = useRouter();
-  const { data: session } = authClient.useSession();
+  const { data: session, status } = authClient.useSession();
   const user = session?.user;
-  const firstName = user?.name ? user.name.split(" ")[0] : "Client";
+  const isLoading = status === "loading";
+  const firstName = user?.name ? user.name.split(" ")[0] : null;
 
   return (
     <div className="space-y-6">
@@ -27,11 +21,31 @@ export function DashboardOverview() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Bienvenue {firstName} à votre espace client GazPoints !
+            {isLoading ? (
+              <span className="text-muted-foreground animate-pulse">
+                Chargement du profil…
+              </span>
+            ) : (
+              <>
+                Bienvenue{" "}
+                <span className="text-primary font-semibold">
+                  {firstName ?? "Utilisateur"}
+                </span>{" "}
+                à votre espace client GazPoints !
+              </>
+            )}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Gérez vos recherches, vos réservations et consultez votre historique.
-          </p>
+          {isLoading && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Récupération de vos informations en cours…
+            </p>
+          )}
+          {!isLoading && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              Gérez vos recherches, vos réservations et consultez votre
+              historique.
+            </p>
+          )}
         </div>
       </div>
 

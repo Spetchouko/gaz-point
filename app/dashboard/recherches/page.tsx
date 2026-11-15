@@ -362,25 +362,20 @@ export function RechercheGaz() {
       )}
 
       {results !== null && results.length === 0 && (
-        <div className="mt-5 flex flex-col items-center justify-center text-center bg-background border border-border rounded-2xl p-6 sm:p-10 shadow-sm">
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <Cylinder className="size-10 text-primary" aria-hidden />
+        <div className="mt-5 flex flex-col items-center justify-center text-center bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-sm">
+          <div className="flex justify-center mb-2">
+            <Search className="size-10 text-primary" aria-hidden />
           </div>
-          <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground mb-3">
-            Aucun gaz disponible pour le moment
-          </h2>
-          <p className="text-base text-muted-foreground max-w-xs mx-auto leading-relaxed mb-6">
-            Nous n'avons actuellement aucune disponibilité correspondant à votre
-            recherche.
+          <p className="font-bold text-foreground whitespace-nowrap text-base sm:text-sm mb-2">
+            Aucun gaz disponible pour le moment.
           </p>
-          <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed mb-8">
-            Nous vous invitons à réessayer un peu plus tard ou à relancer votre
-            recherche pour vérifier les nouvelles disponibilités.
+          <p className="text-sm text-muted-foreground whitespace-nowrap mb-6">
+            Nous vous invitons à réessayer un peu plus tard.
           </p>
           <Button
             type="button"
             variant="default"
-            className="w-full sm:w-auto h-11"
+            className="w-full sm:w-auto h-11 mt-3 sm:mt-0"
             onClick={handleRetry}
           >
             <RefreshCw className="size-4 mr-2" />

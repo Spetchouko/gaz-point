@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
-import { reservation, adminAction } from "@/db/schema"
+import { reservation, adminAction, user } from "@/db/schema"
 import { eq } from "drizzle-orm"
 import { requireModuleApi } from "@/lib/session"
+import { createNotification, buildNotificationLink } from "@/lib/notifications"
 
 const VALID_STATUSES = ["confirmed", "collected", "cancelled"] as const
 
@@ -57,6 +58,57 @@ export async function PATCH(
     }
 
     await db.update(reservation).set(updates).where(eq(reservation.id, id))
+
+    // Créer notification pour le client selon le nouveau statut
+    try {
+      const [res] = await db
+        .select({ userId: reservation.userId, vendorId: reservation.vendorId, reservationCode: reservation.reservationCode })
+        .from(reservation)
+        .where(eq(reservation.id, id))
+        .limit(1)
+
+      if (res?.userId) {
+        let title = ""
+        let message = ""
+
+        switch (body.status) {
+          case "confirmed":
+            title = "Réservation confirmée"
+            message = `Votre réservation ${res.reservationCode} a été confirmée par l'administration.`
+            break
+          case "collected":
+            title = "Réservation récupérée"
+            message = `Votre réservation ${res.reservationCode} a été marquée comme récupérée.`
+            break
+          case "cancelled":
+            title = "Réservation annulée"
+            message = `Votre réservation ${res.reservationCode} a été annulée par l'administration.`
+            break
+        }
+
+        if (title) {
+          await createNotification({
+            userId: res.userId,
+            type: "reservation",
+            title,
+            message,
+            link: buildNotificationLink("reservation", id, "client-reservations"),
+          })
+        }
+
+        if (res?.vendorId) {
+          await createNotification({
+            userId: res.vendorId,
+            type: "reservation",
+            title: `Réservation ${body.status}`,
+            message: `La réservation ${res.reservationCode} a été marquée comme ${body.status} par l'administration.`,
+            link: buildNotificationLink("reservation", id, "vendor-reservations"),
+          })
+        }
+      }
+    } catch {
+      // Ignorer les erreurs de notification
+    }
 
     // Traçabilité
     try {

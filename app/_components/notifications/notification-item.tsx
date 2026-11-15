@@ -14,12 +14,16 @@ import {
   Trash2,
   Archive,
   Eye,
-  EyeOff,
   ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
 export type NotificationItemType = {
@@ -37,7 +41,10 @@ type NotificationItemProps = {
   notification: NotificationItemType;
   onUpdate: (id: string) => void;
   onDelete: (id: string) => void;
+  onOpen?: (id: string) => void;
   compact?: boolean;
+  selected?: boolean;
+  onSelectChange?: (id: string, checked: boolean) => void;
 };
 
 const TYPE_ICONS: Record<string, any> = {
@@ -60,7 +67,10 @@ export function NotificationItem({
   notification,
   onUpdate,
   onDelete,
+  onOpen,
   compact = false,
+  selected = false,
+  onSelectChange,
 }: NotificationItemProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const TypeIcon = TYPE_ICONS[notification.type] || Bell;
@@ -100,6 +110,7 @@ export function NotificationItem({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: notification.id, read: false }),
       });
+      setMenuOpen(false);
       onUpdate(notification.id);
     }
   };
@@ -110,6 +121,17 @@ export function NotificationItem({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: notification.id, archived: true }),
     });
+    setMenuOpen(false);
+    onUpdate(notification.id);
+  };
+
+  const handleRestore = async () => {
+    await fetch("/api/notifications", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: notification.id, archived: false }),
+    });
+    setMenuOpen(false);
     onUpdate(notification.id);
   };
 
@@ -118,6 +140,7 @@ export function NotificationItem({
     await fetch(`/api/notifications/${notification.id}`, {
       method: "DELETE",
     });
+    setMenuOpen(false);
     onDelete(notification.id);
   };
 
@@ -126,17 +149,36 @@ export function NotificationItem({
     if (!notification.read) {
       await handleMarkRead();
     }
-    if (notification.link) {
-      window.location.href = notification.link;
+    if (onOpen) {
+      onOpen(notification.id);
     }
   };
 
   return (
-    <div className="group border border-border rounded-lg shadow-sm transition-all hover:shadow-sm">
+    <div
+      className={cn(
+        "group border border-border rounded-lg shadow-sm transition-all hover:shadow-sm",
+        selected ? "bg-primary/10 border-primary" : "",
+        notification.read ? "" : "border-l-2 border-l-primary bg-primary/5"
+      )}
+    >
+      {/* Checkbox de sélection */}
+      {onSelectChange && (
+        <div className="flex shrink-0 items-center pt-4 pl-4">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={(e) => onSelectChange(notification.id, e.target.checked)}
+            className="accent-primary h-4 w-4 rounded border-gray-300"
+            aria-label={`Sélectionner ${notification.title}`}
+          />
+        </div>
+      )}
+
       <div
         className={cn(
           "flex items-start gap-4 p-4 cursor-pointer",
-          notification.read ? "" : "border-l-2 border-l-primary bg-primary/5"
+          notification.read ? "" : "bg-primary/5"
         )}
         onClick={handleOpen}
       >
@@ -209,7 +251,7 @@ export function NotificationItem({
                 Archiver
               </DropdownMenuItem>
             ) : (
-              <DropdownMenuItem onClick={handleArchive}>
+              <DropdownMenuItem onClick={handleRestore}>
                 <Eye className="size-3 mr-2" />
                 Restaurer
               </DropdownMenuItem>

@@ -167,6 +167,10 @@ export function CollaborateurLayout({
       .slice(0, 2) || "C";
   };
 
+  const handleProfileClick = () => {
+    router.push("/dashboard/admin/profil");
+  };
+
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar - Desktop (positionnée à droite) */}
@@ -281,7 +285,7 @@ export function CollaborateurLayout({
         {/* Footer with user info and logout */}
         <div className={cn("border-t border-border p-3 space-y-2", sidebarCollapsed && "px-1")}>
           <div className={cn("flex items-center gap-3 rounded-lg px-3 py-2", sidebarCollapsed && "justify-center")}>
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary cursor-pointer" onClick={handleProfileClick}>
               {getUserAvatar() ? (
                 <Image
                   src={getUserAvatar()!}
@@ -291,12 +295,12 @@ export function CollaborateurLayout({
                   className="size-8 rounded-full object-cover"
                 />
               ) : (
-                <span className="text-sm font-semibold">{getUserInitials()}</span>
+                <User className="size-5 text-primary" aria-hidden="true" />
               )}
             </span>
             {!sidebarCollapsed && (
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-foreground">
+              <div className="min-w-0 cursor-pointer" onClick={handleProfileClick}>
+                <p className="truncate text-sm font-medium text-foreground hover:text-primary transition-colors">
                   {user?.name || "Collaborateur"}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
@@ -368,7 +372,7 @@ export function CollaborateurLayout({
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 rounded-lg px-3 py-2 bg-primary/10 text-primary text-sm font-medium">
+            <div className="flex items-center gap-3 rounded-lg px-3 py-2 bg-primary/10 text-primary text-sm font-medium cursor-pointer" onClick={handleProfileClick}>
               <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 {getUserAvatar() ? (
                   <Image
@@ -379,10 +383,10 @@ export function CollaborateurLayout({
                     className="size-6 rounded-full object-cover"
                   />
                 ) : (
-                  <span className="text-xs font-semibold">{getUserInitials()}</span>
+                  <User className="size-5 text-primary" aria-hidden="true" />
                 )}
               </span>
-              <span className="hidden sm:block font-medium">
+              <span className="hidden sm:block font-medium hover:text-primary-foreground transition-colors">
                 {user?.name || "Utilisateur"}
               </span>
             </div>

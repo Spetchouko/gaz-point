@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
-import { vendorSubscription, paymentTransaction, reservation, disponibilite } from "@/db/schema"
+import { vendorSubscription, paymentTransaction, reservation, disponibilite, user } from "@/db/schema"
 import { eq, and, sql } from "drizzle-orm"
 import { verifyWebhook, isPaymentCompletedEvent, isPaymentFailedEvent, extractVendorIdFromMetadata } from "@/lib/geniuspay-webhook"
 import { getPayment } from "@/lib/geniuspay"
+import { createNotification, buildNotificationLink } from "@/lib/notifications"
 
 /**
  * POST /api/payment/webhook
@@ -208,8 +209,9 @@ async function handleReservationPaymentSuccess(reference: string, status: string
   }
 
   const reservationId = meta.reservation_id
-  if (!reservationId) {
-    console.error(`[payment/webhook] No reservation_id in metadata for reference: ${reference}`)
+  const userId = meta.user_id
+  if (!reservationId || !userId) {
+    console.error(`[payment/webhook] Missing reservation_id or user_id in metadata for reference: ${reference}`)
     return
   }
 
@@ -222,6 +224,32 @@ async function handleReservationPaymentSuccess(reference: string, status: string
 
   if (updated) {
     console.log(`[payment/webhook] Reservation confirmed: ${reservationId}`)
+    
+    // Créer notification pour le client
+    await createNotification({
+      userId,
+      type: "reservation",
+      title: "Réservation confirmée",
+      message: `Votre réservation a été confirmée suite au paiement. Elle est maintenant prête à être récupérée.`,
+      link: buildNotificationLink("reservation", reservationId, "client-reservations"),
+    })
+    
+    // Créer notification pour le vendeur
+    const [res] = await db
+      .select({ vendorId: reservation.vendorId })
+      .from(reservation)
+      .where(eq(reservation.id, reservationId))
+      .limit(1)
+    
+    if (res?.vendorId) {
+      await createNotification({
+        userId: res.vendorId,
+        type: "reservation",
+        title: "Nouvelle réservation confirmée",
+        message: `Une nouvelle réservation a été confirmée et est prête pour récupération.`,
+        link: buildNotificationLink("reservation", reservationId, "vendor-reservations"),
+      })
+    }
   } else {
     console.log(`[payment/webhook] Reservation not in pending state or already processed: ${reservationId}`)
   }
@@ -251,8 +279,9 @@ async function handleReservationPaymentFailure(reference: string, event: string)
   }
 
   const reservationId = meta.reservation_id
-  if (!reservationId) {
-    console.error(`[payment/webhook] No reservation_id in metadata for reference: ${reference}`)
+  const userId = meta.user_id
+  if (!reservationId || !userId) {
+    console.error(`[payment/webhook] Missing reservation_id or user_id in metadata for reference: ${reference}`)
     return
   }
 
@@ -263,6 +292,7 @@ async function handleReservationPaymentFailure(reference: string, event: string)
       disponibiliteId: reservation.disponibiliteId,
       quantity: reservation.quantity,
       status: reservation.status,
+      vendorId: reservation.vendorId,
     })
     .from(reservation)
     .where(eq(reservation.id, reservationId))
@@ -284,6 +314,28 @@ async function handleReservationPaymentFailure(reference: string, event: string)
     .set({ status: "cancelled", cancelledAt: new Date(), updatedAt: new Date() })
     .where(and(eq(reservation.id, reservationId), eq(reservation.status, "pending")))
     .returning({ id: reservation.id })
+
+  if (cancelled) {
+    // Créer notification pour le client
+    await createNotification({
+      userId,
+      type: "reservation",
+      title: "Réservation annulée",
+      message: `Votre réservation a été annulée suite à l'échec du paiement.`,
+      link: buildNotificationLink("reservation", reservationId, "client-reservations"),
+    })
+    
+    // Créer notification pour le vendeur
+    if (res.vendorId) {
+      await createNotification({
+        userId: res.vendorId,
+        type: "reservation",
+        title: "Réservation annulée",
+        message: `Une réservation a été annulée suite à l'échec du paiement.`,
+        link: buildNotificationLink("reservation", reservationId, "vendor-reservations"),
+      })
+    }
+  }
 
   if (cancelled && res.disponibiliteId) {
     // Libération du stock réservé

@@ -15,6 +15,7 @@ interface UserAvatarProps {
   href: string;
   size?: "sm" | "md" | "lg";
   className?: string;
+  isLoading?: boolean;
 }
 
 const SIZE_CONFIG: Record<string, { container: string; icon: string; image: string }> = {
@@ -25,8 +26,10 @@ const SIZE_CONFIG: Record<string, { container: string; icon: string; image: stri
 
 /**
  * Avatar utilisateur réutilisable sur les trois dashboards.
- * - Affiche la photo réelle si l'utilisateur en a téléversé une.
+ * - Affiche la photo réelle si l'utilisateur en a téléversée.
  * - Sinon, affiche une icône de profil sobre (remplace les initiales).
+ * - Pendant le chargement de la session, affiche un squelette neutre
+ *   pour éviter d'afficher un avatar générique par défaut.
  * - Cliquable : redirige vers `href` (sa section « Mon profil »).
  */
 export function UserAvatar({
@@ -34,9 +37,28 @@ export function UserAvatar({
   href,
   size = "sm",
   className,
+  isLoading = false,
 }: UserAvatarProps) {
   const dims = SIZE_CONFIG[size] ?? SIZE_CONFIG.sm;
   const hasImage = Boolean(user?.image);
+
+  if (isLoading) {
+    return (
+      <Link
+        href={href}
+        className={cn(
+          "flex items-center justify-center rounded-full bg-muted shrink-0",
+          dims.container,
+          className,
+        )}
+        aria-label="Chargement du profil…"
+      >
+        <div className={cn("flex items-center justify-center", dims.container)}>
+          <div className="animate-pulse rounded-full bg-muted" />
+        </div>
+      </Link>
+    );
+  }
 
   return (
     <Link

@@ -8,6 +8,7 @@ import {
 } from "@/db/schema"
 import { eq, count, desc, ilike, or, and } from "drizzle-orm"
 import { requireAdmin, isPrincipalAdmin, canModifyUserRole } from "@/lib/session"
+import { hashPassword } from "better-auth/crypto"
 
 export type Collaborator = {
   id: string
@@ -220,13 +221,14 @@ export async function POST(req: NextRequest) {
       updatedAt: new Date(),
     })
 
-    // Créer le compte better-auth (mot de passe)
+    // Créer le compte better-auth (mot de passe haché)
+    const hashedPassword = await hashPassword(body.password)
     await db.insert(account).values({
       id: crypto.randomUUID(),
       accountId: body.email,
       providerId: "credential",
       userId: id,
-      password: body.password,
+      password: hashedPassword,
       createdAt: new Date(),
       updatedAt: new Date(),
     })

@@ -39,23 +39,30 @@ export async function createNotification(input: CreateNotificationInput) {
 /**
  * Destinations de notification par type d'événement.
  * Chaque notification possède une destination réelle et cohérente.
+ * Note: Les pages de détail individuelles n'existant pas encore, les liens renvoient
+ * vers les pages de liste avec un paramètre de recherche quand possible.
  */
 export function buildNotificationLink(
   type: NotificationType,
   referenceId?: string | null,
-  targetType?: "reservation" | "point" | "disponibilite" | "profil" | "admin"
+  targetType?: "reservation" | "point" | "disponibilite" | "profil" | "admin" | "vendor-reservations" | "client-reservations"
 ): string | null {
   switch (targetType) {
     case "reservation":
-      return `/dashboard/reservations/${referenceId ?? ""}`;
+    case "client-reservations":
+      // Page liste des réservations client avec recherche par code
+      return referenceId ? `/dashboard/reservations?search=${encodeURIComponent(referenceId)}` : "/dashboard/reservations";
+    case "vendor-reservations":
+      // Page liste des réservations vendeur avec recherche par code
+      return referenceId ? `/dashboard/depot/reservations?search=${encodeURIComponent(referenceId)}` : "/dashboard/depot/reservations";
     case "point":
-      return `/dashboard/depot/${referenceId ?? ""}`;
+      return `/dashboard/depot${referenceId ? `/${referenceId}` : ""}`;
     case "disponibilite":
       return `/dashboard/depot/disponibilites`;
     case "profil":
       return "/dashboard/profil";
     case "admin":
-      return `/dashboard/admin/${referenceId ?? ""}`;
+      return referenceId ? `/dashboard/admin${referenceId}` : "/dashboard/admin";
     default:
       return null;
   }
