@@ -4,17 +4,15 @@ import { useCallback, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   AlertCircle,
-  ChevronDown,
   LocateFixed,
   MapPin,
-  Phone,
   RefreshCw,
   Search,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { formats } from "@/app/_components/donnees-demo"
+import { BottleFormatSearchField } from "@/app/_components/bottle-format-search-field"
 import { useSafeSession } from "@/lib/auth-session"
 import type { AvailabilityStatus } from "@/db/schema"
 import {
@@ -224,30 +222,15 @@ export function RechercheGaz() {
               >
                 Format
               </label>
-              <select
-                id="recherche-format"
-                value={format}
-                onChange={(event) => setFormat(event.target.value)}
-                className="mt-1.5 h-12 w-full rounded-xl border border-input bg-background px-3 pr-10 text-sm text-foreground appearance-none pr-12 select-none outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/50"
-              >
-                <option value="">Tous les formats</option>
-                {formats.map((item) => {
-                  const badge =
-                    item === "12,5 kg"
-                      ? " ★ Le plus recherché"
-                      : item === "6 kg"
-                      ? " ★ Très recherché"
-                      : ""
-                  return (
-                    <option key={item} value={item}>
-                      {item}{badge}
-                    </option>
-                  )
-                })}
-              </select>
-              <ChevronDown
-                className="pointer-events-none absolute right-3 bottom-3.5 size-4 text-muted-foreground"
-              />
+              <div className="mt-1.5">
+                <BottleFormatSearchField
+                  id="recherche-format"
+                  value={format}
+                  onChange={setFormat}
+                  inputClassName="h-12 rounded-xl border-input bg-background px-3 pr-10 focus-visible:ring-3 focus-visible:ring-ring/50"
+                  placeholder="Tous les formats ou saisir un grammage"
+                />
+              </div>
             </div>
           </div>
 

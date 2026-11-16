@@ -1,3 +1,5 @@
+import { PREDEFINED_BOTTLE_FORMATS } from "@/lib/bottle-formats"
+
 export const MAX_VENDOR_BRANDS = 30
 export const MAX_VENDOR_FORMATS = 30
 
@@ -36,17 +38,10 @@ export const CAMEROON_GAS_BRANDS = [
 ] as const
 
 /**
- * Grammages les plus courants au Cameroun. Le formulaire accepte aussi un
- * format personnalisé afin de ne pas bloquer un nouveau format commercial.
+ * Grammages prédéfinis proposés dans les formulaires vendeurs/admin.
+ * Les formulaires acceptent aussi un format personnalisé.
  */
-export const GAS_BOTTLE_FORMATS = [
-  "6 kg",
-  "12,5 kg",
-  "15 kg",
-  "28 kg",
-  "35 kg",
-  "50 kg",
-] as const
+export const GAS_BOTTLE_FORMATS = PREDEFINED_BOTTLE_FORMATS
 
 export function normalizeCatalogValue(value: string): string {
   return value.trim().toLowerCase()
