@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 /**
- * Proxy d'authentification centralisé pour GazPoints.
+ * Middleware/proxy d'authentification centralisé pour GazPoints.
  *
  * Vérifie la session côté serveur AVANT le rendu de chaque page protégée.
  * Cela élimine le clignotement "connecté/déconnecté" lié à l'hydratation

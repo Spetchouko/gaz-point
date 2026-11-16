@@ -43,9 +43,14 @@ export type SessionUser = {
 }
 
 export async function getCurrentUser() {
-  const session = await auth.api.getSession({ headers: await getHeaders() })
-  const user = session?.user
-  return (user as SessionUser | undefined) ?? null
+  try {
+    const session = await auth.api.getSession({ headers: await getHeaders() })
+    const user = session?.user
+    return (user as SessionUser | undefined) ?? null
+  } catch (error) {
+    console.error("[session] getCurrentUser failed", error)
+    return null
+  }
 }
 
 /**
