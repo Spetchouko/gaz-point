@@ -1,70 +1,68 @@
 "use client";
-
 import { useEffect, useState } from "react";
-import { redirect } from "next/navigation";
 import { CollaborateurLayout } from "@/app/_components/dashboard/collaborateur-layout";
-import { authClient } from "@/lib/auth-client";
-
-const ALL_MODULES = [
-  "utilisateurs",
-  "clients",
-  "vendeurs",
-  "disponibilites",
-  "reservations",
-  "publicite",
-  "collaborateurs",
-  "marketing",
-  "avis",
-  "statistiques",
-] as const;
+import { useDashboardSession } from "@/lib/auth-session";
 
 export default function DashboardCollaborateurLayoutWrapper({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { data: session, status } = authClient.useSession();
-  const [isStaff, setIsStaff] = useState<boolean | null>(null);
+  const { status, user, isAuthenticated, isLoading, role } =
+    useDashboardSession();
   const [permissions, setPermissions] = useState<Set<string>>(new Set());
 
+  // Charger les permissions réelles depuis l'API protégée.
   useEffect(() => {
-    if (status !== "loading") {
-      if (!session?.user) {
-        redirect("/connexion-admin");
-      } else {
-        const role = (session.user as { role?: string }).role;
-        // Allow both admin and collaborateur
-        if (role === "admin" || role === "collaborateur") {
-          // Fetch permissions from API
-          fetch("/api/user/permissions", {
-            headers: { Accept: "application/json" },
-            cache: "no-store",
-          })
-            .then((res) => {
-              if (!res.ok) throw new Error("Failed to fetch permissions");
-              return res.json();
-            })
-            .then((data) => {
-              if (data.role === "admin") {
-                setPermissions(new Set(ALL_MODULES));
-              } else {
-                setPermissions(new Set(data.permissions || []));
-              }
-              setIsStaff(true);
-            })
-            .catch(() => {
-              redirect("/connexion-admin");
-            });
-        } else {
-          redirect("/dashboard");
+    let cancelled = false;
+    async function loadPermissions() {
+      try {
+        const res = await fetch("/api/user/permissions", {
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+        });
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          setPermissions(
+            new Set(
+              Array.isArray(data.permissions) ? data.permissions : []
+            )
+          );
         }
+      } catch {
+        // En cas d'erreur, l'ensemble vide est utilisé et les modules
+        // restent masqués pour le collaborateur.
       }
     }
-  }, [session, status]);
+    loadPermissions();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  if (isStaff === null) {
-    return null;
-  }
+  // Si la session est définitivement invalide (expiration en cours de navigation),
+  // rediriger vers la connexion admin. Pendant le chargement, on affiche le contenu
+  // pour éviter le clignotement : le middleware a déjà protégé la route côté serveur.
+  useEffect(() => {
+    if (isLoading) {
+      return;
+    }
+    if (!isAuthenticated || !user) {
+      window.location.href = "/connexion-admin";
+      return;
+    }
+    const userRole = (user.role ?? "client") as string;
+    // Seuls admin et collaborateur peuvent accéder à ce dashboard.
+    if (userRole !== "admin" && userRole !== "collaborateur") {
+      window.location.href = "/dashboard";
+      return;
+    }
+  }, [isLoading, isAuthenticated, user, role]);
 
-  return <CollaborateurLayout permissions={permissions}>{children}</CollaborateurLayout>;
+  // Toujours afficher le contenu : pas de retour null pendant le loading.
+  return (
+    <CollaborateurLayout session={user} status={status} permissions={permissions}>
+      {children}
+    </CollaborateurLayout>
+  );
 }

@@ -3,8 +3,9 @@
 import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
+import { useSafeSession } from "@/lib/auth-session"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ModernCard } from "@/app/_components/card-modern"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -33,7 +34,7 @@ type FieldKey = "pointName" | "email" | "password" | "district" | "address" | "b
 
 function InscriptionVendeurContent() {
   const router = useRouter()
-  const { data: session } = authClient.useSession()
+  const { data: session } = useSafeSession()
 
   const searchRedirect = useSearchParams().get("redirect")
   const redirectTo = searchRedirect ?? "/dashboard/vendeur"
@@ -51,7 +52,7 @@ function InscriptionVendeurContent() {
   const [showPassword, setShowPassword] = useState(false)
   const [district, setDistrict] = useState("")
   const [address, setAddress] = useState("")
-  const [brands, setBrands] = useState<string[]>(["", "", "", "", ""])
+  const [brands, setBrands] = useState<string[]>([])
 
   const [error, setError] = useState("")
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldKey, string>>>({})
@@ -113,7 +114,11 @@ function InscriptionVendeurContent() {
       if (!res.ok || !payload?.ok) {
         const message =
           payload?.error?.message ?? "Impossible de créer le compte vendeur."
-        const field = payload?.error?.field as FieldKey | undefined
+        const rawField = payload?.error?.field
+        const field =
+          rawField === "name"
+            ? "pointName"
+            : (rawField as FieldKey | undefined)
         if (field) {
           setFieldErrors({ [field]: message })
         }

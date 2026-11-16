@@ -3,6 +3,7 @@
 import { useCallback, Suspense, useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
+import { useSafeSession } from "@/lib/auth-session"
 import { safeRedirect } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { LoaderButton } from "@/app/_components/loader-button"
@@ -34,7 +35,7 @@ function LoginAdminPageContent() {
   const explicitRedirect = searchParams.get("redirect")
   const defaultRedirect = "/dashboard/admin"
   const redirectTo = safeRedirect(explicitRedirect, defaultRedirect)
-  const { data: session } = authClient.useSession()
+  const { data: session } = useSafeSession()
 
   const passwordRef = useRef<HTMLInputElement>(null)
 
@@ -45,14 +46,12 @@ function LoginAdminPageContent() {
     const mustChange = (session.user as { mustChangePassword?: boolean })?.mustChangePassword
     if (role === "admin") {
       router.push(redirectTo)
-      router.refresh()
     } else if (role === "collaborateur") {
       if (mustChange === true) {
         router.push("/mot-de-passe-temporaire")
       } else {
         router.push("/dashboard/collaborateur")
       }
-      router.refresh()
     }
   }, [session, router, redirectTo])
 
@@ -137,7 +136,6 @@ function LoginAdminPageContent() {
         // Admin -> dashboard admin
         router.push(redirectTo)
       }
-      router.refresh()
     } catch {
       setError("Une erreur inattendue est survenue. Veuillez réessayer.")
       setFeedback({ state: "error", msg: "Une erreur inattendue est survenue. Veuillez réessayer." })

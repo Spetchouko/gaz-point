@@ -30,7 +30,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { authClient } from "@/lib/auth-client";
+import { useSafeSession } from "@/lib/auth-session";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { optimizeImageFile } from "@/lib/image-utils";
@@ -49,7 +49,7 @@ type UserProfile = {
 
 export default function VendorProfilPage() {
   const router = useRouter();
-  const { data: session } = authClient.useSession();
+  const { data: session } = useSafeSession()
   const sessionUser = session?.user;
 
   const [profile, setProfile] = useState<UserProfile | null>(null);

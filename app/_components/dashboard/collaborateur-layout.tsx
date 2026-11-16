@@ -26,6 +26,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useAuthModal } from "@/lib/auth-context";
+import type { DashboardUser } from "@/lib/auth-session";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { DashboardFooter } from "@/app/_components/dashboard/dashboard-footer";
@@ -95,26 +96,28 @@ const COLLABORATEUR_MODULES = [
   },
 ] as const;
 
-type CollaborateurModuleKey = (typeof COLLABORATEUR_MODULES)[number]["key"];
-
 interface CollaborateurLayoutProps {
   children: React.ReactNode;
-  permissions: Set<CollaborateurModuleKey>;
+  permissions: Set<string>;
+  session?: DashboardUser | null;
+  status?: "loading" | "authenticated" | "unauthenticated";
 }
 
 export function CollaborateurLayout({
   children,
   permissions,
+  session: sessionProp,
+  status: statusProp,
 }: CollaborateurLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { isAuthenticated, openAuthModal } = useAuthModal();
-  const { data: session } = authClient.useSession();
-  const user = session?.user as
-    | { name?: string | null; email?: string | null; image?: string | null; role?: string | null }
-    | undefined;
+  const { openAuthModal } = useAuthModal();
+
+  const user = sessionProp ?? undefined;
+  const status = statusProp;
+  const isAuthenticated = Boolean(user);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(3);
 

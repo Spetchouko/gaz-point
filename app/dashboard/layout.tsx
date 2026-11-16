@@ -1,42 +1,49 @@
 "use client";
 import { useEffect } from "react";
 import { DashboardClientLayout } from "@/app/_components/dashboard/client-layout";
-import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
-import { Spinner } from "@/app/_components/spinner";
+import { useRouter, usePathname } from "next/navigation";
+import { useDashboardSession } from "@/lib/auth-session";
 
 export default function DashboardClientLayoutWrapper({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { data: session, status } = authClient.useSession();
+  const { status, user, isAuthenticated, isLoading, role } =
+    useDashboardSession();
   const router = useRouter();
+  const pathname = usePathname();
 
-  // Restaurer la session depuis les cookies avant de décider de l'affichage.
-  // Pendant le statut "loading", on affiche un état de chargement sans rediriger,
-  // ce qui élimine le clignotement de la page de connexion à l'actualisation (F5).
+  // Si la session est définitivement invalide (expiration en cours de navigation),
+  // rediriger vers la connexion. Pendant le chargement (isLoading), on affiche
+  // le contenu pour éviter tout clignotement : le middleware a déjà protégé
+  // la route côté serveur, donc un utilisateur authentifié ne verra jamais
+  // d'état déconnecté au premier rendu.
   useEffect(() => {
-    if (status === "loading") {
-      // Session encore en cours de restauration : on attend, on ne redirige pas.
+    if (isLoading) {
       return;
     }
-    if (status === "unauthenticated" || !session?.user) {
-      // Session réellement expirée ou invalide : rediriger vers la connexion.
+    if (!isAuthenticated || !user) {
       router.push("/connexion");
+      return;
     }
-    // Si status === "authenticated" : rien à faire, le dashboard s'affiche.
-  }, [status, session, router]);
+    // Si l'utilisateur est sur le dashboard générique (/dashboard) mais a un rôle
+    // spécifique, le rediriger vers son dashboard dédié (gardé pour cohérence,
+    // bien que le middleware traite déjà ce cas côté serveur).
+    if (pathname === "/dashboard") {
+      if (role === "admin" || role === "collaborateur") {
+        router.push("/dashboard/admin");
+      } else if (role === "vendor") {
+        router.push("/dashboard/vendeur");
+      }
+    }
+  }, [isLoading, isAuthenticated, user, router, pathname, role]);
 
-  // Pendant la restauration de la session, afficher un loader au lieu de
-  // retourner null (écran blanc) ou de rediriger prématurément.
-  if (status === "loading") {
-    return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
-
-  return <DashboardClientLayout>{children}</DashboardClientLayout>;
+  // Toujours afficher le contenu : pas de retour null pendant le loading,
+  // ce qui supprimerait le clignotement et le retour à la page de connexion.
+  return (
+    <DashboardClientLayout session={user} status={status}>
+      {children}
+    </DashboardClientLayout>
+  );
 }

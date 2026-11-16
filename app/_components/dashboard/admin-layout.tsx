@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -8,22 +8,20 @@ import {
   LayoutDashboard,
   Users,
   User,
-  Search,
   Calendar,
-  History,
   Bell,
   Settings,
   ChevronLeft,
   ChevronRight,
   LogOut,
   Menu,
-  X,
   Store,
   Package,
   Truck,
   Shield,
 } from "lucide-react";
 import { useAuthModal } from "@/lib/auth-context";
+import type { DashboardUser } from "@/lib/auth-session";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { DashboardFooter } from "@/app/_components/dashboard/dashboard-footer";
@@ -81,6 +79,13 @@ const ADMIN_NAV_ITEMS = [
     requiredPermission: "publicite",
   },
   {
+    key: "analytics",
+    href: "/dashboard/admin/analytics",
+    label: "Rapports & statistiques",
+    icon: Settings,
+    requiredPermission: "statistiques",
+  },
+  {
     key: "profil",
     href: "/dashboard/admin/profil",
     label: "Mon profil",
@@ -92,11 +97,15 @@ const ADMIN_NAV_ITEMS = [
 interface DashboardAdminLayoutProps {
   children: React.ReactNode;
   permissions: Set<string>;
+  session?: DashboardUser | null;
+  status?: "loading" | "authenticated" | "unauthenticated";
 }
 
 export function DashboardAdminLayout({
   children,
   permissions,
+  session: sessionProp,
+  status: statusProp,
 }: DashboardAdminLayoutProps) {
   // Filter nav items based on permissions
   const allowedNavItems = ADMIN_NAV_ITEMS.filter(
@@ -106,13 +115,21 @@ export function DashboardAdminLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { isAuthenticated, openAuthModal } = useAuthModal();
-  const { data: session, status } = authClient.useSession();
-  const user = session?.user as
-    | { name?: string | null; email?: string | null; image?: string | null; role?: string | null }
-    | undefined;
+  const { openAuthModal } = useAuthModal();
+
+  const user = sessionProp ?? undefined;
+  const status = statusProp;
+  const isAuthenticated = Boolean(user);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(3);
+  const [buttonDisabled, setButtonDisabled] = useState(false);
+
+  // Synchroniser l'état disabled du bouton après hydratation pour éviter
+  // un mismatch entre le rendu serveur (status undefined) et le client
+  // (status "loading" au démarrage).
+  useEffect(() => {
+    setButtonDisabled(status === "loading");
+  }, [status]);
 
   const isActive = (href: string) =>
     href === "/dashboard/admin" ? pathname === "/dashboard/admin" : pathname.startsWith(href);
@@ -155,28 +172,32 @@ export function DashboardAdminLayout({
       ?.split(" ")
       .map((part) => part.charAt(0).toUpperCase())
       .join("")
-      .slice(0, 2) || "U";
+      .slice(0, 2) || "A";
   };
 
   const handleProfileClick = () => {
     router.push("/dashboard/admin/profil");
   };
 
+  const handleNotificationsClick = () => {
+    router.push("/dashboard/admin/notifications");
+  };
+
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar - Desktop (positionnée à droite) */}
+      {/* Sidebar - GAUCHE : unique navigation du dashboard administrateur */}
       <aside
         className={cn(
-          "fixed inset-y-0 right-0 z-40 flex h-full flex-col bg-card border-l border-border transition-all duration-300 ease-in-out",
+          "fixed inset-y-0 left-0 z-40 flex h-full flex-col bg-card border-r border-border transition-all duration-300 ease-in-out",
           sidebarCollapsed ? "w-16" : "w-64",
-          sidebarOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
         aria-label="Navigation du dashboard administrateur"
       >
         {/* Header with logo */}
         <div
           className={cn(
-            "flex h-16 items-center justify-between border-b border-border px-4",
+            "flex h-14 items-center justify-between border-b border-border px-4",
             sidebarCollapsed && "justify-center px-0"
           )}
         >
@@ -238,10 +259,13 @@ export function DashboardAdminLayout({
           })}
         </nav>
 
-        {/* Footer with user info and logout */}
+        {/* Footer de la sidebar : info utilisateur + déconnexion */}
         <div className={cn("border-t border-border p-3 space-y-2", sidebarCollapsed && "px-1")}>
           <div className={cn("flex items-center gap-3 rounded-lg px-3 py-2", sidebarCollapsed && "justify-center")}>
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary cursor-pointer" onClick={handleProfileClick}>
+            <span
+              className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary cursor-pointer"
+              onClick={handleProfileClick}
+            >
               {status === "loading" ? (
                 <div className="animate-pulse rounded-full bg-muted" />
               ) : getUserAvatar() ? (
@@ -269,7 +293,7 @@ export function DashboardAdminLayout({
                       {user?.name}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {user?.email} — {(user?.role ?? "client") === "admin" ? "Administrateur" : ""}
+                      {user?.email} — {(user?.role ?? "admin") === "admin" ? "Administrateur" : "Collaborateur"}
                     </p>
                   </>
                 )}
@@ -284,7 +308,7 @@ export function DashboardAdminLayout({
               sidebarCollapsed && "justify-center px-1"
             )}
             aria-label="Se déconnecter"
-            disabled={status === "loading"}
+            disabled={buttonDisabled}
           >
             <LogOut className={cn("size-4 shrink-0", sidebarCollapsed && "mx-auto")} aria-hidden />
             {!sidebarCollapsed && <span>Déconnexion</span>}
@@ -301,103 +325,30 @@ export function DashboardAdminLayout({
         />
       )}
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0 lg:mr-64">
-        {/* Top bar - Mobile menu button */}
-        <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-border bg-card/80 backdrop-blur-md px-4 sm:px-6 lg:px-8 lg:hidden">
-          <Link
-            href="/dashboard/admin"
-            className="flex items-center gap-2 font-bold text-lg"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Image
-                src="/brand/logo.png"
-                alt="GazPoints"
-                width={24}
-                height={24}
-                className="h-5 w-5 object-contain"
-              />
-            </span>
-            <span className="text-primary font-bold tracking-tight">GazPoints</span>
-          </Link>
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Ouvrir le menu"
-            className="flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            <Menu className="size-5" aria-hidden />
-            <span className="sr-only">Menu</span>
-          </button>
-        </header>
+      {/* Bouton menu mobile fixe (visible seulement sur mobile) */}
+      <button
+        type="button"
+        onClick={() => setSidebarOpen(true)}
+        aria-label="Ouvrir le menu"
+        className="fixed bottom-6 right-4 z-40 lg:hidden flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary-strong transition-colors"
+      >
+        <Menu className="size-6" aria-hidden />
+      </button>
 
-        {/* Desktop top bar */}
-        <header className="hidden lg:sticky lg:top-0 lg:z-10 lg:flex lg:h-14 lg:items-center lg:justify-between lg:border-b lg:border-border lg:bg-card/80 lg:backdrop-blur-md lg:px-6 lg:px-8">
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-muted-foreground">
-              Espace Administrateur
-            </span>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 rounded-lg px-3 py-2 bg-primary/10 text-primary text-sm font-medium cursor-pointer" onClick={handleProfileClick}>
-              {status === "loading" ? (
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted animate-pulse" />
-              ) : (
-                <>
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    {getUserAvatar() ? (
-                      <Image
-                        src={getUserAvatar()!}
-                        alt="Avatar utilisateur"
-                        width={24}
-                        height={24}
-                        className="size-6 rounded-full object-cover"
-                      />
-                    ) : (
-                      <User className="size-5 text-primary" aria-hidden="true" />
-                    )}
-                  </span>
-                  <span className="hidden sm:block font-medium hover:text-primary-foreground transition-colors">
-                    {user?.name}
-                  </span>
-                </>
-              )}
-            </div>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => router.push("/dashboard/admin/notifications")}
-                className="flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-                aria-label="Notifications"
-              >
-                <Bell className="size-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 size-2.5 rounded-full bg-destructive text-white text-[10px] leading-none">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
-                )}
-              </button>
-            </div>
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <LogOut className="size-4" aria-hidden />
-              <span className="hidden sm:inline">Déconnexion</span>
-            </button>
-          </div>
-        </header>
-
-        {/* Main content area */}
+      {/* Main content - occupe tout l'espace disponible à droite de la sidebar */}
+      <div className={cn(
+        "flex-1 flex flex-col min-w-0 lg:transition-all lg:duration-300 lg:ease-in-out",
+        // Décalage dynamique selon l'état de la sidebar (desktop uniquement)
+        sidebarCollapsed ? "lg:pl-16" : "lg:pl-64"
+      )}>
+        {/* Zone de contenu principale - flexible, s'adapte à la sidebar */}
         <main className="flex-1 overflow-auto">
-          <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <div className="w-full max-w-screen-2xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
             {children}
           </div>
         </main>
 
-        {/* Footer public */}
+        {/* Footer global unique */}
         <DashboardFooter />
 
         {/* Bouton flottant retour en haut */}

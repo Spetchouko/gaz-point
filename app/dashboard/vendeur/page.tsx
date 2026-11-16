@@ -5,12 +5,11 @@ export const dynamic = "force-dynamic"
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import {
-  LayoutDashboard,
   Edit,
-  RefreshCw,
   Package,
   Truck,
   RotateCcw,
+  CheckCircle2,
   Calendar,
   AlertCircle,
   Clock,
@@ -25,7 +24,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
 interface Depot {
@@ -67,6 +65,7 @@ export default function VendeurPage() {
   useEffect(() => {
     let cancelled = false
     async function load() {
+      let loadedDepot: Depot | null = null
       try {
         const [depotRes, dispoRes, resRes] = await Promise.all([
           fetch("/api/depot/mine", { headers: { Accept: "application/json" }, cache: "no-store" }),
@@ -77,7 +76,7 @@ export default function VendeurPage() {
         if (depotRes.ok) {
           const depotData = await depotRes.json()
           if (depotData.point) {
-            setDepot({
+            loadedDepot = {
               id: depotData.point.id,
               name: depotData.point.name,
               district: depotData.point.district,
@@ -87,31 +86,43 @@ export default function VendeurPage() {
               deliveryEnabled: Boolean(depotData.point.deliveryEnabled),
               exchangeEnabled: Boolean(depotData.point.exchangeEnabled),
               gasSaleEnabled: Boolean(depotData.point.gasSaleEnabled),
-            })
+            }
+            setDepot(loadedDepot)
           }
         }
 
         if (dispoRes.ok) {
           const dispoData = await dispoRes.json()
-          const dispo = dispoData.disponibilites ?? []
-          const available = dispo.filter((d: any) => d.status === "disponible").length
-          const unavailable = dispo.filter((d: any) => d.status === "indisponible").length
+          const dispo = (dispoData.disponibilites ?? []) as Array<{
+            status?: string
+          }>
+          const available = dispo.filter((d) => d.status === "disponible").length
+          const unavailable = dispo.filter(
+            (d) => d.status === "indisponible"
+          ).length
           setStats((prev) => ({ ...prev, available, unavailable }))
         }
 
         if (resRes.ok) {
           const resData = await resRes.json()
-          const reservations = resData.reservations ?? []
+          const reservations = (resData.reservations ?? []) as Array<{
+            status?: string
+          }>
           const pending = reservations.filter(
-            (r: any) => r.status === "pending" || r.status === "confirmed"
+            (r) => r.status === "pending" || r.status === "confirmed"
           ).length
           setStats((prev) => ({ ...prev, reservations: reservations.length, pending }))
         }
 
         if (!cancelled) {
-          const brands = depot ? new Set(depot.brands).size : 0
-          const formats = depot ? new Set(depot.formats).size : 0
-          setStats((prev) => ({ ...prev, brands, formats, depots: depot ? 1 : 0 }))
+          const brands = loadedDepot ? new Set(loadedDepot.brands).size : 0
+          const formats = loadedDepot ? new Set(loadedDepot.formats).size : 0
+          setStats((prev) => ({
+            ...prev,
+            brands,
+            formats,
+            depots: loadedDepot ? 1 : 0,
+          }))
         }
       } catch {
         setError("Impossible de charger les données du tableau de bord")
@@ -138,14 +149,19 @@ export default function VendeurPage() {
           <CardContent className="p-6 text-center">
             <AlertCircle className="size-6 text-muted-foreground mx-auto mb-3" />
             <CardTitle>Aucun dépôt configuré</CardTitle>
-            <CardDescription>
-              Vous devez d'abord créer votre point de dépôt pour accéder au
-              tableau de bord vendeur.
+            <CardDescription className={cn(error && "text-destructive")}>
+              {error ?? (
+                <>
+                  Vous devez d&apos;abord créer votre point de dépôt pour accéder
+                  au tableau de bord vendeur.
+                </>
+              )}
             </CardDescription>
             <CardFooter className="pt-6">
-              <Button asChild className="w-full">
-                <Link href="/dashboard/depot">Créer mon dépôt</Link>
-              </Button>
+              <Button
+                className="w-full"
+                render={<Link href="/dashboard/depot">Créer mon dépôt</Link>}
+              />
             </CardFooter>
           </CardContent>
         </Card>
@@ -194,6 +210,15 @@ export default function VendeurPage() {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div
+          className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive"
+          role="alert"
+        >
+          {error}
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Tableau de bord vendeur</h1>

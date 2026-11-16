@@ -3,6 +3,7 @@
 import { useCallback, Suspense, useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
+import { useSafeSession } from "@/lib/auth-session"
 import { safeRedirect } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { LoaderButton } from "@/app/_components/loader-button"
@@ -34,7 +35,7 @@ function LoginPageContent() {
   const searchParams = useSearchParams()
   const explicitRedirect = searchParams.get("redirect")
   const redirectTo = safeRedirect(explicitRedirect, "/dashboard")
-  const { data: session } = authClient.useSession()
+  const { data: session } = useSafeSession()
 
   const isStaff = (role?: string | null) =>
     role === "admin" || role === "collaborateur"
@@ -50,7 +51,7 @@ function LoginPageContent() {
     
     // For vendors: subscription check removed - they can access dashboard without active subscription
     if (!explicitRedirect && isStaff(role)) {
-      router.push("/admin")
+      router.push("/dashboard/admin")
     } else if (!explicitRedirect && role === "vendor") {
       router.push("/dashboard/vendeur")
     } else {
@@ -129,11 +130,10 @@ function LoginPageContent() {
       } else if (!explicitRedirect && role === "vendor") {
         router.push("/dashboard/vendeur")
       } else if (!explicitRedirect && isStaff(role)) {
-        router.push("/admin")
+        router.push("/dashboard/admin")
       } else {
         router.push(redirectTo)
       }
-      router.refresh()
     } catch {
       setError("Une erreur inattendue est survenue. Veuillez réessayer.")
       setFeedback({ state: "error", msg: "Une erreur inattendue est survenue. Veuillez réessayer." })

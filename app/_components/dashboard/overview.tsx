@@ -7,12 +7,12 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { authClient } from "@/lib/auth-client";
+import { useSafeSession } from "@/lib/auth-session";
 
 export function DashboardOverview() {
-  const { data: session, status } = authClient.useSession();
+  const { data: session, isPending } = useSafeSession();
   const user = session?.user;
-  const isLoading = status === "loading";
+  const isLoading = isPending;
   const firstName = user?.name ? user.name.split(" ")[0] : null;
 
   return (

@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm"
 import { db } from "@/db"
-import { collaborateurPermission } from "@/db/schema"
+import { collaborateurPermission, user } from "@/db/schema"
 import { auth } from "@/lib/auth"
 
 /**
@@ -90,7 +90,7 @@ export async function requireUser() {
   const user = await getCurrentUser()
   if (!user) {
     const redirect = await getRedirect()
-    redirect("/connexion")
+    return redirect("/connexion")
   }
   // Seul un collaborateur avec mot de passe temporaire est redirigé.
   // Les admins, vendeurs et clients ne sont jamais impactés.
@@ -137,7 +137,7 @@ export async function getStaff(): Promise<StaffUser> {
   const user = await getCurrentUser()
   if (!user) {
     const redirect = await getRedirect()
-    redirect("/admin/login")
+    return redirect("/admin/login")
   }
   const role = user.role ?? "client"
   if (role !== "admin" && role !== "collaborateur") {

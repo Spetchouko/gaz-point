@@ -1,7 +1,14 @@
+import { randomUUID } from "node:crypto"
 import { NextRequest, NextResponse } from "next/server"
+import { eq } from "drizzle-orm"
 import { db } from "@/db"
-import { pointDeVente } from "@/db/schema"
+import { pointDeVente, vendorOnboarding } from "@/db/schema"
 import { getProUser } from "@/lib/session"
+import {
+  MAX_VENDOR_BRANDS,
+  MAX_VENDOR_FORMATS,
+  cleanCatalogValues,
+} from "@/lib/vendor-catalog"
 
 function cleanText(value: unknown, max: number): string | null {
   if (typeof value !== "string") return null
@@ -18,19 +25,6 @@ export async function POST(req: NextRequest) {
     const { user, role } = auth
     if (role !== "vendor") {
       return NextResponse.json({ error: "Accès réservé aux vendeurs" }, { status: 403 })
-    }
-
-    // Vérifie qu'il n'existe pas déjà un dépôt pour ce vendeur
-    const [existing] = await db
-      .select({ id: pointDeVente.id })
-      .from(pointDeVente)
-      .where(eq(pointDeVente.vendorId, user.id))
-      .limit(1)
-    if (existing) {
-      return NextResponse.json(
-        { error: "Un dépôt est déjà créé pour ce compte" },
-        { status: 400 }
-      )
     }
 
     const body = (await req.json().catch(() => null)) as {
@@ -58,12 +52,46 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const brands = Array.isArray(body.brands) ? body.brands.filter(Boolean) : []
-    const formats = Array.isArray(body.formats) ? body.formats.filter(Boolean) : []
+    const brands = cleanCatalogValues(body.brands, MAX_VENDOR_BRANDS).filter(
+      (brand) => brand.length <= 50
+    )
+    const formats = cleanCatalogValues(body.formats, MAX_VENDOR_FORMATS).filter(
+      (format) => format.length <= 30
+    )
 
-    const [point] = await db
-      .insert(pointDeVente)
-      .values({
+    if (brands.length === 0) {
+      return NextResponse.json(
+        { error: "Sélectionnez au moins une marque" },
+        { status: 400 }
+      )
+    }
+    if (formats.length === 0) {
+      return NextResponse.json(
+        { error: "Sélectionnez au moins un grammage" },
+        { status: 400 }
+      )
+    }
+
+    const [existing] = await db
+      .select({ id: pointDeVente.id })
+      .from(pointDeVente)
+      .where(eq(pointDeVente.vendorId, user.id))
+      .limit(1)
+    if (existing) {
+      return NextResponse.json(
+        { error: "Un dépôt est déjà créé pour ce compte" },
+        { status: 400 }
+      )
+    }
+
+    const pointId = randomUUID()
+    const now = new Date()
+
+    // Neon exécute ce lot dans une transaction. Le dépôt et la clôture du
+    // brouillon d'onboarding sont donc enregistrés ensemble.
+    await db.batch([
+      db.insert(pointDeVente).values({
+        id: pointId,
         name,
         district,
         address,
@@ -72,8 +100,29 @@ export async function POST(req: NextRequest) {
         formats,
         vendorId: user.id,
         isActive: true,
-      })
-      .returning()
+        createdAt: now,
+        updatedAt: now,
+      }),
+      db
+        .update(vendorOnboarding)
+        .set({
+          status: "completed",
+          pointDeVenteId: pointId,
+          pointName: name,
+          district,
+          address,
+          phone,
+          brands,
+          updatedAt: now,
+        })
+        .where(eq(vendorOnboarding.userId, user.id)),
+    ])
+
+    const [point] = await db
+      .select()
+      .from(pointDeVente)
+      .where(eq(pointDeVente.id, pointId))
+      .limit(1)
 
     return NextResponse.json({ point }, { status: 201 })
   } catch (err) {

@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { LayoutDashboard, LogOut, User } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
+import { useSafeSession } from "@/lib/auth-session"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -24,12 +25,24 @@ interface UserMenuProps {
 export function UserMenu({ isMobile = false }: UserMenuProps) {
   const router = useRouter()
   const t = useTranslation()
-  const { data: session } = authClient.useSession()
+  const { data: session } = useSafeSession()
   const user = session?.user
   const role = (user as { role?: string } | undefined)?.role
-  const isStaff = role === "admin" || role === "collaborateur"
-  const espaceHref = isStaff ? "/admin" : role === "vendor" ? "/dashboard/vendeur" : "/dashboard"
+  const espaceHref =
+    role === "admin"
+      ? "/dashboard/admin"
+      : role === "vendor"
+        ? "/dashboard/vendeur"
+        : role === "collaborateur"
+          ? "/dashboard/collaborateur"
+          : "/dashboard"
   const espaceLabel = "Dashboard"
+  const profilHref =
+    role === "admin"
+      ? "/dashboard/admin/profil"
+      : role === "vendor"
+        ? "/dashboard/vendeur/profil"
+        : "/dashboard/profil"
 
   const handleSignOut = async () => {
     await authClient.signOut()
@@ -75,7 +88,7 @@ export function UserMenu({ isMobile = false }: UserMenuProps) {
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link
-            href={isStaff ? "/admin/profil" : "/profil"}
+            href={profilHref}
             className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-foreground hover:bg-muted transition-colors"
           >
             <User className="size-4" />

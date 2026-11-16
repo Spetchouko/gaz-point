@@ -3,6 +3,7 @@
 import { useCallback, Suspense, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
+import { useSafeSession } from "@/lib/auth-session"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ModernCard } from "@/app/_components/card-modern"
@@ -66,7 +67,7 @@ function validateName(name: string): string | null {
 // -------------------------------------------------------------------
 function InscriptionUsagerContent() {
   const router = useRouter()
-  const { data: session } = authClient.useSession()
+  const { data: session } = useSafeSession()
   const role = "client"
 
   const searchRedirect = useSearchParams().get("redirect")

@@ -7,13 +7,62 @@ import { user, vendorOnboarding } from "@/db/schema"
 import { vendorSignupRateLimiter } from "@/lib/rate-limit"
 import { validateVendorSignupPayload } from "@/lib/vendor-signup-validation"
 
+function errorDetails(error: unknown) {
+  if (!error || typeof error !== "object") return {}
+  const value = error as {
+    code?: unknown
+    status?: unknown
+    statusCode?: unknown
+    message?: unknown
+    body?: { code?: unknown }
+  }
+  return {
+    code:
+      typeof value.code === "string"
+        ? value.code
+        : typeof value.body?.code === "string"
+          ? value.body.code
+          : "",
+    status:
+      typeof value.status === "number"
+        ? value.status
+        : typeof value.statusCode === "number"
+          ? value.statusCode
+          : 0,
+    message: typeof value.message === "string" ? value.message : "",
+  }
+}
+
+/**
+ * Vérifie le mot de passe d'un compte déjà commencé sans créer de session.
+ *
+ * Better Auth vérifie le mot de passe avant de refuser la connexion d'un
+ * compte dont l'email n'est pas encore vérifié. L'erreur EMAIL_NOT_VERIFIED
+ * confirme donc que les identifiants sont corrects.
+ */
+async function pendingAccountPasswordMatches(
+  email: string,
+  password: string
+): Promise<boolean> {
+  try {
+    await auth.api.signInEmail({ body: { email, password } })
+    return true
+  } catch (error) {
+    const { code, status, message } = errorDetails(error)
+    return (
+      code === "EMAIL_NOT_VERIFIED" ||
+      (status === 403 && /vérifi|verifi/i.test(message))
+    )
+  }
+}
+
 /**
  * Inscription vendeur en une seule requête serveur :
  * 1. crée le compte Better Auth (rôle vendeur) ;
  * 2. enregistre immédiatement le brouillon commercial (dépôt, localisation,
  *    marques) dans vendor_onboarding.
  *
- * L'OTP reste entièrement géré par les routes existantes. Le brouillon n'est
+ * L'OTP reste entièrement géré par la route OTP existante. Le brouillon n'est
  * jamais public : le point de vente n'est créé qu'après vérification, depuis
  * une session vendeur authentifiée.
  */
@@ -36,6 +85,7 @@ export async function POST(req: NextRequest) {
   }
 
   const data = validation.data
+  let createdUserId: string | null = null
 
   try {
     const [existing] = await db
@@ -51,8 +101,6 @@ export async function POST(req: NextRequest) {
     let userId: string
 
     if (existing) {
-      // Une relance après un échec réseau doit pouvoir reprendre le parcours
-      // sans créer de doublon. Un compte déjà vérifié ou non vendeur est refusé.
       if (existing.emailVerified || existing.role !== "vendor") {
         return NextResponse.json(
           {
@@ -65,8 +113,25 @@ export async function POST(req: NextRequest) {
           { status: 409 }
         )
       }
+
+      const passwordMatches = await pendingAccountPasswordMatches(
+        data.email,
+        data.password
+      )
+      if (!passwordMatches) {
+        return NextResponse.json(
+          {
+            error: {
+              field: "password",
+              message:
+                "Une inscription est déjà commencée avec cette adresse. Utilisez le mot de passe original ou réinitialisez votre mot de passe.",
+            },
+          },
+          { status: 409 }
+        )
+      }
+
       userId = existing.id
-      await db.update(user).set({ name: data.name }).where(eq(user.id, userId))
     } else {
       try {
         const result = await auth.api.signUpEmail({
@@ -78,6 +143,7 @@ export async function POST(req: NextRequest) {
           },
         })
         userId = result.user.id
+        createdUserId = userId
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Impossible de créer le compte."
@@ -109,31 +175,49 @@ export async function POST(req: NextRequest) {
 
     const now = new Date()
     await db
-      .insert(vendorOnboarding)
-      .values({
-        id: randomUUID(),
-        userId,
-        pointName: data.name,
-        district: data.district,
-        address: data.address,
-        brands: data.brands,
-        inventory: [],
-        status: "draft",
-        createdAt: now,
-        updatedAt: now,
+      .update(user)
+      .set({
+        name: data.name,
+        approvalStatus: "pending",
+        approvalRequestedAt: now,
       })
-      .onConflictDoUpdate({
-        target: vendorOnboarding.userId,
-        set: {
+      .where(eq(user.id, userId))
+
+    try {
+      await db
+        .insert(vendorOnboarding)
+        .values({
+          id: randomUUID(),
+          userId,
           pointName: data.name,
           district: data.district,
           address: data.address,
           brands: data.brands,
+          inventory: [],
+          status: "draft",
+          createdAt: now,
           updatedAt: now,
-        },
-      })
+        })
+        .onConflictDoUpdate({
+          target: vendorOnboarding.userId,
+          set: {
+            pointName: data.name,
+            district: data.district,
+            address: data.address,
+            brands: data.brands,
+            updatedAt: now,
+          },
+        })
+    } catch (error) {
+      // Ne laisse pas de compte vendeur orphelin si le brouillon ne peut pas
+      // être enregistré. La suppression est limitée au compte créé ici.
+      if (createdUserId) {
+        await db.delete(user).where(eq(user.id, createdUserId)).catch(() => undefined)
+      }
+      throw error
+    }
 
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, resumed: Boolean(existing) })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     console.error("[vendor-signup] unexpected error:", message)

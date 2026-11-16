@@ -1,26 +1,21 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Plus, Trash2, Cylinder, AlertCircle } from "lucide-react"
+import { Check, Plus, Trash2, AlertCircle } from "lucide-react"
 import {
   dedupeBrands,
   brandKey,
   MIN_VENDOR_BRANDS,
   MAX_VENDOR_BRANDS,
 } from "@/lib/vendor-brands"
+import {
+  CAMEROON_GAS_BRANDS,
+  normalizeCatalogValue,
+} from "@/lib/vendor-catalog"
 
-/**
- * Saisie dynamique d'une liste de marques de bouteilles distinctes.
- *
- * - Ajout / suppression de lignes (au minimum `min` marques différentes) ;
- * - Déduplication insensible à la casse à l'envoi (la première graphie est
- *   conservée) ;
- * - Les valeurs contrôlées permettent de reprendre le saisie après un
- *   rechargement de la page.
- */
 export function BrandListInput({
   values,
   onChange,
@@ -30,6 +25,7 @@ export function BrandListInput({
   error,
   label = "Marques de bouteilles",
   hint,
+  options = CAMEROON_GAS_BRANDS,
 }: {
   values: string[]
   onChange: (values: string[]) => void
@@ -39,40 +35,80 @@ export function BrandListInput({
   error?: string
   label?: string
   hint?: string
+  options?: readonly string[]
 }) {
-  const rows = useMemo(
-    () => (values.length > 0 ? values : [""]),
-    [values]
+  const [customBrand, setCustomBrand] = useState("")
+  const [customError, setCustomError] = useState("")
+
+  const knownOptionKeys = useMemo(
+    () => new Set(options.map(normalizeCatalogValue)),
+    [options]
   )
 
-  const updateRow = (index: number, value: string) => {
-    const next = [...rows]
-    next[index] = value
-    onChange(next)
-  }
+  const customBrands = useMemo(
+    () => values.filter((value) => !knownOptionKeys.has(normalizeCatalogValue(value))),
+    [knownOptionKeys, values]
+  )
 
-  const addRow = () => {
-    if (rows.length >= max || disabled) return
-    onChange([...rows, ""])
-  }
+  const allOptions = useMemo(() => {
+    const extras = values.filter(
+      (value) => value.trim() && !knownOptionKeys.has(normalizeCatalogValue(value))
+    )
+    return [...options, ...extras]
+  }, [knownOptionKeys, options, values])
 
-  const removeRow = (index: number) => {
+  const selectedCount = dedupeBrands(values).length
+  const reached = selectedCount >= min
+
+  const toggleBrand = (value: string) => {
     if (disabled) return
-    const next = rows.filter((_, i) => i !== index)
-    onChange(next.length > 0 ? next : [""])
+    const isSelected = values.some((item) => brandKey(item) === brandKey(value))
+    if (isSelected) {
+      onChange(values.filter((item) => brandKey(item) !== brandKey(value)))
+      return
+    }
+    if (selectedCount >= max) {
+      setCustomError(`Vous pouvez sélectionner au maximum ${max} marques.`)
+      return
+    }
+    onChange([...values, value])
+    setCustomError("")
   }
 
-  const distinctCount = dedupeBrands(rows).length
-  const reached = distinctCount >= min
+  const addCustomBrand = () => {
+    const value = customBrand.trim()
+    if (!value) return
+    if (value.length > 50) {
+      setCustomError("Chaque marque doit faire maximum 50 caractères.")
+      return
+    }
+    if (values.some((item) => brandKey(item) === brandKey(value))) {
+      setCustomError("Cette marque est déjà sélectionnée.")
+      return
+    }
+    if (selectedCount >= max) {
+      setCustomError(`Vous pouvez sélectionner au maximum ${max} marques.`)
+      return
+    }
+
+    onChange([...values, value])
+    setCustomBrand("")
+    setCustomError("")
+  }
+
+  const removeBrand = (value: string) => {
+    if (disabled) return
+    onChange(values.filter((item) => brandKey(item) !== brandKey(value)))
+  }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
+    <div className="space-y-4">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <Label htmlFor="brand-row-0">{label}</Label>
-          <p className="text-xs text-muted-foreground mt-1">
+          <Label>{label}</Label>
+          <p className="mt-1 text-xs text-muted-foreground">
             {hint ??
-              `${min} marques minimum — plusieurs grammages par marque seront possibles à l'étape suivante.`}
+              "Sélectionnez une ou plusieurs marques commercialisées au Cameroun."}
           </p>
         </div>
         <span
@@ -80,70 +116,96 @@ export function BrandListInput({
             reached ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"
           }`}
         >
-          {distinctCount}/{min}
+          {selectedCount} sélectionnée{selectedCount > 1 ? "s" : ""}
         </span>
       </div>
 
-      <ul className="space-y-2">
-        {rows.map((value, index) => {
-          const isDuplicate =
-            !!value.trim() &&
-            rows
-              .slice(0, index)
-              .some((row) => brandKey(row) === brandKey(value))
+      <div className="grid max-h-64 grid-cols-2 gap-2 overflow-y-auto rounded-lg border border-border/70 bg-muted/20 p-3 sm:grid-cols-3">
+        {allOptions.map((brand) => {
+          const selected = values.some(
+            (item) => brandKey(item) === brandKey(brand)
+          )
           return (
-            <li key={index} className="flex items-start gap-2">
-              <div className="relative flex-1">
-                <Cylinder className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id={`brand-row-${index}`}
-                  type="text"
-                  autoComplete="off"
-                  placeholder={`Marque ${index + 1}`}
-                  value={value}
-                  onChange={(e) => updateRow(index, e.target.value)}
-                  disabled={disabled}
-                  className="pl-9 pr-9"
-                  aria-label={`Marque ${index + 1}`}
-                />
-                {value.trim() && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                    {isDuplicate ? "doublon" : "ok"}
-                  </span>
-                )}
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                aria-label={`Supprimer la marque ${index + 1}`}
-                onClick={() => removeRow(index)}
-                disabled={disabled}
-              >
-                <Trash2 className="size-4" />
-              </Button>
-            </li>
+            <Button
+              key={brand}
+              type="button"
+              variant={selected ? "default" : "outline"}
+              size="sm"
+              aria-pressed={selected}
+              disabled={disabled}
+              onClick={() => toggleBrand(brand)}
+              className="h-auto min-h-9 justify-start gap-2 px-3 py-2 text-left"
+            >
+              <span className="min-w-0 flex-1 truncate">{brand}</span>
+              {selected && <Check className="size-4 shrink-0" aria-hidden />}
+            </Button>
           )
         })}
-      </ul>
+      </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={addRow}
-          disabled={disabled || rows.length >= max}
-        >
-          <Plus className="size-4" /> Ajouter une marque
-        </Button>
-        {!reached && (
-          <span className="text-xs text-muted-foreground">
-            Il reste {min - distinctCount} marque{min - distinctCount > 1 ? "s" : ""} à
-            renseigner.
-          </span>
+      <div className="space-y-2 rounded-lg border border-dashed border-border p-3">
+        <Label htmlFor="custom-brand">Autre marque</Label>
+        <div className="flex gap-2">
+          <Input
+            id="custom-brand"
+            type="text"
+            value={customBrand}
+            maxLength={50}
+            disabled={disabled}
+            placeholder="Saisissez une marque non listée"
+            onChange={(event) => {
+              setCustomBrand(event.target.value)
+              setCustomError("")
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault()
+                addCustomBrand()
+              }
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            disabled={disabled || !customBrand.trim()}
+            onClick={addCustomBrand}
+          >
+            <Plus className="size-4" /> Ajouter
+          </Button>
+        </div>
+        {customError && (
+          <p className="text-xs text-destructive" role="alert">
+            {customError}
+          </p>
         )}
       </div>
+
+      {customBrands.length > 0 && (
+        <ul className="flex flex-wrap gap-2" aria-label="Marques saisies manuellement">
+          {customBrands.map((brand) => (
+            <li key={brand}>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={disabled}
+                onClick={() => removeBrand(brand)}
+                className="gap-2"
+              >
+                {brand}
+                <Trash2 className="size-3.5" aria-hidden />
+                <span className="sr-only">Retirer {brand}</span>
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {!reached && (
+        <p className="text-xs text-muted-foreground">
+          Sélectionnez au moins {min} marque{min > 1 ? "s" : ""} pour continuer.
+        </p>
+      )}
 
       {error && (
         <p

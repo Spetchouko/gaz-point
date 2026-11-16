@@ -20,14 +20,24 @@ async function main() {
   for (const file of migrationFiles) {
     console.log(`=== Applying ${file} ===`)
     const content = loadFile(file)
-    try {
-      // Toute la migration est passée comme texte SQL brut (pas d'interpolation).
-      // Les instructions sont idempotentes (ADD COLUMN IF NOT EXISTS / CREATE TABLE IF NOT EXISTS).
-      await sql`${content}`
-      console.log(`  OK: ${file} appliquee`)
-    } catch (e) {
-      console.log(`  WARN: ${file} -> ${(e as Error).message}`)
+    const statements = content
+      .split(/;\s*\n/)
+      .map((statement) => statement.replace(/--[^\n]*\n/g, "").trim())
+      .filter(Boolean)
+
+    for (const statement of statements) {
+      try {
+        // Chaque instruction est idempotente (ADD COLUMN IF NOT EXISTS /
+        // CREATE TABLE IF NOT EXISTS). Une erreur interrompt le runner afin
+        // qu'un déploiement ne soit jamais considéré comme réussi à tort.
+        await sql.query(statement)
+      } catch (error) {
+        throw new Error(
+          `${file}: ${(error as Error).message}\nStatement: ${statement.slice(0, 120)}`
+        )
+      }
     }
+    console.log(`  OK: ${file} appliquee (${statements.length} instructions)`)
   }
   console.log("=== Done ===")
 }

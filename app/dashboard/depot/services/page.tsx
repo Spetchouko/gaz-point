@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic"
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { AlertCircle, CheckCircle2, Truck, Package, Save } from "lucide-react"
+import { AlertCircle, Truck, Package, RotateCcw, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/app/_components/spinner"
 import {
@@ -27,6 +27,7 @@ interface Depot {
   exchangeEnabled: boolean
   gasSaleEnabled: boolean
 }
+
 
 export default function ServicesPage() {
   const [depot, setDepot] = useState<Depot | null>(null)
@@ -106,12 +107,13 @@ export default function ServicesPage() {
           <AlertCircle className="size-6 text-muted-foreground mx-auto mb-3" />
           <CardTitle>Aucun dépôt configuré</CardTitle>
           <CardDescription>
-            Vous devez d'abord créer votre point de dépôt.
+            Vous devez d&apos;abord créer votre point de dépôt.
           </CardDescription>
           <CardFooter className="pt-6">
-            <Button asChild className="w-full">
-              <Link href="/dashboard/depot">Créer mon dépôt</Link>
-            </Button>
+            <Button
+              className="w-full"
+              render={<Link href="/dashboard/depot">Créer mon dépôt</Link>}
+            />
           </CardFooter>
         </CardContent>
       </Card>
@@ -146,7 +148,7 @@ export default function ServicesPage() {
         "Vendez des bouteilles de gaz déjà chargées, prêtes à l'emploi.",
       note: "Prix discutable au dépôt",
     },
-  ]
+  ] as const
 
   return (
     <div className="space-y-6">
@@ -176,9 +178,7 @@ export default function ServicesPage() {
 
           <div className="space-y-3">
             {services.map((service) => {
-              const isActive = Boolean(
-                (depot as any)[service.id as keyof Depot]
-              )
+              const isActive = Boolean(depot[service.id])
               return (
                 <Card
                   key={service.id}

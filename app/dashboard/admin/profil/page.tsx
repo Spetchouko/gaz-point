@@ -31,7 +31,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { authClient } from "@/lib/auth-client"
+import { useSafeSession } from "@/lib/auth-session"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Spinner } from "@/app/_components/spinner"
@@ -51,7 +51,7 @@ type UserProfile = {
 
 export default function AdminProfilPage() {
   const router = useRouter()
-  const { data: session } = authClient.useSession()
+  const { data: session } = useSafeSession()
   const user = session?.user
 
   const [profile, setProfile] = useState<UserProfile | null>(null)

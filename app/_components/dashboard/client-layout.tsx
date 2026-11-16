@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -23,6 +23,7 @@ import {
   Home,
 } from "lucide-react";
 import { useAuthModal } from "@/lib/auth-context";
+import type { DashboardUser } from "@/lib/auth-session";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { DashboardFooter } from "@/app/_components/dashboard/dashboard-footer";
@@ -112,21 +113,33 @@ const VENDOR_NAV_ITEMS = [
 
 export function DashboardClientLayout({
   children,
+  session: sessionProp,
+  status: statusProp,
 }: {
   children: React.ReactNode;
+  session?: DashboardUser | null;
+  status?: "loading" | "authenticated" | "unauthenticated";
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { isAuthenticated, openAuthModal } = useAuthModal();
-  const { data: session, status } = authClient.useSession();
-  const user = session?.user as
-    | { name?: string | null; email?: string | null; image?: string | null; role?: string | null }
-    | undefined;
+  const { openAuthModal } = useAuthModal();
+
+  const user = sessionProp ?? undefined;
+  const status = statusProp;
+  const isAuthenticated = Boolean(user);
   const isVendor = user?.role === "vendor";
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(3);
+  const [buttonDisabled, setButtonDisabled] = useState(false);
+
+  // Synchroniser l'état disabled du bouton après hydratation pour éviter
+  // un mismatch entre le rendu serveur (status undefined) et le client
+  // (status "loading" au démarrage).
+  useEffect(() => {
+    setButtonDisabled(status === "loading");
+  }, [status]);
 
   const isActive = (href: string) =>
     href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
@@ -342,7 +355,7 @@ export function DashboardClientLayout({
               sidebarCollapsed && "justify-center px-1"
             )}
             aria-label="Se déconnecter"
-            disabled={status === "loading"}
+            disabled={buttonDisabled}
           >
             <LogOut className={cn("size-4 shrink-0", sidebarCollapsed && "mx-auto")} aria-hidden />
             {!sidebarCollapsed && <span>Déconnexion</span>}

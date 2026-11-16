@@ -3,6 +3,7 @@
 import { Suspense, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
+import { useSafeSession } from "@/lib/auth-session"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -24,7 +25,7 @@ function ResetPasswordPageContent() {
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
   const redirectTo = searchParams.get("redirect") ?? "/connexion"
-  const { data: session } = authClient.useSession()
+  const { data: session } = useSafeSession()
 
   useEffect(() => {
     if (session?.user) {

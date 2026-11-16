@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { authClient } from "@/lib/auth-client"
+import { useSafeSession } from "@/lib/auth-session"
 import { changeTemporaryPassword } from "@/lib/auth-actions"
 import type { ActionResult } from "@/lib/action-result"
 import { Button } from "@/components/ui/button"
@@ -19,7 +19,7 @@ import {
 
 export default function MotDePasseTemporairePage() {
   const router = useRouter()
-  const { data: session } = authClient.useSession()
+  const { data: session } = useSafeSession()
   const user = session?.user as {
     id?: string
     role?: string

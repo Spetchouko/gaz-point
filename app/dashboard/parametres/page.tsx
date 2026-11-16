@@ -12,13 +12,14 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { authClient } from "@/lib/auth-client";
+import { useSafeSession } from "@/lib/auth-session";
 import { useTheme } from "@/app/_components/theme-provider";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Spinner, PageLoading, ButtonSpinner } from "@/app/_components/spinner";
 
 export default function ParametresPage() {
-  const { data: session } = authClient.useSession();
+  const { data: session } = useSafeSession()
   const user = session?.user;
   const { theme, setTheme } = useTheme();
 

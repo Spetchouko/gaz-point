@@ -246,8 +246,7 @@ export async function sendVerificationEmail({
   verificationLink,
 }: VerificationEmailParams) {
   const transporter = getTransporter()
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
-  const link = verificationLink ?? buildVerificationLink(code, siteUrl)
+  const link = verificationLink
 
   const html = buildVerificationHtml({ code, expiresInMinutes, verificationLink: link })
   const text = buildVerificationText({ code, expiresInMinutes, verificationLink: link })
@@ -270,8 +269,7 @@ export async function sendVerificationEmailResend({
   verificationLink,
 }: VerificationEmailParams) {
   const transporter = getTransporter()
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
-  const link = verificationLink ?? buildVerificationLink(code, siteUrl)
+  const link = verificationLink
 
   const html = buildVerificationHtml({ code, expiresInMinutes, verificationLink: link })
   const text = buildVerificationText({ code, expiresInMinutes, verificationLink: link })

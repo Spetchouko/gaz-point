@@ -1,3 +1,8 @@
+import {
+  MAX_VENDOR_BRANDS,
+  cleanCatalogValues,
+} from "@/lib/vendor-catalog"
+
 /**
  * Validation partagée pour l'inscription vendeur.
  * Utilisée côté client (page d'inscription) et côté serveur (API /api/vendor/signup).
@@ -88,7 +93,7 @@ export function validateVendorSignupPayload(
     }
   }
 
-  // Marques (array de strings, max 5, chaque 1-50 caractères)
+  // Marques (array de strings, max 30, chaque 1-50 caractères)
   const brands = data.brands
   if (!Array.isArray(brands)) {
     return {
@@ -97,9 +102,7 @@ export function validateVendorSignupPayload(
       field: "brands",
     }
   }
-  const validBrands = brands
-    .map((b) => (typeof b === "string" ? b.trim() : ""))
-    .filter((b) => b.length > 0)
+  const validBrands = cleanCatalogValues(brands, MAX_VENDOR_BRANDS)
   if (validBrands.length === 0) {
     return {
       ok: false,
@@ -107,10 +110,10 @@ export function validateVendorSignupPayload(
       field: "brands",
     }
   }
-  if (validBrands.length > 5) {
+  if (validBrands.length < brands.length) {
     return {
       ok: false,
-      message: "Maximum 5 marques autorisées.",
+      message: `Maximum ${MAX_VENDOR_BRANDS} marques autorisées.`,
       field: "brands",
     }
   }

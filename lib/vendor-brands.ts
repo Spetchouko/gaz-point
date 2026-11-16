@@ -3,8 +3,10 @@
  * Utilisés par BrandListInput et la validation d'inscription vendeur.
  */
 
+import { MAX_VENDOR_BRANDS } from "@/lib/vendor-catalog"
+
 export const MIN_VENDOR_BRANDS = 1
-export const MAX_VENDOR_BRANDS = 5
+export { MAX_VENDOR_BRANDS }
 
 /**
  * Normalise une marque pour la comparaison (insensible à la casse, trim).

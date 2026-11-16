@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { formats } from "@/app/_components/donnees-demo";
-import { authClient } from "@/lib/auth-client";
+import { useSafeSession } from "@/lib/auth-session";
 import type { AvailabilityStatus } from "@/db/schema";
 import { ReservationModal } from "@/app/_components/reservation-modal";
 import { ResultatRechercheCard } from "@/app/_components/cards/resultat-recherche-card";
@@ -54,7 +54,7 @@ export type SearchResult = {
 
 export function RechercheGaz() {
   const router = useRouter();
-  const { data: session } = authClient.useSession();
+  const { data: session } = useSafeSession()
   const [brand, setBrand] = useState("");
   const [format, setFormat] = useState("");
   const [zone, setZone] = useState("");

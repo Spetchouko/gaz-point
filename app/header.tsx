@@ -18,10 +18,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { authClient } from "@/lib/auth-client"
+import { useSafeSession } from "@/lib/auth-session"
 import { UserMenu } from "@/app/_components/user-menu"
 import { useTheme } from "@/app/_components/theme-provider"
 import { useTranslation } from "@/lib/i18n"
+import { Shield } from "lucide-react"
 
 const navLinks = [
   { href: "/", labelKey: "nav_home" },
@@ -36,7 +37,7 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
   const closeMenu = () => setMobileMenuOpen(false)
-  const { data: session } = authClient.useSession()
+  const { data: session } = useSafeSession()
   const isAuthenticated = !!session?.user
   const { theme, setTheme } = useTheme()
 
@@ -132,6 +133,15 @@ export function Header() {
                       {t("nav_register")}
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/connexion-admin"
+                      className="flex items-center gap-2 text-foreground"
+                    >
+                      <Shield className="size-4" />
+                      Connexion administrateur
+                    </Link>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
@@ -213,6 +223,14 @@ export function Header() {
                       >
                         <UserPlus className="size-4" />
                         Créer un compte
+                      </Link>
+                      <Link
+                        href="/connexion-admin"
+                        onClick={closeMenu}
+                        className="flex items-center gap-2 rounded-lg px-3 py-3 text-base font-medium transition-colors text-foreground hover:bg-primary hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
+                      >
+                        <Shield className="size-4" />
+                        Connexion administrateur
                       </Link>
                     </>
                   )}

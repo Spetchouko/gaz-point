@@ -1,7 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useState } from "react"
-import { authClient } from "@/lib/auth-client"
+import { useSafeSession } from "@/lib/auth-session"
 
 export type AuthMode = "register" | "login" | "forgot-password"
 
@@ -17,7 +17,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { data: session } = authClient.useSession()
+  const { data: session } = useSafeSession()
   const [isOpen, setIsOpen] = useState(false)
   const [mode, setMode] = useState<AuthMode>("register")
 

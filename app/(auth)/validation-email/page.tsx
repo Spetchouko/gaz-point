@@ -2,13 +2,14 @@
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { authClient } from "@/lib/auth-client"
+import { useSafeSession } from "@/lib/auth-session"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { CheckCircle, AlertCircle, Loader2, Clock, Mail } from "lucide-react"
+import { CheckCircle, AlertCircle, Clock, Mail } from "lucide-react"
 
 import { Spinner, ButtonSpinner } from "@/app/_components/spinner"
 import { safeRedirect } from "@/lib/utils"
+import { trackEvent } from "@/lib/analytics"
 
 const CODE_LENGTH = 6
 const RESEND_COOLDOWN_SECONDS = 60
@@ -16,27 +17,36 @@ const RESEND_COOLDOWN_SECONDS = 60
 function ValidationEmailContent() {
   const params = useSearchParams()
   const router = useRouter()
-  const { data: session } = authClient.useSession()
+  const { data: session } = useSafeSession()
 
   const emailParam = (params.get("email") ?? "").trim().toLowerCase()
   const email = emailParam || (session?.user?.email ?? "").toLowerCase()
   const linkVerified = params.get("verified") === "1"
   const emailSentFromUrl = params.get("sent") === "1"
+  const linkError = params.get("error")
 
   // Cible demandée par le parcours d'inscription (ex: /dashboard/vendeur pour
-  // un vendeur). Si absente, la page de connexion choisit selon le rôle.
+  // un vendeur). Si absente, le client retourne à son dashboard.
   const redirectTarget = safeRedirect(params.get("redirect"), "")
+  const destination = redirectTarget || "/dashboard"
 
-  const connexionUrl = useCallback(() => {
-    const search = new URLSearchParams()
-    if (email) search.set("email", email)
-    if (redirectTarget) search.set("redirect", redirectTarget)
-    const query = search.toString()
-    return query ? `/connexion?${query}` : "/connexion"
-  }, [email, redirectTarget])
+  const linkErrorMessage = (() => {
+    switch (linkError) {
+      case "missing_token":
+        return "Le lien de vérification est incomplet. Demandez un nouveau code."
+      case "invalid_link":
+        return "Ce lien de vérification est invalide ou a déjà été utilisé."
+      case "expired_link":
+        return "Ce lien de vérification a expiré. Demandez un nouveau code."
+      case "server_error":
+        return "La vérification par lien a échoué. Demandez un nouveau code."
+      default:
+        return ""
+    }
+  })()
 
   const [code, setCode] = useState("")
-  const [error, setError] = useState("")
+  const [error, setError] = useState(linkErrorMessage)
   const [notice, setNotice] = useState(emailSentFromUrl ? "Un code de verification a ete envoye a votre adresse email." : "")
   const [success, setSuccess] = useState(linkVerified)
   const [loading, setLoading] = useState(false)
@@ -47,25 +57,19 @@ function ValidationEmailContent() {
 
   useEffect(() => {
     if (session?.user?.emailVerified) {
-      router.push(connexionUrl())
+      router.push(destination)
     }
-  }, [router, session, connexionUrl])
+  }, [router, session, destination])
 
   useEffect(() => {
-    if (linkVerified && email) {
-      setSuccess(true)
-      setNotice("")
-      setError("")
-      setCode("")
-      const timer = setTimeout(() => {
-        // Redirige vers la connexion en conservant la cible du parcours
-        // (ex: /dashboard/vendeur pour un vendeur).
-        router.push(connexionUrl())
-        router.refresh()
-      }, 800)
-      return () => clearTimeout(timer)
-    }
-  }, [linkVerified, email, router, connexionUrl])
+    if (!linkVerified || !email) return
+
+    const timer = setTimeout(() => {
+      router.push(destination)
+      router.refresh()
+    }, 800)
+    return () => clearTimeout(timer)
+  }, [linkVerified, email, router, destination])
 
   useEffect(() => {
     if (resendCooldown <= 0) return
@@ -173,15 +177,15 @@ function ValidationEmailContent() {
       setError("")
       setNotice("")
       // Événement analytics : email vérifié
-      trackEvent({ eventType: "email_verified", path: "/validation-email" })
+      void trackEvent({ eventType: "email_verified", path: "/validation-email" })
       await new Promise((r) => setTimeout(r, 800))
-      router.push(connexionUrl())
+      router.push(destination)
       router.refresh()
     } catch {
       setError("Une erreur inattendue est survenue. Veuillez reessayer.")
       setLoading(false)
     }
-  }, [loading, success, email, router, connexionUrl])
+  }, [loading, success, email, router, destination])
 
   const renvoyerCode = async () => {
     if (resending || resendCooldown > 0) return
@@ -203,6 +207,7 @@ function ValidationEmailContent() {
         | { error?: { message?: string; retryAfter?: number } }
         | null
       if (!res.ok || data?.error) {
+        setNotice("")
         setError(
           data?.error?.message ??
             "Impossible de renvoyer le code. Reessayez dans un instant."
@@ -212,7 +217,6 @@ function ValidationEmailContent() {
           setResendCooldown(retryAfter)
         }
         setResending(false)
-        setNotice("Code de verification envoye a votre adresse email.")
         return
       }
       setNotice("Un nouveau code de verification a ete envoye a votre adresse e-mail.")
