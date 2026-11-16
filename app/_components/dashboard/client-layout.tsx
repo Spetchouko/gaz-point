@@ -21,7 +21,10 @@ import {
   Package,
   Truck,
   Home,
+  Lock,
+  Shield,
 } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 import { useAuthModal } from "@/lib/auth-context";
 import type { DashboardUser } from "@/lib/auth-session";
 import { authClient } from "@/lib/auth-client";
@@ -29,6 +32,7 @@ import { Button } from "@/components/ui/button";
 import { DashboardFooter } from "@/app/_components/dashboard/dashboard-footer";
 import { ScrollToTop } from "@/app/_components/dashboard/scroll-to-top";
 import { cn } from "@/lib/utils";
+import { useNotificationUnreadCount } from "@/lib/use-notification-unread-count";
 
 const CLIENT_NAV_ITEMS = [
   {
@@ -124,15 +128,17 @@ export function DashboardClientLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { openAuthModal } = useAuthModal();
+  const { openAuthModal, closeAuthModal } = useAuthModal();
+  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
 
   const user = sessionProp ?? undefined;
   const status = statusProp;
   const isAuthenticated = Boolean(user);
   const isVendor = user?.role === "vendor";
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [unreadCount, setUnreadCount] = useState(3);
+  const { unreadCount } = useNotificationUnreadCount(isAuthenticated);
   const [buttonDisabled, setButtonDisabled] = useState(false);
+  const notificationsHref = "/dashboard/notifications";
 
   // Synchroniser l'état disabled du bouton après hydratation pour éviter
   // un mismatch entre le rendu serveur (status undefined) et le client
@@ -312,7 +318,13 @@ export function DashboardClientLayout({
         {/* Footer with user info and logout */}
         <div className={cn("border-t border-border p-3 space-y-2", sidebarCollapsed && "px-1")}>
           <div className={cn("flex items-center gap-3 rounded-lg px-3 py-2", sidebarCollapsed && "justify-center")}>
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary cursor-pointer" onClick={handleProfileClick}>
+            <span
+              className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary cursor-pointer"
+              onClick={() => {
+                setAvatarMenuOpen(true);
+                setTimeout(() => setAvatarMenuOpen(false), 300);
+              }}
+            >
               {status === "loading" ? (
                 <div className="animate-pulse rounded-full bg-muted" />
               ) : getUserAvatar() ? (
@@ -326,7 +338,68 @@ export function DashboardClientLayout({
               ) : (
                 <User className="size-5 text-primary" aria-hidden="true" />
               )}
+              <Bell className="size-2 absolute -right-0.5 -top-0.5 text-primary/60" />
             </span>
+            {avatarMenuOpen && (
+              <div
+                className={cn(
+                  "fixed inset-0 z-50 bg-black/40 backdrop-blur-sm lg:hidden",
+                  "flex items-center justify-center"
+                )}
+                onClick={() => setAvatarMenuOpen(false)}
+                aria-hidden="true"
+              />
+            )}
+            {avatarMenuOpen && (
+              <div
+                className={cn(
+                  "fixed right-0 top-64 lg:right-0 lg:w-64 lg:border-l lg:border-border lg:bg-card shadow-lg",
+                  "max-h-[calc(100vh-128px)] overflow-y-auto"
+                )}
+              >
+                <div className="space-y-1 px-2 py-1 text-sm">
+                  {/* S'inscrire */}
+                  <Button
+                    type="button"
+                    className="w-full py-2 px-3 text-left rounded-md hover:bg-muted transition-colors"
+                    onClick={() => {
+                      setAvatarMenuOpen(false);
+                      openAuthModal("register");
+                    }}
+                  >
+                    <User className="size-4 mr-2" />
+                    S'inscrire
+                  </Button>
+                  <Separator className="my-1 border-border/50 h-0.5" />
+                  {/* Se connecter */}
+                  <Button
+                    type="button"
+                    className="w-full py-2 px-3 text-left rounded-md hover:bg-muted transition-colors"
+                    onClick={() => {
+                      setAvatarMenuOpen(false);
+                      openAuthModal("login");
+                    }}
+                  >
+                    <Lock className="size-4 mr-2" />
+                    Se connecter
+                  </Button>
+                  <Separator className="my-1 border-border/50 h-0.5" />
+                  {/* Connexion admin */}
+                  <Button
+                    type="button"
+                    className="w-full py-2 px-3 text-left rounded-md hover:bg-muted transition-colors"
+                    onClick={() => {
+                      setAvatarMenuOpen(false);
+                      // Admin login - redirect to admin login page
+                      router.push("/connexion-admin");
+                    }}
+                  >
+                    <Shield className="size-4 mr-2" />
+                    Connexion admin
+                  </Button>
+                </div>
+              </div>
+            )}
             {!sidebarCollapsed && (
               <div className="min-w-0 cursor-pointer" onClick={handleProfileClick}>
                 {status === "loading" ? (
@@ -347,6 +420,25 @@ export function DashboardClientLayout({
               </div>
             )}
           </div>
+          <Link
+            href={notificationsHref}
+            onClick={() => setSidebarOpen(false)}
+            className={cn(
+              "relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+              sidebarCollapsed && "justify-center px-1"
+            )}
+            aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} non lue${unreadCount > 1 ? "s" : ""}` : "Notifications"}
+          >
+            <span className="relative flex size-4 shrink-0 items-center justify-center">
+              <Bell className={cn("size-4", sidebarCollapsed && "mx-auto")} aria-hidden />
+              {unreadCount > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 min-w-4 h-4 rounded-full bg-destructive px-1 text-[10px] font-semibold leading-4 text-white text-center">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </span>
+            {!sidebarCollapsed && <span>Notifications</span>}
+          </Link>
           <button
             type="button"
             onClick={handleSignOut}
@@ -464,14 +556,14 @@ export function DashboardClientLayout({
             <div className="relative">
               <button
                 type="button"
-                onClick={() => router.push("/dashboard/notifications")}
-                className="flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-                aria-label="Notifications"
+                onClick={() => router.push(notificationsHref)}
+                className="relative flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} non lue${unreadCount > 1 ? "s" : ""}` : "Notifications"}
               >
                 <Bell className="size-5" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 size-2.5 rounded-full bg-destructive text-white text-[10px] leading-none">
-                    {unreadCount > 9 ? "9+" : unreadCount}
+                  <span className="absolute -right-0.5 -top-0.5 min-w-4 h-4 rounded-full bg-destructive px-1 text-[10px] font-semibold leading-4 text-white text-center">
+                    {unreadCount > 99 ? "99+" : unreadCount}
                   </span>
                 )}
               </button>

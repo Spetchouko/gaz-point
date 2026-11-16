@@ -1,7 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
+import { ThemeProvider } from "@/app/_components/theme-provider";
 import { DashboardAdminLayout } from "@/app/_components/dashboard/admin-layout";
 import { useDashboardSession } from "@/lib/auth-session";
+import { cn } from "@/lib/utils";
 
 export default function DashboardAdminLayoutWrapper({
   children,
@@ -58,8 +60,10 @@ export default function DashboardAdminLayoutWrapper({
 
   // Toujours afficher le contenu : pas de retour null pendant le loading.
   return (
-    <DashboardAdminLayout session={user} status={status} permissions={permissions}>
-      {children}
-    </DashboardAdminLayout>
+    <ThemeProvider>
+      <DashboardAdminLayout session={user} status={status} permissions={permissions}>
+        {children}
+      </DashboardAdminLayout>
+    </ThemeProvider>
   );
 }

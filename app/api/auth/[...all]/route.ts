@@ -35,26 +35,11 @@ async function handleAuthPost(req: Request): Promise<Response> {
   try {
     return await handler.POST(req);
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
     console.error("[Better Auth] Handler error:", {
       path,
-      error: message,
+      error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
     });
-    // En production Vercel, un throw non géré produit une page HTML 500 générique.
-    // On renvoie une réponse JSON structurée pour que le client puisse afficher
-    // un message utile et que les logs contiennent le contexte ci-dessus.
-    return NextResponse.json(
-      {
-        error: {
-          message:
-            process.env.NODE_ENV === "production"
-              ? "Une erreur est survenue lors de l'authentification. Veuillez réessayer."
-              : message,
-          code: "AUTH_INTERNAL_ERROR",
-        },
-      },
-      { status: 500 }
-    );
+    throw error;
   }
 }

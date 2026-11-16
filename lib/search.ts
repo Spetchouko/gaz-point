@@ -15,7 +15,6 @@
  */
 
 import type { AvailabilityStatus } from "@/db/schema"
-import { PREDEFINED_BOTTLE_FORMATS } from "@/lib/bottle-formats"
 
 /**
  * Variables d'environnement utilisées par la couche de recherche.
@@ -406,10 +405,17 @@ export function validateSearchCriteria(criteria: SearchCriteria): {
 }
 
 /**
- * Formats de bouteille prédéfinis proposés dans la recherche.
- * Un grammage personnalisé peut aussi être saisi et transmis au backend.
+ * Formats de bouteille supportés (marché camerounais).
  */
-export const SEARCH_BOTTLE_FORMATS = PREDEFINED_BOTTLE_FORMATS
+export const SEARCH_BOTTLE_FORMATS = [
+  "2,75 kg",
+  "6 kg",
+  "12,5 kg",
+  "20 kg",
+  "28 kg",
+  "35 kg",
+  "50 kg",
+] as const
 
 /**
  * Marques de bouteille courantes (à afficher comme suggestions).

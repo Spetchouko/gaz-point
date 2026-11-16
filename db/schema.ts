@@ -528,6 +528,22 @@ export const notification = pgTable("notification", {
   index("notification_user_created_idx").on(table.userId, table.createdAt),
 ]);
 
+export const userPreference = pgTable("user_preference", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  notifyReservations: boolean("notify_reservations").default(true).notNull(),
+  notifyAvailability: boolean("notify_availability").default(true).notNull(),
+  notifySystem: boolean("notify_system").default(true).notNull(),
+  notifyMarketing: boolean("notify_marketing").default(false).notNull(),
+  themePreference: text("theme_preference").default("system").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+});
+
 export const paymentTransaction = pgTable(
   "payment_transaction",
   {

@@ -81,22 +81,13 @@ export const auth = betterAuth({
         schema,
     }),
     // Autoriser les origines de confiance pour éviter l'erreur "Invalid origin"
-    trustedOrigins: Array.from(
-      new Set(
-        [
-          authBaseURL,
-          optionalEnv("NEXT_PUBLIC_SITE_URL"),
-          process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
-          process.env.VERCEL_PROJECT_PRODUCTION_URL
-            ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-            : undefined,
-          "https://gazpoints.com",
-          "https://www.gazpoints.com",
-          "http://localhost:3000",
-          "http://127.0.0.1:3000",
-        ].filter((value): value is string => Boolean(value))
-      )
-    ),
+    trustedOrigins: [
+        authBaseURL,
+        "https://gazpoints.com",
+        "https://www.gazpoints.com",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
     user: {
         additionalFields: {
             phoneNumber: {
@@ -197,8 +188,33 @@ export const auth = betterAuth({
     // Anti-robot : Cloudflare Turnstile (middleware sur /sign-up/email et /sign-in/email).
     // Désactivé en mode test (AUDIT=1) pour permettre les tests automatisés.
     captcha: undefined,
-    // Note: le plugin phoneNumber est enregistré plus bas dans `plugins`.
-    // Ne pas dupliquer la configuration ici (option racine invalide pour Better Auth).
+    // Plugin confirmation par SMS (code OTP). Le callback sendOTP doit être
+    // fourni par l'intégrateur (ici on lève une erreur explicite si non configuré),
+    // conformément à la contrainte "jamais simuler l'envoi".
+    phoneNumber: {
+        isRequired: false,
+        providedInSignUp: true,
+        providedInSignIn: false,
+        // Valider le format camerounais : +237 suivi de 9 chiffres.
+        phoneNumberValidator: async (phone: string) => {
+          const clean = phone.replace(/\s/g, "")
+          // Format standard: +237 suivi de 9 chiffres
+          const standardFormat = /^\+237\d{9}$/.test(clean)
+          // Format avec espaces: +237 suivi de 9 chiffres avec séparateurs
+          const spacedFormat = /^\+237\s\d{2}\s\d{2}\s\d{2}\s\d{2}$/.test(phone)
+          return standardFormat || spacedFormat
+        },
+        // Envoi du code OTP. On ne simule jamais l'envoi ; si cette fonction
+        // n'est pas remplacée par une vraie intégration, Better Auth lèvera
+        // SEND_OTP_NOT_IMPLEMENTED.
+        sendOTP: async () => {
+          throw new Error("L'envoi de code SMS n'est pas encore configuré. Veuillez activer la vérification par email ou configurer un fournisseur SMS.")
+        },
+        // Meilleure pratique : stocker le statut de vérification dans les champs
+        // déjà existants du schéma (phoneVerified / emailVerified). Better Auth
+        // mise à jour ces champs via ses hooks internes quand verifyPhoneNumber
+        // ou verifyEmailOTP réussit.
+    },
     databaseHooks: {
         user: {
             create: {

@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { LogIn, Menu, Sun, X, UserPlus, UserRound, UserRoundPlus } from "lucide-react"
+import { LogIn, Menu, Sun, X, UserPlus, UserRoundPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
@@ -16,6 +16,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useSafeSession } from "@/lib/auth-session"
@@ -72,10 +73,10 @@ export function Header() {
           </span>
         </Link>
 
-        {/* Navigation principale - alignée à droite sur desktop, masquée sur mobile */}
+        {/* Navigation principale - légèrement décalée vers la gauche, groupée et aérée */}
         <nav
           aria-label="Navigation principale"
-          className="hidden flex-1 flex items-center justify-end lg:flex"
+          className="hidden flex-1 items-center justify-end pr-8 lg:flex lg:pr-12 xl:pr-20"
         >
           <ul className="flex items-center gap-1 lg:gap-4" role="menubar">
             {navLinks.map((link) => (
@@ -93,68 +94,62 @@ export function Header() {
         </nav>
 
         {/* Actions utilisateur / Menu mobile */}
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="hidden sm:flex items-center gap-2 shrink-0">
-            {isAuthenticated ? (
-              <UserMenu />
-            ) : (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={t("nav_account")}
-                    className={cn(
-                      "hidden sm:inline-flex text-white/90 hover:text-white",
-                      "rounded-lg cursor-pointer relative",
-                      "hover:bg-white/10 transition-colors",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
-                    )}
-                  >
-                    <UserRoundPlus className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 bg-background">
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/connexion"
-                      className="flex items-center gap-2 text-foreground"
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="hidden sm:flex shrink-0">
+            <div className="flex items-center gap-1 rounded-xl bg-white p-1 shadow-sm">
+              {isAuthenticated ? (
+                <UserMenu iconOnly />
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={t("nav_account")}
+                      className={cn(
+                        "size-9 rounded-lg bg-transparent text-primary",
+                        "hover:bg-primary hover:text-white",
+                        "transition-colors duration-200",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0"
+                      )}
                     >
-                      <LogIn className="size-4" />
-                      {t("nav_login")}
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/inscription"
-                      className="flex items-center gap-2 text-foreground"
-                    >
-                      <UserPlus className="size-4" />
-                      {t("nav_register")}
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/connexion-admin"
-                      className="flex items-center gap-2 text-foreground"
-                    >
-                      <Shield className="size-4" />
-                      Connexion administrateur
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+                      <UserRoundPlus className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 bg-background">
+                    <DropdownMenuItem asChild>
+                      <Link href="/inscription" className="flex items-center gap-2 text-foreground">
+                        <UserPlus className="size-4" />
+                        S&apos;inscrire
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/connexion" className="flex items-center gap-2 text-foreground">
+                        <LogIn className="size-4" />
+                        Se connecter
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/connexion-admin" className="flex items-center gap-2 text-foreground">
+                        <Shield className="size-4" />
+                        Connexion admin
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
 
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t("nav_theme")}
-              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-              className="hidden sm:inline-flex rounded-lg cursor-pointer text-white/90 hover:text-white hover:bg-white/10 transition-colors"
-            >
-              <Sun className="size-4" />
-            </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={t("nav_theme")}
+                onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+                className="size-9 cursor-pointer rounded-lg bg-transparent text-primary hover:bg-primary hover:text-white transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0"
+              >
+                <Sun className="size-4" />
+              </Button>
+            </div>
           </div>
 
           {/* Bouton menu hamburger mobile */}
@@ -207,7 +202,15 @@ export function Header() {
                   {isAuthenticated ? (
                     <UserMenu isMobile />
                   ) : (
-                    <>
+                    <div className="space-y-1">
+                      <Link
+                        href="/inscription"
+                        onClick={closeMenu}
+                        className="flex items-center gap-2 rounded-lg px-3 py-3 text-base font-medium transition-colors text-foreground hover:bg-primary hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
+                      >
+                        <UserPlus className="size-4" />
+                        S&apos;inscrire
+                      </Link>
                       <Link
                         href="/connexion"
                         onClick={closeMenu}
@@ -216,23 +219,16 @@ export function Header() {
                         <LogIn className="size-4" />
                         Se connecter
                       </Link>
-                      <Link
-                        href="/inscription"
-                        onClick={closeMenu}
-                        className="flex items-center gap-2 rounded-lg px-3 py-3 text-base font-medium transition-colors text-foreground hover:bg-primary hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
-                      >
-                        <UserPlus className="size-4" />
-                        Créer un compte
-                      </Link>
+                      <div className="border-t border-border my-1" />
                       <Link
                         href="/connexion-admin"
                         onClick={closeMenu}
                         className="flex items-center gap-2 rounded-lg px-3 py-3 text-base font-medium transition-colors text-foreground hover:bg-primary hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
                       >
                         <Shield className="size-4" />
-                        Connexion administrateur
+                        Connexion admin
                       </Link>
-                    </>
+                    </div>
                   )}
                 </div>
 

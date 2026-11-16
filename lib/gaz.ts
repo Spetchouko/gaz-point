@@ -1,5 +1,4 @@
 import type { AvailabilitySource, AvailabilityStatus } from "@/db/schema"
-import { PREDEFINED_BOTTLE_FORMATS } from "@/lib/bottle-formats"
 
 export const availabilityLabel: Record<AvailabilityStatus, string> = {
   disponible: "Disponible",
@@ -18,8 +17,20 @@ export const sourceLabel: Record<AvailabilitySource, string> = {
   administration: "Signalement de l’administration",
 }
 
-/** Formats de bouteilles prédéfinis (source de vérité : lib/bottle-formats). */
-export const bottleFormats = PREDEFINED_BOTTLE_FORMATS
+export const bottleFormats = [
+  "2,75 kg",
+  "6 kg",
+  "12,5 kg",
+  "15 kg",
+  "18 kg",
+  "20 kg",
+  "25 kg",
+  "28 kg",
+  "32 kg",
+  "35 kg",
+  "38 kg",
+  "50 kg",
+] as const
 
 export const STALE_AFTER_MS = 24 * 60 * 60 * 1000
 

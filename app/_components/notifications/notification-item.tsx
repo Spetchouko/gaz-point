@@ -14,9 +14,8 @@ import {
   Trash2,
   Archive,
   Eye,
-  ChevronRight,
+  EyeOff,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -39,15 +38,16 @@ export type NotificationItemType = {
 
 type NotificationItemProps = {
   notification: NotificationItemType;
-  onUpdate: (id: string) => void;
-  onDelete: (id: string) => void;
-  onOpen?: (id: string) => void;
-  compact?: boolean;
   selected?: boolean;
   onSelectChange?: (id: string, checked: boolean) => void;
+  onMarkRead: (id: string) => Promise<void> | void;
+  onMarkUnread: (id: string) => Promise<void> | void;
+  onArchive: (id: string) => Promise<void> | void;
+  onRestore: (id: string) => Promise<void> | void;
+  onDelete: (id: string) => Promise<void> | void;
 };
 
-const TYPE_ICONS: Record<string, any> = {
+const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   reservation: Calendar,
   availability: Package,
   system: Shield,
@@ -65,14 +65,14 @@ const TYPE_LABELS: Record<string, string> = {
 
 export function NotificationItem({
   notification,
-  onUpdate,
-  onDelete,
-  onOpen,
-  compact = false,
   selected = false,
   onSelectChange,
+  onMarkRead,
+  onMarkUnread,
+  onArchive,
+  onRestore,
+  onDelete,
 }: NotificationItemProps) {
-  const [menuOpen, setMenuOpen] = useState(false);
   const TypeIcon = TYPE_ICONS[notification.type] || Bell;
 
   const formatDate = (iso: string) => {
@@ -92,65 +92,9 @@ export function NotificationItem({
     });
   };
 
-  const handleMarkRead = async () => {
-    if (!notification.read) {
-      await fetch("/api/notifications", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: notification.id, read: true }),
-      });
-      onUpdate(notification.id);
-    }
-  };
-
-  const handleMarkUnread = async () => {
-    if (notification.read) {
-      await fetch("/api/notifications", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: notification.id, read: false }),
-      });
-      setMenuOpen(false);
-      onUpdate(notification.id);
-    }
-  };
-
-  const handleArchive = async () => {
-    await fetch("/api/notifications", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: notification.id, archived: true }),
-    });
-    setMenuOpen(false);
-    onUpdate(notification.id);
-  };
-
-  const handleRestore = async () => {
-    await fetch("/api/notifications", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: notification.id, archived: false }),
-    });
-    setMenuOpen(false);
-    onUpdate(notification.id);
-  };
-
-  const handleDelete = async () => {
-    if (!window.confirm("Supprimer définitivement cette notification ?")) return;
-    await fetch(`/api/notifications/${notification.id}`, {
-      method: "DELETE",
-    });
-    setMenuOpen(false);
-    onDelete(notification.id);
-  };
-
   const handleOpen = async () => {
-    // Marquer comme lue à l'ouverture
     if (!notification.read) {
-      await handleMarkRead();
-    }
-    if (onOpen) {
-      onOpen(notification.id);
+      await onMarkRead(notification.id);
     }
   };
 
@@ -162,106 +106,117 @@ export function NotificationItem({
         notification.read ? "" : "border-l-2 border-l-primary bg-primary/5"
       )}
     >
-      {/* Checkbox de sélection */}
-      {onSelectChange && (
-        <div className="flex shrink-0 items-center pt-4 pl-4">
-          <input
-            type="checkbox"
-            checked={selected}
-            onChange={(e) => onSelectChange(notification.id, e.target.checked)}
-            className="accent-primary h-4 w-4 rounded border-gray-300"
-            aria-label={`Sélectionner ${notification.title}`}
-          />
-        </div>
-      )}
-
-      <div
-        className={cn(
-          "flex items-start gap-4 p-4 cursor-pointer",
-          notification.read ? "" : "bg-primary/5"
-        )}
-        onClick={handleOpen}
-      >
-        {/* Indicateur lu/non lu */}
-        {!notification.read && (
-          <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground mt-0.5">
-            <Check className="size-2.5" />
-          </div>
-        )}
-        {notification.read && (
-          <div className="flex size-5 shrink-0 items-center justify-center mt-0.5">
-            <CheckCircle2 className="size-2.5 text-muted-foreground" />
+      <div className="flex items-start gap-3 p-4">
+        {onSelectChange && (
+          <div className="flex shrink-0 items-center pt-1">
+            <input
+              type="checkbox"
+              checked={selected}
+              onChange={(e) => onSelectChange(notification.id, e.target.checked)}
+              className="accent-primary h-4 w-4 rounded border-gray-300"
+              aria-label={`Sélectionner ${notification.title}`}
+            />
           </div>
         )}
 
-        {/* Contenu */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0" onClick={handleOpen}>
           <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-1.5">
-              <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary mt-0.5">
                 <TypeIcon className="size-4" />
               </div>
-              <div>
-                <h3 className={cn("font-medium text-foreground", !notification.read && "font-bold")}>
-                  {notification.title}
-                </h3>
-                <Badge variant="outline" className="text-xs">
-                  {TYPE_LABELS[notification.type] || notification.type}
-                </Badge>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className={cn("font-medium text-foreground", !notification.read && "font-semibold")}>
+                    {notification.title}
+                  </h3>
+                  {!notification.read && (
+                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                      Non lue
+                    </span>
+                  )}
+                </div>
+                <div className="mt-0.5 flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs">
+                    {TYPE_LABELS[notification.type] || notification.type}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {formatDate(notification.createdAt)}
+                  </span>
+                </div>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
-              {formatDate(notification.createdAt)}
-            </p>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  onClick={(e) => e.stopPropagation()}
+                  className="p-1 text-muted-foreground hover:text-primary transition-colors"
+                  aria-label="Actions de la notification"
+                >
+                  <MoreHorizontal className="size-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {!notification.read ? (
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); void onMarkRead(notification.id); }}>
+                    <Check className="size-3 mr-2" />
+                    Marquer comme lue
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); void onMarkUnread(notification.id); }}>
+                    <EyeOff className="size-3 mr-2" />
+                    Marquer comme non lue
+                  </DropdownMenuItem>
+                )}
+                {!notification.archived ? (
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); void onArchive(notification.id); }}>
+                    <Archive className="size-3 mr-2" />
+                    Archiver
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); void onRestore(notification.id); }}>
+                    <Eye className="size-3 mr-2" />
+                    Restaurer
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); void onDelete(notification.id); }} className="text-destructive">
+                  <Trash2 className="size-3 mr-2" />
+                  Supprimer
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          <p className="mt-1.5 text-sm text-muted-foreground line-clamp-2">
+
+          <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
             {notification.message}
           </p>
-        </div>
 
-        {/* Menu d'actions */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setMenuOpen(!menuOpen);
-              }}
-              className="p-1 text-muted-foreground hover:text-primary transition-colors"
-              aria-label="Actions de la notification"
-            >
-              <MoreHorizontal className="size-4" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <div className="mt-3 flex items-center gap-3">
+            {notification.link ? (
+              <Link
+                href={notification.link}
+                onClick={handleOpen}
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                Voir l'élément lié →
+              </Link>
+            ) : null}
             {!notification.read ? (
-              <DropdownMenuItem onClick={handleMarkRead}>
-                <Check className="size-3 mr-2" />
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); void onMarkRead(notification.id); }}
+                className="text-xs text-muted-foreground hover:text-primary"
+              >
                 Marquer comme lue
-              </DropdownMenuItem>
+              </button>
             ) : (
-              <DropdownMenuItem onClick={handleMarkUnread}>
-                <EyeOff className="size-3 mr-2" />
-                Marquer comme non lue
-              </DropdownMenuItem>
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                <CheckCircle2 className="size-3" /> Lue
+              </span>
             )}
-            {!notification.archived ? (
-              <DropdownMenuItem onClick={handleArchive}>
-                <Archive className="size-3 mr-2" />
-                Archiver
-              </DropdownMenuItem>
-            ) : (
-              <DropdownMenuItem onClick={handleRestore}>
-                <Eye className="size-3 mr-2" />
-                Restaurer
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem onClick={handleDelete} className="text-destructive">
-              <Trash2 className="size-3 mr-2" />
-              Supprimer
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </div>
+        </div>
       </div>
     </div>
   );
