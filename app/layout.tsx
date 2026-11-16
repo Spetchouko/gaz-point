@@ -1,58 +1,74 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { Header } from "@/app/header";
-import { Footer } from "@/app/_components/footer";
-import { RecherchePermanente } from "@/app/_components/recherche-permanente";
-import { ConsentBanner } from "@/app/_components/consent-banner";
-import { PwaRegistration } from "@/app/_components/pwa-registration";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import './globals.css';
+import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
+import LayoutClient from '@/app/layout-client';
+import { LangProvider } from '@/app/_components/lang-provider';
+import { PublicHeader } from '@/app/_components/public-header';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
-  ),
-  title: "GazPoints - Trouve ton gaz avant de te déplacer",
-  description:
-    "Vérifie la disponibilité des bouteilles de gaz près de chez toi. Évite les déplacements inutiles, économise temps et argent. Trouve le bon point de vente en 2 min.",
+  metadataBase: new URL('https://www.gazpoints.com'),
+  title: {
+    template: '%s | GazPoints',
+    absolute: 'GazPoints – Trouvez votre bouteille de gaz au Cameroun',
+  },
+  description: 'GazPoints est la plateforme qui vous permet de rechercher et de vérifier la disponibilité des bouteilles de gaz auprès des points de vente au Cameroun. Trouvez le gaz près de chez vous sans vous déplacer inutilement.',
+  authors: [{ name: 'GazPoints' }],
+  creator: 'GazPoints',
+  publisher: 'GazPoints',
   keywords: [
-    "gaz bouteilles",
-    "points de vente gaz",
-    "disponibilité gaz",
-    "trouver gaz près de moi",
-    "livraison gaz",
-    "gaz domestique",
-    "bouteille gaz prix",
-    "gaz butane propane",
+    'gaz bouteille disponibilité Cameroun',
+    'trouver gaz Douala',
+    'point de vente gaz Cameroun',
+    'bouteille gaz 6 kg 12,5 kg',
+    'gaz domestique Cameroun',
+    'GazPoints',
   ],
+  openGraph: {
+    type: 'website',
+    locale: 'fr_FR',
+    url: 'https://www.gazpoints.com',
+    siteName: 'GazPoints',
+    title: 'GazPoints – Trouvez votre bouteille de gaz au Cameroun',
+    description: 'GazPoints est la plateforme qui vous permet de rechercher et de vérifier la disponibilité des bouteilles de gaz auprès des points de vente au Cameroun.',
+    images: [
+      {
+        url: '/brand/opengraph.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'GazPoints - Trouvez votre gaz au Cameroun',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'GazPoints – Trouvez votre bouteille de gaz au Cameroun',
+    description: 'GazPoints est la plateforme qui vous permet de rechercher et de vérifier la disponibilité des bouteilles de gaz auprès des points de vente au Cameroun.',
+    images: ['/brand/opengraph.jpg'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: ReactNode }) {
+  const role = 'client';
   return (
-    <html
-      lang="fr"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <head>
-        <meta name="apple-mobile-web-app-title" content="GazPoints" />
-        <link rel="manifest" href="/manifest.json" />
-      </head>
-      <body className="min-h-full flex flex-col">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <RecherchePermanente />
-        <ConsentBanner />
-        <PwaRegistration />
+    <html lang="fr">
+      <body>
+        <LayoutClient role={role}>
+          <LangProvider>
+            <PublicHeader />
+            {children}
+          </LangProvider>
+        </LayoutClient>
       </body>
     </html>
   );

@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
-import { user, pointDeVente } from "@/db/schema"
+import { user } from "@/db/schema"
 import { eq } from "drizzle-orm"
-import { requireAdmin } from "@/lib/session"
+import { requireModuleApi } from "@/lib/session"
 import { sendVendorApprovalResultEmail } from "@/lib/email"
+import { createNotification, buildNotificationLink } from "@/lib/notifications"
 
 export async function POST(req: NextRequest) {
   try {
-    const currentUser = await requireAdmin()
+    const staff = await requireModuleApi("vendeurs")
+    if (!staff) {
+      return NextResponse.json({ error: "Accès réservé à l'administration" }, { status: 403 })
+    }
+    const currentUser = staff.user
     const body = (await req.json().catch(() => null)) as { vendorId?: string; reason?: string } | null
 
     if (!body?.vendorId) {
@@ -50,6 +55,19 @@ export async function POST(req: NextRequest) {
         updatedAt: new Date(),
       })
       .where(eq(user.id, vendor.id))
+
+    // Créer notification pour le vendeur
+    try {
+      await createNotification({
+        userId: vendor.id,
+        type: "system",
+        title: "Compte vendeur refusé",
+        message: `Votre demande de compte vendeur a été refusée.${body.reason ? ` Motif : ${body.reason}` : ""}`,
+        link: buildNotificationLink("admin", vendor.id, "profil"),
+      })
+    } catch {
+      // Ignorer les erreurs de notification
+    }
 
     // Send rejection email to vendor
     const adminDashboardUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://gazpoints.com"}/dashboard/vendeur`

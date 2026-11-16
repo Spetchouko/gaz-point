@@ -1,76 +1,98 @@
-"use client"
-
 import Link from "next/link"
-import { ArrowRight, Check, Search } from "lucide-react"
+import { ArrowRight, Check } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { useTrouverGaz } from "@/lib/use-trouver-gaz"
+import { RechercheGaz } from "@/app/_components/recherche-gaz"
+import { PubliciteCarousel, type PubliciteBannerData } from "@/app/_components/publicite-banner"
 
 const benefits = [
-  "Vérifie la dispo avant de partir",
-  "Trouve un point de vente proche",
-  "Évite les déplacements inutiles",
+  "Vérifiez la disponibilité avant de partir",
+  "Trouvez un point de vente proche",
+  "Évitez les déplacements inutiles",
 ]
 
-export function Hero() {
-  const handleTrouverGaz = useTrouverGaz()
-
+export function Hero({
+  searchPublicites,
+}: {
+  searchPublicites?: PubliciteBannerData[]
+}) {
   return (
-    <section id="accueil" className="w-full overflow-hidden py-16 md:py-24 bg-gradient-section">
-      <div className="container mx-auto px-4">
-        <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
-          <Badge variant="secondary" className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]">
-            Avant de te déplacer, vérifie d&apos;abord
+    <section id="accueil" className="relative w-full overflow-hidden">
+      {/* Image de fond avec aspect-ratio réservé pour éviter CLS */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: 'url("/brand/hero.webp")',
+          aspectRatio: "16 / 9",
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Voile noir pour assombrir la photo sans la masquer */}
+      <div className="absolute inset-0 bg-black/40" />
+
+      {/* Contenu centré au-dessus */}
+      <div className="relative z-10 container mx-auto px-4 pt-12 pb-16 md:py-20 flex flex-col items-center text-center min-h-[560px] md:min-h-[640px]">
+        <div className="mx-auto max-w-3xl">
+          <Badge
+            variant="secondary"
+            className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em] bg-card text-primary border border-primary/20 shadow-sm"
+          >
+            Vérifiez d’abord où il y en a
           </Badge>
 
-          <h1 className="mt-6 text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl">
-            Ton gaz est fini ?{" "}
-            <span className="text-primary">
-              Vérifie où il y en a avant de te déplacer.
-            </span>
+          <h1 className="mt-4 text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white leading-tight drop-shadow-md">
+            Ton gaz est fini&nbsp;?{" "}
+            <span className="text-[#4ADE80] font-extrabold">Vérifiez où il y en a avant de vous déplacer.</span>
           </h1>
 
-          <p className="mt-6 max-w-xl text-pretty text-base text-muted-foreground sm:text-lg">
-            GazPoints te montre les points de vente de gaz près de chez toi, avec la
-            disponibilité, la distance et le numéro du vendeur. Tu pars seulement
-            quand c&apos;est sûr.
+          <p className="mt-3 text-lg sm:text-xl text-white max-w-2xl mx-auto leading-relaxed drop-shadow-sm">
+            GazPoints vous montre les points de vente de gaz près de chez vous, avec la
+            disponibilité, la distance et le numéro du vendeur.
           </p>
+        </div>
 
-          <ul className="mt-8 grid w-full gap-3 sm:grid-cols-3 sm:gap-6">
-            {benefits.map((benefit) => (
-              <li
-                key={benefit}
-                className="flex items-start gap-2 text-left text-sm text-muted-foreground"
-              >
-                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <Check className="size-3.5" />
-                </span>
-                <span>{benefit}</span>
-              </li>
-            ))}
-          </ul>
+        {/* Recherche */}
+        <div
+          id="trouver-du-gaz"
+          className="mx-auto mt-8 max-w-3xl"
+        >
+          {searchPublicites && searchPublicites.length > 0 && (
+            <PubliciteCarousel
+              publicites={searchPublicites}
+              className="mb-6 py-6 md:py-8"
+            />
+          )}
+          <RechercheGaz />
 
-          <div className="mt-9 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
+          <div className="mt-5 flex justify-center">
             <Button
               size="lg"
-              className="h-12 w-full gap-2 px-6 text-base sm:w-auto cursor-pointer"
-              onClick={handleTrouverGaz}
-            >
-              <Search className="size-4" />
-              Trouver du gaz
-              <ArrowRight className="size-4" />
-            </Button>
-            <Button
+              variant="default"
+              className="h-11 px-6 text-sm text-primary-foreground rounded-xl"
               render={<Link href="/#comment-ca-marche" />}
               nativeButton={false}
-              variant="outline"
-              size="lg"
-              className="h-12 w-full px-6 text-base sm:w-auto"
             >
               Comment ça marche
+              <ArrowRight className="size-4" />
             </Button>
           </div>
         </div>
+
+        {/* Avantages clés */}
+        <ul className="mx-auto mt-8 max-w-3xl grid gap-3 sm:grid-cols-3 sm:gap-8">
+          {benefits.map((benefit) => (
+            <li
+              key={benefit}
+              className="flex items-start gap-2 text-left text-sm text-foreground bg-card rounded-sm px-3 py-2 shadow-sm border border-border"
+            >
+              <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                <Check className="size-3" />
+              </span>
+              <span className="font-medium text-foreground">{benefit}</span>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   )

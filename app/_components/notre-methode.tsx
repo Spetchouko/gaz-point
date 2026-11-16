@@ -20,19 +20,19 @@ const sources = [
     icon: Clock,
     title: "La date de mise à jour",
     description:
-      "Chaque information est datée. Quand elle est ancienne, elle est marquée \"à confirmer\" au lieu d'être présentée comme fiable.",
+      "Chaque information est datée. Quand elle est ancienne, elle est marquée « à confirmer » au lieu d'être présentée comme fiable.",
   },
   {
     icon: MessageCircleQuestion,
     title: "Les signalements des habitants",
     description:
-      "Tu peux signaler un point qui n'existe plus ou une information fausse. Ça nous aide à corriger la carte.",
+      "Vous pouvez signaler un point qui n'existe plus ou une information fausse. Ça nous aide à corriger la carte.",
   },
 ]
 
 export function NotreMethode() {
   return (
-    <section className="w-full py-16 md:py-24 bg-linear-to-b from-muted/30 via-muted/60 to-muted/30 border-y">
+    <section className="w-full py-16 md:py-24 bg-linear-to-b from-muted/30 via-muted/60 to-muted/30 border-t border-border">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
           <Badge
@@ -43,7 +43,7 @@ export function NotreMethode() {
           </Badge>
 
           <h2 className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            D'où vient l'information que tu vois
+            D'où vient l'information que vous voyez
           </h2>
 
           <p className="mt-5 text-pretty text-base text-muted-foreground sm:text-lg">
@@ -76,7 +76,7 @@ export function NotreMethode() {
                 Hors limites
               </Badge>
               <CardTitle className="mt-3 text-xl font-semibold tracking-tight text-foreground">
-                Ce que GazPoints ne font pas
+                Ce que GazPoints ne fait pas
               </CardTitle>
             </CardHeader>
             <CardContent className="px-0">
@@ -98,10 +98,10 @@ export function NotreMethode() {
                 ))}
               </ul>
 
-              <Separator className="my-4" />
+              <Separator className="my-4 bg-border" />
 
               <p className="text-pretty text-sm font-medium text-foreground">
-                Une information honnête vaut mieux qu'une information
+                Une information honnête vaut mieux qu’une information
                 rassurante.
               </p>
             </CardContent>

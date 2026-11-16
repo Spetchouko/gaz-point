@@ -3,14 +3,16 @@
 import { Suspense, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
+import { useSafeSession } from "@/lib/auth-session"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { Lock, Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
-import { useState } from "react"
+import { useCallback, useState } from "react"
 import Image from "next/image"
+import { ButtonSpinner } from "@/app/_components/spinner"
 
 function validatePassword(password: string): string | null {
   if (!password) return "Le mot de passe est requis."
@@ -23,7 +25,7 @@ function ResetPasswordPageContent() {
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
   const redirectTo = searchParams.get("redirect") ?? "/connexion"
-  const { data: session } = authClient.useSession()
+  const { data: session } = useSafeSession()
 
   useEffect(() => {
     if (session?.user) {
@@ -39,6 +41,10 @@ function ResetPasswordPageContent() {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+
+  const handleShowPasswordToggle = useCallback(() => {
+    setShowPassword((prev) => !prev)
+  }, [])
 
   const validateForm = () => {
     const passwordError = validatePassword(password)
@@ -107,7 +113,7 @@ function ResetPasswordPageContent() {
       <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex size-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20">
+            <div className="mx-auto mb-4 flex size-11 items-center justify-center rounded-xl bg-success/10 text-success ring-1 ring-success/20">
               <CheckCircle2 className="size-6" />
             </div>
             <CardTitle className="text-2xl">Mot de passe réinitialisé</CardTitle>
@@ -133,9 +139,9 @@ function ResetPasswordPageContent() {
             <Image
               src="/brand/logo.png"
               alt="GazPoints"
-              width={26}
-              height={26}
-              className="h-6.5 w-6.5 object-contain"
+              width={24}
+              height={24}
+              className="h-6 w-6 object-contain"
             />
           </div>
           <CardTitle className="text-2xl">Nouveau mot de passe</CardTitle>
@@ -174,7 +180,7 @@ function ResetPasswordPageContent() {
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={handleShowPasswordToggle}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   disabled={loading || !token}
                   aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
@@ -210,7 +216,7 @@ function ResetPasswordPageContent() {
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={handleShowPasswordToggle}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   disabled={loading || !token}
                   aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
@@ -233,7 +239,7 @@ function ResetPasswordPageContent() {
             )}
 
             <Button type="submit" className="w-full" disabled={loading || !token}>
-              {loading ? <Loader2 className="size-4 mr-2 animate-spin" /> : "Réinitialiser le mot de passe"}
+              {loading ? <ButtonSpinner /> : "Réinitialiser le mot de passe"}
             </Button>
           </form>
         </CardContent>

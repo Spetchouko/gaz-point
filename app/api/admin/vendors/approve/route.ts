@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
-import { user, pointDeVente } from "@/db/schema"
+import { user } from "@/db/schema"
 import { eq } from "drizzle-orm"
-import { requireAdmin } from "@/lib/session"
+import { requireModuleApi } from "@/lib/session"
 import { sendVendorApprovalResultEmail } from "@/lib/email"
+import { createNotification, buildNotificationLink } from "@/lib/notifications"
 
 export async function POST(req: NextRequest) {
   try {
-    const currentUser = await requireAdmin()
+    const staff = await requireModuleApi("vendeurs")
+    if (!staff) {
+      return NextResponse.json({ error: "Accès réservé à l'administration" }, { status: 403 })
+    }
+    const currentUser = staff.user
     const body = (await req.json().catch(() => null)) as { vendorId?: string } | null
 
     if (!body?.vendorId) {
@@ -35,20 +40,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Vendeur déjà approuvé" }, { status: 400 })
     }
 
-    // Get vendor's points for location info in email
-    const points = await db
-      .select({
-        district: pointDeVente.district,
-        address: pointDeVente.address,
-      })
-      .from(pointDeVente)
-      .where(eq(pointDeVente.vendorId, vendor.id))
-
-    const location = points.length > 0
-      ? points.map((p) => `${p.address}, ${p.district}`).join(" ; ")
-      : "Non renseigné"
-
-    // Update vendor approval status
+    // Send approval email to vendor
     await db
       .update(user)
       .set({
@@ -58,6 +50,19 @@ export async function POST(req: NextRequest) {
         updatedAt: new Date(),
       })
       .where(eq(user.id, vendor.id))
+
+    // Créer notification pour le vendeur
+    try {
+      await createNotification({
+        userId: vendor.id,
+        type: "system",
+        title: "Compte vendeur approuvé",
+        message: "Votre compte vendeur a été approuvé par l'administration. Vous pouvez maintenant accéder à votre espace vendeur.",
+        link: buildNotificationLink("admin", vendor.id, "profil"),
+      })
+    } catch {
+      // Ignorer les erreurs de notification
+    }
 
     // Send approval email to vendor
     const adminDashboardUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://gazpoints.com"}/dashboard/vendeur`

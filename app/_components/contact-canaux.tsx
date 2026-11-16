@@ -12,10 +12,10 @@ const canaux = [
   {
     icon: Mail,
     title: "Email",
-    href: "mailto:petchouko@gmail.com",
-    value: "petchouko@gmail.com",
+    href: "mailto:gazpoints@gmail.com",
+    value: "gazpoints@gmail.com",
     description:
-      "Le canal principal. C'est ici que tu nous écris pour tout le reste.",
+      "Le canal principal. C'est ici que vous nous écrivez pour tout le reste.",
     note: "Réponse sous 48 h ouvrées.",
   },
   {
@@ -67,7 +67,7 @@ export function ContactCanaux() {
         <ul className="mx-auto mt-12 grid max-w-5xl gap-4 sm:grid-cols-2">
           {canaux.map((canal) => (
             <li key={canal.title}>
-              <Card className="h-full transition-all hover:border-primary/40 hover:shadow-md">
+              <Card className="h-full transition-all hover:border-primary/40 hover:shadow-sm">
                 <CardHeader>
                   <div className="flex items-center gap-3">
                     <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">

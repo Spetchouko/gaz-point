@@ -1,5 +1,4 @@
 import {
-  Clock,
   Compass,
   MapPinOff,
   PackageCheck,
@@ -14,86 +13,96 @@ const benefits = [
   {
     icon: MapPinOff,
     title: "Moins de déplacements inutiles",
-    description: "Tu ne fais plus le tour de plusieurs points de vente pour rien.",
+    description: "Vous ne faites plus le tour de plusieurs points de vente pour rien.",
   },
   {
     icon: PiggyBank,
     title: "Moins d'argent pour le transport",
-    description: "Tu économises le taxi, la moto et l'essence.",
+    description: "Vous économisez le taxi, la moto et l'essence.",
   },
   {
     icon: Timer,
-    title: "Tu gagnes du temps",
+    title: "Vous gagnez du temps",
     description: "Deux minutes de recherche au lieu d'une demi-journée.",
   },
   {
     icon: Compass,
-    title: "Tu sais où chercher",
-    description: "Tu vas droit au bon endroit, sans errer dans les quartiers.",
+    title: "Vous savez où chercher",
+    description: "Vous allez droit au bon endroit, sans errer dans les quartiers.",
   },
   {
     icon: PackageCheck,
-    title: "Tu connais la disponibilité",
-    description: "Tu sais s'il reste du gaz avant de quitter la maison.",
+    title: "Vous connaissez la disponibilité",
+    description: "Vous savez s'il reste du gaz avant de quitter la maison.",
   },
   {
     icon: Store,
-    title: "Tu trouves plus facilement un point de vente",
-    description: "Le bon commerce, près de chez toi.",
+    title: "Vous trouvez plus facilement un point de vente",
+    description: "Le bon commerce, près de chez vous.",
   },
 ]
 
 export function Benefices() {
   return (
-    <section className="w-full border-y bg-linear-to-b from-muted/30 via-muted/60 to-muted/30 py-16 md:py-24">
+    <section className="w-full bg-background py-12 md:py-16">
       <div className="container mx-auto px-4">
-        <div className="mx-auto max-w-3xl text-center">
-          <Badge variant="secondary" className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]">
-            Ce que ça t&apos;apporte
-          </Badge>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 lg:items-center">
+          {/* Image en haut — pleine section avec aspect-ratio réservé */}
+          <div className="relative w-full overflow-hidden rounded-2xl shadow-2xl ring-2 ring-black/20 aspect-[4/3] sm:aspect-[3/2] lg:aspect-[16/9]">
+            <div
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat rounded-2xl"
+              style={{
+                backgroundImage: 'url("/brand/kill.png")',
+              }}
+              aria-hidden="true"
+            />
+          </div>
 
-          <h2 className="mt-6 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            Avant de partir,{" "}
-            <span className="text-primary">tu décides</span>
-          </h2>
+          {/* Cartes en dessous — centrées et resserrées */}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Badge
+                variant="secondary"
+                className="h-5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
+              >
+                Ce que cela vous apporte
+              </Badge>
 
-          <p className="mt-5 text-pretty text-base text-muted-foreground sm:text-lg">
-            GazPoints ne te vend pas juste une information : il t&apos;aide à choisir
-            où aller, avant de te déplacer.
-          </p>
-        </div>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+                Avant de partir, <span className="text-primary">vous décidez</span>
+              </h2>
 
-        <div className="mx-auto mt-12 grid max-w-4xl gap-6 sm:grid-cols-3">
-          {benefits.map((benefit, idx) => (
-            <Card
-              key={benefit.title}
-              className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-md"
-            >
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <span className="flex size-11 items-center justify-center rounded-xl bg-destructive/10 text-destructive ring-1 ring-destructive/20">
-                    <benefit.icon className="size-5" />
-                  </span>
-                  <Badge variant="outline" className="gap-1 font-semibold text-muted-foreground">
-                    <Clock className="size-3" />
-                  </Badge>
-                </div>
-                <CardTitle className="mt-4 text-base">
-                  <span className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Étape {idx + 1}
-                  </span>
-                  <span className="mt-1 block font-bold text-foreground">
-                    {benefit.title}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {benefit.description}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+              <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+                GazPoints ne vous vend pas juste une information : il vous aide à
+                choisir où aller, avant de vous déplacer.
+              </p>
+            </div>
+
+            <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+              {benefits.map((benefit) => (
+                <Card
+                  key={benefit.title}
+                  className="p-3 rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md hover:border-primary/20"
+                >
+                  <CardHeader>
+                    <span className="flex size-9 items-center justify-center rounded-xl bg-mint text-primary-strong ring-1 ring-primary/20">
+                      <benefit.icon className="size-3.5" />
+                    </span>
+                    <CardTitle className="mt-2 text-sm font-bold">
+                      <span className="mt-1 block font-bold text-foreground">
+                        {benefit.title}
+                      </span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {benefit.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </section>

@@ -99,7 +99,7 @@ export function PageLegale({ document }: { document: LegalDocument }) {
                     {section.items.map((item) => (
                       <div
                         key={item.term}
-                        className="flex flex-col gap-1 border-b px-5 py-3 last:border-b-0 sm:flex-row sm:gap-6"
+                        className="flex flex-col gap-1 border-b border-border px-5 py-3 last:border-b-0 sm:flex-row sm:gap-6"
                       >
                         <dt className="text-sm font-medium text-foreground sm:w-52 sm:shrink-0">
                           {item.term}

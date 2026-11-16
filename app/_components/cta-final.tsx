@@ -1,44 +1,39 @@
 "use client"
 
-import { ArrowDown, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
 export function CtaFinal() {
   return (
-    <section className="w-full py-16 md:py-24">
+    <section className="w-full bg-sand py-12 md:py-16">
       <div className="container mx-auto px-4">
-        <div className="mx-auto max-w-3xl rounded-3xl bg-primary px-6 py-12 text-center text-primary-foreground md:px-12 md:py-16">
-          <p className="text-balance text-sm font-medium text-primary-foreground/70 sm:text-base">
-            Ton gaz est fini&nbsp;?
-          </p>
-          <Badge variant="secondary" className="mt-3 h-6 bg-primary-foreground/15 px-3 text-xs font-semibold uppercase tracking-[0.15em] text-primary-foreground">
-            Ne pars pas chercher au hasard
+        <div className="relative mx-auto max-w-3xl rounded-xl border border-border bg-card p-6 md:px-12 md:py-10 shadow-sm flex flex-col items-center text-center">
+          <Badge
+            variant="secondary"
+            className="mt-1 h-5 bg-primary-foreground/15 px-2.5 text-xs font-semibold uppercase tracking-[0.15em] text-primary"
+          >
+            Ne partez pas chercher au hasard
           </Badge>
 
-          <ArrowDown
-            className="mx-auto mt-6 size-5 text-primary-foreground/40"
-            aria-hidden
-          />
-
-          <h2 className="mt-6 text-balance text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-            Vérifie d&apos;abord où il y en a.
+          <h2 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            Vérifie d'abord où il y en a.
           </h2>
 
-          <div className="mt-10 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center">
-            <Link href="/#trouver-du-gaz">
+          <div className="mt-5 w-full sm:w-auto">
+            <Link href="/?#recherche-gaz">
               <Button
                 size="lg"
-                className="h-12 w-full gap-2 bg-primary-foreground px-6 text-base text-primary hover:bg-primary-foreground/90 sm:w-auto cursor-pointer"
+                className="w-full sm:w-auto rounded-xl border border-input bg-primary px-6 text-base font-medium text-primary-foreground transition-colors hover:bg-primary-strong focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-ring/50"
               >
                 Trouver mon gaz
-                <ArrowRight className="size-4" />
+                <ArrowRight className="size-4 ml-2" />
               </Button>
             </Link>
           </div>
 
-          <p className="mt-6 text-xs text-primary-foreground/60">
+          <p className="mt-4 text-xs text-foreground/60">
             Gratuit · Sans abonnement · Sans carte bancaire
           </p>
         </div>

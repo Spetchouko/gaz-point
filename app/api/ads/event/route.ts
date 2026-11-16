@@ -64,11 +64,20 @@ export async function POST(req: NextRequest) {
     // session illisible : on considère un visiteur anonyme
   }
 
-  const [ad] = await db
-    .select({ id: publicite.id, slot: publicite.slot })
-    .from(publicite)
-    .where(eq(publicite.id, publiciteId))
-    .limit(1)
+  let ad: { id: string; slot: string } | null = null
+  try {
+    const rows = await db
+      .select({ id: publicite.id, slot: publicite.slot })
+      .from(publicite)
+      .where(eq(publicite.id, publiciteId))
+      .limit(1)
+    ad = rows[0] ?? null
+  } catch (error) {
+    // Événement best-effort : une base indisponible ne doit pas produire un 500
+    // côté client (le compteur est simplement perdu).
+    console.error("publicite_event lookup failed", error)
+    return new NextResponse(null, { status: 204 })
+  }
   if (!ad) return new NextResponse(null, { status: 204 })
 
   const referrer = clean(body.referrer, 500)

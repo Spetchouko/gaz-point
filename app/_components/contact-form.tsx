@@ -27,7 +27,7 @@ const sujets = [
   {
     objet: "Question générale",
     description:
-      "Comprendre le service, savoir si GazPoints couvre ton quartier, ou demander une précision.",
+      "Comprendre le service, savoir si GazPoints couvre votre quartier, ou demander une précision.",
   },
   {
     objet: "Signalement",
@@ -42,7 +42,7 @@ const sujets = [
   {
     objet: "Données personnelles",
     description:
-      "Accès, rectification ou suppression de tes données. Objet à utiliser en priorité.",
+      "Accès, rectification ou suppression de vos données. Objet à utiliser en priorité.",
   },
   {
     objet: "Facturation",
@@ -56,7 +56,7 @@ const sujets = [
   },
 ]
 
-type Statut = "idle" | "envoi" | "succes" | "erreur"
+type Statut = "idle" | "envoi" | "succès" | "erreur"
 
 export function ContactForm() {
   const [nom, setNom] = useState("")
@@ -82,31 +82,31 @@ export function ContactForm() {
 
       if (!response.ok) {
         setStatut("erreur")
-        setErreur(data?.error ?? "L'envoi a échoué. Réessaie plus tard.")
+        setErreur(data?.error ?? "L'envoi a échoué. Réessayez plus tard.")
         return
       }
 
-      setStatut("succes")
+      setStatut("succès")
       setNom("")
       setEmail("")
       setObjet(null)
       setMessage("")
     } catch {
       setStatut("erreur")
-      setErreur("Impossible d'envoyer le message. Vérifie ta connexion.")
+      setErreur("Impossible d'envoyer le message. Vérifiez votre connexion.")
     }
   }
 
   return (
     <section
       id="ecrire"
-      className="w-full scroll-mt-16 border-y bg-muted/50 py-16 md:py-24"
+      className="w-full scroll-mt-16 border-t border-border bg-muted/50 py-16 md:py-24"
     >
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
           <Badge variant="secondary" className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]">
             <Send className="size-3.5" />
-            Avant d'écrire
+            Avant d’écrire
           </Badge>
 
           <h2 className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
@@ -115,13 +115,13 @@ export function ContactForm() {
           </h2>
 
           <p className="mt-4 text-pretty text-base text-muted-foreground sm:text-lg">
-            Un objet clair, c'est une réponse en quelques heures au lieu de
-            plusieurs jours. Tu n'as aucun compte à créer.
+            Un objet clair, c’est une réponse en quelques heures au lieu de
+            plusieurs jours. Vous n’avez aucun compte à créer.
           </p>
         </div>
 
         <div className="mx-auto mt-12 grid max-w-5xl gap-6 lg:grid-cols-[1.25fr_1fr]">
-          <Card className="transition-all hover:shadow-md">
+          <Card className="transition-all hover:shadow-sm">
             <CardHeader>
               <CardTitle className="text-xl">Le formulaire</CardTitle>
               <CardDescription>
@@ -131,11 +131,11 @@ export function ContactForm() {
             </CardHeader>
 
             <CardContent>
-              {statut === "succes" ? (
-                <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900 *:data-[slot=alert-description]:text-emerald-800">
+              {statut === "succès" ? (
+                <Alert className="border-success/20 bg-success/5 text-success *:data-[slot=alert-description]:text-success">
                   <AlertTitle>Message envoyé</AlertTitle>
                   <AlertDescription>
-                    Merci ! Ta demande est bien reçue, nous te répondons par
+                    Merci ! Votre demande est bien reçue, nous vous répondons par
                     email sous 48 h ouvrées.
                   </AlertDescription>
                 </Alert>
@@ -151,7 +151,7 @@ export function ContactForm() {
                         autoComplete="name"
                         value={nom}
                         onChange={(event) => setNom(event.target.value)}
-                        placeholder="Ton nom complet"
+                        placeholder="Votre nom complet"
                       />
                     </div>
 
@@ -165,7 +165,7 @@ export function ContactForm() {
                         autoComplete="email"
                         value={email}
                         onChange={(event) => setEmail(event.target.value)}
-                        placeholder="ton@email.com"
+                        placeholder="votre@email.com"
                       />
                     </div>
                   </div>
@@ -177,7 +177,7 @@ export function ContactForm() {
                       onValueChange={(value) => setObjet(value ?? "")}
                     >
                       <SelectTrigger id="contact-objet" className="w-full">
-                        <SelectValue placeholder="Choisis un objet" />
+                        <SelectValue placeholder="Choisissez un objet" />
                       </SelectTrigger>
                       <SelectContent>
                         {sujets.map((sujet) => (
@@ -199,13 +199,13 @@ export function ContactForm() {
                       maxLength={5000}
                       value={message}
                       onChange={(event) => setMessage(event.target.value)}
-                      placeholder="Décris ta demande en quelques lignes…"
+                      placeholder="Décrivez votre demande en quelques lignes…"
                     />
                   </div>
 
                   {statut === "erreur" && erreur && (
                     <Alert variant="destructive">
-                      <AlertTitle>Échec de l'envoi</AlertTitle>
+                      <AlertTitle>Échec de l’envoi</AlertTitle>
                       <AlertDescription>{erreur}</AlertDescription>
                     </Alert>
                   )}
@@ -237,13 +237,13 @@ export function ContactForm() {
             <CardHeader>
               <CardTitle className="text-xl">Les objets possibles</CardTitle>
               <CardDescription>
-                Aucun objet n'est obligatoire, mais voici les plus courants.
+                Aucun objet n’est obligatoire, mais voici les plus courants.
               </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-4">
               {sujets.map((sujet) => (
-                <div key={sujet.objet} className="border-b pb-4 last:border-b-0 last:pb-0">
+                <div key={sujet.objet} className="border-b border-border pb-4 last:border-b-0 last:pb-0">
                   <p className="text-sm font-medium text-foreground">
                     {sujet.objet}
                   </p>
@@ -255,12 +255,12 @@ export function ContactForm() {
 
               <p className="flex items-start gap-2 rounded-lg bg-muted/60 p-3 text-xs leading-relaxed text-muted-foreground">
                 <Mail className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-                Tu préfères ton propre client email ? Écris directement à{" "}
+                Vous préférez votre propre client email ? Écris directement à{" "}
                 <a
-                  href="mailto:petchouko@gmail.com"
+                  href="mailto:gazpoints@gmail.com"
                   className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
                 >
-                  petchouko@gmail.com
+                  gazpoints@gmail.com
                 </a>
                 .
               </p>

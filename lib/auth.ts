@@ -13,6 +13,53 @@ import {
 } from "better-auth/plugins";
 import { sendVerificationEmail } from "@/lib/email";
 import { recordConversionFromHeaders } from "@/lib/publicite-attribution";
+import { isBuildPhase, optionalEnv } from "@/lib/env";
+import { createNotification, buildNotificationLink } from "@/lib/notifications";
+
+// Valeurs utilisées uniquement pendant `next build` et en développement.
+// En production (`next start`), l'absence de configuration lève une erreur
+// explicite au démarrage plutôt que de laisser Better Auth utiliser un secret
+// par défaut (faille de sécurité) ou déduire l'origine de chaque requête.
+const DEV_SECRET = "gazpoints-development-only-secret-do-not-use-in-production";
+const BUILD_SECRET = "gazpoints-build-time-only-secret-do-not-use-in-production";
+const DEV_BASE_URL = "http://localhost:3000";
+
+function resolveAuthSecret(): string {
+  const secret = optionalEnv("BETTER_AUTH_SECRET");
+  if (secret) return secret;
+  if (isBuildPhase) return BUILD_SECRET;
+  if (process.env.NODE_ENV !== "production") return DEV_SECRET;
+  throw new Error(
+    "[auth] BETTER_AUTH_SECRET est requis en production. Générez-en un avec `openssl rand -base64 32`."
+  );
+}
+
+function resolveBaseURL(): string {
+  const configured =
+    optionalEnv("BETTER_AUTH_URL") ?? optionalEnv("NEXT_PUBLIC_SITE_URL");
+  if (configured) return configured.replace(/\/+$/, "");
+  if (isBuildPhase || process.env.NODE_ENV !== "production") return DEV_BASE_URL;
+  throw new Error(
+    "[auth] BETTER_AUTH_URL (ou NEXT_PUBLIC_SITE_URL) est requis en production."
+  );
+}
+
+const authBaseURL = resolveBaseURL();
+const authSecret = resolveAuthSecret();
+
+// Ne déclarer Google que si les deux identifiants sont fournis : sinon Better
+// Auth émet un avertissement à chaque instanciation (build et runtime).
+const googleClientId = optionalEnv("GOOGLE_CLIENT_ID");
+const googleClientSecret = optionalEnv("GOOGLE_CLIENT_SECRET");
+const socialProviders =
+  googleClientId && googleClientSecret
+    ? {
+        google: {
+          clientId: googleClientId,
+          clientSecret: googleClientSecret,
+        },
+      }
+    : {};
 
 async function getRoleFromRegisterCookie(): Promise<"client" | "vendor"> {
   // Lecture côté serveur via l'en-tête cookie.
@@ -27,12 +74,15 @@ async function getRoleFromRegisterCookie(): Promise<"client" | "vendor"> {
 }
 
 export const auth = betterAuth({
+    baseURL: authBaseURL,
+    secret: authSecret,
     database: drizzleAdapter(db, {
         provider: "pg",
         schema,
     }),
     // Autoriser les origines de confiance pour éviter l'erreur "Invalid origin"
     trustedOrigins: [
+        authBaseURL,
         "https://gazpoints.com",
         "https://www.gazpoints.com",
         "http://localhost:3000",
@@ -45,20 +95,70 @@ export const auth = betterAuth({
                 required: false,
                 input: true,
             },
+            phoneVerified: {
+                type: "boolean",
+                required: false,
+                defaultValue: false,
+                input: false,
+            },
+            phoneNumberVerified: {
+                type: "boolean",
+                required: false,
+                defaultValue: false,
+                input: false,
+            },
             role: {
                 type: "string",
                 required: false,
                 defaultValue: "client",
                 input: true,
             },
+            image: {
+                type: "string",
+                required: false,
+                input: true,
+            },
+            isActive: {
+                type: "boolean",
+                required: false,
+                defaultValue: true,
+                input: false,
+            },
+            mustChangePassword: {
+                type: "boolean",
+                required: false,
+                defaultValue: false,
+                input: false,
+            },
+            approvalStatus: {
+                type: "string",
+                required: false,
+                defaultValue: "none",
+                input: false,
+            },
+            approvalRequestedAt: {
+                type: "date",
+                required: false,
+                input: false,
+            },
+            approvalProcessedAt: {
+                type: "date",
+                required: false,
+                input: false,
+            },
+            approvalProcessedBy: {
+                type: "string",
+                required: false,
+                input: false,
+            },
+            rejectionReason: {
+                type: "string",
+                required: false,
+                input: false,
+            },
         },
     },
-    socialProviders: {
-        google: {
-            clientId: process.env.GOOGLE_CLIENT_ID as string,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-        },
-    },
+    socialProviders,
     account: {
         accountLinking: {
             enabled: true,
@@ -78,8 +178,9 @@ export const auth = betterAuth({
     // n'empêche pas la création du compte et soit signalé clairement à l'utilisateur.
     // Le renvoi emprunte la même route (cooldown serveur de 60 s).
     emailVerification: {
-        // Pas d'envoi automatique par le cœur de Better Auth : on garde la main
-        // sur le déclenchement et la gestion des erreurs d'envoi.
+        // L'envoi est geré explicitement par la route POST /api/auth/email-otp/send-verification
+        // appelee apres l'inscription. sendOnSignUp desactive pour eviter un double envoi
+        // (Better Auth + route explicite) qui invaliderait le premier code (strategie rotate).
         sendOnSignUp: false,
         // Une session est créée dès que le code est validé (utilisateur connecté).
         autoSignInAfterVerification: true,
@@ -97,12 +198,16 @@ export const auth = betterAuth({
         // Valider le format camerounais : +237 suivi de 9 chiffres.
         phoneNumberValidator: async (phone: string) => {
           const clean = phone.replace(/\s/g, "")
-          return /^\+237\d{9}$/.test(clean)
+          // Format standard: +237 suivi de 9 chiffres
+          const standardFormat = /^\+237\d{9}$/.test(clean)
+          // Format avec espaces: +237 suivi de 9 chiffres avec séparateurs
+          const spacedFormat = /^\+237\s\d{2}\s\d{2}\s\d{2}\s\d{2}$/.test(phone)
+          return standardFormat || spacedFormat
         },
         // Envoi du code OTP. On ne simule jamais l'envoi ; si cette fonction
         // n'est pas remplacée par une vraie intégration, Better Auth lèvera
         // SEND_OTP_NOT_IMPLEMENTED.
-        sendOTP: async ({ phoneNumber, code }: { phoneNumber: string; code: string }) => {
+        sendOTP: async () => {
           throw new Error("L'envoi de code SMS n'est pas encore configuré. Veuillez activer la vérification par email ou configurer un fournisseur SMS.")
         },
         // Meilleure pratique : stocker le statut de vérification dans les champs
@@ -160,6 +265,27 @@ export const auth = betterAuth({
                     } catch (e) {
                         console.error("publicite signup conversion failed", e)
                     }
+                    
+                    // Notifier les administrateurs de la nouvelle inscription
+                    try {
+                        const [admins] = await db
+                          .select({ id: schema.user.id })
+                          .from(schema.user)
+                          .where(eq(schema.user.role, "admin"))
+                          .limit(10)
+                        
+                        for (const admin of admins) {
+                          await createNotification({
+                            userId: admin.id,
+                            type: "admin",
+                            title: "Nouvel utilisateur inscrit",
+                            message: `Un nouvel utilisateur (${user.name ?? user.email}) s'est inscrit sur la plateforme.`,
+                            link: buildNotificationLink("admin", String(user.id ?? ""), "admin"),
+                          })
+                        }
+                    } catch {
+                      // Ignorer les erreurs de notification
+                    }
                 },
             },
             // Au mise à jour du profil (ex: après validation SMS), on peut
@@ -178,27 +304,36 @@ export const auth = betterAuth({
         session: {
             create: {
                 // Sécurité : un compte désactivé (isActive=false) ne peut pas se connecter
+                // Bloquer la connexion tant que l'email n'est pas vérifié.
+                // On lève une erreur explicite pour que Better Auth renvoie un message clair
+                // au lieu de bloquer silencieusement (ce qui donnait "Identifiants incorrects").
                 before: async (session: Record<string, unknown>) => {
                     const userId = String(session.userId ?? "")
                     if (!userId) return true
                     const [row] = await db
-                        .select({ isActive: schema.user.isActive })
+                        .select({ isActive: schema.user.isActive, emailVerified: schema.user.emailVerified })
                         .from(schema.user)
                         .where(eq(schema.user.id, userId))
                         .limit(1)
-                    if (!row || row.isActive === false) return false
-                    // Bloquer la connexion tant que l'email n'est pas vérifié.
-                    // (La création de session est ensuite interceptée par la vérification
-                    //  côté client via useSession + route protégée, mais ce garde added here.)
-                    const [userRow] = await db
-                        .select({ emailVerified: schema.user.emailVerified })
-                        .from(schema.user)
-                        .where(eq(schema.user.id, userId))
-                        .limit(1)
-                    if (userRow && userRow.emailVerified === false) return false
+                    if (!row || row.isActive === false) {
+                        throw new Error("Ce compte a été désactivé. Contactez le support.")
+                    }
+                    if (row.emailVerified === false) {
+                        throw new Error("Veuillez vérifier votre adresse email avant de vous connecter. Un code de vérification vous a été envoyé.")
+                    }
                     return true
                 },
                 after: async (session: Record<string, unknown>) => {
+                    const userId = String(session.userId ?? "")
+                    // Enregistrer la date et heure de la dernière connexion réussie.
+                    try {
+                        await db
+                            .update(schema.user)
+                            .set({ lastLoginAt: new Date() })
+                            .where(eq(schema.user.id, userId))
+                    } catch (e) {
+                        console.error("user last_login_at update failed", e)
+                    }
                     // Connexion réelle : journalisée pour les statistiques de trafic
                     try {
                         await db.insert(schema.trafficEvent).values({
@@ -209,7 +344,7 @@ export const auth = betterAuth({
                             utmSource: null,
                             utmMedium: null,
                             utmCampaign: null,
-                            userId: String(session.userId ?? ""),
+                            userId: userId,
                             consented: false,
                         })
                     } catch (e) {
@@ -246,7 +381,7 @@ export const auth = betterAuth({
         },
       } satisfies EmailOTPOptions),
       phoneNumber({
-        sendOTP: async ({ phoneNumber: _phoneNumber, code }: { phoneNumber: string; code: string }) => {
+        sendOTP: async () => {
           throw new Error("L'envoi de code SMS n'est pas encore configuré. Veuillez activer la vérification par email ou configurer un fournisseur SMS.")
         },
       } satisfies PhoneNumberOptions),

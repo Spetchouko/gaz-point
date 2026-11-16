@@ -16,6 +16,19 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Variables d'environnement
+
+Copiez `.env.example` en `.env` et renseignez les valeurs :
+
+```bash
+cp .env.example .env
+```
+
+`DATABASE_URL`, `BETTER_AUTH_SECRET` et `BETTER_AUTH_URL` (ou
+`NEXT_PUBLIC_SITE_URL`) sont obligatoires en production. `pnpm build` ne
+nécessite aucune de ces valeurs : les pages qui lisent la base de données sont
+rendues à la demande, et les secrets runtime ne sont validés qu'au démarrage.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

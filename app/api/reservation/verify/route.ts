@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
 import { reservation, pointDeVente } from "@/db/schema"
-import { eq, and } from "drizzle-orm"
-import { requirePro } from "@/lib/session"
+import { eq } from "drizzle-orm"
+import { getProUser } from "@/lib/session"
+
+const RESERVATION_CODE_LENGTH = 10
 
 export async function POST(req: NextRequest) {
   try {
-    const { user, role } = await requirePro()
+    const auth = await getProUser()
+    if (!auth) {
+      return NextResponse.json({ error: "Accès réservé aux vendeurs" }, { status: 401 })
+    }
+    const { user, role } = auth
     if (role !== "vendor") {
       return NextResponse.json({ error: "Accès réservé aux vendeurs" }, { status: 403 })
     }
@@ -14,9 +20,9 @@ export async function POST(req: NextRequest) {
     const body = (await req.json().catch(() => null)) as { code?: string } | null
     const code = body?.code?.trim().toUpperCase()
 
-    if (!code || code.length !== 12) {
+    if (!code || code.length !== RESERVATION_CODE_LENGTH) {
       return NextResponse.json(
-        { error: "Code de réservation invalide (12 caractères requis)" },
+        { error: `Code de réservation invalide (${RESERVATION_CODE_LENGTH} caractères requis)` },
         { status: 400 }
       )
     }

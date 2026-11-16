@@ -92,18 +92,18 @@ export function ConsentBanner() {
     <div
       role="region"
       aria-label="Consentement au suivi d'audience"
-      className="fixed bottom-4 left-1/2 z-50 w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 rounded-xl border bg-card/95 p-4 shadow-lg backdrop-blur sm:p-5"
+      className="fixed bottom-4 left-1/2 z-50 w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 rounded-xl border bg-card/95 p-4 shadow-sm backdrop-blur sm:p-5"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
         <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
           <Cookie className="size-4 text-primary" />
         </div>
         <div className="flex-1 space-y-1">
-          <p className="text-sm font-semibold">Gestion du suivi d&apos;audience</p>
+          <p className="text-sm font-semibold">Gestion du suivi d’audience</p>
           <p className="text-sm text-muted-foreground">
             Nous mesurons anonymement le trafic (pages visitées, inscriptions) et la
             performance des publicités (impressions, clics, conversions) pour améliorer
-            GazPoints. Aucune donnée personnelle n&apos;est transmise. En cas de clic sur une
+            GazPoints. Aucune donnée personnelle n’est transmise. En cas de clic sur une
             publicité, un identifiant anonyme et un cookie publicitaire (gz_ad_ref, 30 jours)
             servent uniquement à mesurer son efficacité.
           </p>

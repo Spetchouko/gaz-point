@@ -1,104 +1,69 @@
-// @ts-nocheck
-/*
- * Service Worker GazPoints - Stratégie de cache sécurisée
- * - Mise en cache "stale-while-revalidate" pour les assets statiques
- * - Réseau-first pour les API et pages dynamiques (auth, session)
- * - Mise en cache refusée pour les pages sensibles
- * - Mise à jour en arrière-plan
+/**
+ * PWA utilities and type definitions.
  */
 
-const CACHE_NAME = "gazpoints-v1"
-const STATIC_ASSETS = [
-  "/_next/static/css/*.css",
-  "/_next/static/js/*.js",
-  "/images/*.png",
-  "/images/*.jpg",
-  "/favicon.ico",
-  "/web-app-manifest-*.png",
-]
+export interface ServiceWorkerRegistrationOptions {
+  scope: string
+  type?: "classic" | "module"
+  scriptUrl?: string
+}
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS.map((asset) => new Request(asset)))
-    })
-  )
-  self.skipWaiting()
-})
+export interface ServiceWorkerState {
+  active: boolean
+  installing: boolean
+  waiting: boolean
+  updatefound: boolean
+  controller?: ServiceWorker
+  error?: boolean
+}
 
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((name) => {
-          if (name !== CACHE_NAME) {
-            return caches.delete(name)
-          }
-          return Promise.resolve()
-        })
-      )
-    })
-  )
-  self.clients.claim()
-})
+export interface ServiceWorker extends EventTarget {
+  readonly state: ServiceWorkerState
+  addEventListener<K extends keyof WorkerEventMap>(
+    type: K,
+    listener: (this: ServiceWorker, ev: WorkerEventMap[K]) => unknown,
+    options?: AddEventListenerOptions | boolean,
+  ): void
+  removeEventListener<K extends keyof WorkerEventMap>(
+    type: K,
+    listener: (this: ServiceWorker, ev: WorkerEventMap[K]) => unknown,
+    options?: boolean,
+  ): void
+  postMessage(message: any, transfer?: Transferable[]): void
+  readonly controller: ServiceWorker | null
+  addEventListener(type: "message", listener: ((ev: MessageEvent) => unknown)): void
+  removeEventListener(type: "message", listener: ((ev: MessageEvent) => unknown)): void
+}
 
-self.addEventListener("fetch", (event) => {
-  const url = new URL(event.request.url)
-
-  if (url.origin !== self.location.origin) {
-    return
+declare global {
+  interface Navigator {
+    readonly devMenu: boolean
   }
+}
 
-  if (
-    url.pathname.startsWith("/api/") ||
-    url.pathname.startsWith("/auth/") ||
-    url.pathname.startsWith("/verification") ||
-    url.pathname.startsWith("/validation") ||
-    url.pathname.startsWith("/inscription") ||
-    url.pathname.startsWith("/connexion")
-  ) {
-    event.respondWith(
-      fetch(event.request).then((response) => {
-        if (!response || !response.ok) {
-          return response
-        }
-        return response
-      }).catch(() => {
-        return caches.match(event.request).then((cached) => cached || null)
-      })
-    )
-    return
+/** Check if PWA service worker is available. */
+export function hasServiceWorker(): boolean {
+  return typeof navigator !== "undefined" && "serviceWorker" in navigator
+}
+
+/** Register the app's service worker. Returns a promise resolving on success. */
+export async function registerServiceWorker(
+  scriptUrl: string = "/sw.js",
+  options?: Omit<ServiceWorkerRegistrationOptions, "scriptUrl">,
+): Promise<ServiceWorkerRegistration> {
+  if (!hasServiceWorker()) {
+    throw new Error("Service worker not supported")
   }
+  return navigator.serviceWorker.register(scriptUrl, options)
+}
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        const fetchPromise = fetch(event.request).then((freshResponse) => {
-          try {
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, freshResponse.clone())
-            })
-          } catch (e) {
-            console.error("SW cache update error:", e)
-          }
-          return freshResponse
-        })
-        return cachedResponse || fetchPromise
-      }
-
-      return fetch(event.request).then((fetchResponse) => {
-        if (!fetchResponse || !fetchResponse.ok) {
-          return fetchResponse
-        }
-        try {
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, fetchResponse.clone())
-          })
-        } catch (e) {
-          console.error("SW cache add error:", e)
-        }
-        return fetchResponse
-      })
-    })
-  )
-})
+/** Show the native install prompt if available. */
+export function promptInstall(): boolean {
+  const w = typeof navigator !== "undefined" ? navigator.serviceWorker : undefined
+  if (!w?.controller) return false
+  if (String(w.controller?.state) === "active") {
+    if ("onLine" in navigator) return true
+    return typeof Notification !== "undefined" && Notification.permission === "granted"
+  }
+  return false
+}

@@ -1,231 +1,479 @@
 @import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+/* ------------------------------------------------------------------ */
+/* Système de design GazPoints — Tailwind v4 (shadcn/ui base-nova)      */
+/*                                                                     */
+/* Tous les composants consomment exclusivement ces tokens sémantiques. */
+/* Aucune couleur de palette Tailwind brute (emerald, sky, red...) ne   */
+/* doit être écrite en dur dans le code applicatif.                     */
+/*                                                                     */
+/* Palette de marque :                                                  */
+/*  Vert profond  #16834A → primaire, actions principales               */
+/*  Bleu navy     #174A7E → secondaire, informations, dashboards        */
+/*  Bleu info     #1F6FB2 → accents informatifs (AA ≥ 5:1 sur blanc)    */
+/*  Fonds clairs  mint #EAF5EE · sky #EFF4FA · sand #F5F7F6             */
+/*  Textes        #17251E (gris profond) · #5B6B62 (secondaire)         */
+/*  États         success #17804A · warning #B45309 · erreur #B42318    */
+/* ------------------------------------------------------------------ */
+@theme {
+  /* Marque */
+  --color-primary: #16834a;
+  --color-primary-strong: #0e5c34;
+  --color-primary-foreground: #ffffff;
 
-:root {
-  --background: oklch(0.9703 0.0083 271.3290);
-  --foreground: oklch(0.0672 0 0);
-  --card: oklch(1.0000 0 0);
-  --card-foreground: oklch(0.0672 0 0);
-  --popover: oklch(1.0000 0 0);
-  --popover-foreground: oklch(0.0672 0 0);
-  --primary: oklch(0.3776 0.1447 264.5076);
-  --primary-foreground: oklch(0.9055 0.0307 265.3249);
-  --secondary: oklch(0.1448 0 0);
-  --secondary-foreground: oklch(0.9758 0.0057 264.5326);
-  --muted: oklch(0.9702 0 0);
-  --muted-foreground: oklch(0.3904 0 0);
-  --accent: oklch(0.3776 0.1447 264.5076);
-  --accent-foreground: oklch(1.0000 0 0);
-  --destructive: oklch(0.4386 0.1753 14.1958);
-  --destructive-foreground: oklch(1.0000 0 0);
-  --border: oklch(0.9158 0 0);
-  --input: oklch(1.0000 0 0);
-  --ring: oklch(0.4467 0.1272 265.6182);
-  --chart-1: oklch(0.4774 0.1654 256.4882);
-  --chart-2: oklch(0.7479 0.1375 176.0249);
-  --chart-3: oklch(0.6342 0.2449 325.1505);
-  --chart-4: oklch(0.4635 0.1206 39.4515);
-  --chart-5: oklch(0.6645 0.1195 176.9037);
-  --sidebar: oklch(0.2244 0.0722 254.3366);
-  --sidebar-foreground: oklch(0.9714 0.0094 279.6908);
-  --sidebar-primary: oklch(0.3776 0.1447 264.5076);
-  --sidebar-primary-foreground: oklch(1.0000 0 0);
-  --sidebar-accent: oklch(0.3776 0.1447 264.5076);
-  --sidebar-accent-foreground: oklch(1.0000 0 0);
-  --sidebar-border: oklch(0.8699 0 0);
-  --sidebar-ring: oklch(0.3776 0.1447 264.5076);
-  --font-sans: Inter, ui-sans-serif, sans-serif, system-ui;
-  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  --radius: 0.5rem;
-  --shadow-x: 0;
-  --shadow-y: 1px;
-  --shadow-blur: 2px;
-  --shadow-spread: 0px;
-  --shadow-opacity: 0.05;
-  --shadow-color: #1a2137;
-  --shadow-2xs: 0 1px 2px 0px hsl(225.5172 35.8025% 15.8824% / 0.03);
-  --shadow-xs: 0 1px 2px 0px hsl(225.5172 35.8025% 15.8824% / 0.03);
-  --shadow-sm: 0 1px 2px 0px hsl(225.5172 35.8025% 15.8824% / 0.05), 0 1px 2px -1px hsl(225.5172 35.8025% 15.8824% / 0.05);
-  --shadow: 0 1px 2px 0px hsl(225.5172 35.8025% 15.8824% / 0.05), 0 1px 2px -1px hsl(225.5172 35.8025% 15.8824% / 0.05);
-  --shadow-md: 0 1px 2px 0px hsl(225.5172 35.8025% 15.8824% / 0.05), 0 2px 4px -1px hsl(225.5172 35.8025% 15.8824% / 0.05);
-  --shadow-lg: 0 1px 2px 0px hsl(225.5172 35.8025% 15.8824% / 0.05), 0 4px 6px -1px hsl(225.5172 35.8025% 15.8824% / 0.05);
-  --shadow-xl: 0 1px 2px 0px hsl(225.5172 35.8025% 15.8824% / 0.05), 0 8px 10px -1px hsl(225.5172 35.8025% 15.8824% / 0.05);
-  --shadow-2xl: 0 1px 2px 0px hsl(225.5172 35.8025% 15.8824% / 0.13);
-  --tracking-normal: 0em;
-  --spacing: 0.24rem;
+  --color-navy: #174a7e;
+  --color-navy-strong: #103657;
+  --color-navy-foreground: #ffffff;
 
-  /* Couleurs de section pour le design trois couleurs */
-  --section-light: oklch(0.98 0.01 30);
-  --section-green: oklch(0.92 0.08 140);
-  --section-blue: oklch(0.95 0.06 200);
+  /* États sémantiques (contraste AA vérifié sur les fonds clairs) */
+  --color-success: #17804a;
+  --color-success-strong: #0f6b38;
+  --color-success-foreground: #ffffff;
+
+  --color-warning: #b45309;
+  --color-warning-strong: #92400e;
+  --color-warning-foreground: #ffffff;
+
+  --color-info: #1f6fb2;
+  --color-info-strong: #174a7e;
+  --color-info-foreground: #ffffff;
+
+  --color-destructive: #b42318;
+  --color-destructive-strong: #99131c;
+  --color-destructive-foreground: #ffffff;
+
+  /* Fonds alternés des sections */
+  --color-mint: #eaf5ee;
+  --color-sky: #eff4fa;
+  --color-sand: #f5f7f6;
+
+  /* Neutres */
+  --color-background: #ffffff;
+  --color-foreground: #17251e;
+  --color-card: #ffffff;
+  --color-card-foreground: #17251e;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #17251e;
+  --color-muted: #f5f7f6;
+  --color-muted-foreground: #5b6b62;
+  --color-border: #dfe8e2;
+  --color-input: #dfe8e2;
+  --color-ring: #16834a;
+
+  /* Secondary = bleu marque pâle (badges, boutons) */
+  --color-secondary: #eff4fa;
+  --color-secondary-foreground: #174a7e;
+
+  /* Graphiques (convention shadcn/ui : --color-chart-1..5) */
+  --color-chart-1: #16834a;
+  --color-chart-2: #174a7e;
+  --color-chart-3: #1f6fb2;
+  --color-chart-4: #b45309;
+  --color-chart-5: #5b6b62;
+
+  /* Typographie — une seule famille : Geist, chargée via next/font
+     (voir app/layout.tsx). Mono héritée du même système. */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Arrondis */
+  --radius-4xl: 2rem;
+
+  /* Hauteur du header unifiée (48px = 3rem = h-12) */
+  --header-height: 3rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Animations tw-animate-css (fallback si le plugin n'est pas installé)*/
+/* ------------------------------------------------------------------ */
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes zoom-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes zoom-out {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.95); }
+}
+
+@keyframes slide-in-from-top-2 {
+  from { transform: translateY(-0.5rem); }
+  to { transform: translateY(0); }
+}
+
+@keyframes slide-in-from-bottom-2 {
+  from { transform: translateY(0.5rem); }
+  to { transform: translateY(0); }
+}
+
+@keyframes slide-in-from-left-2 {
+  from { transform: translateX(-0.5rem); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slide-in-from-right-2 {
+  from { transform: translateX(0.5rem); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slide-in-from-bottom-4 {
+  from { transform: translateY(1rem); }
+  to { transform: translateY(0); }
+}
+
+@keyframes slide-in-from-right-8 {
+  from { transform: translateX(2rem); }
+  to { transform: translateX(0); }
+}
+
+.animate-in {
+  animation: fade-in both;
+}
+
+.animate-out {
+  animation: fade-out both;
+}
+
+.fade-in-0 {
+  animation: fade-in both;
+}
+
+.fade-out-0 {
+  animation: fade-out both;
+}
+
+.zoom-in-95 {
+  animation: zoom-in both;
+}
+
+.zoom-out-95 {
+  animation: zoom-out both;
+}
+
+.slide-in-from-top-2 {
+  animation: slide-in-from-top-2 both;
+}
+
+.slide-in-from-bottom-2 {
+  animation: slide-in-from-bottom-2 both;
+}
+
+.slide-in-from-left-2 {
+  animation: slide-in-from-left-2 both;
+}
+
+.slide-in-from-right-2 {
+  animation: slide-in-from-right-2 both;
+}
+
+.slide-in-from-bottom-4 {
+  animation: slide-in-from-bottom-4 both;
+}
+
+.slide-in-from-right-8 {
+  animation: slide-in-from-right-8 both;
+}
+
+/* ------------------------------------------------------------------ */
+/* Base                                                                */
+/* ------------------------------------------------------------------ */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+/* Les titres utilisent la police de marque, resserrée et équilibrée */
+h1,
+h2,
+h3,
+.font-heading {
+  font-family: var(--font-heading);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+/* Sélection aux couleurs de marque (::selection) */
+::selection {
+  background-color: color-mix(in oklch, var(--color-primary) 18%, transparent);
+  color: var(--color-foreground);
+}
+
+/* Focus visible pour navigation clavier */
+*:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+/* Tableaux responsifs */
+table {
+  width: 100%;
+  font-size: 0.875rem;
+}
+
+/* Images : pas de débordement sur mobile */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Respect de prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Zones tactiles confortables */
+.btn,
+.link-hover {
+  @media (hover: hover) {
+    transition: color 0.2s, background-color 0.2s, border-color 0.2s;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Layout — Réservation d'espace pour header sticky                   */
+/* ------------------------------------------------------------------ */
+
+/* Utilitaire pour réserver l'espace du header (48px) sous le header sticky */
+@utility pt-header {
+  padding-top: var(--header-height);
+}
+
+/* Variante pour les pages avec header public (h-12 = 48px) */
+@utility pt-header-public {
+  padding-top: var(--header-height);
+}
+
+/* Variante pour les dashboards (header h-14 = 56px) */
+@utility pt-header-dashboard {
+  padding-top: 3.5rem;
+}
+
+@utility pt-header-admin {
+  padding-top: 3.5rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Utilitaires de marque                                               */
+/* ------------------------------------------------------------------ */
+
+/* Dégradé de section : bleu clair → blanc (haut de page, sections clés) */
+@utility bg-gradient-section {
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-sky) 0%,
+    var(--color-background) 100%
+  );
+}
+
+/* Dégradé inversé : blanc → bleu clair */
+@utility bg-gradient-section-reverse {
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-background) 0%,
+    var(--color-sky) 100%
+  );
+}
+
+/* Dégradé teinté vert : blanc → mint (sections positives / CTA) */
+@utility bg-gradient-section-mint {
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-background) 0%,
+    var(--color-mint) 100%
+  );
 }
 
 .dark {
-  --background: oklch(0.1149 0 0);
-  --foreground: oklch(0.9851 0 0);
-  --card: oklch(0.1448 0 0);
-  --card-foreground: oklch(0.9851 0 0);
-  --popover: oklch(0.2046 0 0);
-  --popover-foreground: oklch(0.9851 0 0);
-  --primary: oklch(0.6497 0.1195 264.3295);
-  --primary-foreground: oklch(0.1448 0 0);
-  --secondary: oklch(0.2046 0 0);
-  --secondary-foreground: oklch(0.9851 0 0);
-  --muted: oklch(0.2686 0 0);
-  --muted-foreground: oklch(0.7090 0 0);
-  --accent: oklch(0.3715 0 0);
-  --accent-foreground: oklch(0.9851 0 0);
-  --destructive: oklch(0.6496 0.1202 12.3014);
-  --destructive-foreground: oklch(0.9851 0 0);
-  --border: oklch(0.2768 0 0);
-  --input: oklch(0.1822 0 0);
-  --ring: oklch(0.6497 0.1195 264.3295);
-  --chart-1: oklch(0.6497 0.1195 264.3295);
-  --chart-2: oklch(0.5196 0.1801 260.0927);
-  --chart-3: oklch(0.4532 0.1101 122.1507);
-  --chart-4: oklch(0.6500 0.1195 40.0066);
-  --chart-5: oklch(0.7008 0.0999 180.0402);
-  --sidebar: oklch(0.1448 0 0);
-  --sidebar-foreground: oklch(0.9851 0 0);
-  --sidebar-primary: oklch(0.6497 0.1195 264.3295);
-  --sidebar-primary-foreground: oklch(0.9851 0 0);
-  --sidebar-accent: oklch(0.2686 0 0);
-  --sidebar-accent-foreground: oklch(0.9851 0 0);
-  --sidebar-border: oklch(0.2768 0 0);
-  --sidebar-ring: oklch(0.6497 0.1195 264.3295);
-  --font-sans: Inter, ui-sans-serif, sans-serif, system-ui;
-  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  --radius: 0.5rem;
-  --shadow-x: 0;
-  --shadow-y: 1px;
-  --shadow-blur: 2px;
-  --shadow-spread: 0px;
-  --shadow-opacity: 0.05;
-  --shadow-color: #000000;
-  --shadow-2xs: 0 1px 2px 0px hsl(0 0% 0% / 0.03);
-  --shadow-xs: 0 1px 2px 0px hsl(0 0% 0% / 0.03);
-  --shadow-sm: 0 1px 2px 0px hsl(0 0% 0% / 0.05), 0 1px 2px -1px hsl(0 0% 0% / 0.05);
-  --shadow: 0 1px 2px 0px hsl(0 0% 0% / 0.05), 0 1px 2px -1px hsl(0 0% 0% / 0.05);
-  --shadow-md: 0 1px 2px 0px hsl(0 0% 0% / 0.05), 0 2px 4px -1px hsl(0 0% 0% / 0.05);
-  --shadow-lg: 0 1px 2px 0px hsl(0 0% 0% / 0.05), 0 4px 6px -1px hsl(0 0% 0% / 0.05);
-  --shadow-xl: 0 1px 2px 0px hsl(0 0% 0% / 0.05), 0 8px 10px -1px hsl(0 0% 0% / 0.05);
-  --shadow-2xl: 0 1px 2px 0px hsl(0 0% 0% / 0.13);
+  /* Fond principal — vert profond */
+  --color-background: #101713;
+  --color-foreground: #F4F7F4;
+
+  /* Cartes et popovers — vert soutenu */
+  --color-card: #1B2A21;
+  --color-card-foreground: #F4F7F4;
+  --color-popover: #1B2A21;
+  --color-popover-foreground: #F4F7F4;
+
+  /* Muted et bordures — vert très sombre */
+  --color-muted: #17231C;
+  --color-muted-foreground: #B8C5BB;
+  --color-border: #35483B;
+  --color-input: #35483B;
+  --color-ring: #16834a;
+
+  /* États — verts ajustés */
+  --color-primary: #16834a;
+  --color-primary-strong: #1f9b5c;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #17231C;
+  --color-secondary-foreground: #F4F7F4;
+  --color-success: #17804a;
+  --color-success-strong: #1f9b5c;
+  --color-success-foreground: #ffffff;
+  --color-warning: #b45309;
+  --color-warning-strong: #d97706;
+  --color-warning-foreground: #ffffff;
+  --color-info: #1f6fb2;
+  --color-info-strong: #2a8fd6;
+  --color-info-foreground: #ffffff;
+  --color-destructive: #b42318;
+  --color-destructive-strong: #d62828;
+  --color-destructive-foreground: #ffffff;
+
+  /* Fonds alternés — sombres et cohérents */
+  --color-mint: #0f1a14;
+  --color-sky: #0f1520;
+  --color-sand: #111418;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
-  --font-serif: var(--font-serif);
-
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-
-  --shadow-2xs: var(--shadow-2xs);
-  --shadow-xs: var(--shadow-xs);
-  --shadow-sm: var(--shadow-sm);
-  --shadow: var(--shadow);
-  --shadow-md: var(--shadow-md);
-  --shadow-lg: var(--shadow-lg);
-  --shadow-xl: var(--shadow-xl);
-  --shadow-2xl: var(--shadow-2xl);
-
-  --animate-demo-float: demo-float 8s ease-in-out infinite;
-  --animate-demo-swipe: demo-swipe 2.6s cubic-bezier(0.45, 0, 0.2, 1) infinite;
-
-  @keyframes demo-float {
-    0%, 100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-7px);
-    }
-  }
-
-  @keyframes demo-swipe {
-    0%, 10% {
-      transform: translateY(28px) rotate(0deg);
-      opacity: 0;
-    }
-    18% {
-      opacity: 1;
-    }
-    46% {
-      transform: translateY(12px) rotate(-1deg);
-      opacity: 1;
-    }
-    72% {
-      transform: translateY(-30px) rotate(-2deg);
-      opacity: 1;
-    }
-    82%, 100% {
-      transform: translateY(-32px) rotate(-2deg);
-      opacity: 0;
-    }
-  }
+[aria-disabled="true"] {
+  pointer-events: none;
+  opacity: 0.5;
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-  }
+/* ------------------------------------------------------------------ */
+/* Layout — Administration (référence Microsoft Outlook)              */
+/*                                                                    */
+/* Barre supérieure, barre latérale et zone de travail pleine largeur */
+/* ------------------------------------------------------------------ */
+@utility admin-top-bar {
+  height: 3.5rem; /* h-14 */
+}
+@utility admin-sidebar-width {
+  width: 16rem; /* w-64 */
+}
+@utility admin-sidebar-collapsed-width {
+  width: 4rem; /* w-16 */
 }
 
-@layer utilities {
-  .bg-gradient-section {
-    background: linear-gradient(180deg,
-        oklch(0.98 0.01 265) 0%,
-        oklch(0.97 0.015 220) 50%,
-        oklch(0.96 0.02 176) 100%);
-  }
+/* Barre latérale : séparation fine, pas d'encadrement lourd */
+.admin-sidebar {
+  @apply border-r border-border bg-card;
+}
 
-  .bg-gradient-section-reverse {
-    background: linear-gradient(180deg,
-        oklch(0.96 0.02 176) 0%,
-        oklch(0.97 0.015 220) 50%,
-        oklch(0.98 0.01 265) 100%);
-  }
+/* Zone de travail : occupe toute la surface disponible, pas de conteneur centré */
+.admin-workarea {
+  @apply flex-1 min-w-0;
+}
+.admin-workarea__main {
+  @apply flex-1 overflow-auto bg-background;
+}
+.admin-workarea__padding {
+  @apply px-4 py-3;
+}
+
+/* Carte statique compacte (Outlook) */
+.admin-stat-card {
+  @apply rounded-xl border bg-card p-4 transition-colors hover:bg-muted/40;
+}
+.admin-stat-card__value {
+  @apply text-2xl font-bold tracking-tight text-foreground;
+}
+.admin-stat-card__label {
+  @apply text-xs text-muted-foreground;
+}
+.admin-stat-card__icon {
+  @apply flex size-10 shrink-0 items-center justify-center rounded-xl border bg-muted/50 text-primary;
+}
+
+/* En-tête de page admin : titre + sous-titre */
+.admin-page-header {
+  @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-1;
+}
+.admin-page-title {
+  @apply text-2xl font-bold tracking-tight;
+}
+.admin-page-subtitle {
+  @apply text-sm text-muted-foreground;
+}
+
+/* Actions de page : groupe de boutons à droite de l'en-tête */
+.admin-page-actions {
+  @apply flex items-center gap-2;
+}
+
+/* Tableaux compacts : lignes serrées, séparateurs fins */
+.admin-table {
+  @apply rounded-lg border bg-card overflow-hidden;
+}
+.admin-table__wrap {
+  @apply overflow-x-auto;
+}
+.admin-table table {
+  @apply w-full text-sm;
+}
+.admin-table thead tr {
+  @apply border-b border-border bg-muted/50;
+}
+.admin-table th {
+  @apply px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground;
+}
+.admin-table td {
+  @apply px-4 py-3;
+}
+.admin-table tbody tr {
+  @apply divide-y divide-border hover:bg-muted/50 transition-colors;
+}
+
+/* Boutons d'action secondaires uniformes */
+.admin-btn {
+  @apply inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium transition-colors outline-none;
+}
+.admin-btn--primary {
+  @apply bg-primary text-primary-foreground hover:bg-primary-strong;
+}
+.admin-btn--secondary {
+  @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
+}
+.admin-btn--ghost {
+  @apply bg-background text-foreground hover:bg-muted hover:text-foreground;
+}
+.admin-btn--icon {
+  @apply h-9 w-9;
+}
+
+/* Séparateurs de section fins et élégants */
+.admin-section {
+  @apply space-y-5;
+}
+.admin-section__title {
+  @apply text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2;
+}
+
+/* Badge d'état compact */
+.admin-badge {
+  @apply inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider;
+}
+
+/* Overlay mobile du menu latéral */
+.admin-mobile-overlay {
+  @apply fixed inset-0 z-50 flex lg:hidden;
 }

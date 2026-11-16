@@ -45,23 +45,23 @@ function useReducedMotion() {
 
 const steps = [
   {
-    title: "Tu cherches une bouteille",
-    description: "Ouvre la recherche GazPoints depuis ta zone.",
+    title: "Vous cherchez une bouteille",
+    description: "Ouvrez la recherche GazPoints depuis votre zone.",
   },
   {
-    title: "Tu sélectionnes la marque",
-    description: "Tradex, Total, SCTM ou Bocom : choisis ta bouteille.",
+    title: "Vous sélectionnez la marque",
+    description: "Tradex, Total, SCTM ou Bocom : choisissez votre bouteille.",
   },
   {
-    title: "Tu sélectionnes le format",
-    description: "6 kg, 12,5 kg ou 15 kg selon ton foyer.",
+    title: "Vous sélectionnez le format",
+    description: "6 kg, 12,5 kg ou 15 kg selon votre foyer.",
   },
   {
-    title: "Tu vois les disponibilités",
+    title: "Vous voyez les disponibilités",
     description: "Points à proximité, statut et dernière mise à jour.",
   },
   {
-    title: "Tu ouvres un point de vente",
+    title: "Vous ouvrez un point de vente",
     description: "Adresse, téléphone et détails du dépôt.",
   },
   {
@@ -69,8 +69,8 @@ const steps = [
     description: "Repère le point directement sur le plan.",
   },
   {
-    title: "Tu appelles ou ouvres l'itinéraire",
-    description: "Appelle le vendeur ou lance l'itinéraire.",
+    title: "Tu appelles ou ouvres l’itinéraire",
+    description: "Appelle le vendeur ou lance l’itinéraire.",
   },
 ]
 
@@ -81,7 +81,7 @@ const badgeClass: Record<Availability, string> = {
 }
 
 /* ------------------------------------------------------------------ */
-/* Blocs d'interface du téléphone (décoratifs : wrapper aria-hidden)   */
+/* Blocs d’interface du téléphone (décoratifs : wrapper aria-hidden)   */
 /* ------------------------------------------------------------------ */
 
 function Screen({ children }: { children: ReactNode }) {
@@ -96,7 +96,7 @@ function AppHeader() {
   return (
     <div className="flex items-center justify-between border-b border-primary/10 bg-primary px-3 py-2">
       <div className="flex items-center gap-1.5">
-        <span className="flex size-5 items-center justify-center rounded-md bg-white shadow-sm">
+        <span className="flex size-5 items-center justify-center rounded-md bg-card shadow-sm">
           <Image
             src="/brand/logo.png"
             alt=""
@@ -181,7 +181,7 @@ function SearchScreen({
         </div>
         <div className="space-y-1.5 pt-1">
           <p className="text-[8px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Quelle bouteille tu cherches ?
+            Quelle bouteille cherchez-vous ?
           </p>
           <SelectField
             label="Marque"
@@ -297,7 +297,7 @@ function DetailScreen() {
             </p>
             <p className="flex items-center gap-1">
               <MapPin className="size-2.5 shrink-0" />
-              À {point.distanceKm.toLocaleString("fr-FR")} km de ta position
+              À {point.distanceKm.toLocaleString("fr-FR")} km de votre position
             </p>
             <p className="flex items-center gap-1 text-zinc-500">
               Mis à jour : {formatAge(point.updatedMinutesAgo)} · {point.brands.join(", ")}
@@ -346,7 +346,7 @@ function MapScreen() {
           </div>
           <div className="mt-1.5 flex items-center justify-center gap-1 rounded-lg bg-primary py-1.5 text-[9px] font-bold text-primary-foreground">
             <Navigation className="size-2.5" />
-            Ouvrir l'itinéraire
+            Ouvrir l’itinéraire
           </div>
         </div>
       </div>
@@ -493,7 +493,7 @@ function PhoneMockup({
               )}
             >
               <span className="absolute size-7 rounded-full bg-primary/15" />
-              <span className="size-3.5 rounded-full bg-primary/70 shadow-md ring-2 ring-white/70" />
+              <span className="size-3.5 rounded-full bg-primary/70 shadow-md ring-2 ring-border/50" />
             </span>
           )}
 
@@ -548,7 +548,7 @@ export function Demonstration() {
         </div>
 
         <div className="mx-auto mt-12 grid max-w-4xl items-center gap-10 lg:grid-cols-2 lg:gap-8">
-          {/* Rail d'étapes (à droite sur desktop) */}
+          {/* Rail d’étapes (à droite sur desktop) */}
           <div className="order-2 lg:order-2">
             <ol className="space-y-2">
               {steps.map((stepItem, index) => {

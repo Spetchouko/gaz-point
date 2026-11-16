@@ -10,11 +10,11 @@ export const size = { width: 1200, height: 630 }
 
 export const contentType = "image/png"
 
-const INK = "#010101"
-const NAVY = "#19398D"
-const MUTED = "#454545"
-const BORDER = "#E3E3E3"
-const PAPER = "#F5F5F2"
+const INK = "#17251E"
+const NAVY = "#174A7E"
+const MUTED = "#5B6B62"
+const BORDER = "#DFE8E2"
+const PAPER = "#F5F7F6"
 
 const REASSURANCES = ["Gratuit", "Sans abonnement", "Sans carte bancaire"]
 
@@ -64,7 +64,7 @@ export default async function OpengraphImage() {
           display: "flex",
           flexDirection: "column",
           position: "relative",
-          backgroundColor: "#F3F5FB",
+          backgroundColor: "#EFF4FA",
           fontFamily: "Inter",
           padding: 64,
         }}
@@ -77,7 +77,7 @@ export default async function OpengraphImage() {
             width: 580,
             height: 580,
             borderRadius: 9999,
-            backgroundColor: "rgba(25, 57, 141, 0.06)",
+            backgroundColor: "rgba(23, 74, 126, 0.06)",
           }}
         />
 
@@ -163,7 +163,7 @@ export default async function OpengraphImage() {
                     gap: 8,
                     padding: "10px 18px",
                     borderRadius: 9999,
-                    backgroundColor: "rgba(25, 57, 141, 0.1)",
+                    backgroundColor: "rgba(23, 74, 126, 0.1)",
                   }}
                 >
                   <CheckIcon />

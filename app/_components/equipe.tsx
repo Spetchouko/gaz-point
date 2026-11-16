@@ -13,7 +13,7 @@ const equipe = [
     name: "PETCHOUKO Solomon",
     image: petchImage,
     description:
-      "A lancé GazPoints après avoir constat le problème sur le terrain, quartier par quartier.",
+      "A lancé GazPoints après avoir constaté le problème sur le terrain et dans les ménages.",
   },
   {
     role: "Produit et développement",
@@ -33,14 +33,14 @@ const equipe = [
 
 export function Equipe() {
   return (
-    <section className="w-full py-16 md:py-24 bg-muted/50 border-y">
+    <section className="w-full py-16 md:py-24 bg-muted/50 border-t border-border">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
           <Badge
             variant="secondary"
             className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]"
           >
-            L'équipe
+            L’équipe
           </Badge>
 
           <h2 className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
@@ -57,14 +57,14 @@ export function Equipe() {
         <ul className="mx-auto mt-12 grid max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {equipe.map((membre) => (
             <li key={membre.role}>
-              <Card className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-md">
+              <Card className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-sm">
                 <CardHeader className="text-center">
                   <Avatar className="mx-auto size-12 ring-1 ring-primary/20">
                     {membre.image ? (
                       <AvatarImage
                         src={membre.image}
                         alt={membre.name}
-                        className={membre.role === "Fondation et direction" ? "bg-white" : ""}
+                        className={membre.role === "Fondation et direction" ? "bg-card" : ""}
                       />
                     ) : (
                       <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
@@ -94,19 +94,19 @@ export function Equipe() {
 
         <p className="mx-auto mt-10 flex max-w-3xl flex-wrap items-center justify-center gap-2 text-sm text-muted-foreground">
           <Mail className="size-4 shrink-0" aria-hidden />
-          Tu es point de vente et tu veux apparaître sur GazPoints ?{" "}
+          Vous êtes point de vente et vous voulez apparaître sur GazPoints ?{" "}
           <Link
             href="/inscription"
             className="font-medium text-foreground underline underline-offset-4 transition-colors hover:text-primary"
           >
-            Crée ton espace vendeur
+            Créez votre espace vendeur
           </Link>
           , écris-nous à{" "}
           <a
-            href="mailto:petchouko@gmail.com"
+            href="mailto:gazpoints@gmail.com"
             className="font-medium text-foreground underline underline-offset-4 transition-colors hover:text-primary"
           >
-            petchouko@gmail.com
+            gazpoints@gmail.com
           </a>
           , ou passe par la{" "}
           <Link

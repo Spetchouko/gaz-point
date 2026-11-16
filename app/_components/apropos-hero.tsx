@@ -11,7 +11,7 @@ const points = [
 
 export function AproposHero() {
   return (
-    <section className="w-full border-b bg-muted/50 py-16 md:py-24">
+    <section className="w-full border-t border-border bg-muted/50 py-16 md:py-24">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-4xl text-center">
           <Badge
@@ -23,14 +23,14 @@ export function AproposHero() {
 
           <h1 className="mt-6 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
             GazPoints veut supprimer{" "}
-            <span className="text-primary">les déplacements à vide</span> pour
+            <span className="text-primary">les déplacements incertains</span> pour
             chercher du gaz.
           </h1>
 
           <p className="mt-5 text-pretty text-base text-muted-foreground sm:text-lg max-w-3xl mx-auto">
-            Nous construisons un service d&apos;information sur les points de vente
-            de gaz de cuisson. Pas une boutique, pas un revendeur : un moyen de
-            savoir, avant de partir, où il reste du gaz. Deux profils : les
+            Nous construisons un service d’information sur les points de vente
+            de gaz pour les ménages. Pas une boutique, pas un revendeur : un moyen de
+            se renseigner, avant de se déplacer. Deux profils : les
             usagers y entrent gratuitement, les vendeurs y publient leurs
             stocks.
           </p>
@@ -49,7 +49,7 @@ export function AproposHero() {
         </div>
 
         <div className="mt-12 mx-auto">
-          <Card className="mx-auto flex size-36 shrink-0 items-center justify-center border-none bg-background p-8 shadow-md lg:size-48">
+          <Card className="mx-auto flex size-36 shrink-0 items-center justify-center border-none bg-background p-8 shadow-sm lg:size-48">
             <Image
               src="/brand/logo.png"
               alt=""

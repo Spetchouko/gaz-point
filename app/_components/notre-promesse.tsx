@@ -25,13 +25,13 @@ const engagements = [
     icon: Ban,
     title: "Aucune promesse en trop",
     description:
-      "Nous ne garantissons pas qu'une bouteille restera disponible jusqu'à ton arrivée. Nous montrons ce qui a été signalé, et quand.",
+      "Nous ne garantissons pas qu'une bouteille restera disponible jusqu'à votre arrivée. Nous montrons ce qui a été signalé, et quand.",
   },
 ]
 
 export function NotrePromesse() {
   return (
-    <section className="w-full py-16 md:py-24 bg-muted/50 border-y">
+    <section className="w-full py-16 md:py-24 bg-muted/50 border-t border-border">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
           <Badge
@@ -42,12 +42,12 @@ export function NotrePromesse() {
           </Badge>
 
           <h2 className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            Quatre règles qu'on{" "}
+            Quatre règles qu’on{" "}
             <span className="text-primary">négocie pas</span>
           </h2>
 
           <p className="mt-5 text-pretty text-base text-muted-foreground sm:text-lg">
-            Elles sont la raison d'être du service. Si GazPoints cessent de les
+            Elles sont la raison d’être du service. Si GazPoints cesse de les
             respecter, il ne sert plus à rien.
           </p>
         </div>
@@ -55,7 +55,7 @@ export function NotrePromesse() {
         <ul className="mx-auto mt-12 grid max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {engagements.map((engagement) => (
             <li key={engagement.title}>
-              <Card className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-md">
+              <Card className="transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-sm">
                 <CardHeader>
                   <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
                     <engagement.icon className="size-5" aria-hidden />

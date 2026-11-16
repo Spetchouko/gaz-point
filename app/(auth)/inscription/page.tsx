@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import { ModernCard } from "@/app/_components/card-modern"
 import { User, Store } from "lucide-react"
 import Link from "next/link"
 
@@ -48,12 +48,12 @@ export default function InscriptionPage() {
         <div className="grid max-w-140 mx-auto gap-4 md:grid-cols-2">
 
           {/* Carte Usager - Bleu clair */}
-          <Card
+          <ModernCard
             className={cn(
               CARD_HEIGHT,
-              "flex flex-col items-center rounded-xl bg-sky-50 border-sky-200 hover:border-sky-400 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer p-4",
+              "flex flex-col items-center rounded-xl bg-info/5 border-info/20 hover:border-info/40 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 cursor-pointer p-4",
               selectedRole === "user"
-                ? "border-sky-500 ring-2 ring-sky-500/20 bg-sky-100"
+                ? "border-info ring-2 ring-info/20 bg-info/10"
                 : ""
             )}
             onClick={handleUsager}
@@ -63,20 +63,20 @@ export default function InscriptionPage() {
             aria-label="Compte usager"
           >
             <div className="relative mb-3 shrink-0">
-              <div className="size-12 rounded-full bg-sky-100 flex items-center justify-center mx-auto border border-sky-200">
-                <User className="size-5 text-sky-600" />
+              <div className="size-12 rounded-full bg-info/10 flex items-center justify-center mx-auto border border-info/20">
+                <User className="size-5 text-info" />
               </div>
               {selectedRole === "user" && (
-                <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 size-3 rounded-full bg-sky-600 ring-2 ring-background" />
+                <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 size-3 rounded-full bg-info ring-2 ring-background" />
               )}
             </div>
-            <h3 className="font-heading text-sm font-semibold text-sky-800 mb-1">Compte usager</h3>
-            <p className="text-xs text-sky-600/80 text-center mb-4 leading-snug px-1 flex-1">
+            <h3 className="font-heading text-sm font-semibold text-info mb-1">Compte usager</h3>
+            <p className="text-xs text-info/80 text-center mb-4 leading-snug px-1 flex-1">
               Trouvez facilement les disponibilités de gaz près de vous.
             </p>
             <Button
               type="button"
-              className="w-full px-5 py-2 text-sm font-medium bg-sky-600 hover:bg-sky-700 text-white"
+              className="w-full px-5 py-2 text-sm font-medium bg-info hover:bg-info-strong text-white"
               onClick={(e) => {
                 e.stopPropagation()
                 handleUsager()
@@ -85,15 +85,15 @@ export default function InscriptionPage() {
             >
               Continuer
             </Button>
-          </Card>
+          </ModernCard>
 
           {/* Carte Vendeur - Vert/Émeraude clair */}
-          <Card
+          <ModernCard
             className={cn(
               CARD_HEIGHT,
-              "flex flex-col items-center rounded-xl bg-emerald-50 border-emerald-200 hover:border-emerald-400 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer p-4",
+              "flex flex-col items-center rounded-xl bg-success/5 border-success/20 hover:border-success/40 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 cursor-pointer p-4",
               selectedRole === "vendor"
-                ? "border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-100"
+                ? "border-success ring-2 ring-success/20 bg-success/10"
                 : ""
             )}
             onClick={handleVendor}
@@ -103,20 +103,20 @@ export default function InscriptionPage() {
             aria-label="Compte vendeur"
           >
             <div className="relative mb-3 shrink-0">
-              <div className="size-12 rounded-full bg-emerald-100 flex items-center justify-center mx-auto border border-emerald-200">
-                <Store className="size-5 text-emerald-600" />
+              <div className="size-12 rounded-full bg-success/10 flex items-center justify-center mx-auto border border-success/20">
+                <Store className="size-5 text-success" />
               </div>
               {selectedRole === "vendor" && (
-                <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 size-3 rounded-full bg-emerald-600 ring-2 ring-background" />
+                <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 size-3 rounded-full bg-success ring-2 ring-background" />
               )}
             </div>
-            <h3 className="font-heading text-sm font-semibold text-emerald-800 mb-1">Compte vendeur</h3>
-            <p className="text-xs text-emerald-600/80 text-center mb-4 leading-snug px-1 flex-1">
+            <h3 className="font-heading text-sm font-semibold text-success mb-1">Compte vendeur</h3>
+            <p className="text-xs text-success/80 text-center mb-4 leading-snug px-1 flex-1">
               Publiez et gérez la disponibilité de vos bouteilles de gaz.
             </p>
             <Button
               type="button"
-              className="w-full px-5 py-2 text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="w-full px-5 py-2 text-sm font-medium bg-success hover:bg-success-strong text-white"
               onClick={(e) => {
                 e.stopPropagation()
                 handleVendor()
@@ -125,7 +125,7 @@ export default function InscriptionPage() {
             >
               Continuer
             </Button>
-          </Card>
+          </ModernCard>
 
         </div>
 
@@ -141,7 +141,7 @@ export default function InscriptionPage() {
             href="/"
             className="text-sm text-muted-foreground hover:text-foreground hover:underline"
           >
-            Retour à l&apos;accueil
+            Retour à l’accueil
           </Link>
         </div>
 

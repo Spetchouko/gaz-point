@@ -189,7 +189,7 @@ export function AdminPointForm({
                   name="formats"
                   value={formState.formats}
                   onChange={(e) => setFormState((s) => ({ ...s, formats: e.target.value }))}
-                  placeholder="Ex: 6 kg, 12,5 kg"
+                  placeholder="Ex: 6 kg, 12,5 kg, 15 kg, 25 kg, 35 kg, 50 kg"
                 />
               </div>
             </div>

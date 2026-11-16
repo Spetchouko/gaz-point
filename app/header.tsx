@@ -3,211 +3,255 @@
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { usePathname, useRouter } from "next/navigation"
-import { LogIn, Menu, Shield, UserPlus } from "lucide-react"
+import { usePathname } from "next/navigation"
+import { LogIn, Menu, Sun, X, UserPlus, UserRound, UserRoundPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import {
   Sheet,
   SheetTrigger,
   SheetContent,
-  SheetHeader,
-  SheetTitle,
 } from "@/components/ui/sheet"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { authClient } from "@/lib/auth-client"
+import { useSafeSession } from "@/lib/auth-session"
 import { UserMenu } from "@/app/_components/user-menu"
+import { useTheme } from "@/app/_components/theme-provider"
+import { useTranslation } from "@/lib/i18n"
+import { Shield } from "lucide-react"
 
 const navLinks = [
-  { href: "/", label: "Accueil" },
-  { href: "/#comment-ca-marche", label: "Comment ça marche" },
-  { href: "/#faq", label: "FAQ" },
-  { href: "/a-propos", label: "À propos" },
-  { href: "/contact", label: "Contact" },
+  { href: "/", labelKey: "nav_home" },
+  { href: "/#comment-ca-marche", labelKey: "nav_how" },
+  { href: "/#faq", labelKey: "nav_faq" },
+  { href: "/a-propos", labelKey: "nav_about" },
+  { href: "/contact", labelKey: "nav_contact" },
 ]
 
 export function Header() {
+  const t = useTranslation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
-  const router = useRouter()
   const closeMenu = () => setMobileMenuOpen(false)
-  const { data: session } = authClient.useSession()
+  const { data: session } = useSafeSession()
   const isAuthenticated = !!session?.user
+  const { theme, setTheme } = useTheme()
+
+  // Green brand background for the header
+  const headerClassName =
+    "sticky top-0 z-50 bg-primary border-b border-primary/20"
+
+  const navLinkClassName =
+    "relative px-3 py-2 text-sm font-medium text-white/90 transition-colors hover:text-white after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:origin-left after:scale-x-0 after:bg-white after:transition-transform hover:after:scale-x-100"
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/85 backdrop-blur-md supports-backdrop-filter:bg-background/65">
-      <div className="container mx-auto flex h-16 items-center justify-between gap-6 px-4 lg:px-32 lg:grid lg:grid-cols-[auto_1fr_auto] lg:gap-8">
+    <header className={headerClassName}>
+      <div className="container mx-auto flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8">
+        {/* Logo à gauche dans un cercle blanc */}
         <Link
           href="/"
           onClick={closeMenu}
-          className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
+          className="flex items-center gap-3 transition-opacity hover:opacity-80 shrink-0"
         >
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#ffffff] ring-2 ring-black/5 shadow-xs">
+          <span className="flex size-9 items-center justify-center rounded-full bg-white shrink-0">
             <Image
               src="/brand/logo.png"
-              alt=""
-              width={28}
-              height={28}
-              className="h-8 w-8 object-contain"
+              alt="GazPoints"
+              width={24}
+              height={24}
+              className="size-5 object-contain"
+              style={{ width: "auto", height: "auto" }}
             />
           </span>
-          <span className="font-heading text-lg font-bold tracking-tight text-foreground">
+          <span className="font-heading text-lg font-bold tracking-tight text-white">
             GazPoints
           </span>
         </Link>
 
-        <nav className="hidden items-center justify-center gap-6 lg:flex">
-          {navLinks.map((link) => (
-            <NavLink
-              key={link.href}
-              {...link}
-              active={pathname === link.href}
-            />
-          ))}
+        {/* Navigation principale - alignée à droite sur desktop, masquée sur mobile */}
+        <nav
+          aria-label="Navigation principale"
+          className="hidden flex-1 flex items-center justify-end lg:flex"
+        >
+          <ul className="flex items-center gap-1 lg:gap-4" role="menubar">
+            {navLinks.map((link) => (
+              <li key={link.href} role="none">
+                <Link
+                  href={link.href}
+                  role="menuitem"
+                  className={navLinkClassName}
+                >
+                  {t(link.labelKey)}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </nav>
 
-        <div className="flex items-center gap-2">
-          {isAuthenticated ? (
-            <UserMenu />
-          ) : (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="gap-2 hidden sm:flex">
-                  <UserPlus className="size-4" />
-                  <span>Compte</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link
-                    href="/inscription"
-                    className="flex items-center gap-2"
-                  >
-                    <UserPlus className="size-4" />
-                    S&apos;inscrire
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link
-                    href="/connexion"
-                    className="flex items-center gap-2"
-                  >
-                    <LogIn className="size-4" />
-                    Se connecter
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link
-                    href="/admin/login"
-                    className="flex items-center gap-2"
-                  >
-                    <Shield className="size-4" />
-                    Connexion administrateur
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-
-          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-            <SheetTrigger
-              render={
-                <button
-                  type="button"
-                  className="inline-flex size-9 items-center justify-center rounded-lg text-foreground transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 lg:hidden"
-                >
-                  <Menu className="size-5" />
-                  <span className="sr-only">Ouvrir le menu</span>
-                </button>
-              }
-            />
-            <SheetContent side="right" className="w-[85vw] max-w-sm flex flex-col justify-between p-0">
-              <div>
-                <SheetHeader className="border-b p-4">
-                  <SheetTitle>Menu</SheetTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Navigation GazPoints
-                  </p>
-                </SheetHeader>
-
-                <nav className="flex flex-col gap-1 p-4">
-                  {navLinks.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={closeMenu}
-                      aria-current={pathname === link.href ? "page" : undefined}
-                      className="rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
-                  <div className="border-t my-2" />
-                  <div className="space-y-2">
-                    <p className="px-3 py-2 text-sm font-medium text-muted-foreground">Compte</p>
-                    {isAuthenticated ? (
-                      <UserMenu isMobile />
-                    ) : (
-                      <>
-                        <Link
-                          href="/inscription"
-                          onClick={closeMenu}
-                          className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
-                        >
-                          <UserPlus className="size-4" />
-                          S&apos;inscrire
-                        </Link>
-                        <Link
-                          href="/connexion"
-                          onClick={closeMenu}
-                          className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
-                        >
-                          <LogIn className="size-4" />
-                          Se connecter
-                        </Link>
-                        <Link
-                          href="/admin/login"
-                          onClick={closeMenu}
-                          className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
-                        >
-                          <Shield className="size-4" />
-                          Connexion administrateur
-                        </Link>
-                      </>
+        {/* Actions utilisateur / Menu mobile */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="hidden sm:flex items-center gap-2 shrink-0">
+            {isAuthenticated ? (
+              <UserMenu />
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t("nav_account")}
+                    className={cn(
+                      "hidden sm:inline-flex text-white/90 hover:text-white",
+                      "rounded-lg cursor-pointer relative",
+                      "hover:bg-white/10 transition-colors",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
                     )}
-                  </div>
-                </nav>
-              </div>
+                  >
+                    <UserRoundPlus className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 bg-background">
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/connexion"
+                      className="flex items-center gap-2 text-foreground"
+                    >
+                      <LogIn className="size-4" />
+                      {t("nav_login")}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/inscription"
+                      className="flex items-center gap-2 text-foreground"
+                    >
+                      <UserPlus className="size-4" />
+                      {t("nav_register")}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/connexion-admin"
+                      className="flex items-center gap-2 text-foreground"
+                    >
+                      <Shield className="size-4" />
+                      Connexion administrateur
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={t("nav_theme")}
+              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+              className="hidden sm:inline-flex rounded-lg cursor-pointer text-white/90 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <Sun className="size-4" />
+            </Button>
+          </div>
+
+          {/* Bouton menu hamburger mobile */}
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 rounded-lg lg:hidden text-white"
+                aria-label={t("nav_menu")}
+              >
+                {mobileMenuOpen ? (
+                  <X className="size-5" />
+                ) : (
+                  <Menu className="size-5" />
+                )}
+                <span className="sr-only">{t("nav_menu")}</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent
+              side="right"
+              className="flex w-[85vw] max-w-sm flex-col p-0 bg-background overflow-hidden"
+            >
+              <nav className="flex flex-col gap-1 p-4 flex-1 overflow-y-auto">
+                {/* Section 1: Navigation principale */}
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={closeMenu}
+                    aria-current={pathname === link.href ? "page" : undefined}
+                    className={cn(
+                      "rounded-lg px-3 py-3 text-base font-medium transition-colors",
+                      pathname === link.href
+                        ? "bg-primary/10 text-primary border-l-2 border-primary pl-2"
+                        : "text-foreground hover:bg-primary hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
+                    )}
+                  >
+                    {t(link.labelKey)}
+                  </Link>
+                ))}
+
+                <div className="my-2 border-t border-border" />
+
+                {/* Section 2: Compte */}
+                <div className="space-y-2">
+                  <p className="px-3 py-2 text-sm font-medium text-muted-foreground">
+                    Votre compte
+                  </p>
+                  {isAuthenticated ? (
+                    <UserMenu isMobile />
+                  ) : (
+                    <>
+                      <Link
+                        href="/connexion"
+                        onClick={closeMenu}
+                        className="flex items-center gap-2 rounded-lg px-3 py-3 text-base font-medium transition-colors text-foreground hover:bg-primary hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
+                      >
+                        <LogIn className="size-4" />
+                        Se connecter
+                      </Link>
+                      <Link
+                        href="/inscription"
+                        onClick={closeMenu}
+                        className="flex items-center gap-2 rounded-lg px-3 py-3 text-base font-medium transition-colors text-foreground hover:bg-primary hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
+                      >
+                        <UserPlus className="size-4" />
+                        Créer un compte
+                      </Link>
+                      <Link
+                        href="/connexion-admin"
+                        onClick={closeMenu}
+                        className="flex items-center gap-2 rounded-lg px-3 py-3 text-base font-medium transition-colors text-foreground hover:bg-primary hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
+                      >
+                        <Shield className="size-4" />
+                        Connexion administrateur
+                      </Link>
+                    </>
+                  )}
+                </div>
+
+                <div className="my-2 border-t border-border" />
+
+                {/* Section 3: Apparence */}
+                <button
+                  onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+                  aria-label={t("nav_theme")}
+                  className="flex items-center gap-2 rounded-lg px-3 py-3 text-base font-medium transition-colors text-foreground hover:bg-primary hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground cursor-pointer"
+                >
+                  <Sun className="size-5" />
+                  <span>Changer de thème</span>
+                </button>
+              </nav>
             </SheetContent>
           </Sheet>
         </div>
       </div>
     </header>
-  )
-}
-
-function NavLink({
-  href,
-  label,
-  active,
-}: {
-  href: string
-  label: string
-  active?: boolean
-}) {
-  return (
-    <Link
-      href={href}
-      data-active={active || undefined}
-      className="relative py-1 text-sm font-medium text-muted-foreground transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:origin-left after:scale-x-0 after:bg-primary after:transition-transform hover:text-foreground hover:after:scale-x-100 data-active:text-foreground data-active:after:scale-x-100"
-    >
-      {label}
-    </Link>
   )
 }

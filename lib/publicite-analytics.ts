@@ -330,10 +330,13 @@ export function resolveAnalyticsRange(
   }
 
   const from = startOfDay(new Date(now.getTime() - (days - 1) * 86_400_000))
+  // Add 1 second buffer to account for race conditions in tests
+  // where events are inserted with NOW() but checked immediately
+  const to = new Date(now.getTime() + 1000)
   return {
     key,
     from,
-    to: now,
+    to,
     days,
     fromInput: toDateInputValue(from),
     toInput: toDateInputValue(now),

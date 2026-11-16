@@ -16,7 +16,7 @@ function argValue(name) {
   return i >= 0 ? args[i + 1] : undefined;
 }
 
-const email = (argValue("--email") || "petchouko@gmail.com").trim().toLowerCase();
+const email = (argValue("--email") || "gazpoints@gmail.com").trim().toLowerCase();
 const name = argValue("--name") || "Admin GazPoints";
 const passwordFile = argValue("--password-file");
 

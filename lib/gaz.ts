@@ -17,7 +17,7 @@ export const sourceLabel: Record<AvailabilitySource, string> = {
   administration: "Signalement de l’administration",
 }
 
-export const bottleFormats = ["6 kg", "12,5 kg", "15 kg"] as const
+export { PREDEFINED_BOTTLE_FORMATS as bottleFormats } from "@/lib/bottle-formats"
 
 export const STALE_AFTER_MS = 24 * 60 * 60 * 1000
 

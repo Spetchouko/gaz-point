@@ -4,13 +4,13 @@ import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
 
-interface BeforeInstallPromptEvent extends Event {
-  readonly platforms: string[];
-  readonly userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
-  prompt(): Promise<void>;
-}
-
 const MAX_VISITES_BEFORE_PROMPT = 3;
+
+// Type for the beforeinstallprompt event (not in standard TypeScript lib)
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
 
 export function usePwaInstallation() {
   const [showPrompt, setShowPrompt] = useState(false);
@@ -35,11 +35,9 @@ export function usePwaInstallation() {
 
   // Écouter l'événement d'installation du browser
   useEffect(() => {
-    const handleBeforeInstallPrompt = (event: Event) => {
-      // beforeinstallprompt is a non-standard event
-      const customEvent = event as BeforeInstallPromptEvent
-      customEvent.preventDefault()
-      setIsInstallable(true)
+    const handleBeforeInstallPrompt = (event: BeforeInstallPromptEvent) => {
+      event.preventDefault();
+      setIsInstallable(true);
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt as EventListener);
@@ -111,7 +109,7 @@ export function PwaInstallationBanner() {
         <div className="flex items-center gap-3">
           <Loader2 className="size-4 animate-spin opacity-70" />
           <span className="font-medium text-foreground">
-            Installer GazPoints sur votre &eacute;cran d&apos;accueil
+            Installer GazPoints sur votre écran d'accueil
           </span>
         </div>
         <div className="flex gap-2">

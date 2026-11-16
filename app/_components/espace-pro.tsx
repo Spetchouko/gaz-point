@@ -40,6 +40,7 @@ import { DashboardNav } from "@/app/_components/dashboard-nav"
 import {
   availabilityBadgeClass,
   availabilityLabel,
+  bottleFormats,
   effectiveStatus,
   formatDateTime,
   isStale,
@@ -452,7 +453,7 @@ function FormulaireSignalement({
               <SelectValue placeholder="Ex : 12,5 kg" />
             </SelectTrigger>
             <SelectContent>
-              {["6 kg", "12,5 kg", "15 kg"].map((item) => (
+              {bottleFormats.map((item) => (
                 <SelectItem key={item} value={item}>
                   {item}
                 </SelectItem>

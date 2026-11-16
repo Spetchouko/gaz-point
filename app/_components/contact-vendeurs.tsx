@@ -21,7 +21,7 @@ export function ContactVendeurs() {
   return (
     <section className="w-full py-16 md:py-24">
       <div className="container mx-auto px-4">
-        <Card className="mx-auto max-w-5xl overflow-visible border-2 border-primary bg-primary/5 p-6 md:p-10">
+        <Card className="mx-auto max-w-5xl overflow-visible border border-primary bg-primary/5 p-6 md:p-10">
           <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr] lg:gap-12">
             <div>
               <div className="flex items-center gap-3">
@@ -35,12 +35,12 @@ export function ContactVendeurs() {
               </div>
 
               <h2 className="mt-6 text-balance text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                Tu vends du gaz et tu n&apos;apparais pas encore sur GazPoints ?
+                Vendez-vous du gaz et n’apparaissez pas encore sur GazPoints ?
               </h2>
 
               <p className="mt-4 text-pretty text-base text-muted-foreground">
-                Crée ton compte Vendeur, renseigne ton dépôt et ton numéro de
-                téléphone : tu publies tes stocks en direct et tu reçois les
+                Créez votre compte Vendeur, renseignez votre dépôt et votre numéro de
+                téléphone : vous publiez vos stocks en direct et vous recevez les
                 appels des clients.
               </p>
 
@@ -63,7 +63,7 @@ export function ContactVendeurs() {
                 size="lg"
                 className="mt-8 h-12 w-full gap-2 px-6 text-base sm:w-auto"
               >
-                Créer mon espace vendeur
+                Créer un compte Vendeur
                 <ArrowRight className="size-4" />
               </Button>
             </div>
@@ -71,7 +71,7 @@ export function ContactVendeurs() {
             <Card className="h-full bg-background/80 shadow-none">
               <CardHeader>
                 <CardTitle className="text-base">
-                  Ce que ça change pour toi
+                  Ce que cela change pour vous
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -89,7 +89,7 @@ export function ContactVendeurs() {
                   ))}
                 </ul>
 
-                <Separator className="my-4" />
+                <Separator className="my-4 bg-border" />
 
                 <p className="text-xs leading-relaxed text-muted-foreground">
                   Déjà inscrit ?{" "}
@@ -97,9 +97,9 @@ export function ContactVendeurs() {
                     href="/connexion"
                     className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
                   >
-                    Connecte-toi
+                    Connectez-vous
                   </Link>{" "}
-                  pour gérer ton espace.
+                  pour gérer votre espace.
                 </p>
               </CardContent>
             </Card>

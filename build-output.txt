@@ -1,0 +1,147 @@
+$ next build
+▲ Next.js 16.3.7 (Turbopack)
+- Environments: .env
+✓ Running next.config.ts took 54ms
+- Experiments (use with caution):
+  · serverActions
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.3s
+  Skipping validation of types
+  Finished TypeScript config validation in 5ms ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/108) ...
+  Generating static pages using 7 workers (27/108) 
+  Generating static pages using 7 workers (54/108) 
+  Generating static pages using 7 workers (81/108) 
+✓ Generating static pages using 7 workers (108/108) in 2.4s
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ○ /a-propos
+├ ƒ /api/admin/analytics
+├ ƒ /api/admin/collaborateurs
+├ ƒ /api/admin/collaborateurs/[id]
+├ ƒ /api/admin/collaborateurs/[id]/reset-password
+├ ƒ /api/admin/dashboard
+├ ƒ /api/admin/disponibilites
+├ ƒ /api/admin/disponibilites/[id]/status
+├ ƒ /api/admin/overview
+├ ƒ /api/admin/points-de-vente
+├ ƒ /api/admin/points-de-vente/[id]
+├ ƒ /api/admin/points-de-vente/[id]/toggle
+├ ƒ /api/admin/publicite
+├ ƒ /api/admin/publicite/[id]
+├ ƒ /api/admin/reservations
+├ ƒ /api/admin/reservations/[id]/status
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/admin/users/[id]/toggle
+├ ƒ /api/admin/vendors/approvals
+├ ƒ /api/admin/vendors/approve
+├ ƒ /api/admin/vendors/reject
+├ ƒ /api/ads/event
+├ ƒ /api/analytics
+├ ƒ /api/auth/[...all]
+├ ƒ /api/auth/email-otp/send-verification
+├ ƒ /api/auth/email-otp/test-email
+├ ƒ /api/auth/email-otp/verify-email
+├ ƒ /api/auth/email-otp/verify-link
+├ ƒ /api/auth/password-reset/reset
+├ ƒ /api/auth/password-reset/send
+├ ƒ /api/auth/providers
+├ ƒ /api/contact
+├ ƒ /api/depot/[id]/services
+├ ƒ /api/depot/create
+├ ƒ /api/depot/mine
+├ ƒ /api/disponibilite/[id]/status
+├ ƒ /api/disponibilite/mine
+├ ƒ /api/marketing/schedule
+├ ƒ /api/notifications
+├ ƒ /api/notifications/[id]
+├ ƒ /api/notifications/bulk
+├ ƒ /api/payment/initiate
+├ ƒ /api/payment/verify/[reference]
+├ ƒ /api/payment/webhook
+├ ƒ /api/recherche
+├ ƒ /api/reservation/cancel
+├ ƒ /api/reservation/collect
+├ ƒ /api/reservation/create
+├ ƒ /api/reservation/my
+├ ƒ /api/reservation/scan
+├ ƒ /api/reservation/vendor
+├ ƒ /api/reservation/verify
+├ ƒ /api/traffic
+├ ƒ /api/user/account
+├ ƒ /api/user/avatar
+├ ƒ /api/user/me
+├ ƒ /api/user/password
+├ ƒ /api/user/permissions
+├ ƒ /api/user/profile
+├ ƒ /api/vendor/onboarding
+├ ƒ /api/vendor/signup
+├ ƒ /api/vendor/subscription
+├ ○ /apple-icon.png
+├ ○ /cgu
+├ ○ /cgv
+├ ○ /connexion
+├ ○ /connexion-admin
+├ ○ /contact
+├ ƒ /dashboard
+├ ○ /dashboard/admin
+├ ○ /dashboard/admin/analytics
+├ ○ /dashboard/admin/collaborateurs
+├ ○ /dashboard/admin/disponibilites
+├ ○ /dashboard/admin/notifications
+├ ○ /dashboard/admin/points-de-vente
+├ ○ /dashboard/admin/profil
+├ ○ /dashboard/admin/publicite
+├ ○ /dashboard/admin/reservations
+├ ○ /dashboard/admin/utilisateurs
+├ ○ /dashboard/admin/vendeurs
+├ ○ /dashboard/collaborateur
+├ ○ /dashboard/depot
+├ ○ /dashboard/depot/disponibilites
+├ ○ /dashboard/depot/reservations
+├ ○ /dashboard/depot/services
+├ ○ /dashboard/historique
+├ ○ /dashboard/notifications
+├ ○ /dashboard/parametres
+├ ○ /dashboard/profil
+├ ○ /dashboard/recherches
+├ ○ /dashboard/reservations
+├ ○ /dashboard/reservations/vendor
+├ ○ /dashboard/reservations/verify
+├ ○ /dashboard/vendeur
+├ ○ /dashboard/vendeur/notifications
+├ ○ /dashboard/vendeur/profil
+├ ○ /devenir-vendeur
+├ ○ /icon.png
+├ ○ /icon0.svg
+├ ○ /icon1.png
+├ ○ /inscription
+├ ○ /inscription/usager
+├ ○ /inscription/vendeur
+├ ○ /inscription/vendeur/configuration
+├ ○ /manifest.json
+├ ○ /mentions-legales
+├ ○ /mot-de-passe-demander
+├ ○ /mot-de-passe-oublie
+├ ○ /mot-de-passe-temporaire
+├ ○ /opengraph-image
+├ ○ /paiement/abonnement
+├ ○ /paiement/echec
+├ ○ /paiement/succes
+├ ○ /politique-confidentialite
+├ ○ /politique-cookies
+├ ○ /robots.txt
+├ ○ /services
+├ ○ /sitemap.xml
+└ ○ /validation-email
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

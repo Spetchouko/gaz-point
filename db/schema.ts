@@ -7,7 +7,9 @@ import {
   index,
   integer,
   uniqueIndex,
+  jsonb,
 } from "drizzle-orm/pg-core";
+import type { VendorInventoryEntry } from "@/lib/vendor-types";
 
 export type UserRole = "client" | "vendor" | "admin" | "collaborateur";
 export type AvailabilityStatus = "disponible" | "a_confirmer" | "indisponible";
@@ -24,6 +26,9 @@ export const user = pgTable("user", {
   role: text("role").default("client").notNull(), // 'client' | 'vendor' | 'admin' | 'collaborateur'
   image: text("image"),
   isActive: boolean("is_active").default(true).notNull(),
+  // Mot de passe temporaire : true si le collaborateur doit le changer à sa prochaine connexion.
+  // Valeur par défaut false : aucun compte existant n'est impacté.
+  mustChangePassword: boolean("must_change_password").default(false).notNull(),
   // Approbation vendeur (cf. drizzle/0011_vendor_approval.sql)
   approvalStatus: text("approval_status").default("none").notNull(), // 'none' | 'pending' | 'approved' | 'rejected'
   approvalRequestedAt: timestamp("approval_requested_at"),
@@ -35,7 +40,10 @@ export const user = pgTable("user", {
     .defaultNow()
     .$onUpdate(() => /* @__PURE */ new Date())
     .notNull(),
-});
+  lastLoginAt: timestamp("last_login_at"),
+  },
+  (table) => [index("user_role_created_at_idx").on(table.role, table.createdAt)],
+);
 
 export const session = pgTable(
   "session",
@@ -106,6 +114,13 @@ export const pointDeVente = pgTable(
     phone: text("phone"),
     brands: text("brands").array(),
     formats: text("formats").array(),
+    // Services configuration
+    deliveryEnabled: boolean("delivery_enabled").default(false).notNull(),
+    deliveryFee: integer("delivery_fee").default(0).notNull(), // FCFA
+    exchangeEnabled: boolean("exchange_enabled").default(false).notNull(),
+    exchangeBrands: text("exchange_brands").array().default([]), // Marques acceptées pour l'échange
+    exchangeFormats: text("exchange_formats").array().default([]), // Grammages acceptés pour l'échange
+    gasSaleEnabled: boolean("gas_sale_enabled").default(false).notNull(),
     vendorId: text("vendor_id").references(() => user.id, { onDelete: "set null" }),
     isActive: boolean("is_active").default(true).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -114,7 +129,10 @@ export const pointDeVente = pgTable(
       .$onUpdate(() => /* @__PURE */ new Date())
       .notNull(),
   },
-  (table) => [index("point_de_vente_vendor_id_idx").on(table.vendorId)],
+  (table) => [
+    index("point_de_vente_vendor_id_idx").on(table.vendorId),
+    index("point_de_vente_is_active_idx").on(table.isActive),
+  ],
 );
 
 export const disponibilite = pgTable(
@@ -138,13 +156,23 @@ export const disponibilite = pgTable(
     reportedBy: text("reported_by").references(() => user.id, { onDelete: "set null" }),
     reportedByName: text("reported_by_name").notNull(),
     source: text("source").notNull(), // AvailabilitySource
+    // Services additionnels
+    delivery: boolean("delivery").default(false).notNull(), // Livraison à domicile
+    exchange: boolean("exchange").default(false).notNull(), // Échange de bouteille (prix à discuter au dépôt)
+    gasSale: boolean("gas_sale").default(false).notNull(), // Vente de bouteille de gaz chargée (prix à discuter au dépôt)
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
       .$onUpdate(() => /* @__PURE */ new Date())
       .notNull(),
   },
-  (table) => [index("disponibilite_point_id_idx").on(table.pointId), index("disponibilite_vendor_id_idx").on(table.vendorId)]
+  (table) => [
+    index("disponibilite_point_id_idx").on(table.pointId),
+    index("disponibilite_vendor_id_idx").on(table.vendorId),
+    index("disponibilite_status_created_idx").on(table.status, table.createdAt),
+    index("disponibilite_brand_format_idx").on(table.brand, table.format),
+    index("disponibilite_point_id_created_at_idx").on(table.pointId, table.createdAt),
+  ]
 )
 
 export const brand = pgTable(
@@ -158,22 +186,74 @@ export const brand = pgTable(
   (table) => [uniqueIndex("brand_name_key_idx").on(table.nameKey)]
 );
 
-export const favori = pgTable(
-  "favori",
+export const pointDeVenteBouteille = pgTable(
+  "point_de_vente_bouteille",
+  {
+    id: text("id").primaryKey(),
+    pointDeVenteId: text("point_de_vente_id")
+      .notNull()
+      .references(() => pointDeVente.id, { onDelete: "cascade" }),
+    brandId: text("brand_id")
+      .notNull()
+      .references(() => brand.id, { onDelete: "cascade" }),
+    format: text("format").notNull(), // ex: '6 kg', '12,5 kg', '15 kg'
+    // Quantité réelle présente dans le dépôt (inventaire, jamais fictive).
+    quantity: integer("quantity").default(0).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("point_de_vente_bouteille_unique_idx").on(
+      table.pointDeVenteId,
+      table.brandId,
+      table.format
+    ),
+    index("point_de_vente_bouteille_point_idx").on(table.pointDeVenteId),
+    index("point_de_vente_bouteille_brand_idx").on(table.brandId),
+  ]
+);
+
+/**
+ * Brouillon d'inscription vendeur.
+ *
+ * Une seule ligne par vendeur (userId unique) : les informations saisies avant
+ * la vérification OTP sont conservées, puis reprises dans la modale de
+ * finalisation. Le point de vente public n'est créé qu'à la fin du parcours.
+ */
+export const vendorOnboarding = pgTable(
+  "vendor_onboarding",
   {
     id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
+      .unique()
       .references(() => user.id, { onDelete: "cascade" }),
-    pointId: text("point_id")
-      .notNull()
-      .references(() => pointDeVente.id, { onDelete: "cascade" }),
+    pointName: text("point_name").notNull(),
+    district: text("district").notNull(),
+    address: text("address").notNull(),
+    phone: text("phone"),
+    brands: text("brands").array().default([]).notNull(),
+    inventory: jsonb("inventory")
+      .$type<VendorInventoryEntry[]>()
+      .default([])
+      .notNull(),
+    status: text("status").default("draft").notNull(), // 'draft' | 'completed'
+    pointDeVenteId: text("point_de_vente_id").references(() => pointDeVente.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE */ new Date())
+      .notNull(),
   },
   (table) => [
-    index("favori_user_id_idx").on(table.userId),
-    uniqueIndex("favori_user_point_idx").on(table.userId, table.pointId),
-  ],
+    index("vendor_onboarding_status_idx").on(table.status),
+    index("vendor_onboarding_point_id_idx").on(table.pointDeVenteId),
+  ]
 );
 
 export const recharge = pgTable(
@@ -287,6 +367,8 @@ export const publiciteEvent = pgTable(
     index("publicite_event_publicite_id_idx").on(table.publiciteId),
     index("publicite_event_created_at_idx").on(table.createdAt),
     index("publicite_event_type_created_idx").on(table.eventType, table.createdAt),
+    index("publicite_event_conversion_type_idx").on(table.conversionType),
+    index("publicite_event_source_category_idx").on(table.sourceCategory),
   ]
 )
 
@@ -294,7 +376,7 @@ export const trafficEvent = pgTable(
   "traffic_event",
   {
     id: text("id").primaryKey(),
-    eventType: text("event_type").notNull(), // 'pageview' | 'signup' | 'signin'
+    eventType: text("event_type").notNull(), // 'pageview' | 'signup' | 'signin' | 'search_performed' | ...
     path: text("path"),
     referrer: text("referrer"),
     utmSource: text("utm_source"),
@@ -302,6 +384,10 @@ export const trafficEvent = pgTable(
     utmCampaign: text("utm_campaign"),
     userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
     consented: boolean("consented").default(false).notNull(),
+    // Identifiant de session anonyme pour regrouper les événements d'un même visiteur
+    sessionId: text("session_id"),
+    // Métadonnées strictement nécessaires (JSON), sans données personnelles sensibles
+    metadata: jsonb("metadata"),
     // Device & browser tracking
     userAgent: text("user_agent"),
     screenWidth: integer("screen_width"),
@@ -313,6 +399,11 @@ export const trafficEvent = pgTable(
   (table) => [
     index("traffic_event_created_at_idx").on(table.createdAt),
     index("traffic_event_user_agent_idx").on(table.userAgent),
+    index("traffic_event_path_type_idx").on(table.path, table.eventType),
+    index("traffic_event_user_id_idx").on(table.userId),
+    index("traffic_event_created_at_path_idx").on(table.createdAt, table.path),
+    index("traffic_event_session_id_idx").on(table.sessionId),
+    index("traffic_event_event_type_created_idx").on(table.eventType, table.createdAt),
   ]
 )
 
@@ -386,16 +477,161 @@ export const reservation = pgTable(
   ]
 )
 
+export const vendorSubscription = pgTable(
+  "vendor_subscription",
+  {
+    id: text("id").primaryKey(),
+    vendorId: text("vendor_id")
+      .notNull()
+      .unique()
+      .references(() => user.id, { onDelete: "cascade" }),
+    status: text("status").default("inactive").notNull(), // 'active' | 'inactive' | 'past_due' | 'cancelled'
+    currentPeriodStart: timestamp("current_period_start"),
+    currentPeriodEnd: timestamp("current_period_end"),
+    cancelledAt: timestamp("cancelled_at"),
+    lastPaymentAt: timestamp("last_payment_at"),
+    lastPaymentReference: text("last_payment_reference"), // GeniusPay reference
+    amount: integer("amount").default(5000).notNull(), // FCFA/XAF
+    currency: text("currency").default("XAF").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("vendor_subscription_vendor_id_idx").on(table.vendorId),
+    index("vendor_subscription_status_idx").on(table.status),
+  ]
+)
+
+export const notification = pgTable("notification", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  type: text("type").notNull(), // 'reservation' | 'availability' | 'system' | 'promo' | 'admin'
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  link: text("link"), // optionnel : URL de destination au clic
+  read: boolean("read").default(false).notNull(),
+  archived: boolean("archived").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE */ new Date())
+    .notNull(),
+}, (table) => [
+  index("notification_user_id_idx").on(table.userId),
+  index("notification_read_idx").on(table.read),
+  index("notification_archived_idx").on(table.archived),
+  index("notification_user_created_idx").on(table.userId, table.createdAt),
+]);
+
+export const userPreference = pgTable("user_preference", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  notifyReservations: boolean("notify_reservations").default(true).notNull(),
+  notifyAvailability: boolean("notify_availability").default(true).notNull(),
+  notifySystem: boolean("notify_system").default(true).notNull(),
+  notifyMarketing: boolean("notify_marketing").default(false).notNull(),
+  themePreference: text("theme_preference").default("system").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+});
+
+export const paymentTransaction = pgTable(
+  "payment_transaction",
+  {
+    id: text("id").primaryKey(),
+    vendorId: text("vendor_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    geniuspayReference: text("geniuspay_reference").notNull().unique(), // MTX-XXXXXXXXXX
+    geniuspayId: integer("geniuspay_id"), // internal GeniusPay ID
+    amount: integer("amount").notNull(), // XAF
+    currency: text("currency").default("XAF").notNull(),
+    fees: integer("fees"),
+    netAmount: integer("net_amount"),
+    status: text("status").notNull(), // 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'expired' | 'refunded'
+    paymentMethod: text("payment_method"), // 'wave' | 'pawapay' | 'orange_money' | 'mtn_money' | 'card' | etc.
+    paymentProvider: text("payment_provider"),
+    customerName: text("customer_name"),
+    customerEmail: text("customer_email"),
+    customerPhone: text("customer_phone"),
+    checkoutUrl: text("checkout_url"),
+    successUrl: text("success_url"),
+    errorUrl: text("error_url"),
+    metadata: text("metadata"), // JSON string
+    environment: text("environment").notNull(), // 'sandbox' | 'live'
+    initiatedAt: timestamp("initiated_at").defaultNow().notNull(),
+    completedAt: timestamp("completed_at"),
+    webhookReceivedAt: timestamp("webhook_received_at"),
+    webhookVerified: boolean("webhook_verified").default(false).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("payment_transaction_vendor_id_idx").on(table.vendorId),
+    index("payment_transaction_geniuspay_reference_idx").on(table.geniuspayReference),
+    index("payment_transaction_status_idx").on(table.status),
+    index("payment_transaction_created_at_idx").on(table.createdAt),
+  ]
+)
+
+
+/**
+ * Table de liaison pour les favoris (points de vente favoris des clients).
+ * Un client peut avoir plusieurs points de vente en favoris.
+ */
+export const favori = pgTable(
+  "favori",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    pointId: text("point_id")
+      .notNull()
+      .references(() => pointDeVente.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("favori_user_point_unique_idx").on(table.userId, table.pointId),
+    index("favori_user_id_idx").on(table.userId),
+    index("favori_point_id_idx").on(table.pointId),
+  ]
+)
+
 export const relations = defineRelations(
-  { user, session, account, verification, pointDeVente, disponibilite, favori, recharge, adminAction, collaborateurPermission, publicite, trafficEvent, brand, avis, reservation },
+  { user, session, account, verification, pointDeVente, disponibilite, recharge, adminAction, collaborateurPermission, publicite, trafficEvent, brand, avis, reservation, vendorSubscription, paymentTransaction, pointDeVenteBouteille, vendorOnboarding, notification },
   (r) => ({
     user: {
       sessions: r.many.session(),
       accounts: r.many.account(),
-      favoris: r.many.favori(),
       recharges: r.many.recharge(),
       adminActions: r.many.adminAction(),
       avis: r.many.avis(),
+      vendorSubscription: r.one.vendorSubscription({
+        from: r.user.id,
+        to: r.vendorSubscription.vendorId,
+      }),
+      paymentTransactions: r.many.paymentTransaction(),
+      notifications: r.many.notification({
+        from: r.user.id,
+        to: r.notification.userId,
+      }),
+      vendorOnboarding: r.one.vendorOnboarding({
+        from: r.user.id,
+        to: r.vendorOnboarding.userId,
+      }),
     },
     session: {
       user: r.one.user({
@@ -415,8 +651,28 @@ export const relations = defineRelations(
         to: r.user.id,
       }),
       disponibilites: r.many.disponibilite(),
-      favoris: r.many.favori(),
       recharges: r.many.recharge(),
+      bouteilles: r.many.pointDeVenteBouteille(),
+    },
+    pointDeVenteBouteille: {
+      point: r.one.pointDeVente({
+        from: r.pointDeVenteBouteille.pointDeVenteId,
+        to: r.pointDeVente.id,
+      }),
+      brand: r.one.brand({
+        from: r.pointDeVenteBouteille.brandId,
+        to: r.brand.id,
+      }),
+    },
+    vendorOnboarding: {
+      user: r.one.user({
+        from: r.vendorOnboarding.userId,
+        to: r.user.id,
+      }),
+      pointDeVente: r.one.pointDeVente({
+        from: r.vendorOnboarding.pointDeVenteId,
+        to: r.pointDeVente.id,
+      }),
     },
     disponibilite: {
       point: r.one.pointDeVente({
@@ -430,16 +686,6 @@ export const relations = defineRelations(
       reporter: r.one.user({
         from: r.disponibilite.reportedBy,
         to: r.user.id,
-      }),
-    },
-    favori: {
-      user: r.one.user({
-        from: r.favori.userId,
-        to: r.user.id,
-      }),
-      point: r.one.pointDeVente({
-        from: r.favori.pointId,
-        to: r.pointDeVente.id,
       }),
     },
     recharge: {
@@ -492,6 +738,24 @@ export const relations = defineRelations(
       disponibilite: r.one.disponibilite({
         from: r.reservation.disponibiliteId,
         to: r.disponibilite.id,
+      }),
+    },
+    vendorSubscription: {
+      vendor: r.one.user({
+        from: r.vendorSubscription.vendorId,
+        to: r.user.id,
+      }),
+    },
+    paymentTransaction: {
+      vendor: r.one.user({
+        from: r.paymentTransaction.vendorId,
+        to: r.user.id,
+      }),
+    },
+    notification: {
+      user: r.one.user({
+        from: r.notification.userId,
+        to: r.user.id,
       }),
     },
   })

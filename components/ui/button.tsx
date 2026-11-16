@@ -73,4 +73,9 @@ function Button({
   })
 }
 
+export type ButtonProps = ButtonPrimitive.Props & VariantProps<typeof buttonVariants> & {
+  render?: React.ReactElement
+  nativeButton?: boolean
+}
+
 export { Button, buttonVariants }

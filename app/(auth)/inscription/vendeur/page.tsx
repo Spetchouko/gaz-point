@@ -1,57 +1,43 @@
 "use client"
 
-import { Suspense, useEffect } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
+import { useSafeSession } from "@/lib/auth-session"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ModernCard } from "@/app/_components/card-modern"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { BrandListInput } from "@/app/_components/brand-list-input"
 import Link from "next/link"
-import { Mail, Lock, Store, Eye, EyeOff, ArrowLeft, AlertCircle } from "lucide-react"
+import { PageLoading } from "@/app/_components/spinner"
+import {
+  Mail,
+  Lock,
+  Store,
+  Eye,
+  EyeOff,
+  ArrowLeft,
+  AlertCircle,
+  MapPin,
+  LocateFixed,
+} from "lucide-react"
 import Image from "next/image"
-import { useState } from "react"
+import { validateVendorSignupPayload } from "@/lib/vendor-signup-validation"
 
 // === Mode de confirmation email ===
 const MODE_EMAIL = "email"
 
-function validateEmail(email: string): string | null {
-  if (!email.trim()) return "L'email est requis."
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(email)) return "Format d'email invalide."
-  
-  const domain = email.split("@")[1]?.toLowerCase()
-  if (domain && ["10minutemail.com", "guerrillamail.com", "mailinator.com", "tempmail.com",
-    "throwawaymail.com", "yopmail.com", "trashmail.com", "getnada.com",
-    "maildrop.cc", "sharklasers.com", "grr.la", "spamgourmet.com",
-    "temp-mail.org", "fakeinbox.com", "dispostable.com", "mintemail.com"].includes(domain)) {
-    return "Les emails temporaires ne sont pas autorisés."
-  }
-  return null
-}
+type FieldKey = "pointName" | "email" | "password" | "district" | "address" | "brands"
 
-function validatePassword(password: string): string | null {
-  if (!password) return "Le mot de passe est requis."
-  if (password.length < 6) return "Le mot de passe doit contenir au moins 6 caractères."
-  return null
-}
-
-function validateBusinessName(name: string): string | null {
-  if (!name.trim()) return "Le nom du dépôt est requis."
-  if (name.trim().length < 2) return "Le nom du dépôt doit contenir au moins 2 caractères."
-  return null
-}
-
-// -------------------------------------------------------------------
-// Page d'inscription vendeur — mode email uniquement
-// -------------------------------------------------------------------
 function InscriptionVendeurContent() {
   const router = useRouter()
-  const { data: session } = authClient.useSession()
-  const role = "vendor"
+  const { data: session } = useSafeSession()
 
   const searchRedirect = useSearchParams().get("redirect")
-  const redirectTo = searchRedirect ?? "/dashboard/pro"
+  const redirectTo = searchRedirect ?? "/dashboard/vendeur"
 
   useEffect(() => {
     if (session?.user) {
@@ -59,145 +45,143 @@ function InscriptionVendeurContent() {
     }
   }, [session, router, redirectTo])
 
-  // ---------- État du formulaire ----------
-  const [businessName, setBusinessName] = useState("")
+  // ---------- État du formulaire (création de compte + point de vente) ----------
+  const [pointName, setPointName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [district, setDistrict] = useState("")
+  const [address, setAddress] = useState("")
+  const [brands, setBrands] = useState<string[]>([])
+
   const [error, setError] = useState("")
-  const [fieldErrors, setFieldErrors] = useState<{
-    businessName?: string
-    email?: string
-    password?: string
-  }>({})
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldKey, string>>>({})
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
-  // ---------- Validation ----------
-  const validateForm = () => {
-    const businessNameError = validateBusinessName(businessName)
-    const emailError = validateEmail(email)
-    const passwordError = validatePassword(password)
-    const errors: {
-      businessName?: string
-      email?: string
-      password?: string
-    } = {}
-    if (businessNameError) errors.businessName = businessNameError
-    if (emailError) errors.email = emailError
-    if (passwordError) errors.password = passwordError
-    setFieldErrors(errors)
-    return Object.keys(errors).length === 0
+  const clearFieldError = (field: FieldKey) => {
+    setFieldErrors((prev) => ({ ...prev, [field]: undefined }))
+    if (error) setError("")
   }
 
-  // ---------- Submission ----------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitted(true)
+    setError("")
 
-    if (!validateForm()) {
+    // Mêmes règles que le serveur (lib/vendor-onboarding) : le message
+    // affiché est identique à celui renvoyé par l'API.
+    const validation = validateVendorSignupPayload({
+      name: pointName,
+      email,
+      password,
+      district,
+      address,
+      brands,
+    })
+
+    if (!validation.ok) {
+      if (validation.field) {
+        setFieldErrors({ [validation.field]: validation.message } as Partial<Record<FieldKey, string>>)
+      }
+      setError(validation.message)
       return
     }
 
-    setError("")
+    setFieldErrors({})
     setLoading(true)
 
+    const data = validation.data
+
     try {
-      // Nettoyer le numéro de téléphone (non utilisé en mode email)
-      const cleanPhoneNumber = ""
+      const res = await fetch("/api/vendor/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+          district: data.district,
+          address: data.address,
+          brands: data.brands,
+        }),
+      })
 
-      // Inscription mode email
-      const { error: signUpError } = await authClient.signUp.email({
-        name: businessName.trim(),
-        email: email.trim().toLowerCase(),
-        password,
-        phoneNumber: cleanPhoneNumber,
-        role,
-      } as Parameters<typeof authClient.signUp.email>[0])
+      const payload = (await res.json().catch(() => null)) as
+        | { ok?: boolean; error?: { message?: string; field?: string } }
+        | null
 
-      if (signUpError) {
-        console.error("[signup-vendeur] signUpError:", JSON.stringify(signUpError, null, 2))
-        const errorMessage = signUpError.message ?? "Impossible de créer le compte."
-        if (errorMessage.toLowerCase().includes("email") || errorMessage.toLowerCase().includes("already") || errorMessage.toLowerCase().includes("déjà") || errorMessage.toLowerCase().includes("exist")) {
-          setFieldErrors((prev) => ({ ...prev, email: "Cette adresse email est déjà utilisée. Essayez de vous connecter." }))
-        } else if (errorMessage.toLowerCase().includes("phone") || errorMessage.toLowerCase().includes("téléphone")) {
-          setFieldErrors((prev) => ({ ...prev, phoneNumber: errorMessage }))
-        } else if (errorMessage.toLowerCase().includes("password") || errorMessage.toLowerCase().includes("mot de passe")) {
-          setFieldErrors((prev) => ({ ...prev, password: errorMessage }))
-        } else if (errorMessage.toLowerCase().includes("name") || errorMessage.toLowerCase().includes("nom")) {
-          setFieldErrors((prev) => ({ ...prev, businessName: errorMessage }))
-        } else {
-          setError(errorMessage)
+      if (!res.ok || !payload?.ok) {
+        const message =
+          payload?.error?.message ?? "Impossible de créer le compte vendeur."
+        const rawField = payload?.error?.field
+        const field =
+          rawField === "name"
+            ? "pointName"
+            : (rawField as FieldKey | undefined)
+        if (field) {
+          setFieldErrors({ [field]: message })
         }
+        setError(message)
         setLoading(false)
         return
       }
-
-      // Inscription réussie — déclencher l'envoi du code de vérification à 6 chiffres.
-      // Le compte est déjà créé : un échec d'envoi ne doit pas bloquer l'utilisateur.
-      // On le redirige dans tous les cas, avec un message clair en cas d'échec.
-      const normalizedEmail = email.trim().toLowerCase()
-      let sendOk = true
-      try {
-        const res = await fetch("/api/auth/email-otp/send-verification", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: normalizedEmail, resend: false }),
-        })
-        sendOk = res.ok
-        if (!sendOk) {
-          const data = await res.json().catch(() => null)
-          console.error("[signup-vendeur] envoi du code refusé:", data?.error?.message)
-        }
-      } catch (sendErr) {
-        console.error("[signup-vendeur] envoi du code échoué:", sendErr)
-        sendOk = false
-      }
-
-      const flags = sendOk ? "&sent=1" : "&sendError=1"
-      router.push(
-        `/validation-email?mode=${MODE_EMAIL}&email=${encodeURIComponent(normalizedEmail)}&redirect=${encodeURIComponent(redirectTo)}${flags}`
-      )
-      router.refresh()
     } catch (err) {
-      console.error("[signup-vendeur] catch error:", err)
-      setError("Une erreur inattendue est survenue. Veuillez réessayer.")
+      console.error("[signup-vendeur] erreur réseau:", err)
+      setError("Une erreur réseau est survenue. Veuillez réessayer.")
       setLoading(false)
+      return
     }
+
+    // === Envoi du code de vérification (comportement OTP inchangé) ===
+    // Le brouillon du point de vente est déjà enregistré côté serveur : il n'est
+    // jamais perdu, même si l'envoi échoue ou si la page est rechargée.
+    try {
+      const res = await fetch("/api/auth/email-otp/send-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: data.email, resend: false }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        console.error(
+          "[signup-vendeur] envoi du code échoué:",
+          body?.error?.message ?? res.statusText
+        )
+        setError(
+          body?.error?.message ??
+            "L'envoi du code de vérification a échoué. Veuillez réessayer."
+        )
+        setLoading(false)
+        return
+      }
+    } catch (sendErr) {
+      console.error("[signup-vendeur] envoi du code échoué (exception):", sendErr)
+      setError("L'envoi du code de vérification a échoué. Veuillez réessayer.")
+      setLoading(false)
+      return
+    }
+
+    router.push(
+      `/validation-email?mode=${MODE_EMAIL}&email=${encodeURIComponent(
+        data.email
+      )}&redirect=${encodeURIComponent("/dashboard/vendeur")}&sent=1`
+    )
+    router.refresh()
   }
 
-  // ---------- Gestion des changements d'entrée ----------
-  const handleInputChange = (
-    field: "businessName" | "email" | "password",
-    value: string
-  ) => {
-    if (field === "businessName") setBusinessName(value)
-    if (field === "email") setEmail(value)
-    if (field === "password") setPassword(value)
-    if (fieldErrors[field]) {
-      setFieldErrors((prev) => ({ ...prev, [field]: undefined }))
-    }
-    if (error) setError("")
+  const handleGoogle = async () => {
+    document.cookie = `gazpoint_register_role=vendor; path=/; max-age=300`
+    await authClient.signIn.social({
+      provider: "google",
+      callbackURL: "/dashboard/vendeur",
+    })
   }
 
   return (
     <div className="min-h-screen bg-background px-4 py-8 flex items-center justify-center">
       <div className="w-full max-w-md">
-        {/* ---------- Choix du mode (simplifié à email) ---------- */}
-        <div className="mb-6">
-          <Card className="p-4 md:p-6 text-sm">
-            <CardHeader className="flex justify-between items-center mb-3">
-              <h3 className="font-medium text-foreground">
-                Confirmation par email
-              </h3>
-            </CardHeader>
-            <p className="text-xs text-muted-foreground">
-              Un code vous sera envoyé sur votre adresse email.
-            </p>
-          </Card>
-        </div>
-
-        {/* ---------- Retourn en arrière ---------- */}
+        {/* ---------- Retour en arrière ---------- */}
         <div className="mb-6">
           <Button
             render={<Link href="/inscription" />}
@@ -211,67 +195,143 @@ function InscriptionVendeurContent() {
           </Button>
         </div>
 
-        <Card className="shadow-xl">
+        <ModernCard className="shadow-sm">
           <CardHeader className="text-center pb-2">
-            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 ring-1 ring-emerald-200">
+            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-success/10 text-success ring-1 ring-success/20">
               <Store className="size-6" />
             </div>
-            <CardTitle className="text-xl font-bold">Créer un compte vendeur</CardTitle>
+            <CardTitle className="text-xl font-bold">
+              Créer un compte vendeur
+            </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Remplissez vos informations pour commencer
+              Renseignez votre point de vente pour commencer
             </p>
           </CardHeader>
 
           <CardContent className="space-y-4">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="businessName">Nom du dépôt</Label>
+                <Label htmlFor="businessName">Nom du point de vente</Label>
                 <div className="relative">
                   <Store className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="businessName"
                     type="text"
-                    autoComplete="businessName"
+                    autoComplete="organization"
                     placeholder="Ex: Point Gaz Bonamoussadi"
-                    value={businessName}
-                    onChange={(e) => handleInputChange("businessName", e.target.value)}
+                    value={pointName}
+                    onChange={(e) => {
+                      setPointName(e.target.value)
+                      clearFieldError("pointName")
+                    }}
                     onBlur={() => setSubmitted(true)}
                     required
-                    className="pl-10 h-11"
                     disabled={loading}
-                    aria-invalid={submitted && !!fieldErrors.businessName}
-                    aria-describedby={submitted && fieldErrors.businessName ? "businessName-error" : undefined}
+                    className="pl-9"
+                    aria-invalid={submitted && !!fieldErrors.pointName}
+                    aria-describedby={
+                      submitted && fieldErrors.pointName ? "pointName-error" : undefined
+                    }
                   />
                 </div>
-                {submitted && fieldErrors.businessName && (
-                  <p id="businessName-error" className="text-sm text-destructive" role="alert">
-                    {fieldErrors.businessName}
+                {submitted && fieldErrors.pointName && (
+                  <p id="pointName-error" className="text-sm text-destructive" role="alert">
+                    {fieldErrors.pointName}
                   </p>
                 )}
               </div>
 
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="district">Quartier</Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="district"
+                      type="text"
+                      autoComplete="address-level3"
+                      placeholder="Ex: Bonamoussadi"
+                      value={district}
+                      onChange={(e) => {
+                        setDistrict(e.target.value)
+                        clearFieldError("district")
+                      }}
+                      onBlur={() => setSubmitted(true)}
+                      required
+                      disabled={loading}
+                      className="pl-9"
+                      aria-invalid={submitted && !!fieldErrors.district}
+                      aria-describedby={
+                        submitted && fieldErrors.district ? "district-error" : undefined
+                      }
+                    />
+                  </div>
+                  {submitted && fieldErrors.district && (
+                    <p id="district-error" className="text-sm text-destructive" role="alert">
+                      {fieldErrors.district}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      autoComplete="email"
+                      placeholder="votre@email.com"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value)
+                        clearFieldError("email")
+                      }}
+                      onBlur={() => setSubmitted(true)}
+                      required
+                      disabled={loading}
+                      className="pl-9"
+                      aria-invalid={submitted && !!fieldErrors.email}
+                      aria-describedby={
+                        submitted && fieldErrors.email ? "email-error" : undefined
+                      }
+                    />
+                  </div>
+                  {submitted && fieldErrors.email && (
+                    <p id="email-error" className="text-sm text-destructive" role="alert">
+                      {fieldErrors.email}
+                    </p>
+                  )}
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="address">Adresse (rue et repères)</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="votre@email.com"
-                    value={email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
+                  <LocateFixed className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                  <Textarea
+                    id="address"
+                    autoComplete="street-address"
+                    placeholder="Ex: Rue principale, en face de la pharmacie du carrefour"
+                    value={address}
+                    onChange={(e) => {
+                      setAddress(e.target.value)
+                      clearFieldError("address")
+                    }}
                     onBlur={() => setSubmitted(true)}
+                    rows={2}
                     required
-                    className="pl-10 h-11"
                     disabled={loading}
-                    aria-invalid={submitted && !!fieldErrors.email}
-                    aria-describedby={submitted && fieldErrors.email ? "email-error" : undefined}
+                    className="pl-9"
+                    aria-invalid={submitted && !!fieldErrors.address}
+                    aria-describedby={
+                      submitted && fieldErrors.address ? "address-error" : undefined
+                    }
                   />
                 </div>
-                {submitted && fieldErrors.email && (
-                  <p id="email-error" className="text-sm text-destructive" role="alert">
-                    {fieldErrors.email}
+                {submitted && fieldErrors.address && (
+                  <p id="address-error" className="text-sm text-destructive" role="alert">
+                    {fieldErrors.address}
                   </p>
                 )}
               </div>
@@ -286,21 +346,30 @@ function InscriptionVendeurContent() {
                     autoComplete="new-password"
                     placeholder="6 caractères minimum"
                     value={password}
-                    onChange={(e) => handleInputChange("password", e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value)
+                      clearFieldError("password")
+                    }}
                     onBlur={() => setSubmitted(true)}
                     required
                     minLength={6}
-                    className="pl-10 pr-10 h-11"
+                    className="pl-9 pr-10"
                     disabled={loading}
                     aria-invalid={submitted && !!fieldErrors.password}
-                    aria-describedby={submitted && fieldErrors.password ? "password-error" : undefined}
+                    aria-describedby={
+                      submitted && fieldErrors.password ? "password-error" : undefined
+                    }
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     disabled={loading}
-                    aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                    aria-label={
+                      showPassword
+                        ? "Masquer le mot de passe"
+                        : "Afficher le mot de passe"
+                    }
                   >
                     {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </button>
@@ -312,40 +381,66 @@ function InscriptionVendeurContent() {
                 )}
               </div>
 
+              <BrandListInput
+                values={brands}
+                onChange={(next) => {
+                  setBrands(next)
+                  clearFieldError("brands")
+                }}
+                disabled={loading}
+                error={submitted ? fieldErrors.brands : undefined}
+              />
+
               {error && (
-                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive flex items-center gap-2" role="alert">
+                <div
+                  className="rounded-md bg-destructive/10 p-3 text-sm text-destructive flex items-center gap-2"
+                  role="alert"
+                >
                   <AlertCircle className="size-4 shrink-0" />
                   {error}
                 </div>
               )}
 
-              <Button type="submit" className="w-full h-11" disabled={loading}>
-                Créer un compte vendeur
-              </Button>
-            </form>
+              <div className="mt-6 space-y-6">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase tracking-wider">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Ou continuer avec
+                    </span>
+                  </div>
+                </div>
 
-            <div className="mt-8 space-y-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase tracking-wider">
-                  <span className="bg-background px-2 text-muted-foreground">Ou continuer avec</span>
-                </div>
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 h-11"
+                  onClick={handleGoogle}
+                  disabled={loading}
+                >
+                  <Image
+                    src="https://www.svgrepo.com/show/475656/google-color.svg"
+                    alt="Google"
+                    width={16}
+                    height={16}
+                    className="size-4"
+                  />
+                  Continuer avec Google
+                </Button>
               </div>
 
-              <Button
-                variant="outline"
-                className="w-full gap-2 h-11"
-                disabled={loading}
-                onClick={() => authClient.signIn.social({ provider: "google", callbackURL: redirectTo })}
-              >
-                <Image src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width={16} height={16} className="size-4" />
-                Continuer avec Google
+              <Button type="submit" className="w-full h-11" disabled={loading}>
+                {loading ? "Création en cours..." : "Créer un compte vendeur"}
               </Button>
-            </div>
+
+              <p className="text-center text-xs text-muted-foreground">
+                Votre point de vente sera créé après la vérification de votre
+                email.
+              </p>
+            </form>
           </CardContent>
-        </Card>
+        </ModernCard>
       </div>
     </div>
   )
@@ -353,7 +448,7 @@ function InscriptionVendeurContent() {
 
 export default function InscriptionVendeurPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Chargement...</div>}>
+    <Suspense fallback={<PageLoading />}>
       <InscriptionVendeurContent />
     </Suspense>
   )

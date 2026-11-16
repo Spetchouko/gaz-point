@@ -1,0 +1,65 @@
+"use client";
+import { useEffect, useState } from "react";
+import { DashboardAdminLayout } from "@/app/_components/dashboard/admin-layout";
+import { useDashboardSession } from "@/lib/auth-session";
+
+export default function DashboardAdminLayoutWrapper({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { status, user, isAuthenticated, isLoading, role } =
+    useDashboardSession();
+  const [permissions, setPermissions] = useState<Set<string>>(new Set());
+
+  // Charger les permissions réelles depuis l'API protégée (collaborateur a des
+  // permissions assignées, admin a tous les modules).
+  useEffect(() => {
+    let cancelled = false;
+    async function loadPermissions() {
+      try {
+        const res = await fetch("/api/user/permissions", {
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+        });
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          setPermissions(new Set(Array.isArray(data.permissions) ? data.permissions : []));
+        }
+      } catch {
+        // En cas d'erreur, l'ensemble vide est utilisé et les modules
+        // restent masqués pour le collaborateur.
+      }
+    }
+    loadPermissions();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Si la session est définitivement invalide (expiration en cours de navigation),
+  // rediriger vers la connexion admin. Pendant le chargement, on affiche le contenu
+  // pour éviter le clignotement : le middleware a déjà protégé la route côté serveur.
+  useEffect(() => {
+    if (isLoading) {
+      return;
+    }
+    if (!isAuthenticated || !user) {
+      window.location.href = "/connexion-admin";
+      return;
+    }
+    const userRole = (user.role ?? "client") as string;
+    // Seuls admin et collaborateur peuvent accéder à ce dashboard.
+    if (userRole !== "admin" && userRole !== "collaborateur") {
+      window.location.href = "/dashboard";
+      return;
+    }
+  }, [isLoading, isAuthenticated, user, role]);
+
+  // Toujours afficher le contenu : pas de retour null pendant le loading.
+  return (
+    <DashboardAdminLayout session={user} status={status} permissions={permissions}>
+      {children}
+    </DashboardAdminLayout>
+  );
+}

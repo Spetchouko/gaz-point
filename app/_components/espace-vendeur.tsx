@@ -22,10 +22,10 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { reportDisponibilite, upsertDisponibilite, type ActionResult } from "@/app/dashboard/pro/actions"
 import { DashboardNav } from "@/app/_components/dashboard-nav"
-import { availabilityLabel } from "@/lib/gaz"
+import { availabilityLabel, bottleFormats } from "@/lib/gaz"
 import type { AvailabilityStatus } from "@/db/schema"
 
-const FORMATS = ["6 kg", "12,5 kg", "15 kg"] as const
+const FORMATS = bottleFormats
 const STATUSES: AvailabilityStatus[] = ["disponible", "indisponible"]
 
 type PointWithDispos = {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { authClient } from "@/lib/auth-client"
+import { useSafeSession } from "@/lib/auth-session"
 
 /**
  * Gestionnaire des actions « Trouver du gaz ».
@@ -13,7 +13,7 @@ import { authClient } from "@/lib/auth-client"
  */
 export function useTrouverGaz(destination = "/inscription") {
   const router = useRouter()
-  const { data: session, isPending } = authClient.useSession()
+  const { data: session, isPending } = useSafeSession()
 
   return () => {
     if (isPending) return
