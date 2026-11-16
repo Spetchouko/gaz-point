@@ -189,7 +189,32 @@ export function Acces() {
           </div>
         </div>
 
+        {/* Accès direct : connexion et administration */}
+        <div className="mx-auto mt-16 max-w-4xl">
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-2">
+            {/* Se connecter (client / vendeur) */}
+            <Link href="/connexion">
+              <Button
+                size="lg"
+                className="h-12 w-full gap-2 text-sm font-semibold border border-input bg-background hover:bg-navy hover:text-navy-foreground"
+              >
+                <LogIn className="size-4" />
+                Se connecter
+              </Button>
+            </Link>
 
+            {/* Se connecter comme administrateur */}
+            <Link href="/connexion-admin">
+              <Button
+                size="lg"
+                className="h-12 w-full gap-2 text-sm font-semibold bg-slate-900 text-white shadow-sm hover:bg-slate-800"
+              >
+                <Shield className="size-4" />
+                Se connecter comme administrateur
+              </Button>
+            </Link>
+          </div>
+        </div>
       </div>
     </section>
   )

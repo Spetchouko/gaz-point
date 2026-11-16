@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import { useState } from "react";
-import { Bell, Shield, Palette, Trash2, Save, AlertCircle, CheckCircle2, Moon, Sun, Key } from "lucide-react";
+import { Bell, Shield, Palette, Trash2, Save, AlertCircle, CheckCircle2, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";

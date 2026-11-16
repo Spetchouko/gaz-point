@@ -20,10 +20,9 @@ import { useTranslation } from "@/lib/i18n"
 
 interface UserMenuProps {
   isMobile?: boolean
-  iconOnly?: boolean
 }
 
-export function UserMenu({ isMobile = false, iconOnly = false }: UserMenuProps) {
+export function UserMenu({ isMobile = false }: UserMenuProps) {
   const router = useRouter()
   const t = useTranslation()
   const { data: session } = useSafeSession()
@@ -60,23 +59,16 @@ export function UserMenu({ isMobile = false, iconOnly = false }: UserMenuProps) 
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          aria-label="Compte"
           className={cn(
-            isMobile
-              ? "w-full justify-start gap-2 py-2.5 px-3 text-left hover:bg-muted transition-colors"
-              : iconOnly
-                ? "size-9 rounded-lg bg-transparent text-primary hover:bg-primary hover:text-white transition-colors duration-200 p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0"
-                : "size-10 rounded-md bg-white text-primary shadow-sm hover:bg-primary-strong hover:text-white transition-colors duration-200 p-0",
-            !iconOnly && "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
+            "gap-2 h-9 px-3",
+            isMobile && "w-full justify-start py-2.5 text-left",
+            "hover:bg-white/10 transition-colors",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           )}
         >
-          {isMobile ? (
-            <Avatar className="size-8 flex items-center justify-center" data-size={avatarSize}>
-              <UserRound className="size-4" />
-            </Avatar>
-          ) : (
+          <Avatar className="size-8 flex items-center justify-center" data-size={avatarSize}>
             <UserRound className="size-4" />
-          )}
+          </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
