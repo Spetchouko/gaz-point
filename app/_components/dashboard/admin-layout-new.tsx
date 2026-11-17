@@ -24,6 +24,7 @@ import {
   MapPin,
   Archive,
   X,
+  Search,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useAuthModal } from "@/lib/auth-context";
