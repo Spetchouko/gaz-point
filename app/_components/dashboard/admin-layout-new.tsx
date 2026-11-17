@@ -404,6 +404,16 @@ export function DashboardAdminLayout({
             <LogOut className={cn("size-4 shrink-0", sidebarCollapsed && "mx-auto")} aria-hidden />
             {!sidebarCollapsed && <span>Déconnexion</span>}
           </button>
+
+          {/* Footer - Simple comme le dashboard vendeur */}
+          <div className={cn("border-t border-border pt-3", sidebarCollapsed && "hidden")}>
+            <p className="text-xs text-muted-foreground text-center">
+              © {new Date().getFullYear()} GazPoints. Tous droits réservés.
+            </p>
+            <p className="text-xs text-muted-foreground text-center mt-1">
+              Fait pour faciliter l'accès au gaz au Cameroun.
+            </p>
+          </div>
         </div>
       </aside>
 
@@ -545,19 +555,6 @@ export function DashboardAdminLayout({
             {children}
           </div>
         </main>
-
-        {/* Footer - Simple comme le dashboard vendeur */}
-        <footer className="bg-muted border-t border-border py-4 lg:pl-64 lg:transition-all lg:duration-300">
-          <div className="container mx-auto px-4 text-center">
-            <div className="border-t border-border my-3"></div>
-            <p className="text-xs text-muted-foreground">
-              © {new Date().getFullYear()} GazPoints. Tous droits réservés.
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Fait pour faciliter l'accès au gaz au Cameroun.
-            </p>
-          </div>
-        </footer>
 
         {/* Scroll to top button */}
         <ScrollToTop />
