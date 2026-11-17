@@ -441,15 +441,60 @@ export function DashboardAdminLayout({
         "flex-1 flex flex-col min-w-0 lg:transition-all lg:duration-300 lg:ease-in-out",
         sidebarCollapsed ? "lg:pl-[calc(4rem+1px)]" : "lg:pl-[calc(16rem+1px)]"
       )}>
-        {/* Top Bar - Desktop */}
-        <header className="hidden lg:sticky lg:top-0 lg:z-20 lg:flex lg:h-14 lg:items-center lg:justify-between lg:border-b lg:border-border lg:bg-card/80 lg:backdrop-blur-md lg:px-6 lg:px-8">
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-muted-foreground">
-              Espace Administrateur
-            </span>
+        {/* Unified Top Bar - Desktop & Mobile */}
+        <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-border bg-card/80 backdrop-blur-md px-4 sm:px-6 lg:px-8">
+          {/* Left: Logo + Label + Search + Reservations */}
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <Link
+              href="/dashboard/admin"
+              className="flex items-center gap-2 font-bold text-lg"
+              onClick={() => setSidebarOpen(false)}
+            >
+              <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                {EA_MONOGRAM}
+              </span>
+              <span className="font-bold text-lg tracking-tight hidden sm:inline">Espace administrateur</span>
+            </Link>
+
+            {/* Search - hidden on mobile, visible on tablet+ */}
+            <div className="hidden md:block relative flex-1 max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" aria-hidden="true" />
+              <input
+                type="search"
+                placeholder="Rechercher..."
+                className="w-full pl-10 pr-4 py-2 text-sm bg-muted/50 border border-border rounded-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    router.push(`/dashboard/recherches?q=${encodeURIComponent(e.currentTarget.value)}`);
+                  }
+                }}
+              />
+            </div>
+
+            {/* Quick actions: Search (mobile), Reservations */}
+            <div className="flex items-center gap-2 md:hidden">
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard/recherches")}
+                className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                aria-label="Rechercher"
+              >
+                <Search className="size-4" />
+              </button>
+            </div>
+
+            <Link
+              href="/dashboard/admin/reservations"
+              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors hidden sm:flex"
+            >
+              <Calendar className="size-4" />
+              <span>Réservations</span>
+            </Link>
           </div>
+
+          {/* Right: Notifications + Avatar Menu */}
           <div className="flex items-center gap-3">
-            {/* Notifications in top bar */}
+            {/* Notifications */}
             <button
               type="button"
               onClick={handleNotificationsClick}
@@ -463,8 +508,8 @@ export function DashboardAdminLayout({
                 </span>
               )}
             </button>
-          </div>
-          <div className="flex items-center gap-4">
+
+            {/* Avatar Menu */}
             <div className="relative">
               <button
                 type="button"
@@ -524,29 +569,6 @@ export function DashboardAdminLayout({
               )}
             </div>
           </div>
-        </header>
-
-        {/* Mobile Top Bar */}
-        <header className="lg:hidden sticky top-0 z-20 flex h-14 items-center justify-between border-b border-border bg-card/80 backdrop-blur-md px-4">
-          <Link
-            href="/dashboard/admin"
-            className="flex items-center gap-2 font-bold text-lg"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              {EA_MONOGRAM}
-            </span>
-            <span className="font-bold text-lg tracking-tight">Espace Admin</span>
-          </Link>
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Ouvrir le menu"
-            className="flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            <Menu className="size-5" aria-hidden />
-            <span className="sr-only">Menu</span>
-          </button>
         </header>
 
         {/* Main Content */}
