@@ -17,6 +17,7 @@ import {
   Settings,
   Eye,
   EyeOff,
+  Camera,
 } from "lucide-react";
 import { Spinner, PageLoading, ButtonSpinner } from "@/app/_components/spinner";
 import { Button } from "@/components/ui/button";
@@ -509,8 +510,12 @@ export default function ProfilPage() {
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="avatar">Photo de profil</Label>
                 <div className="flex flex-col items-center gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0 overflow-hidden border border-primary/20 relative">
+                  <label
+                    htmlFor="avatar"
+                    className="cursor-pointer group"
+                    disabled={avatarUploading || saving}
+                  >
+                    <div className="flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0 overflow-hidden border border-primary/20 relative group-hover:ring-2 group-hover:ring-primary/50 transition-all">
                       {avatarPreview || userProfile.image ? (
                         <Image
                           src={avatarPreview || userProfile.image!}
@@ -527,16 +532,17 @@ export default function ProfilPage() {
                           <Spinner size="sm" />
                         </div>
                       )}
+                      <div className="absolute bottom-0 right-0 size-5 flex items-center justify-center rounded-full bg-primary text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Camera className="size-3" aria-hidden="true" />
+                      </div>
                     </div>
-                    <div className="space-y-2 text-center">
+                    <div className="space-y-2 text-center mt-2">
                       <p className="text-xs text-muted-foreground">Photo de profil</p>
-                      <label
-                        className="cursor-pointer text-sm text-primary underline underline-offset-4 hover:text-primary-dark disabled:opacity-50 disabled:pointer-events-none"
-                      >
+                      <span className="text-sm text-primary underline underline-offset-4 hover:text-primary-dark">
                         Choisir une image
-                      </label>
+                      </span>
                     </div>
-                  </div>
+                  </label>
                   <input
                     id="avatar"
                     type="file"
