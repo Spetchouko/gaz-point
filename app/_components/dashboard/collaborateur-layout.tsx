@@ -338,7 +338,10 @@ export function CollaborateurLayout({
       )}
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0 lg:mr-64">
+      <div className={cn(
+        "flex-1 flex flex-col min-w-0",
+        sidebarCollapsed ? "lg:mr-[calc(4rem+1px)]" : "lg:mr-[calc(16rem+1px)]"
+      )}>
         {/* Top bar - Mobile menu button */}
         <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-border bg-card/80 backdrop-blur-md px-4 sm:px-6 lg:px-8 lg:hidden">
           <Link

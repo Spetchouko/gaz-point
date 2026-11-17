@@ -439,7 +439,7 @@ export function DashboardAdminLayout({
       {/* Main content area */}
       <div className={cn(
         "flex-1 flex flex-col min-w-0 lg:transition-all lg:duration-300 lg:ease-in-out",
-        sidebarCollapsed ? "lg:pl-16" : "lg:pl-64"
+        sidebarCollapsed ? "lg:pl-[calc(4rem+1px)]" : "lg:pl-[calc(16rem+1px)]"
       )}>
         {/* Top Bar - Desktop */}
         <header className="hidden lg:sticky lg:top-0 lg:z-20 lg:flex lg:h-14 lg:items-center lg:justify-between lg:border-b lg:border-border lg:bg-card/80 lg:backdrop-blur-md lg:px-6 lg:px-8">
