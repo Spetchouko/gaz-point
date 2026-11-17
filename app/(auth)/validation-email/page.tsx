@@ -81,17 +81,6 @@ function ValidationEmailContent() {
     return () => clearInterval(timer)
   }, [resendCooldown])
 
-  // Auto-verification when 6 digits are filled (manual, auto-fill, or paste)
-  useEffect(() => {
-    if (code.length === CODE_LENGTH && !loading && !success && !verifying) {
-      // Prevent multiple verification attempts for the same code
-      if (verificationTriggeredRef.current === code) return
-      verificationTriggeredRef.current = code
-      setVerifying(true)
-      verifier(code)
-    }
-  }, [code, loading, success, verifier])
-
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
@@ -205,6 +194,17 @@ function ValidationEmailContent() {
       verificationTriggeredRef.current = null
     }
   }, [loading, success, email, router, destination])
+
+  // Auto-verification when 6 digits are filled (manual, auto-fill, or paste)
+  useEffect(() => {
+    if (code.length === CODE_LENGTH && !loading && !success && !verifying) {
+      // Prevent multiple verification attempts for the same code
+      if (verificationTriggeredRef.current === code) return
+      verificationTriggeredRef.current = code
+      setVerifying(true)
+      verifier(code)
+    }
+  }, [code, loading, success, verifier])
 
   const renvoyerCode = async () => {
     if (resending || resendCooldown > 0) return
