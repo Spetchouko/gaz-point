@@ -108,6 +108,7 @@ export function AuthGateModal() {
               width={26}
               height={26}
               className="h-6.5 w-6.5 object-contain"
+              style={{ width: "auto", height: "auto" }}
             />
           </div>
 

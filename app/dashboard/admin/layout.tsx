@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { ThemeProvider } from "@/app/_components/theme-provider";
-import { DashboardAdminLayout } from "@/app/_components/dashboard/admin-layout";
+import { DashboardAdminLayout } from "@/app/_components/dashboard/admin-layout-new";
 import { useDashboardSession, useAutoRefreshSession } from "@/lib/auth-session";
 import { cn } from "@/lib/utils";
 

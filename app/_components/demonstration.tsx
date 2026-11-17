@@ -103,6 +103,7 @@ function AppHeader() {
             width={40}
             height={40}
             className="size-3.5 object-contain"
+            style={{ width: "auto", height: "auto" }}
           />
         </span>
         <span className="text-[10px] font-bold tracking-tight text-primary-foreground">

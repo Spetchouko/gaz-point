@@ -230,6 +230,7 @@ export function DashboardClientLayout({
                 width={24}
                 height={24}
                 className="h-5 w-5 object-contain"
+                style={{ width: "auto", height: "auto" }}
               />
             </span>
             {!sidebarCollapsed && (
@@ -420,6 +421,7 @@ export function DashboardClientLayout({
                 width={24}
                 height={24}
                 className="h-5 w-5 object-contain"
+                style={{ width: "auto", height: "auto" }}
               />
             </span>
             <span className="text-primary font-bold tracking-tight">GazPoints</span>

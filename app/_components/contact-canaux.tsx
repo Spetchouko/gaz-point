@@ -50,8 +50,7 @@ export function ContactCanaux() {
           </Badge>
 
           <h2 className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            Quatre façons de{" "}
-            <span className="text-primary">nous joindre</span>
+            <span className="text-primary">Nos coordonnées</span> pour rester en contact
           </h2>
         </div>
 

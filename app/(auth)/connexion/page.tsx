@@ -175,6 +175,7 @@ function LoginPageContent() {
                 width={24}
                 height={24}
                 className="h-6 w-6 object-contain"
+                style={{ width: "auto", height: "auto" }}
               />
             </div>
             <CardTitle className="text-xl font-bold">{t("login_title")}</CardTitle>

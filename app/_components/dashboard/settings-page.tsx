@@ -181,20 +181,26 @@ export function DashboardSettingsPage({ title = "Paramètres" }: { title?: strin
               <Label htmlFor="theme-select" className="font-medium">
                 Thème
               </Label>
-              <Select
-                value={prefs.themePreference}
-                onValueChange={(v) => setPrefs((p) => ({ ...p, themePreference: v as Prefs["themePreference"] }))}
-                disabled={saving}
-              >
-                <SelectTrigger id="theme-select" className="w-full">
-                  <SelectValue placeholder="Choisir un thème" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="system">Système (automatique)</SelectItem>
-                  <SelectItem value="light">Clair</SelectItem>
-                  <SelectItem value="dark">Sombre</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2">
+                    <Switch
+                      checked={prefs.themePreference === "light"}
+                      onCheckedChange={(checked) => setPrefs((p) => ({ ...p, themePreference: checked ? "light" : "dark" }))}
+                    />
+                    <span className="font-medium">Mode clair</span>
+                  </label>
+                </div>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2">
+                    <Switch
+                      checked={prefs.themePreference === "dark"}
+                      onCheckedChange={(checked) => setPrefs((p) => ({ ...p, themePreference: checked ? "dark" : "light" }))}
+                    />
+                    <span className="font-medium">Mode sombre</span>
+                  </label>
+                </div>
+              </div>
               <p className="text-xs text-muted-foreground">
                 Le thème « Système » suit les préférences de votre appareil.
               </p>
@@ -229,15 +235,30 @@ export function DashboardSettingsPage({ title = "Paramètres" }: { title?: strin
         </div>
 
         {/* Info Card */}
-        <Card className="border-dashed border-border/50 shadow-sm">
-          <CardContent className="pt-6 pb-2">
-            <div className="flex gap-3 text-sm text-muted-foreground">
-              <AlertCircle className="size-4.5 shrink-0 mt-0.5" />
-              <span>
-                Seules les préférences prises en charge par l'application sont proposées ici.
-                La gestion avancée du compte (mot de passe, informations personnelles) se fait
-                depuis votre <a href="/dashboard/profil" className="text-primary underline hover:no-underline">profil</a>.
-              </span>
+        {/* Danger Zone */}
+        <Card className="border-destructive/50 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="size-5" />
+              Zone de danger
+            </CardTitle>
+            <CardDescription>
+              Actions irréversibles — à utiliser avec précaution
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <AlertCircle className="size-4.5 shrink-0 mt-0.5 text-destructive" />
+              <p className="font-medium text-destructive mb-1">
+                Supprimer définitivement ton compte et toutes les données
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Cette action est irréversible et supprimera toutes tes données personnelles,
+                historiques de réservations et préférences. Cette action ne peut pas être annulée.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Cette action ne peut pas être annulée.
+              </p>
             </div>
           </CardContent>
         </Card>

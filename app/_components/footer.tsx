@@ -54,6 +54,7 @@ export function Footer() {
                 width={28}
                 height={28}
                 className="h-6 w-6 shrink-0 object-contain"
+                style={{ width: "auto", height: "auto" }}
               />
               <span className="font-heading text-lg font-bold tracking-tight text-foreground">GazPoints</span>
             </Link>
@@ -142,6 +143,7 @@ export function Footer() {
                 width={28}
                 height={28}
                 className="h-6 w-6 shrink-0 object-contain"
+                style={{ width: "auto", height: "auto" }}
               />
               <span className="font-heading text-lg font-bold tracking-tight text-foreground">GazPoints</span>
             </Link>

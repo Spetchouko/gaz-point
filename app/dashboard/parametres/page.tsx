@@ -151,33 +151,30 @@ export default function ParametresPage() {
             <div>
               <h3 className="font-medium mb-3">Thème</h3>
               <div className="grid gap-3 sm:grid-cols-2">
-                {[
-                  { value: "light", label: "Clair", icon: <Sun className="size-5" />, desc: "Interface claire" },
-                  { value: "dark", label: "Sombre", icon: <Moon className="size-5" />, desc: "Interface sombre" },
-                ].map((item) => (
-                  <button
-                    key={item.value}
-                    type="button"
-                    onClick={() => { setTheme(item.value as "light" | "dark"); handleSave("appearance"); }}
-                    className={cn(
-                      "relative flex flex-col items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all",
-                      theme === item.value
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50 hover:bg-muted/50"
-                    )}
-                  >
-                    <div className="flex size-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      {item.icon}
-                    </div>
-                    <span className="font-medium">{item.label}</span>
-                    <p className="text-xs text-muted-foreground text-center">{item.desc}</p>
-                    {theme === item.value && (
-                      <div className="absolute top-2 right-2 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                        <CheckCircle2 className="size-3" />
-                      </div>
-                    )}
-                  </button>
-                ))}
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2">
+                    <Switch
+                      checked={theme === "light"}
+                      onCheckedChange={(checked) => {
+                        setTheme(checked ? "light" : "dark");
+                        handleSave("appearance");
+                      }}
+                    />
+                    <span className="font-medium">Mode clair</span>
+                  </label>
+                </div>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2">
+                    <Switch
+                      checked={theme === "dark"}
+                      onCheckedChange={(checked) => {
+                        setTheme(checked ? "dark" : "light");
+                        handleSave("appearance");
+                      }}
+                    />
+                    <span className="font-medium">Mode sombre</span>
+                  </label>
+                </div>
               </div>
             </div>
 
@@ -250,12 +247,19 @@ export default function ParametresPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between p-4 border rounded-lg bg-destructive/5">
-            <div>
-              <p className="font-medium text-destructive">Supprimer mon compte</p>
-              <p className="text-sm text-muted-foreground">Supprime définitivement votre compte et toutes vos données</p>
-            </div>
-            <Button variant="destructive" onClick={handleDeleteAccount}>
+          <div className="p-4 space-y-4">
+            <AlertCircle className="size-4.5 shrink-0 mt-0.5 text-destructive" />
+            <p className="font-medium text-destructive mb-1">
+              Supprimer définitivement ton compte et toutes les données
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Cette action est irréversible et supprimera toutes tes données personnelles,
+              historiques de réservations et préférences. Cette action ne peut pas être annulée.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Cette action ne peut pas être annulée.
+            </p>
+            <Button variant="destructive" onClick={handleDeleteAccount} className="w-full sm:w-auto">
               <Trash2 className="size-4 mr-2" /> Supprimer mon compte
             </Button>
           </div>
