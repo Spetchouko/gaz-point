@@ -1,6 +1,7 @@
 "use client"
 
-import { authClient } from "@/lib/auth-client"
+import { authClient, refreshSession } from "@/lib/auth-client"
+import { useEffect, useRef } from "react"
 
 export const DASHBOARD_PERMISSION_KEYS = [
   "utilisateurs",
@@ -73,6 +74,39 @@ export type SafeSession = Omit<BetterAuthSession, "data"> & {
  */
 export function useSafeSession(): SafeSession {
   return authClient.useSession() as SafeSession
+}
+
+/**
+ * Hook pour forcer le rafraîchissement de la session depuis le serveur.
+ * Utile après mise à jour du profil/avatar pour refléter immédiatement les changements.
+ */
+export function useRefreshSession() {
+  return refreshSession
+}
+
+/**
+ * Hook pour rafraîchir automatiquement la session quand la fenêtre retrouve le focus.
+ * Utile si l'utilisateur a mis à jour son profil dans un autre onglet.
+ * @param enabled - Activer/désactiver le rafraîchissement automatique (défaut: true)
+ * @param debounceMs - Délai anti-rebond en ms pour éviter les rafraîchissements excessifs (défaut: 2000ms)
+ */
+export function useAutoRefreshSession(enabled = true, debounceMs = 2000) {
+  const lastRefreshRef = useRef<number>(0)
+
+  useEffect(() => {
+    if (!enabled) return
+
+    const handleFocus = () => {
+      const now = Date.now()
+      if (now - lastRefreshRef.current >= debounceMs) {
+        lastRefreshRef.current = now
+        refreshSession()
+      }
+    }
+
+    window.addEventListener("focus", handleFocus)
+    return () => window.removeEventListener("focus", handleFocus)
+  }, [enabled, debounceMs])
 }
 
 /**

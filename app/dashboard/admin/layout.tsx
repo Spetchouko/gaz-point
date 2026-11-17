@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { ThemeProvider } from "@/app/_components/theme-provider";
 import { DashboardAdminLayout } from "@/app/_components/dashboard/admin-layout";
-import { useDashboardSession } from "@/lib/auth-session";
+import { useDashboardSession, useAutoRefreshSession } from "@/lib/auth-session";
 import { cn } from "@/lib/utils";
 
 export default function DashboardAdminLayoutWrapper({
@@ -13,6 +13,9 @@ export default function DashboardAdminLayoutWrapper({
   const { status, user, isAuthenticated, isLoading, role } =
     useDashboardSession();
   const [permissions, setPermissions] = useState<Set<string>>(new Set());
+
+  // Rafraîchir automatiquement la session au focus de la fenêtre
+  useAutoRefreshSession()
 
   // Charger les permissions réelles depuis l'API protégée (collaborateur a des
   // permissions assignées, admin a tous les modules).

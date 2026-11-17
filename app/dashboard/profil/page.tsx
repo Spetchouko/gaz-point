@@ -30,7 +30,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useSafeSession } from "@/lib/auth-session";
+import { useSafeSession, useRefreshSession } from "@/lib/auth-session";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { optimizeImageFile } from "@/lib/image-utils";
@@ -50,6 +50,7 @@ type UserProfile = {
 export default function ProfilPage() {
   const router = useRouter();
   const { data: session } = useSafeSession()
+  const refreshSession = useRefreshSession()
   const sessionUser = session?.user;
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -210,6 +211,9 @@ export default function ProfilPage() {
         text: "Vos informations ont été mises à jour avec succès.",
       });
       toast.success("Profil mis à jour");
+
+      // Rafraîchir la session pour refléter immédiatement les modifications
+      await refreshSession();
     } catch (error) {
       setProfileMessage({
         type: "error",
@@ -264,6 +268,9 @@ export default function ProfilPage() {
         text: "Photo de profil mise à jour.",
       });
       toast.success("Avatar mis à jour");
+
+      // Rafraîchir la session pour refléter immédiatement l'avatar mis à jour
+      await refreshSession();
     } catch {
       setProfileMessage({
         type: "error",
@@ -293,6 +300,9 @@ export default function ProfilPage() {
       setProfile((prev) => (prev ? { ...prev, image: null } : prev));
       setProfileMessage({ type: "success", text: "Photo de profil supprimée." });
       toast.success("Avatar supprimé");
+
+      // Rafraîchir la session pour refléter immédiatement la suppression
+      await refreshSession();
     } catch {
       setProfileMessage({
         type: "error",

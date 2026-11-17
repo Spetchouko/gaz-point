@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { DashboardClientLayout } from "@/app/_components/dashboard/client-layout";
 import { useRouter, usePathname } from "next/navigation";
-import { useDashboardSession } from "@/lib/auth-session";
+import { useDashboardSession, useAutoRefreshSession } from "@/lib/auth-session";
 
 export default function DashboardClientLayoutWrapper({
   children,
@@ -13,6 +13,10 @@ export default function DashboardClientLayoutWrapper({
     useDashboardSession();
   const router = useRouter();
   const pathname = usePathname();
+
+  // Rafraîchir automatiquement la session au focus de la fenêtre
+  // pour détecter les changements faits dans d'autres onglets
+  useAutoRefreshSession()
 
   // Si la session est définitivement invalide (expiration en cours de navigation),
   // rediriger vers la connexion. Pendant le chargement (isLoading), on affiche
