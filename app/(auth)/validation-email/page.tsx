@@ -52,8 +52,10 @@ function ValidationEmailContent() {
   const [loading, setLoading] = useState(false)
   const [resending, setResending] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
+  const [verifying, setVerifying] = useState(false)
 
   const codeRef = useRef<HTMLInputElement[]>([])
+  const verificationTriggeredRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (session?.user?.emailVerified) {
@@ -78,6 +80,17 @@ function ValidationEmailContent() {
     }, 1000)
     return () => clearInterval(timer)
   }, [resendCooldown])
+
+  // Auto-verification when 6 digits are filled (manual, auto-fill, or paste)
+  useEffect(() => {
+    if (code.length === CODE_LENGTH && !loading && !success && !verifying) {
+      // Prevent multiple verification attempts for the same code
+      if (verificationTriggeredRef.current === code) return
+      verificationTriggeredRef.current = code
+      setVerifying(true)
+      verifier(code)
+    }
+  }, [code, loading, success, verifier])
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -171,6 +184,9 @@ function ValidationEmailContent() {
         const msg = data?.error?.message ?? data?.message ?? "Code invalide ou expiré."
         setError(msg)
         setLoading(false)
+        setVerifying(false)
+        // Reset verification trigger to allow retry with same code
+        verificationTriggeredRef.current = null
         return
       }
       setSuccess(true)
@@ -184,6 +200,9 @@ function ValidationEmailContent() {
     } catch {
       setError("Une erreur inattendue est survenue. Veuillez reessayer.")
       setLoading(false)
+      setVerifying(false)
+      // Reset verification trigger to allow retry with same code
+      verificationTriggeredRef.current = null
     }
   }, [loading, success, email, router, destination])
 
@@ -300,7 +319,7 @@ function ValidationEmailContent() {
                     ref={(el) => {
                       if (el) codeRef.current[i] = el
                     }}
-                    disabled={loading || !email}
+                    disabled={loading || verifying || !email}
                     className="w-10 h-12 rounded-lg border border-border text-center text-2xl font-bold text-foreground focus:border-primary focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
                     aria-label={`Chiffre ${i + 1} du code de verification`}
                   />
@@ -310,9 +329,9 @@ function ValidationEmailContent() {
               <Button
                 onClick={() => verifier(code)}
                 className="w-full"
-                disabled={loading || !email || code.length !== CODE_LENGTH}
+                disabled={loading || verifying || !email || code.length !== CODE_LENGTH}
               >
-                {loading ? (
+                {loading || verifying ? (
                   <>
                     <ButtonSpinner />
                     Verification en cours…

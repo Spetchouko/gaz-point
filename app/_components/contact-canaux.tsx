@@ -1,4 +1,4 @@
-import { Clock, Mail, MapPin, MessageCircle, Phone } from "lucide-react"
+import { Clock, MapPin, Mail, MessageCircle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -17,15 +17,6 @@ const canaux = [
     description:
       "Le canal principal. C'est ici que vous nous écrivez pour tout le reste.",
     note: "Réponse sous 48 h ouvrées.",
-  },
-  {
-    icon: Phone,
-    title: "Téléphone",
-    href: "tel:+237672072550",
-    value: "+237 672 07 25 50",
-    description:
-      "Pour une question urgente sur un point de vente, sur une commande ou sur un accès.",
-    note: "Du lundi au samedi, 8 h – 18 h.",
   },
   {
     icon: MessageCircle,
@@ -64,53 +55,52 @@ export function ContactCanaux() {
           </h2>
         </div>
 
-        <ul className="mx-auto mt-12 grid max-w-5xl gap-4 sm:grid-cols-2">
+        <div className="mx-auto mt-8 flex justify-center items-center gap-3 sm:gap-4">
           {canaux.map((canal) => (
-            <li key={canal.title}>
-              <Card className="h-full transition-all hover:border-primary/40 hover:shadow-sm">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <canal.icon className="size-5" aria-hidden />
-                    </span>
-                    <CardTitle className="text-lg">{canal.title}</CardTitle>
-                  </div>
-                </CardHeader>
+            <Card
+              key={canal.title}
+              className="flex-1 max-w-sm w-full flex-col border border-border rounded-lg overflow-hidden hover:shadow-sm transition-shadow"
+            >
+              <CardHeader className="p-4 border-b border-border flex-1">
+                <div className="flex items-center gap-3">
+                  <span
+                    className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary"
+                  >
+                    <canal.icon className="size-4" aria-hidden />
+                  </span>
+                  <CardTitle className="text-lg">{canal.title}</CardTitle>
+                </div>
+              </CardHeader>
 
-                <CardContent>
-                  {canal.href ? (
-                    <a
-                      href={canal.href}
-                      target={canal.href.startsWith("http") ? "_blank" : undefined}
-                      rel={
-                        canal.href.startsWith("http")
-                          ? "noopener noreferrer"
-                          : undefined
-                      }
-                      className="text-pretty font-medium text-foreground underline underline-offset-4 transition-colors hover:text-primary"
-                    >
-                      {canal.value}
-                    </a>
-                  ) : (
-                    <p className="text-pretty font-medium text-foreground">
-                      {canal.value}
-                    </p>
-                  )}
-                  <p className="mt-1.5 text-sm text-muted-foreground">
-                    {canal.description}
+              <CardContent className="p-4 flex-1">
+                {canal.href ? (
+                  <a
+                    href={canal.href}
+                    target={canal.href.startsWith("http") ? "_blank" : undefined}
+                    rel={canal.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                    className="text-pretty font-medium text-foreground underline underline-offset-4 transition-colors hover:text-primary"
+                  >
+                    {canal.value}
+                  </a>
+                ) : (
+                  <p className="text-pretty font-medium text-foreground">
+                    {canal.value}
                   </p>
-                </CardContent>
+                )}
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  {canal.description}
+                </p>
+              </CardContent>
 
-                <CardFooter>
-                  <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Clock className="size-3.5 shrink-0" aria-hidden />
-                    {canal.note}
-                  </p>
-                </CardFooter>
-              </Card>
-            </li>
+              <CardFooter className="p-2 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+                <p className="inline-flex items-center gap-1.5">
+                  <Clock className="size-3.5 shrink-0" aria-hidden />
+                  {canal.note}
+                </p>
+              </CardFooter>
+            </Card>
           ))}
-        </ul>
+        </div>
       </div>
     </section>
   )

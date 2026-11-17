@@ -5,63 +5,16 @@ import { Loader2, Mail, Send } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-
-const sujets = [
-  {
-    objet: "Question générale",
-    description:
-      "Comprendre le service, savoir si GazPoints couvre votre quartier, ou demander une précision.",
-  },
-  {
-    objet: "Signalement",
-    description:
-      "Un point de vente qui n'existe plus, une disponibilité fausse, une adresse erronée. On corrige la carte.",
-  },
-  {
-    objet: "Problème technique",
-    description:
-      "Une page qui ne s'affiche pas, une recherche qui ne trouve rien, une erreur d'interface.",
-  },
-  {
-    objet: "Données personnelles",
-    description:
-      "Accès, rectification ou suppression de vos données. Objet à utiliser en priorité.",
-  },
-  {
-    objet: "Facturation",
-    description:
-      "Une question sur l'abonnement Vendeur (5 000 FCFA/mois), un paiement, un remboursement ou une facture déjà réglée.",
-  },
-  {
-    objet: "Partenariat ou presse",
-    description:
-      "Un article sur GazPoints, une interview, ou une collaboration institutionnelle.",
-  },
-]
 
 type Statut = "idle" | "envoi" | "succès" | "erreur"
 
 export function ContactForm() {
   const [nom, setNom] = useState("")
   const [email, setEmail] = useState("")
-  const [objet, setObjet] = useState<string | null>(null)
   const [message, setMessage] = useState("")
   const [statut, setStatut] = useState<Statut>("idle")
   const [erreur, setErreur] = useState<string | null>(null)
@@ -75,7 +28,7 @@ export function ContactForm() {
       const response = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nom, email, objet: objet ?? "", message }),
+        body: JSON.stringify({ nom, email, message }),
       })
 
       const data = await response.json().catch(() => null)
@@ -89,7 +42,6 @@ export function ContactForm() {
       setStatut("succès")
       setNom("")
       setEmail("")
-      setObjet(null)
       setMessage("")
     } catch {
       setStatut("erreur")
@@ -105,22 +57,19 @@ export function ContactForm() {
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
           <Badge variant="secondary" className="h-6 px-3 text-xs font-semibold uppercase tracking-[0.15em]">
-            <Send className="size-3.5" />
-            Avant d’écrire
+            <Send className="size-3.5" /> Avant d’écrire
           </Badge>
 
           <h2 className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            Envoie-nous{" "}
-            <span className="text-primary">ta demande</span>
+            Envoie-nous{" "}<span className="text-primary">ta demande</span>
           </h2>
 
           <p className="mt-4 text-pretty text-base text-muted-foreground sm:text-lg">
-            Un objet clair, c’est une réponse en quelques heures au lieu de
-            plusieurs jours. Vous n’avez aucun compte à créer.
+            Un objet clair, c'est une réponse en quelques heures au lieu de plusieurs jours. Vous n'avez aucun compte à créer.
           </p>
         </div>
 
-        <div className="mx-auto mt-12 grid max-w-5xl gap-6 lg:grid-cols-[1.25fr_1fr]">
+        <div className="mx-auto mt-12 max-w-2xl">
           <Card className="transition-all hover:shadow-sm">
             <CardHeader>
               <CardTitle className="text-xl">Le formulaire</CardTitle>
@@ -135,14 +84,14 @@ export function ContactForm() {
                 <Alert className="border-success/20 bg-success/5 text-success *:data-[slot=alert-description]:text-success">
                   <AlertTitle>Message envoyé</AlertTitle>
                   <AlertDescription>
-                    Merci ! Votre demande est bien reçue, nous vous répondons par
+                    Merci ! Votre demande est bien reçue, nous vous répondrons par
                     email sous 48 h ouvrées.
                   </AlertDescription>
                 </Alert>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-1.5">
+                    <div>
                       <Label htmlFor="contact-nom">Nom</Label>
                       <Input
                         id="contact-nom"
@@ -155,7 +104,7 @@ export function ContactForm() {
                       />
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div>
                       <Label htmlFor="contact-email">Email</Label>
                       <Input
                         id="contact-email"
@@ -168,25 +117,6 @@ export function ContactForm() {
                         placeholder="votre@email.com"
                       />
                     </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="contact-objet">Objet</Label>
-                    <Select
-                      value={objet}
-                      onValueChange={(value) => setObjet(value ?? "")}
-                    >
-                      <SelectTrigger id="contact-objet" className="w-full">
-                        <SelectValue placeholder="Choisissez un objet" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {sujets.map((sujet) => (
-                          <SelectItem key={sujet.objet} value={sujet.objet}>
-                            {sujet.objet}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                   </div>
 
                   <div className="space-y-1.5">
@@ -230,40 +160,6 @@ export function ContactForm() {
                   </Button>
                 </form>
               )}
-            </CardContent>
-          </Card>
-
-          <Card className="h-full">
-            <CardHeader>
-              <CardTitle className="text-xl">Les objets possibles</CardTitle>
-              <CardDescription>
-                Aucun objet n’est obligatoire, mais voici les plus courants.
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              {sujets.map((sujet) => (
-                <div key={sujet.objet} className="border-b border-border pb-4 last:border-b-0 last:pb-0">
-                  <p className="text-sm font-medium text-foreground">
-                    {sujet.objet}
-                  </p>
-                  <p className="mt-1 text-pretty text-sm text-muted-foreground">
-                    {sujet.description}
-                  </p>
-                </div>
-              ))}
-
-              <p className="flex items-start gap-2 rounded-lg bg-muted/60 p-3 text-xs leading-relaxed text-muted-foreground">
-                <Mail className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-                Vous préférez votre propre client email ? Écris directement à{" "}
-                <a
-                  href="mailto:gazpoints@gmail.com"
-                  className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
-                >
-                  gazpoints@gmail.com
-                </a>
-                .
-              </p>
             </CardContent>
           </Card>
         </div>

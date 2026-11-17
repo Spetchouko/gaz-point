@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import { SoftSeparator } from "@/app/_components/soft-separator"
 import { ContactCanaux } from "@/app/_components/contact-canaux"
 import { ContactFaq } from "@/app/_components/contact-faq"
 import { ContactForm } from "@/app/_components/contact-form"
@@ -22,13 +21,9 @@ export default function Contact() {
         url="https://www.gazpoints.com/contact"
       />
       <ContactHero />
-      <SoftSeparator />
       <ContactCanaux />
-      <SoftSeparator />
       <ContactForm />
-      <SoftSeparator />
       <ContactVendeurs />
-      <SoftSeparator />
       <ContactFaq />
     </>
   )

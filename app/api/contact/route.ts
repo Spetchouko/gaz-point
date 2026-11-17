@@ -4,15 +4,6 @@ import { getTransporter, resolveSmtpCredentials } from "@/lib/email"
 
 const CONTACT_EMAIL = process.env.CONTACT_EMAIL ?? "gazpoints@gmail.com"
 
-const OBJETS = [
-  "Question générale",
-  "Signalement",
-  "Problème technique",
-  "Données personnelles",
-  "Facturation",
-  "Partenariat ou presse",
-]
-
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function escapeHtml(value: string) {
@@ -50,7 +41,6 @@ export async function POST(request: Request) {
 
   const nom = String(payload.nom ?? "").trim()
   const email = String(payload.email ?? "").trim()
-  const objet = String(payload.objet ?? "").trim()
   const message = String(payload.message ?? "").trim()
 
   if (!nom || !email || !message) {
@@ -67,7 +57,7 @@ export async function POST(request: Request) {
   // (replyTo must be an internal email, not the sender's own).
   const sanitizedReplyTo = sanitizeReplyTo(payload.replyTo, email)
 
-  const objetFinal = OBJETS.includes(objet) ? objet : "Question générale"
+  const objetFinal = "Question générale"
 
   // Vérifier que la config email existe
   const creds = resolveSmtpCredentials()
@@ -89,7 +79,7 @@ export async function POST(request: Request) {
       text: message,
       html: `
         <div style="font-family:sans-serif;font-size:14px;line-height:1.6">
-          <p><strong>Objet :</strong> ${escapeHtml(objetFinal)}</p>
+          <p><strong>Objet :</strong> ${objetFinal}</p>
           <p><strong>Nom :</strong> ${escapeHtml(singleLine(nom))}</p>
           <p><strong>Email :</strong> ${escapeHtml(email)}</p>
           <hr style="border:none;border-top:1px solid #e5e5e5;margin:16px 0" />
