@@ -55,11 +55,11 @@ export function ContactCanaux() {
           </h2>
         </div>
 
-        <div className="mx-auto mt-8 flex justify-center items-center gap-3 sm:gap-4">
+        <div className="mx-auto mt-8 flex flex-wrap justify-center items-center gap-3 sm:gap-4">
           {canaux.map((canal) => (
             <Card
               key={canal.title}
-              className="flex-1 max-w-sm w-full flex-col border border-border rounded-lg overflow-hidden hover:shadow-sm transition-shadow"
+              className="flex-1 min-w-[280px] max-w-sm w-full flex-col border border-border rounded-lg overflow-hidden hover:shadow-sm transition-shadow"
             >
               <CardHeader className="p-4 border-b border-border flex-1">
                 <div className="flex items-center gap-3">
@@ -72,28 +72,28 @@ export function ContactCanaux() {
                 </div>
               </CardHeader>
 
-              <CardContent className="p-4 flex-1">
+              <CardContent className="p-4 flex-1 min-w-0">
                 {canal.href ? (
                   <a
                     href={canal.href}
                     target={canal.href.startsWith("http") ? "_blank" : undefined}
                     rel={canal.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                    className="text-pretty font-medium text-foreground underline underline-offset-4 transition-colors hover:text-primary"
+                    className="text-pretty break-words font-medium text-foreground underline underline-offset-4 transition-colors hover:text-primary"
                   >
                     {canal.value}
                   </a>
                 ) : (
-                  <p className="text-pretty font-medium text-foreground">
+                  <p className="text-pretty break-words font-medium text-foreground">
                     {canal.value}
                   </p>
                 )}
-                <p className="mt-1.5 text-sm text-muted-foreground">
+                <p className="mt-1.5 text-sm text-muted-foreground break-words">
                   {canal.description}
                 </p>
               </CardContent>
 
-              <CardFooter className="p-2 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-                <p className="inline-flex items-center gap-1.5">
+              <CardFooter className="p-2 border-t border-border flex items-center justify-between text-xs text-muted-foreground min-w-0">
+                <p className="inline-flex items-center gap-1.5 break-words">
                   <Clock className="size-3.5 shrink-0" aria-hidden />
                   {canal.note}
                 </p>
