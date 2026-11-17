@@ -119,7 +119,6 @@ export function DashboardAdminLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { openAuthModal, closeAuthModal } = useAuthModal();
-  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
 
   const user = sessionProp ?? undefined;
   const status = statusProp;
@@ -267,12 +266,11 @@ export function DashboardAdminLayout({
         {/* Footer de la sidebar : info utilisateur + déconnexion */}
         <div className={cn("border-t border-border p-3 space-y-2", sidebarCollapsed && "px-1")}>
           <div className={cn("flex items-center gap-3 rounded-lg px-3 py-2", sidebarCollapsed && "justify-center")}>
-            <span
-              className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary cursor-pointer"
-              onClick={() => {
-                setAvatarMenuOpen(true);
-                setTimeout(() => setAvatarMenuOpen(false), 300);
-              }}
+            <button
+              type="button"
+              onClick={handleProfileClick}
+              className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary cursor-pointer hover:bg-primary/20 transition-colors"
+              aria-label="Aller à mon profil"
             >
               {status === "loading" ? (
                 <div className="animate-pulse rounded-full bg-muted" />
@@ -288,67 +286,7 @@ export function DashboardAdminLayout({
                 <User className="size-5 text-primary" aria-hidden="true" />
               )}
               <Bell className="size-2 absolute -right-0.5 -top-0.5 text-primary/60" />
-            </span>
-            {avatarMenuOpen && (
-              <div
-                className={cn(
-                  "fixed inset-0 z-50 bg-black/40 backdrop-blur-sm lg:hidden",
-                  "flex items-center justify-center"
-                )}
-                onClick={() => setAvatarMenuOpen(false)}
-                aria-hidden="true"
-              />
-            )}
-            {avatarMenuOpen && (
-              <div
-                className={cn(
-                  "fixed right-0 top-64 lg:right-0 lg:w-64 lg:border-l lg:border-border lg:bg-card shadow-lg",
-                  "max-h-[calc(100vh-128px)] overflow-y-auto"
-                )}
-              >
-                <div className="space-y-1 px-2 py-1 text-sm">
-                  {/* S'inscrire */}
-                  <Button
-                    type="button"
-                    className="w-full py-2 px-3 text-left rounded-md hover:bg-muted transition-colors"
-                    onClick={() => {
-                      setAvatarMenuOpen(false);
-                      openAuthModal("register");
-                    }}
-                  >
-                    <User className="size-4 mr-2" />
-                    S'inscrire
-                  </Button>
-                  <Separator className="my-1 border-border/50 h-0.5" />
-                  {/* Se connecter */}
-                  <Button
-                    type="button"
-                    className="w-full py-2 px-3 text-left rounded-md hover:bg-muted transition-colors"
-                    onClick={() => {
-                      setAvatarMenuOpen(false);
-                      openAuthModal("login");
-                    }}
-                  >
-                    <Lock className="size-4 mr-2" />
-                    Se connecter
-                  </Button>
-                  <Separator className="my-1 border-border/50 h-0.5" />
-                  {/* Connexion admin */}
-                  <Button
-                    type="button"
-                    className="w-full py-2 px-3 text-left rounded-md hover:bg-muted transition-colors"
-                    onClick={() => {
-                      setAvatarMenuOpen(false);
-                      // Admin login - redirect to admin login page
-                      router.push("/connexion-admin");
-                    }}
-                  >
-                    <Shield className="size-4 mr-2" />
-                    Connexion admin
-                  </Button>
-                </div>
-              </div>
-            )}
+            </button>
             {!sidebarCollapsed && (
               <div className="min-w-0 cursor-pointer" onClick={handleProfileClick}>
                 {status === "loading" ? (
