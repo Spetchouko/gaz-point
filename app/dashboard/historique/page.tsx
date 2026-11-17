@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, Calendar, Package, MapPin, Download } from "lucide-react";
@@ -45,20 +45,10 @@ export default function HistoriquePage() {
 
   const router = useRouter();
 
-  const searchHistory: SearchHistoryItem[] = [
-    { id: "1", brand: "Total", format: "12,5 kg", zone: "Bonamoussadi", resultsCount: 3, searchedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() },
-    { id: "2", brand: "Bocom", format: "6 kg", zone: "Akwa", resultsCount: 1, searchedAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString() },
-    { id: "3", brand: "Tradex", format: null, zone: "Makepe", resultsCount: 2, searchedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() },
-    { id: "4", brand: "Bocom", format: "12,5 kg", zone: "Deido", resultsCount: 0, searchedAt: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString() },
-    { id: "5", brand: null, format: "6 kg", zone: "Bonanjo", resultsCount: 2, searchedAt: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString() },
-  ];
-
-  const reservationHistory: ReservationHistoryItem[] = [
-    { id: "1", reservationCode: "GP-2024-001234", brand: "Total", format: "12,5 kg", quantity: 1, amount: 1000, amountType: "reservation", pointName: "Total Bonamoussadi", pointDistrict: "Bonamoussadi", status: "collected", reservedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), collectedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), cancelledAt: null },
-    { id: "2", reservationCode: "GP-2024-001235", brand: "Tradex", format: "6 kg", quantity: 2, amount: 2000, amountType: "consigne", pointName: "Tradex Akwa", pointDistrict: "Akwa", status: "collected", reservedAt: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(), collectedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), cancelledAt: null },
-    { id: "3", reservationCode: "GP-2024-001236", brand: "Bocom", format: "12,5 kg", quantity: 1, amount: 1500, amountType: "mixed", pointName: "Bocom Makepe", pointDistrict: "Makepe", status: "confirmed", reservedAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), collectedAt: null, cancelledAt: null },
-    { id: "4", reservationCode: "GP-2024-001237", brand: "SCTM", format: "6 kg", quantity: 1, amount: 1000, amountType: "reservation", pointName: "SCTM Deido", pointDistrict: "Deido", status: "cancelled", reservedAt: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(), collectedAt: null, cancelledAt: new Date(Date.now() - 60 * 60 * 60 * 1000).toISOString() },
-  ];
+  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
+  const [reservationHistory, setReservationHistory] = useState<ReservationHistoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const formatDateShort = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("fr-FR", {
@@ -67,6 +57,37 @@ export default function HistoriquePage() {
       year: "numeric",
     });
   };
+
+  // Charger l'historique depuis l'API
+  useEffect(() => {
+    let cancelled = false;
+    async function loadHistory() {
+      try {
+        setLoading(true);
+        const [searchRes, reservationRes] = await Promise.all([
+          fetch("/api/historique/searches", { headers: { Accept: "application/json" }, cache: "no-store" }),
+          fetch("/api/historique/reservations", { headers: { Accept: "application/json" }, cache: "no-store" }),
+        ]);
+
+        if (!cancelled) {
+          if (searchRes.ok) {
+            const data = await searchRes.json();
+            setSearchHistory(Array.isArray(data.searches) ? data.searches : []);
+          }
+          if (reservationRes.ok) {
+            const data = await reservationRes.json();
+            setReservationHistory(Array.isArray(data.reservations) ? data.reservations : []);
+          }
+        }
+      } catch (err) {
+        if (!cancelled) setError("Impossible de charger l'historique");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    loadHistory();
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <div className="space-y-6">
