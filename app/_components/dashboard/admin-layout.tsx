@@ -20,6 +20,8 @@ import {
   Truck,
   Shield,
   Lock,
+  MessageSquare,
+  CreditCard,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useAuthModal } from "@/lib/auth-context";
@@ -87,6 +89,20 @@ const ADMIN_NAV_ITEMS = [
     label: "Rapports & statistiques",
     icon: Settings,
     requiredPermission: "statistiques",
+  },
+  {
+    key: "avis",
+    href: "/dashboard/admin/avis",
+    label: "Avis",
+    icon: MessageSquare,
+    requiredPermission: "avis",
+  },
+  {
+    key: "abonnements",
+    href: "/dashboard/admin/abonnements",
+    label: "Abonnements",
+    icon: CreditCard,
+    requiredPermission: "abonnements",
   },
   {
     key: "profil",

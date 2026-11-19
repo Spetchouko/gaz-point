@@ -16,14 +16,15 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { AdminCard, AdminBadge } from "@/app/_components/dashboard/admin";
 
 export type NotificationItemType = {
   id: string;
@@ -99,12 +100,14 @@ export function NotificationItem({
   };
 
   return (
-    <div
+    <AdminCard
       className={cn(
-        "group border border-border rounded-lg shadow-sm transition-all hover:shadow-sm",
-        selected ? "bg-primary/10 border-primary" : "",
-        notification.read ? "" : "border-l-2 border-l-primary bg-primary/5"
+        "group transition-all hover:shadow-md",
+        selected && "border-green-300 bg-green-50",
+        !notification.read && "border-l-2 border-l-green-600 bg-green-50/50",
+        notification.archived && "opacity-70"
       )}
+      hover={false}
     >
       <div className="flex items-start gap-3 p-4">
         {onSelectChange && (
@@ -113,7 +116,7 @@ export function NotificationItem({
               type="checkbox"
               checked={selected}
               onChange={(e) => onSelectChange(notification.id, e.target.checked)}
-              className="accent-primary h-4 w-4 rounded border-gray-300"
+              className="accent-green-600 h-4 w-4 rounded border-border"
               aria-label={`Sélectionner ${notification.title}`}
             />
           </div>
@@ -122,7 +125,7 @@ export function NotificationItem({
         <div className="flex-1 min-w-0" onClick={handleOpen}>
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary mt-0.5">
+              <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-green-50 text-green-700">
                 <TypeIcon className="size-4" />
               </div>
               <div className="min-w-0">
@@ -131,15 +134,15 @@ export function NotificationItem({
                     {notification.title}
                   </h3>
                   {!notification.read && (
-                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                    <AdminBadge variant="primary" className="text-[10px]">
                       Non lue
-                    </span>
+                    </AdminBadge>
                   )}
                 </div>
                 <div className="mt-0.5 flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs">
+                  <AdminBadge variant="neutral" className="text-xs">
                     {TYPE_LABELS[notification.type] || notification.type}
-                  </Badge>
+                  </AdminBadge>
                   <span className="text-xs text-muted-foreground">
                     {formatDate(notification.createdAt)}
                   </span>
@@ -151,7 +154,7 @@ export function NotificationItem({
               <DropdownMenuTrigger asChild>
                 <button
                   onClick={(e) => e.stopPropagation()}
-                  className="p-1 text-muted-foreground hover:text-primary transition-colors"
+                  className="p-1 text-muted-foreground hover:text-green-700 transition-colors"
                   aria-label="Actions de la notification"
                 >
                   <MoreHorizontal className="size-4" />
@@ -159,28 +162,54 @@ export function NotificationItem({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {!notification.read ? (
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); void onMarkRead(notification.id); }}>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void onMarkRead(notification.id);
+                    }}
+                  >
                     <Check className="size-3 mr-2" />
                     Marquer comme lue
                   </DropdownMenuItem>
                 ) : (
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); void onMarkUnread(notification.id); }}>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void onMarkUnread(notification.id);
+                    }}
+                  >
                     <EyeOff className="size-3 mr-2" />
                     Marquer comme non lue
                   </DropdownMenuItem>
                 )}
                 {!notification.archived ? (
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); void onArchive(notification.id); }}>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void onArchive(notification.id);
+                    }}
+                  >
                     <Archive className="size-3 mr-2" />
                     Archiver
                   </DropdownMenuItem>
                 ) : (
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); void onRestore(notification.id); }}>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void onRestore(notification.id);
+                    }}
+                  >
                     <Eye className="size-3 mr-2" />
                     Restaurer
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); void onDelete(notification.id); }} className="text-destructive">
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void onDelete(notification.id);
+                  }}
+                  className="text-destructive"
+                >
                   <Trash2 className="size-3 mr-2" />
                   Supprimer
                 </DropdownMenuItem>
@@ -197,7 +226,7 @@ export function NotificationItem({
               <Link
                 href={notification.link}
                 onClick={handleOpen}
-                className="text-xs font-medium text-primary hover:underline"
+                className="text-xs font-medium text-green-700 hover:underline"
               >
                 Voir l'élément lié →
               </Link>
@@ -205,8 +234,11 @@ export function NotificationItem({
             {!notification.read ? (
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); void onMarkRead(notification.id); }}
-                className="text-xs text-muted-foreground hover:text-primary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void onMarkRead(notification.id);
+                }}
+                className="text-xs text-muted-foreground hover:text-green-700"
               >
                 Marquer comme lue
               </button>
@@ -218,6 +250,6 @@ export function NotificationItem({
           </div>
         </div>
       </div>
-    </div>
+    </AdminCard>
   );
 }

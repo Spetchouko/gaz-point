@@ -18,6 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { NotificationItem } from "./notification-item";
 import { dispatchNotificationsUpdated } from "@/lib/use-notification-unread-count";
+import { AdminPageHeader, AdminCard, AdminBadge } from "@/app/_components/dashboard/admin";
 
 type Notification = {
   id: string;
@@ -224,49 +225,46 @@ export function NotificationCenter() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Notifications</h1>
-          <p className="text-muted-foreground">
-            Gérez vos notifications et alertes GazPoints
-          </p>
-        </div>
-
-        {unreadCount > 0 && !bulkMode && (
-          <Button variant="outline" size="sm" onClick={handleMarkAllRead} className="text-sm">
-            <Check className="size-3 mr-1" />
-            Tout marquer comme lu
-          </Button>
-        )}
-      </div>
+    <div className="admin-section">
+      <AdminPageHeader
+        title="Notifications"
+        subtitle="Gérez vos notifications et alertes GazPoints"
+        icon={<Bell className="size-5" />}
+        actions={
+          unreadCount > 0 && !bulkMode && (
+            <Button variant="outline" size="sm" onClick={handleMarkAllRead} className="text-sm">
+              <Check className="size-3 mr-1" />
+              Tout marquer comme lu
+            </Button>
+          )
+        }
+        breadcrumb={[{ label: "Dashboard", href: "/dashboard/admin" }, { label: "Notifications" }]}
+      />
 
       {bulkMode && (
-        <Card className="border border-border shadow-sm rounded-lg bg-primary/5">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-sm font-medium text-foreground">
-                {selectedIds.length} notification(s) sélectionnée(s)
-              </span>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={handleBulkArchive} className="text-xs px-2">
-                  <Archive className="size-3 mr-1" />
-                  Archiver
-                </Button>
-                <Button variant="destructive" size="sm" onClick={handleBulkDelete} className="text-xs px-2">
-                  <Trash2 className="size-3 mr-1" />
-                  Supprimer
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => { setBulkMode(false); setSelectedIds([]); }} className="text-xs px-2 text-muted-foreground">
-                  Annuler
-                </Button>
-              </div>
+        <AdminCard className="border-green-200 bg-green-50">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm font-medium text-foreground">
+              {selectedIds.length} notification(s) sélectionnée(s)
+            </span>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handleBulkArchive} className="text-xs px-2">
+                <Archive className="size-3 mr-1" />
+                Archiver
+              </Button>
+              <Button variant="destructive" size="sm" onClick={handleBulkDelete} className="text-xs px-2">
+                <Trash2 className="size-3 mr-1" />
+                Supprimer
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => { setBulkMode(false); setSelectedIds([]); }} className="text-xs px-2 text-muted-foreground">
+                Annuler
+              </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </AdminCard>
       )}
 
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 flex-wrap mb-4">
         {(["all", "unread", "archived"] as const).map((t) => {
           const isActive = tab === t;
           return (
@@ -296,14 +294,14 @@ export function NotificationCenter() {
       </div>
 
       {!bulkMode && (
-        <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-end mb-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               placeholder="Rechercher dans les notifications…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-10 admin-input"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -321,37 +319,35 @@ export function NotificationCenter() {
         </div>
       )}
 
-      <Separator />
+      <Separator className="admin-separator" />
 
       <div className="space-y-2">
         {filteredNotifications.length === 0 ? (
-          <Card className="border border-border shadow-sm rounded-lg">
-            <CardContent className="py-12 text-center">
-              <div className="flex flex-col items-center gap-2">
-                {tab === "archived" ? (
-                  <Archive className="size-12 mx-auto text-muted-foreground/50" />
-                ) : (
-                  <Bell className="size-12 mx-auto text-muted-foreground/50" />
-                )}
-                <h3 className="mt-3 font-semibold">
-                  {tab === "archived"
-                    ? "Aucune notification archivée"
-                    : searchQuery
-                    ? "Aucune notification ne correspond à votre recherche"
-                    : tab === "unread"
-                    ? "Aucune notification non lue"
-                    : "Aucune notification pour le moment"}
-                </h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {tab === "archived"
-                    ? "Les notifications archivées s'afficheront ici."
-                    : tab === "unread"
-                    ? "Toutes vos notifications ont été lues."
-                    : "Vous n'avez aucune notification pour le moment."}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <AdminCard className="text-center py-12">
+            <div className="flex flex-col items-center gap-2">
+              {tab === "archived" ? (
+                <Archive className="size-12 mx-auto text-muted-foreground/50" />
+              ) : (
+                <Bell className="size-12 mx-auto text-muted-foreground/50" />
+              )}
+              <h3 className="mt-3 font-semibold">
+                {tab === "archived"
+                  ? "Aucune notification archivée"
+                  : searchQuery
+                  ? "Aucune notification ne correspond à votre recherche"
+                  : tab === "unread"
+                  ? "Aucune notification non lue"
+                  : "Aucune notification pour le moment"}
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                {tab === "archived"
+                  ? "Les notifications archivées s'afficheront ici."
+                  : tab === "unread"
+                  ? "Toutes vos notifications ont été lues."
+                  : "Vous n'avez aucune notification pour le moment."}
+              </p>
+            </div>
+          </AdminCard>
         ) : (
           <div className="space-y-2">
             {filteredNotifications.map((n) => (

@@ -1,7 +1,13 @@
 "use client"
 
-import { createContext, useContext, useState, type ReactNode } from "react"
-import { initTheme, setTheme, type Theme } from "@/lib/theme"
+import { createContext, useContext, useSyncExternalStore, type ReactNode } from "react"
+import {
+  getServerThemeSnapshot,
+  getThemeSnapshot,
+  setTheme,
+  subscribeTheme,
+  type Theme,
+} from "@/lib/theme"
 
 type ThemeContextType = {
   theme: Theme
@@ -11,26 +17,16 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType | null>(null)
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    try {
-      const raw = localStorage.getItem("gaz-theme")
-      if (raw === "light" || raw === "dark" || raw === "system") return raw
-    } catch {}
-    return "system"
-  })
-
-  // Initialiser le thème du document immédiatement (évite le flash de thème par défaut)
-  if (typeof window !== "undefined") {
-    initTheme()
-  }
-
-  const handleSet = (t: Theme) => {
-    setThemeState(t)
-    setTheme(t)
-  }
+  // La valeur sérvée pendant l'hydratation est toujours "system" ; la vraie
+  // préférence n'est lue qu'après, ce qui évite tout mismatch avec le HTML SSR.
+  const theme = useSyncExternalStore(
+    subscribeTheme,
+    getThemeSnapshot,
+    getServerThemeSnapshot
+  )
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme: handleSet }}>
+    <ThemeContext.Provider value={{ theme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   )

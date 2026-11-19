@@ -43,6 +43,13 @@ export default function DashboardClientLayoutWrapper({
     }
   }, [isLoading, isAuthenticated, user, router, pathname, role]);
 
+  // L'espace admin a sa propre coquille (sidebar + en-tête) dans son layout
+  // dédié. La coquille générique du dashboard ne doit pas être rendue sur ces
+  // routes, sinon deux sidebars s'affichent en même temps.
+  if (pathname.startsWith("/dashboard/admin")) {
+    return <>{children}</>;
+  }
+
   // Toujours afficher le contenu : pas de retour null pendant le loading,
   // ce qui supprimerait le clignotement et le retour à la page de connexion.
   return (

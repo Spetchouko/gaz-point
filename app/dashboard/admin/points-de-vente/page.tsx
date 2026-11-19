@@ -1,21 +1,21 @@
-"use client"
+"use client";
 
-export const dynamic = "force-dynamic"
+export const dynamic = "force-dynamic";
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import { Search, Package, AlertCircle, ArrowLeft, Store, User, Truck, Loader2, Trash2, Edit2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Search, Package, AlertCircle, ArrowLeft, Store, User, Truck, Loader2, Trash2, Edit2, MapPin, Package as PackageIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -23,7 +23,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -31,13 +31,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { cn } from "@/lib/utils"
-import { Spinner } from "@/app/_components/spinner"
-import { toast } from "sonner"
+} from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { cn } from "@/lib/utils";
+import { Spinner } from "@/app/_components/spinner";
+import { toast } from "sonner";
+import { AdminPageHeader, AdminCard, AdminTable, AdminBadge } from "@/app/_components/dashboard/admin";
 
 const pointSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
@@ -52,42 +53,40 @@ const pointSchema = z.object({
   gasSaleEnabled: z.boolean().default(false),
   isActive: z.boolean().default(true),
   vendorId: z.string().nullable().optional(),
-})
+});
 
-type PointFormValues = z.infer<typeof pointSchema>
+type PointFormValues = z.infer<typeof pointSchema>;
 
 interface PointDeVente {
-  id: string
-  name: string
-  district: string
-  address: string
-  phone: string | null
-  brands: string[] | null
-  formats: string[] | null
-  deliveryEnabled: boolean
-  deliveryFee: number
-  exchangeEnabled: boolean
-  gasSaleEnabled: boolean
-  vendorId: string | null
-  vendorName: string | null
-  vendorEmail: string | null
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
+  id: string;
+  name: string;
+  district: string;
+  address: string;
+  phone: string | null;
+  brands: string[] | null;
+  formats: string[] | null;
+  deliveryEnabled: boolean;
+  deliveryFee: number;
+  exchangeEnabled: boolean;
+  gasSaleEnabled: boolean;
+  vendorId: string | null;
+  vendorName: string | null;
+  vendorEmail: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function AdminPointsDeVentePage() {
-  const [filterStatus, setFilterStatus] = useState<string>("all")
-  const [searchQuery, setSearchQuery] = useState("")
-  const [points, setPoints] = useState<PointDeVente[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [saving, setSaving] = useState<Set<string>>(new Set())
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [points, setPoints] = useState<PointDeVente[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState<Set<string>>(new Set());
 
-  const [editDialog, setEditDialog] = useState(false)
-  const [deleteDialog, setDeleteDialog] = useState(false)
-  const [editItem, setEditItem] = useState<PointDeVente | null>(null)
-  const [deleteItem, setDeleteItem] = useState<PointDeVente | null>(null)
+  const [editDialog, setEditDialog] = useState(false);
+  const [editItem, setEditItem] = useState<PointDeVente | null>(null);
 
   const form = useForm<PointFormValues>({
     resolver: zodResolver(pointSchema),
@@ -96,44 +95,41 @@ export default function AdminPointsDeVentePage() {
       deliveryEnabled: false, deliveryFee: 0, exchangeEnabled: false, gasSaleEnabled: false,
       isActive: true, vendorId: null,
     },
-  })
+  });
+
+  const loadPoints = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (searchQuery) params.set("search", searchQuery);
+      if (filterStatus !== "all") params.set("status", filterStatus);
+      params.set("page", "1");
+      params.set("pageSize", "50");
+
+      const res = await fetch(`/api/admin/points-de-vente?${params.toString()}`, {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error("Impossible de charger les points de vente");
+      const data = await res.json();
+      setPoints(data.points ?? []);
+      setError(null);
+    } catch {
+      setError("Impossible de charger les points de vente");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let cancelled = false
-    async function loadPoints() {
-      try {
-        setLoading(true)
-        const params = new URLSearchParams()
-        if (searchQuery) params.set("search", searchQuery)
-        if (filterStatus !== "all") params.set("status", filterStatus)
-        params.set("page", "1")
-        params.set("pageSize", "50")
-
-        const res = await fetch(`/api/admin/points-de-vente?${params.toString()}`, {
-          headers: { Accept: "application/json" },
-          cache: "no-store",
-        })
-        if (!res.ok) throw new Error("Impossible de charger les points de vente")
-        const data = await res.json()
-        if (!cancelled) {
-          setPoints(data.points ?? [])
-          setError(null)
-        }
-      } catch {
-        if (!cancelled) setError("Impossible de charger les points de vente")
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    loadPoints()
-    return () => {
-      cancelled = true
-    }
-  }, [searchQuery, filterStatus])
+    let cancelled = false;
+    loadPoints();
+    return () => { cancelled = true; };
+  }, [searchQuery, filterStatus]);
 
   const handleEditSubmit = async (values: PointFormValues) => {
-    if (!editItem) return
-    setSaving((prev) => new Set([...prev, editItem.id]))
+    if (!editItem) return;
+    setSaving((prev) => new Set([...prev, editItem.id]));
     try {
       const res = await fetch(`/api/admin/points-de-vente/${editItem.id}`, {
         method: "PATCH",
@@ -152,232 +148,239 @@ export default function AdminPointsDeVentePage() {
           isActive: values.isActive,
           vendorId: values.vendorId || null,
         }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data.error || "Échec de la modification")
-      setEditDialog(false)
-      form.reset()
-      await loadPoints()
-      toast.success("Point de vente mis à jour avec succès")
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Échec de la modification");
+      setEditDialog(false);
+      form.reset();
+      await loadPoints();
+      toast.success("Point de vente mis à jour avec succès");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur lors de la modification")
+      toast.error(err instanceof Error ? err.message : "Erreur lors de la modification");
     } finally {
       setSaving((prev) => {
-        const next = new Set(prev)
-        next.delete(editItem.id)
-        return next
-      })
+        const next = new Set(prev);
+        next.delete(editItem.id);
+        return next;
+      });
     }
-  }
+  };
 
   const toggleStatus = async (id: string, isActive: boolean) => {
-    setSaving((prev) => new Set([...prev, id]))
+    setSaving((prev) => new Set([...prev, id]));
     try {
       const res = await fetch(`/api/admin/points-de-vente/${id}/toggle`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: !isActive }),
-      })
-      if (!res.ok) throw new Error("Échec de la modification")
+      });
+      if (!res.ok) throw new Error("Échec de la modification");
       setPoints((prev) =>
         prev.map((p) => (p.id === id ? { ...p, isActive: !isActive } : p))
-      )
-      toast.success(`Dépôt ${!isActive ? "réactivé" : "suspendu"} avec succès`)
+      );
+      toast.success(`Dépôt ${!isActive ? "réactivé" : "suspendu"} avec succès`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur lors de la modification")
+      toast.error(err instanceof Error ? err.message : "Erreur lors de la modification");
     } finally {
       setSaving((prev) => {
-        const next = new Set(prev)
-        next.delete(id)
-        return next
-      })
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
-  }
+  };
+
+  const columns = [
+    {
+      key: "depot",
+      header: "Dépôt",
+      render: (p: PointDeVente) => (
+        <div className="flex items-center gap-3">
+          <div className="flex size-8 items-center justify-center rounded-full bg-green-50 text-green-700">
+            <Store className="size-4" />
+          </div>
+          <p className="font-medium text-foreground truncate max-w-xs">{p.name}</p>
+        </div>
+      ),
+    },
+    {
+      key: "location",
+      header: "District / Adresse",
+      render: (p: PointDeVente) => (
+        <div className="text-muted-foreground">
+          <p className="text-sm">{p.district}</p>
+          <p className="text-xs truncate max-w-xs">{p.address}</p>
+        </div>
+      ),
+    },
+    {
+      key: "vendor",
+      header: "Vendeur",
+      render: (p: PointDeVente) => (
+        <div className="text-muted-foreground">
+          <p className="text-sm truncate max-w-xs">{p.vendorName || "—"}</p>
+          {p.vendorEmail && <p className="text-xs truncate max-w-xs">{p.vendorEmail}</p>}
+        </div>
+      ),
+    },
+    {
+      key: "brands",
+      header: "Marques / Formats",
+      render: (p: PointDeVente) => (
+        <div className="text-muted-foreground text-xs">
+          <p>{(p.brands || []).slice(0, 3).join(", ") || "—"}</p>
+          <p>{(p.formats || []).slice(0, 3).join(", ") || "—"}</p>
+        </div>
+      ),
+    },
+    {
+      key: "services",
+      header: "Services",
+      render: (p: PointDeVente) => (
+        <div className="flex flex-wrap gap-1 text-xs">
+          {p.deliveryEnabled && <AdminBadge variant="info" className="text-[10px]">Livraison</AdminBadge>}
+          {p.exchangeEnabled && <AdminBadge variant="neutral" className="text-[10px]">Échange</AdminBadge>}
+          {p.gasSaleEnabled && <AdminBadge variant="success" className="text-[10px]">Vente gaz</AdminBadge>}
+          {!p.deliveryEnabled && !p.exchangeEnabled && !p.gasSaleEnabled && <span className="text-xs text-muted-foreground italic">—</span>}
+        </div>
+      ),
+    },
+    {
+      key: "status",
+      header: "Statut",
+      render: (p: PointDeVente) => (
+        <AdminBadge variant={p.isActive ? "success" : "neutral"}>
+          {p.isActive ? "Actif" : "Suspendu"}
+        </AdminBadge>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Action",
+      className: "text-right",
+      headerClassName: "text-right",
+      render: (p: PointDeVente) => (
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setEditItem(p);
+              form.reset({
+                name: p.name,
+                district: p.district,
+                address: p.address,
+                phone: p.phone,
+                brands: p.brands || [],
+                formats: p.formats || [],
+                deliveryEnabled: p.deliveryEnabled,
+                deliveryFee: p.deliveryFee,
+                exchangeEnabled: p.exchangeEnabled,
+                gasSaleEnabled: p.gasSaleEnabled,
+                isActive: p.isActive,
+                vendorId: p.vendorId,
+              });
+              setEditDialog(true);
+            }}
+            disabled={saving.has(p.id)}
+          >
+            <Edit2 className="size-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => toggleStatus(p.id, p.isActive)}
+            disabled={saving.has(p.id)}
+          >
+            {p.isActive ? "Suspendre" : "Réactiver"}
+          </Button>
+        </div>
+      ),
+    },
+  ];
 
   const filtered = points.filter((p) => {
     if (searchQuery) {
-      const q = searchQuery.toLowerCase()
-      return p.name.toLowerCase().includes(q) || p.district.toLowerCase().includes(q) || p.address.toLowerCase().includes(q)
+      const q = searchQuery.toLowerCase();
+      return p.name.toLowerCase().includes(q) || p.district.toLowerCase().includes(q) || p.address.toLowerCase().includes(q);
     }
-    return true
+    return true;
   }).filter((p) => {
-    if (filterStatus === "active") return p.isActive
-    if (filterStatus === "inactive") return !p.isActive
-    return true
-  })
+    if (filterStatus === "active") return p.isActive;
+    if (filterStatus === "inactive") return !p.isActive;
+    return true;
+  });
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("fr-FR", {
       day: "2-digit", month: "2-digit", year: "numeric",
-    })
-  }
+    });
+  };
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <Spinner size="lg" />
       </div>
-    )
+    );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Points de vente (dépôts)</h1>
-          <p className="text-muted-foreground text-sm">
-            Consultez et gérez les dépôts de gaz et leurs vendeurs associés
-          </p>
-        </div>
-        <Link href="/dashboard/admin">
-          <Button variant="outline">
-            <ArrowLeft className="size-4 mr-2" /> Retour
-          </Button>
-        </Link>
-      </div>
+    <div className="admin-section">
+      <AdminPageHeader
+        title="Points de vente (dépôts)"
+        subtitle="Consultez et gérez les dépôts de gaz et leurs vendeurs associés"
+        icon={<Store className="size-5" />}
+        actions={
+          <Link href="/dashboard/admin">
+            <Button variant="outline">
+              <ArrowLeft className="size-4 mr-2" /> Retour
+            </Button>
+          </Link>
+        }
+        breadcrumb={[{ label: "Dashboard", href: "/dashboard/admin" }, { label: "Points de vente" }]}
+      />
 
       {error && (
-        <Card className="border border-destructive/20 bg-destructive/5">
-          <CardContent className="p-4">
-            <AlertCircle className="size-4 mr-2 text-destructive" />
-            <span className="text-sm text-destructive">{error}</span>
-          </CardContent>
-        </Card>
+        <AdminCard className="border-red-200 bg-red-50">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="size-4 text-red-600" />
+            <span className="text-sm text-red-600">{error}</span>
+          </div>
+        </AdminCard>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Tous les points de vente</CardTitle>
-          <CardDescription>
-            Gérez les informations de chaque dépôt, ses services et son statut
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher par nom, district, adresse..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Tous les statuts" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous</SelectItem>
-                <SelectItem value="active">Actifs</SelectItem>
-                <SelectItem value="inactive">Suspendus</SelectItem>
-              </SelectContent>
-            </Select>
+      <AdminCard>
+        <div className="admin-grid admin-grid--4 mb-4">
+          <div className="relative flex-1 sm:col-span-3">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher par nom, district, adresse..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 admin-input"
+            />
           </div>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Tous les statuts" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous</SelectItem>
+              <SelectItem value="active">Actifs</SelectItem>
+              <SelectItem value="inactive">Suspendus</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-muted-foreground border-b">
-                  <th className="text-left py-3 px-4">Dépôt</th>
-                  <th className="text-left py-3 px-4">District / Adresse</th>
-                  <th className="text-left py-3 px-4">Vendeur</th>
-                  <th className="text-left py-3 px-4">Marques / Formats</th>
-                  <th className="text-left py-3 px-4">Services</th>
-                  <th className="text-left py-3 px-4">Statut</th>
-                  <th className="text-right py-3 px-4">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="py-8 text-center text-muted-foreground">
-                      Aucun point de vente trouvé
-                    </td>
-                  </tr>
-                ) : (
-                  filtered.map((p) => (
-                    <tr key={p.id} className="border-b">
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className="flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                            <Store className="size-4" />
-                          </div>
-                          <p className="font-medium text-foreground">{p.name}</p>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-muted-foreground">
-                        <p className="text-sm">{p.district}</p>
-                        <p className="text-xs">{p.address}</p>
-                      </td>
-                      <td className="py-3 px-4 text-muted-foreground">
-                        {p.vendorName || "—"}
-                        {p.vendorEmail && <p className="text-xs">{p.vendorEmail}</p>}
-                      </td>
-                      <td className="py-3 px-4 text-muted-foreground text-xs">
-                        {(p.brands || []).slice(0, 3).join(", ") || "—"}
-                        {(p.brands || []).length > 3 && <span>…</span>}
-                        <br />
-                        {(p.formats || []).slice(0, 3).join(", ") || "—"}
-                      </td>
-                      <td className="py-3 px-4 text-muted-foreground text-xs">
-                        <div className="flex flex-wrap gap-1">
-                          {p.deliveryEnabled && <span className="text-xs">Livraison</span>}
-                          {p.exchangeEnabled && <span className="text-xs">Échange</span>}
-                          {p.gasSaleEnabled && <span className="text-xs">Vente gaz</span>}
-                          {!p.deliveryEnabled && !p.exchangeEnabled && !p.gasSaleEnabled && <span className="text-xs text-muted-foreground italic">—</span>}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <Badge variant={p.isActive ? "default" : "secondary"}>
-                          {p.isActive ? "Actif" : "Suspendu"}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setEditItem(p)
-                              form.reset({
-                                name: p.name,
-                                district: p.district,
-                                address: p.address,
-                                phone: p.phone,
-                                brands: p.brands || [],
-                                formats: p.formats || [],
-                                deliveryEnabled: p.deliveryEnabled,
-                                deliveryFee: p.deliveryFee,
-                                exchangeEnabled: p.exchangeEnabled,
-                                gasSaleEnabled: p.gasSaleEnabled,
-                                isActive: p.isActive,
-                                vendorId: p.vendorId,
-                              })
-                              setEditDialog(true)
-                            }}
-                            disabled={saving.has(p.id)}
-                          >
-                            <Edit2 className="size-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => toggleStatus(p.id, p.isActive)}
-                            disabled={saving.has(p.id)}
-                          >
-                            {p.isActive ? "Suspendre" : "Réactiver"}
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+        <AdminTable
+          columns={columns}
+          data={filtered}
+          keyExtractor={(p) => p.id}
+          emptyMessage="Aucun point de vente trouvé"
+          emptyIcon={<Store className="size-8" />}
+        />
+      </AdminCard>
 
       {/* Dialog modification */}
       <Dialog open={editDialog} onOpenChange={setEditDialog}>
@@ -398,7 +401,7 @@ export default function AdminPointsDeVentePage() {
                     <FormItem>
                       <FormLabel>Nom du dépôt</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} className="admin-input" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -411,7 +414,7 @@ export default function AdminPointsDeVentePage() {
                     <FormItem>
                       <FormLabel>District / Quartier</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} className="admin-input" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -424,7 +427,7 @@ export default function AdminPointsDeVentePage() {
                     <FormItem>
                       <FormLabel>Adresse complète</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} className="admin-input" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -437,7 +440,7 @@ export default function AdminPointsDeVentePage() {
                     <FormItem>
                       <FormLabel>Téléphone</FormLabel>
                       <FormControl>
-                        <Input type="tel" {...field} placeholder="+237 ..." />
+                        <Input type="tel" {...field} placeholder="+237 ..." className="admin-input" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -450,18 +453,18 @@ export default function AdminPointsDeVentePage() {
                   <FormLabel>Marques acceptées</FormLabel>
                   <div className="flex flex-wrap gap-2">
                     {["Butagaz", "Total", "Camgaz", "Sodigaz", "Vitogaz", "Autre"].map((b) => (
-                      <label key={b} className="flex items-center gap-2 cursor-pointer select-none rounded-lg border p-2 hover:bg-primary/50 transition-colors">
+                      <label key={b} className="flex items-center gap-2 cursor-pointer select-none rounded-lg border p-2 hover:bg-green-50 transition-colors">
                         <input
                           type="checkbox"
                           checked={form.getValues("brands").includes(b)}
                           onCheckedChange={(checked) => {
-                            const current = form.getValues("brands")
+                            const current = form.getValues("brands");
                             form.setValue("brands", checked
                               ? [...current, b]
                               : current.filter((v: string) => v !== b)
-                            )
+                            );
                           }}
-                          className="accent-primary"
+                          className="accent-green-600"
                         />
                         <span className="text-sm">{b}</span>
                       </label>
@@ -472,18 +475,18 @@ export default function AdminPointsDeVentePage() {
                   <FormLabel>Formats de bouteilles</FormLabel>
                   <div className="flex flex-wrap gap-2">
                     {["6 kg", "12,5 kg", "15 kg"].map((f) => (
-                      <label key={f} className="flex items-center gap-2 cursor-pointer select-none rounded-lg border p-2 hover:bg-primary/50 transition-colors">
+                      <label key={f} className="flex items-center gap-2 cursor-pointer select-none rounded-lg border p-2 hover:bg-green-50 transition-colors">
                         <input
                           type="checkbox"
                           checked={form.getValues("formats").includes(f)}
                           onCheckedChange={(checked) => {
-                            const current = form.getValues("formats")
+                            const current = form.getValues("formats");
                             form.setValue("formats", checked
                               ? [...current, f]
                               : current.filter((v: string) => v !== f)
-                            )
+                            );
                           }}
-                          className="accent-primary"
+                          className="accent-green-600"
                         />
                         <span className="text-sm">{f}</span>
                       </label>
@@ -500,7 +503,7 @@ export default function AdminPointsDeVentePage() {
                     <FormItem>
                       <FormLabel>Livraison à domicile</FormLabel>
                       <FormControl>
-                        <input type="checkbox" {...field} className="accent-primary" />
+                        <input type="checkbox" {...field} className="accent-green-600" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -513,7 +516,7 @@ export default function AdminPointsDeVentePage() {
                     <FormItem>
                       <FormLabel>Frais de livraison (FCFA)</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <Input type="number" {...field} className="admin-input" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -526,7 +529,7 @@ export default function AdminPointsDeVentePage() {
                     <FormItem>
                       <FormLabel>Échange de bouteille</FormLabel>
                       <FormControl>
-                        <input type="checkbox" {...field} className="accent-primary" />
+                        <input type="checkbox" {...field} className="accent-green-600" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -539,7 +542,7 @@ export default function AdminPointsDeVentePage() {
                     <FormItem>
                       <FormLabel>Vente de bouteille chargée</FormLabel>
                       <FormControl>
-                        <input type="checkbox" {...field} className="accent-primary" />
+                        <input type="checkbox" {...field} className="accent-green-600" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -575,7 +578,7 @@ export default function AdminPointsDeVentePage() {
                     <FormItem>
                       <FormLabel>Dépôt actif</FormLabel>
                       <FormControl>
-                        <input type="checkbox" {...field} className="accent-primary" />
+                        <input type="checkbox" {...field} className="accent-green-600" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -597,5 +600,5 @@ export default function AdminPointsDeVentePage() {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }
