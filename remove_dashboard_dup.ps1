@@ -1,1 +1,0 @@
-Remove-Item -Recurse -Force "C:\Users\Solomon\gaz-point\app\(dashboard)" -ErrorAction SilentlyContinue
