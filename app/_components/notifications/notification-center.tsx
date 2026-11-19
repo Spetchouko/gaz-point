@@ -238,7 +238,6 @@ export function NotificationCenter() {
             </Button>
           )
         }
-        breadcrumb={[{ label: "Dashboard", href: "/dashboard/admin" }, { label: "Notifications" }]}
       />
 
       {bulkMode && (

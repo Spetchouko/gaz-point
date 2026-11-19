@@ -14,6 +14,8 @@ import { errorMessage } from "@/lib/errors"
 import { WebPageJsonLd } from "@/app/_components/json-ld"
 import type { Metadata } from "next"
 
+const now = new Date().toISOString()
+
 // Les publicités et les avis proviennent de la base de données : la page est
 // rendue à la demande pour ne pas figer ces données au moment du build (et
 // pour que `next build` n'exige pas une base accessible).
@@ -81,6 +83,8 @@ export default async function Home() {
         name="GazPoints – Trouvez votre bouteille de gaz au Cameroun"
         description="GazPoints est la plateforme qui vous permet de rechercher et de vérifier la disponibilité des bouteilles de gaz auprès des points de vente au Cameroun."
         url="https://www.gazpoints.com/"
+        datePublished={now}
+        dateModified={now}
       />
       <Hero searchPublicites={searchPublicites} />
       <PubliciteCarousel publicites={heroPublicites} className="py-8 md:py-12" />

@@ -194,7 +194,6 @@ export default function AdminAnalyticsPage() {
             </Link>
           </>
         }
-        breadcrumb={[{ label: "Dashboard", href: "/dashboard/admin" }, { label: "Analytics" }]}
       />
 
       {error && (

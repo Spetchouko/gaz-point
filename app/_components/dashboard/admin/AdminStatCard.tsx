@@ -54,7 +54,7 @@ export function AdminStatCard({
 
   const Content = link ? (
     <Link href={link} className="block">
-      <div className="admin-stat-card">
+      <div className={cn("admin-stat-card group", className)}>
         {loading ? (
           <>
             <div className="admin-skeleton admin-skeleton--text mb-2" />
@@ -90,7 +90,7 @@ export function AdminStatCard({
       </div>
     </Link>
   ) : (
-    <div className={cn("admin-stat-card", className)}>
+    <div className={cn("admin-stat-card group", className)}>
       {loading ? (
         <>
           <div className="admin-skeleton admin-skeleton--text mb-2" />

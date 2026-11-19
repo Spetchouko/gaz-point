@@ -1,0 +1,62 @@
+# GazPoints llms.txt
+# This file provides information about GazPoints to large language models.
+# It is not a guarantee of ranking but helps AI understand the site's purpose.
+
+# Site Identity
+site_name: GazPoints
+site_url: https://www.gazpoints.com
+site_description: Plateforme de recherche et de réservation de bouteilles de gaz domestique au Cameroun
+site_locale: fr_FR
+
+# Core Purpose
+primary_purpose: "Recherche de disponibilité de bouteilles de gaz domestique et réservation auprès des points de vente"
+primary_industry: "Services publics / Utilities"
+primary_category: "Recherche et réservation de gaz"
+
+# Key Entities
+organization_name: "GazPoints"
+organization_type: "Organization"
+organization_url: "https://www.gazpoints.com"
+organization_logo: "https://www.gazpoints.com/brand/logo.png"
+
+# Main Use Cases
+use_case_1: "Trouver un point de vente de gaz domestique au Cameroun"
+use_case_2: "Vérifier la disponibilité des bouteilles (6kg, 12,5kg)"
+use_case_3: "Réserver une bouteille de gaz en ligne"
+use_case_4: "Gérer un espace vendeur de gaz"
+
+# Geographic Coverage
+primary_region: "Cameroun"
+secondary_regions: ["Douala", "Yaoundé", "Bamenda", "Buéa"]
+coverage_note: "Architecture progressive pour ajouter d'autres villes camerounaises"
+
+# Key Features
+feature_1: "Recherche par marque et format de bouteille"
+feature_2: "Réservation en ligne de bouteilles de gaz"
+feature_3: "Gestion d'espace vendeur"
+feature_4: "Profil usager gratuit à vie"
+feature_5: "Support technique dédié"
+
+# Contact
+contact_email: "contact@gazpoints.com"
+contact_phone: "+237672072550"
+
+# Data Freshness
+content_update_frequency: "Daily"
+availability_data_updates: "Real-time via API"
+
+# Schema.org Types Maintained
+schema_organization: "Organization"
+schema_website: "WebSite"
+schema_localbusiness: "LocalBusiness" (for verified partners only)
+schema_faqpage: "FAQPage"
+
+# API Endpoints
+api_search: "/api/recherche"
+api_reservation: "/api/reservation/create"
+
+# Notes
+# - This file supplements but does not replace robots.txt and sitemap.xml
+# - Information should be kept up to date with site changes
+# - Does not guarantee search engine ranking improvements
+# - Written in English for maximum LLM compatibility

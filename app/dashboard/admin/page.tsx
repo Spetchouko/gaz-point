@@ -199,7 +199,6 @@ export default function AdminOverviewPage() {
             </Link>
           </>
         }
-        breadcrumb={[{ label: "Dashboard", href: "/dashboard/admin" }]}
       />
 
       {(from || to) && (
@@ -361,133 +360,132 @@ export default function AdminOverviewPage() {
         </AdminCard>
       </section>
 
-      {/* Quick Actions & Alerts */}
+      {/* Quick Actions, System Health & Recent Activity - Horizontal on desktop */}
       <section className="admin-grid admin-grid--3">
-        {/* Pending Reservations Alert */}
-        {r.pending > 0 && (
-          <AdminCard className="border-amber-200 bg-amber-50 lg:col-span-2">
-            <div className="flex items-start gap-3">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-amber-100 text-amber-600 shrink-0">
-                <AlertCircle className="size-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-amber-800">
-                  {r.pending} réservation(s) en attente
-                </h3>
-                <p className="text-sm text-amber-700 mt-1">
-                  Des réservations client attendent votre validation.
-                </p>
-              </div>
-              <Link href="/dashboard/admin/reservations?status=pending">
-                <Button variant="outline" size="sm">
-                  Voir les en attente
-                </Button>
-              </Link>
-            </div>
-          </AdminCard>
-        )}
-
-        {/* Quick Stats Cards */}
+        {/* Actions rapides */}
         <AdminCard title="Actions rapides" icon={<Archive className="size-5" />}>
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <Link href="/dashboard/admin/utilisateurs">
-              <Button variant="outline" className="w-full justify-start gap-3 h-auto py-3">
-                <Users className="size-5 text-blue-600" />
-                <div className="text-left">
-                  <p className="font-medium">Gérer les utilisateurs</p>
-                  <p className="text-xs text-muted-foreground">{u.total} utilisateurs au total</p>
+              <Button variant="outline" className="w-full justify-start gap-2.5 h-auto py-2.5 text-sm">
+                <Users className="size-4 text-blue-600 shrink-0" />
+                <div className="text-left min-w-0">
+                  <p className="font-medium truncate">Gérer les utilisateurs</p>
+                  <p className="text-xs text-muted-foreground truncate">{u.total} utilisateurs</p>
                 </div>
               </Button>
             </Link>
             <Link href="/dashboard/admin/vendeurs">
-              <Button variant="outline" className="w-full justify-start gap-3 h-auto py-3">
-                <Store className="size-5 text-orange-600" />
-                <div className="text-left">
-                  <p className="font-medium">Gérer les vendeurs</p>
-                  <p className="text-xs text-muted-foreground">{u.vendors} vendeurs inscrits</p>
+              <Button variant="outline" className="w-full justify-start gap-2.5 h-auto py-2.5 text-sm">
+                <Store className="size-4 text-orange-600 shrink-0" />
+                <div className="text-left min-w-0">
+                  <p className="font-medium truncate">Gérer les vendeurs</p>
+                  <p className="text-xs text-muted-foreground truncate">{u.vendors} vendeurs</p>
                 </div>
               </Button>
             </Link>
             <Link href="/dashboard/admin/reservations">
-              <Button variant="outline" className="w-full justify-start gap-3 h-auto py-3">
-                <Calendar className="size-5 text-red-600" />
-                <div className="text-left">
-                  <p className="font-medium">Gérer les réservations</p>
-                  <p className="text-xs text-muted-foreground">{r.pending} en attente • {r.total} total</p>
+              <Button variant="outline" className="w-full justify-start gap-2.5 h-auto py-2.5 text-sm">
+                <Calendar className="size-4 text-red-600 shrink-0" />
+                <div className="text-left min-w-0">
+                  <p className="font-medium truncate">Gérer les réservations</p>
+                  <p className="text-xs text-muted-foreground truncate">{r.pending} en attente</p>
                 </div>
               </Button>
             </Link>
             <Link href="/dashboard/admin/analytics">
-              <Button variant="outline" className="w-full justify-start gap-3 h-auto py-3">
-                <BarChart3 className="size-5 text-emerald-600" />
-                <div className="text-left">
-                  <p className="font-medium">Voir les rapports</p>
-                  <p className="text-xs text-muted-foreground">Statistiques détaillées & exports</p>
+              <Button variant="outline" className="w-full justify-start gap-2.5 h-auto py-2.5 text-sm">
+                <BarChart3 className="size-4 text-emerald-600 shrink-0" />
+                <div className="text-left min-w-0">
+                  <p className="font-medium truncate">Voir les rapports</p>
+                  <p className="text-xs text-muted-foreground truncate">Statistiques & exports</p>
                 </div>
               </Button>
             </Link>
           </div>
         </AdminCard>
-      </section>
 
-      {/* System Health */}
-      <section className="admin-grid admin-grid--3">
+        {/* Santé du système */}
         <AdminCard title="Santé du système" icon={<Shield className="size-5" />}>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Utilisateurs actifs</span>
-              <span className="font-semibold">{u.active} / {u.total}</span>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground truncate">Utilisateurs actifs</span>
+              <span className="font-semibold ml-2 whitespace-nowrap">{u.active} / {u.total}</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Vendeurs actifs</span>
-              <span className="font-semibold">{u.vendors}</span>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground truncate">Vendeurs actifs</span>
+              <span className="font-semibold ml-2 whitespace-nowrap">{u.vendors}</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Points de vente actifs</span>
-              <span className="font-semibold">{p.active} / {p.total}</span>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground truncate">Points de vente actifs</span>
+              <span className="font-semibold ml-2 whitespace-nowrap">{p.active} / {p.total}</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Réservations ce mois</span>
-              <span className="font-semibold">{r.month}</span>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground truncate">Réservations ce mois</span>
+              <span className="font-semibold ml-2 whitespace-nowrap">{r.month}</span>
             </div>
           </div>
         </AdminCard>
 
+        {/* Activité récente */}
         <AdminCard title="Activité récente" icon={<Activity className="size-5" />}>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 text-sm">
-              <div className="flex size-8 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                <Users className="size-4" />
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2.5 text-sm">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                <Users className="size-3.5" />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium">Nouveau client inscrit</p>
+              <div className="min-w-0 flex-1">
+                <p className="font-medium truncate">Nouveau client inscrit</p>
                 <p className="text-xs text-muted-foreground">Il y a 10 minutes</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 text-sm">
-              <div className="flex size-8 items-center justify-center rounded-full bg-orange-100 text-orange-600">
-                <Store className="size-4" />
+            <div className="flex items-center gap-2.5 text-sm">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-orange-100 text-orange-600">
+                <Store className="size-3.5" />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium">Nouveau vendeur inscrit</p>
+              <div className="min-w-0 flex-1">
+                <p className="font-medium truncate">Nouveau vendeur inscrit</p>
                 <p className="text-xs text-muted-foreground">Il y a 2 heures</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 text-sm">
-              <div className="flex size-8 items-center justify-center rounded-full bg-red-100 text-red-600">
-                <AlertCircle className="size-4" />
+            <div className="flex items-center gap-2.5 text-sm">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+                <AlertCircle className="size-3.5" />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium">{r.pending} réservations en attente</p>
+              <div className="min-w-0 flex-1">
+                <p className="font-medium truncate">{r.pending} réservations en attente</p>
                 <p className="text-xs text-muted-foreground">Nécessitent une action</p>
               </div>
             </div>
-            <Link href="/dashboard/admin/analytics" className="text-sm text-primary hover:underline">
-              Voir tout l'historique d'activité →
+            <Link href="/dashboard/admin/analytics" className="text-sm text-primary hover:underline block text-center mt-1">
+              Voir tout l'historique →
             </Link>
           </div>
         </AdminCard>
       </section>
+
+      {/* Pending Reservations Alert - Full width below */}
+      {r.pending > 0 && (
+        <AdminCard className="border-amber-200 bg-amber-50 mt-4">
+          <div className="flex items-start gap-3">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-amber-100 text-amber-600 shrink-0">
+              <AlertCircle className="size-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-amber-800">
+                {r.pending} réservation(s) en attente
+              </h3>
+              <p className="text-sm text-amber-700 mt-1">
+                Des réservations client attendent votre validation.
+              </p>
+            </div>
+            <Link href="/dashboard/admin/reservations?status=pending">
+              <Button variant="outline" size="sm">
+                Voir les en attente
+              </Button>
+            </Link>
+          </div>
+        </AdminCard>
+      )}
     </div>
   );
 }

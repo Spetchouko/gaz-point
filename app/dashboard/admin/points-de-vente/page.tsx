@@ -338,7 +338,6 @@ export default function AdminPointsDeVentePage() {
             </Button>
           </Link>
         }
-        breadcrumb={[{ label: "Dashboard", href: "/dashboard/admin" }, { label: "Points de vente" }]}
       />
 
       {error && (

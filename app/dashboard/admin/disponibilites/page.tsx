@@ -234,7 +234,6 @@ export default function AdminDisponibilitesPage() {
             </Button>
           </Link>
         }
-        breadcrumb={[{ label: "Dashboard", href: "/dashboard/admin" }, { label: "Disponibilités" }]}
       />
 
       {error && (

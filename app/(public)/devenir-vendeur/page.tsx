@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Store, ShieldCheck, TrendingUp, BarChart3 } from "lucide-react"
 import { WebPageJsonLd } from "@/app/_components/json-ld"
 
+const now = new Date().toISOString()
+
 export const metadata: Metadata = {
   title: { absolute: "Devenir Vendeur | GazPoints" },
   description:
@@ -31,6 +33,8 @@ export default function DevenirVendeurPage() {
         name="Devenir Vendeur | GazPoints"
         description="Devenez vendeur GazPoints : publiez vos disponibilités de bouteilles de gaz en temps réel et attirez des clients à Douala et au Cameroun. Inscription à 5 000 FCFA/mois."
         url="https://www.gazpoints.com/devenir-vendeur"
+        datePublished={now}
+        dateModified={now}
       />
       <div className="min-h-screen bg-background">
         {/* Header */}
@@ -168,7 +172,7 @@ export default function DevenirVendeurPage() {
             </h2>
             <p className="text-muted-foreground mb-8 max-w-md mx-auto">
               Créez votre compte vendeur et commencez à publier vos
-              disponibilités aujourd’hui. Aucun engagement mensuel.
+              disponibilités aujourd'hui. Aucun engagement mensuel.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button

@@ -189,7 +189,6 @@ export default function AdminAvisPage() {
             </Button>
           </Link>
         }
-        breadcrumb={[{ label: "Dashboard", href: "/dashboard/admin" }, { label: "Avis" }]}
       />
 
       {error && (

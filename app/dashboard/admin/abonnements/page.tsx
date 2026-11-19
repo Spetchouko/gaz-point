@@ -291,7 +291,6 @@ export default function AdminAbonnementsPage() {
             </Button>
           </Link>
         }
-        breadcrumb={[{ label: "Dashboard", href: "/dashboard/admin" }, { label: "Abonnements" }]}
       />
 
       {error && (

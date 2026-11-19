@@ -38,6 +38,7 @@ import * as z from "zod"
 import { cn } from "@/lib/utils"
 import { Spinner } from "@/app/_components/spinner"
 import { toast } from "sonner"
+import { AdminPageHeader } from "@/app/_components/dashboard/admin"
 
 const slotSchema = z.object({
   title: z.string().min(1, "Le titre est requis").max(60),
@@ -288,30 +289,29 @@ export default function AdminPublicitePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Annonces & publicités</h1>
-          <p className="text-muted-foreground text-sm">
-            Créez, modifiez et suivez les annonces publicitaires affichées sur le site
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={() => {
-            form.reset({
-              title: "", description: "", image: "", linkUrl: "",
-              slot: "home_hero", status: "draft", startAt: "", endAt: "",
-            })
-            setCreateDialog(true)
-          }}>
-            <Plus className="size-4 mr-2" /> Nouvelle annonce
-          </Button>
-          <Link href="/dashboard/admin">
-            <Button variant="outline">
-              <ArrowLeft className="size-4 mr-2" /> Retour
+      <AdminPageHeader
+        title="Annonces & publicités"
+        subtitle="Créez, modifiez et suivez les annonces publicitaires affichées sur le site"
+        icon={<Truck className="size-5" />}
+        actions={
+          <>
+            <Button onClick={() => {
+              form.reset({
+                title: "", description: "", image: "", linkUrl: "",
+                slot: "home_hero", status: "draft", startAt: "", endAt: "",
+              })
+              setCreateDialog(true)
+            }}>
+              <Plus className="size-4 mr-2" /> Nouvelle annonce
             </Button>
-          </Link>
-        </div>
-      </div>
+            <Link href="/dashboard/admin">
+              <Button variant="outline">
+                <ArrowLeft className="size-4 mr-2" /> Retour
+              </Button>
+            </Link>
+          </>
+        }
+      />
 
       {error && (
         <Card className="border border-destructive/20 bg-destructive/5">

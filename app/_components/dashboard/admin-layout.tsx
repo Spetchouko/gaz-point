@@ -268,8 +268,8 @@ export function DashboardAdminLayout({
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                   active
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    ? "bg-green-50 text-green-700"
+                    : "bg-white text-muted-foreground hover:bg-green-50 hover:text-green-700",
                   sidebarCollapsed && "justify-center px-2"
                 )}
               >

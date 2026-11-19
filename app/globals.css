@@ -406,13 +406,13 @@ img {
 
 /* En-tête de page admin : titre + sous-titre */
 .admin-page-header {
-  @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-1;
+  @apply flex flex-col sm:flex-row sm:items-center gap-3 mb-4;
 }
 .admin-page-title {
-  @apply text-2xl font-bold tracking-tight;
+  @apply text-3xl font-bold tracking-tight truncate;
 }
 .admin-page-subtitle {
-  @apply text-sm text-muted-foreground;
+  @apply text-base text-muted-foreground truncate;
 }
 
 /* Actions de page : groupe de boutons à droite de l'en-tête */
@@ -505,8 +505,8 @@ img {
   @apply px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60;
 }
 .admin-sidebar__link {
-  @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 outline-none;
-  @apply text-muted-foreground hover:bg-green-50 hover:text-green-700;
+  @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors;
+  @apply bg-white text-muted-foreground hover:bg-green-50 hover:text-green-700;
   @apply data-[active]:bg-green-50 data-[active]:text-green-700 data-[active]:font-medium;
 }
 .admin-sidebar__link-icon {
@@ -517,10 +517,10 @@ img {
 }
 .admin-sidebar__user-btn {
   @apply flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors;
-  @apply text-muted-foreground hover:bg-green-50 hover:text-green-700;
+  @apply text-muted-foreground hover:bg-blue-50 hover:text-blue-700;
 }
 .admin-sidebar__notif-btn {
-  @apply relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-green-50 hover:text-green-700;
+  @apply relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-blue-50 hover:text-blue-700;
 }
 .admin-sidebar__logout-btn {
   @apply flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600;
@@ -539,10 +539,10 @@ img {
 
 /* Stat cards - Outlook style */
 .admin-stat-card {
-  @apply rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:shadow-md hover:border-green-200;
+  @apply rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:shadow-md hover:border-green-300 hover:bg-green-50 cursor-pointer;
 }
 .admin-stat-card__icon {
-  @apply flex size-11 shrink-0 items-center justify-center rounded-xl bg-green-50 text-green-700;
+  @apply flex size-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700 transition-colors duration-200 group-hover:bg-green-100 group-hover:text-green-700;
 }
 .admin-stat-card__value {
   @apply text-2xl font-bold tracking-tight text-foreground;
@@ -892,30 +892,6 @@ img {
   padding: 1rem 1.25rem;
 }
 
-/* Séparateurs et titres de section : discrets, très espacés. */
-.dashboard-surface .admin-section__title {
-  color: var(--color-muted-foreground);
-  letter-spacing: 0.08em;
-}
-.dashboard-surface .admin-separator {
-  border-color: var(--color-border);
-}
-
-/* Boutons et champs : ombre fine sur l'action principale. */
-.dashboard-surface .admin-btn--primary {
-  box-shadow: 0 1px 2px rgb(16 24 40 / 0.14);
-}
-.dashboard-surface .admin-input,
-.dashboard-surface .admin-select-trigger {
-  background: var(--color-card);
-  border-radius: 0.625rem;
-}
-
-/* Tableaux : lignes aérées et séparateurs visibles. */
-.dashboard-surface .admin-table__tbody-tr {
-  border-bottom: 1px solid var(--color-border);
-}
-
 /* ----- Mobile : cartes compactes, une seule colonne ------------------ */
 @media (max-width: 639px) {
   .dashboard-surface {
@@ -939,11 +915,11 @@ img {
     gap: 0.75rem;
   }
   .dashboard-surface .admin-page-title {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     line-height: 1.3;
   }
   .dashboard-surface .admin-page-subtitle {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
   }
 
   .dashboard-surface .admin-card__header,
