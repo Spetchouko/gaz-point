@@ -36,6 +36,7 @@ import { ScrollToTop } from "@/app/_components/dashboard/scroll-to-top";
 import { DashboardQuickActions } from "@/app/_components/dashboard/dashboard-quick-actions";
 import { cn } from "@/lib/utils";
 import { useNotificationUnreadCount } from "@/lib/use-notification-unread-count";
+import { AdminSidebarProvider, useAdminSidebar } from "@/app/_components/dashboard/admin-sidebar-context";
 
 // Logo du site pour l'en-tête de la sidebar admin
 const SIDEBAR_LOGO = (
@@ -172,11 +173,10 @@ export function DashboardAdminLayout({
   session: sessionProp,
   status: statusProp,
 }: DashboardAdminLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { openAuthModal, closeAuthModal } = useAuthModal();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const user = sessionProp ?? undefined;
   const status = statusProp;
@@ -227,6 +227,82 @@ export function DashboardAdminLayout({
   const allowedNavItems = allNavItems.filter(
     (item) => item.requiredPermission === null || permissions.has(item.requiredPermission)
   );
+
+  return (
+    <AdminSidebarProvider>
+      <DashboardAdminLayoutInner
+        children={children}
+        permissions={permissions}
+        session={sessionProp}
+        status={statusProp}
+        sidebarCollapsed={sidebarCollapsed}
+        setSidebarCollapsed={setSidebarCollapsed}
+        user={user}
+        status={status}
+        isAuthenticated={isAuthenticated}
+        unreadCount={unreadCount}
+        buttonDisabled={buttonDisabled}
+        notificationsHref={notificationsHref}
+        allowedNavItems={allowedNavItems}
+        handleSignOut={handleSignOut}
+        handleAuthClick={handleAuthClick}
+        getUserAvatar={getUserAvatar}
+        getUserInitials={getUserInitials}
+        handleProfileClick={handleProfileClick}
+        handleNotificationsClick={handleNotificationsClick}
+      />
+    </AdminSidebarProvider>
+  );
+}
+
+function DashboardAdminLayoutInner({
+  children,
+  permissions,
+  session,
+  status,
+  sidebarCollapsed,
+  setSidebarCollapsed,
+  user,
+  status: statusProp,
+  isAuthenticated,
+  unreadCount,
+  buttonDisabled,
+  notificationsHref,
+  allowedNavItems,
+  handleSignOut,
+  handleAuthClick,
+  getUserAvatar,
+  getUserInitials,
+  handleProfileClick,
+  handleNotificationsClick,
+}: {
+  children: React.ReactNode;
+  permissions: Set<string>;
+  session: DashboardUser | null;
+  status: "loading" | "authenticated" | "unauthenticated";
+  sidebarCollapsed: boolean;
+  setSidebarCollapsed: (v: boolean) => void;
+  user: DashboardUser | undefined;
+  status: "loading" | "authenticated" | "unauthenticated";
+  isAuthenticated: boolean;
+  unreadCount: number;
+  buttonDisabled: boolean;
+  notificationsHref: string;
+  allowedNavItems: typeof ADMIN_NAV_GROUPS extends { flatMap: (fn: (g: any) => any) => infer T } ? T : any;
+  handleSignOut: () => Promise<void>;
+  handleAuthClick: (mode: "login" | "register") => void;
+  getUserAvatar: () => string | null;
+  getUserInitials: () => string;
+  handleProfileClick: () => void;
+  handleNotificationsClick: () => void;
+}) {
+  const { sidebarOpen, setSidebarOpen, toggleSidebar } = useAdminSidebar();
+  const pathname = usePathname();
+  const router = useRouter();
+  const { openAuthModal, closeAuthModal } = useAuthModal();
+
+  const isActive = (href: string) =>
+    href === "/dashboard/admin" ? pathname === "/dashboard/admin" : pathname.startsWith(href);
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -396,19 +472,6 @@ export function DashboardAdminLayout({
           aria-hidden="true"
         />
       )}
-
-      {/* Mobile menu button (masqué quand le tiroir est ouvert) */}
-      <button
-        type="button"
-        onClick={() => setSidebarOpen(true)}
-        aria-label="Ouvrir le menu"
-        className={cn(
-          "fixed bottom-6 right-4 z-40 lg:hidden flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors",
-          sidebarOpen && "hidden"
-        )}
-      >
-        <Menu className="size-6" aria-hidden />
-      </button>
 
       {/* Main content area */}
       <div className={cn(
