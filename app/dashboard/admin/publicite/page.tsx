@@ -738,7 +738,10 @@ export default function AdminPublicitePage() {
                 <Button type="button" variant="outline" onClick={() => setEditDialog(false)}>
                   Annuler
                 </Button>
-                <Button type="submit" disabled={form.formState.isSubmitting || saving.has(editItem!.id)}>
+                <Button
+                  type="submit"
+                  disabled={form.formState.isSubmitting || (editItem && saving.has(editItem.id))}
+                >
                   {form.formState.isSubmitting ? <Loader2 className="size-4 mr-2 animate-spin" /> : null}
                   Enregistrer
                 </Button>
