@@ -12,7 +12,6 @@ import {
   Clock,
   Calendar,
   CheckCircle2,
-  ArrowRight,
   Activity,
   AlertCircle,
   TrendingUp,

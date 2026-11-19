@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx __tests__/csv-export-tests.ts && tsx __tests__/publicite-analytics-tests.ts",
+    "test": "tsx __tests__/csv-export-tests.ts && tsx __tests__/publicite-analytics-tests.ts && tsx __tests__/search-results-url-tests.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

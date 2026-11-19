@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { AlertCircle, CheckCircle, Loader2, CreditCard, Shield } from "lucide-react"
+import { AlertCircle, CheckCircle, Loader2, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -11,8 +11,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
 import { formatPrice } from "@/lib/gaz"
 import { QRCodeDisplay } from "@/app/_components/qr-code-display"
 
@@ -20,7 +18,6 @@ export type ReservationResult = {
   code: string
   expiresAt: string
   amount: number
-  amountType: "reservation" | "consigne" | "mixed"
   brand: string
   format: string
   quantity: number
@@ -28,11 +25,6 @@ export type ReservationResult = {
   pointDistrict: string
   reservedAt: string
   qrCode?: string
-}
-
-export type ReservationPaymentResult = {
-  checkoutUrl: string
-  reservationCode: string
 }
 
 type PointData = {
@@ -43,8 +35,11 @@ type PointData = {
   phone: string | null
   brand: string | null
   format: string | null
-  quantity: number | null
   disponibiliteId: string
+  // Services
+  hasDelivery: boolean
+  hasExchange: boolean
+  hasGasSale: boolean
 }
 
 const RESERVATION_AMOUNT = 1000 // FCFA
@@ -54,19 +49,12 @@ export function ReservationModal({
   onClose,
   point,
   onConfirm,
-  defaultAmountType,
-  onPaymentRedirect,
 }: {
   open: boolean
   onClose: () => void
   point: PointData | null
-  onConfirm: (
-    amountType: "reservation" | "consigne"
-  ) => Promise<ReservationResult | ReservationPaymentResult | void>
-  defaultAmountType?: "reservation" | "consigne"
-  onPaymentRedirect?: (checkoutUrl: string) => void
+  onConfirm: (disponibiliteId: string) => Promise<ReservationResult | void>
 }) {
-  const [amountType, setAmountType] = useState<"reservation" | "consigne">(defaultAmountType ?? "reservation")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<ReservationResult | null>(null)
@@ -78,18 +66,9 @@ export function ReservationModal({
     setError(null)
 
     try {
-      const result = await onConfirm(amountType)
+      const result = await onConfirm(point.disponibiliteId)
       if (!result) {
         setError("La réservation n'a pas pu être confirmée.")
-        return
-      }
-      // Si le résultat contient une URL de checkout, rediriger vers le paiement
-      if ("checkoutUrl" in result && result.checkoutUrl) {
-        if (onPaymentRedirect) {
-          onPaymentRedirect(result.checkoutUrl)
-        } else {
-          window.location.href = result.checkoutUrl
-        }
         return
       }
       setSuccess(result)
@@ -173,20 +152,7 @@ export function ReservationModal({
                   })}
                 </p>
               </div>
-              <div>
-                <p className="text-xs font-semibold text-foreground">Statut</p>
-                <p className="text-sm text-success">Confirmée</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-foreground">Type</p>
-                <p className="text-sm">
-                  {success.amountType === "consigne" ? "Consigne" : "Réservation"}
-                </p>
-              </div>
             </div>
-            <Button onClick={handleClose} className="w-full" variant="default">
-              Fermer
-            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -202,76 +168,50 @@ export function ReservationModal({
             Confirmer la réservation
           </DialogTitle>
           <DialogDescription>
-            Choisissez le type de frais pour réserver votre bouteille chez{" "}
-            <strong>{point?.name}</strong>.
+            Vous allez réserver une bouteille de gaz au dépôt {point?.name}.
           </DialogDescription>
         </DialogHeader>
 
         {point && (
           <div className="space-y-4 py-2">
-            <div className="rounded-lg border bg-muted/30 p-4">
-              <p className="font-medium">
+            {/* Récapitulatif automatique de la disponibilité */}
+            <div className="rounded-lg border bg-primary/5 p-4">
+              <p className="font-medium text-primary">
                 {point.brand ?? "—"} {point.format ?? "—"}
               </p>
               <p className="text-sm text-muted-foreground">
                 {point.address}, {point.district}
               </p>
+              {point.phone && (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Téléphone du vendeur: {point.phone}
+                </p>
+              )}
             </div>
 
-            <RadioGroup
-              value={amountType}
-              onValueChange={(value) => setAmountType(value as "reservation" | "consigne")}
-              className="space-y-3"
-            >
-              <div className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors">
-                <RadioGroupItem value="reservation" id="reservation" className="mt-1" />
-                <div className="flex-1">
-                  <Label htmlFor="reservation" className="font-medium cursor-pointer">
-                    Frais de réservation
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Vous payez {formatPrice(RESERVATION_AMOUNT)} pour bloquer la bouteille.
-                    Le prix du gaz se paiera au dépôt.
-                  </p>
-                </div>
-                <span className="font-semibold text-primary">
-                  {formatPrice(RESERVATION_AMOUNT)}
-                </span>
+            {/* Autres services disponibles au dépôt */}
+            {point.hasDelivery || point.hasExchange || point.hasGasSale && (
+              <div className="rounded-lg bg-muted/30 p-3">
+                <p className="font-medium text-muted-foreground">Autres services disponibles au dépôt</p>
+                <ul className="mt-2 space-y-1 text-xs text-muted-foreground list-disc list-inside">
+                  {point.hasDelivery && (
+                    <li>
+                      <span className="font-medium">Livraison</span> à domicile
+                    </li>
+                  )}
+                  {point.hasExchange && (
+                    <li>
+                      <span className="font-medium">Échange de bouteille</span>
+                    </li>
+                  )}
+                  {point.hasGasSale && (
+                    <li>
+                      <span className="font-medium">Vente de bouteille de gaz</span>
+                    </li>
+                  )}
+                </ul>
               </div>
-
-              <div className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors">
-                <RadioGroupItem value="consigne" id="consigne" className="mt-1" />
-                <div className="flex-1">
-                  <Label htmlFor="consigne" className="font-medium cursor-pointer">
-                    Consigne
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Vous payez {formatPrice(RESERVATION_AMOUNT)} de consigne pour la
-                    bouteille. Le prix du gaz se règle directement au dépôt.
-                  </p>
-                </div>
-                <span className="font-semibold text-primary">
-                  {formatPrice(RESERVATION_AMOUNT)}
-                </span>
-              </div>
-
-
-            </RadioGroup>
-
-            <div className="rounded-lg bg-muted/50 p-3 text-sm">
-              <p className="font-medium flex items-center gap-1">
-                <AlertCircle className="size-3.5" />
-                Important
-              </p>
-              <ul className="mt-2 space-y-1 text-xs text-muted-foreground list-disc list-inside">
-                <li>
-                  Ce montant ne couvre <strong>pas</strong> le prix du gaz
-                </li>
-                <li>Le prix du gaz se règle directement au dépôt</li>
-                <li>La réservation expire dans 24 heures</li>
-                <li>Annulation possible avant retrait (libération du stock)</li>
-              </ul>
-            </div>
+            )}
 
             {error && (
               <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive flex items-center gap-2">
@@ -285,17 +225,7 @@ export function ReservationModal({
                 Annuler
               </Button>
               <Button size="lg" onClick={handleConfirm} disabled={loading} className="flex-1 gap-2 h-14 text-lg font-extrabold tracking-tight shadow-xl shadow-primary/20 transition hover:shadow-2xl hover:scale-[1.01]">
-                {loading ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    Confirmation...
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="size-4" />
-                    Réserver pour {formatPrice(RESERVATION_AMOUNT)}
-                  </>
-                )}
+                Réserver
               </Button>
             </DialogFooter>
           </div>

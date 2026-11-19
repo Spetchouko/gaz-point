@@ -28,7 +28,7 @@ export function AdminPageHeader({
   className,
 }: AdminPageHeaderProps) {
   return (
-    <div className={cn("admin-page-header", className)}>
+    <div className={cn("admin-page-header dashboard-card", className)}>
       {breadcrumb && breadcrumb.length > 0 && (
         <nav className="flex items-center gap-1 text-xs text-muted-foreground mb-2" aria-label="Fil d'Ariane">
           {breadcrumb.map((item, index) => {

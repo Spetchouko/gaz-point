@@ -33,6 +33,7 @@ import { useDashboardSession } from "@/lib/auth-session";
 import { authClient } from "@/lib/auth-client";
 import { DashboardFooter } from "@/app/_components/dashboard/dashboard-footer";
 import { ScrollToTop } from "@/app/_components/dashboard/scroll-to-top";
+import { DashboardQuickActions } from "@/app/_components/dashboard/dashboard-quick-actions";
 import { cn } from "@/lib/utils";
 import { useNotificationUnreadCount } from "@/lib/use-notification-unread-count";
 
@@ -233,9 +234,12 @@ export function DashboardAdminLayout({
       <aside
         id="admin-sidebar"
         className={cn(
-          "admin-sidebar fixed inset-y-0 left-0 z-40 flex h-full flex-col transition-all duration-200 ease-out",
+          // Mobile : tiroir à droite (glisse depuis la droite, pleine hauteur).
+          // Desktop : sidebar fixée à gauche.
+          "admin-sidebar fixed inset-y-0 right-0 z-40 flex h-full flex-col border-l border-border transition-all duration-200 ease-out",
+          "lg:left-0 lg:right-auto lg:border-l-0 lg:border-r",
           sidebarCollapsed ? "w-16" : "w-64",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          sidebarOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
         )}
         aria-label="Navigation du dashboard administrateur"
       >
@@ -310,6 +314,14 @@ export function DashboardAdminLayout({
 
         {/* Sidebar Footer: User Info + Actions */}
         <div className={cn("admin-sidebar__footer", sidebarCollapsed && "px-1")}>
+          {/* Accès rapide : retour au site + thème */}
+          <div className={cn("flex items-center gap-1", sidebarCollapsed ? "justify-center" : "justify-between")}>
+            {!sidebarCollapsed && (
+              <span className="text-xs font-medium text-muted-foreground">Accès rapide</span>
+            )}
+            <DashboardQuickActions popoverPlacement="top" />
+          </div>
+
           {/* Profile Button */}
           <button
             type="button"
@@ -373,16 +385,6 @@ export function DashboardAdminLayout({
             <LogOut className={cn("size-4 shrink-0", sidebarCollapsed && "mx-auto")} aria-hidden />
             {!sidebarCollapsed && <span>Déconnexion</span>}
           </button>
-
-          {/* Footer - Simple comme le dashboard vendeur */}
-          <div className={cn("border-t border-border pt-3", sidebarCollapsed && "hidden")}>
-            <p className="text-xs text-muted-foreground text-center">
-              © {new Date().getFullYear()} GazPoints. Tous droits réservés.
-            </p>
-            <p className="text-xs text-muted-foreground text-center mt-1">
-              Fait pour faciliter l'accès au gaz au Cameroun.
-            </p>
-          </div>
         </div>
       </aside>
 
@@ -395,19 +397,22 @@ export function DashboardAdminLayout({
         />
       )}
 
-      {/* Mobile menu button */}
+      {/* Mobile menu button (masqué quand le tiroir est ouvert) */}
       <button
         type="button"
         onClick={() => setSidebarOpen(true)}
         aria-label="Ouvrir le menu"
-        className="fixed bottom-6 right-4 z-40 lg:hidden flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors"
+        className={cn(
+          "fixed bottom-6 right-4 z-40 lg:hidden flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors",
+          sidebarOpen && "hidden"
+        )}
       >
         <Menu className="size-6" aria-hidden />
       </button>
 
       {/* Main content area */}
       <div className={cn(
-        "admin-workarea",
+        "dashboard-surface admin-workarea flex flex-col",
         sidebarCollapsed ? "lg:pl-[calc(4rem+1px)]" : "lg:pl-[calc(16rem+1px)]"
       )}>
         {/* Main Content */}
@@ -416,6 +421,9 @@ export function DashboardAdminLayout({
             {children}
           </div>
         </main>
+
+        {/* Copyright au niveau du dashboard (plus dans la sidebar) */}
+        <DashboardFooter />
 
         {/* Scroll to top button */}
         <ScrollToTop />

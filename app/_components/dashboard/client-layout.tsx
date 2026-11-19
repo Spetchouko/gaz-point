@@ -29,6 +29,7 @@ import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { DashboardFooter } from "@/app/_components/dashboard/dashboard-footer";
 import { ScrollToTop } from "@/app/_components/dashboard/scroll-to-top";
+import { DashboardQuickActions } from "@/app/_components/dashboard/dashboard-quick-actions";
 import { cn } from "@/lib/utils";
 import { useNotificationUnreadCount } from "@/lib/use-notification-unread-count";
 
@@ -403,7 +404,7 @@ export function DashboardClientLayout({
 
       {/* Main content */}
       <div className={cn(
-        "flex-1 flex flex-col min-w-0",
+        "dashboard-surface flex-1 flex flex-col min-w-0",
         // Décalage dynamique vers la droite selon l'état de la sidebar (desktop uniquement).
         sidebarCollapsed ? "lg:ml-[calc(4rem+1px)]" : "lg:ml-[calc(16rem+1px)]"
       )}>
@@ -426,15 +427,18 @@ export function DashboardClientLayout({
             </span>
             <span className="text-primary font-bold tracking-tight">GazPoints</span>
           </Link>
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Ouvrir le menu"
-            className="flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            <Menu className="size-5" aria-hidden />
-            <span className="sr-only">Menu</span>
-          </button>
+          <div className="flex items-center gap-1">
+            <DashboardQuickActions />
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Ouvrir le menu"
+              className="flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <Menu className="size-5" aria-hidden />
+              <span className="sr-only">Menu</span>
+            </button>
+          </div>
         </header>
 
         {/* Desktop top bar */}
@@ -467,6 +471,7 @@ export function DashboardClientLayout({
             </Button>
           </div>
           <div className="flex items-center gap-4">
+            <DashboardQuickActions />
             <div className="flex items-center gap-3 rounded-lg px-3 py-2 bg-primary/10 text-primary text-sm font-medium cursor-pointer" onClick={handleProfileClick}>
               {status === "loading" ? (
                 <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted animate-pulse" />

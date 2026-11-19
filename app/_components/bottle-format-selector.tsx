@@ -56,7 +56,7 @@ export function BottleFormatSelector({
 
   // All formats: predefined + "Tous les formats" option + custom value if not in list
   const allOptions = useMemo(() => {
-    const options = [...PREDEFINED_BOTTLE_FORMATS];
+    const options: string[] = [...PREDEFINED_BOTTLE_FORMATS];
     if (allowAllOption) {
       options.unshift(allOptionLabel);
     }

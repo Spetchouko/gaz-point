@@ -40,9 +40,14 @@ export type SearchResponse = {
   disponibiliteIds: string[]
 }
 
-export type SearchError = {
-  code: string
-  message: string
+export class SearchError extends Error {
+  readonly code: string
+
+  constructor(code: string, message: string) {
+    super(message)
+    this.name = "SearchError"
+    this.code = code
+  }
 }
 
 /**
@@ -88,6 +93,33 @@ export class SearchService {
       params.set("available", String(criteria.available))
     }
     return `${this.baseUrl}?${params.toString()}`
+  }
+
+  /**
+   * Sérialise les critères dans l'URL publique. Le format est conservé même
+   * vide afin de pouvoir distinguer « tous les formats » du format par défaut
+   * lors d'un rechargement ou d'un retour au formulaire.
+   */
+  private buildCriteriaParams(criteria: SearchCriteria): URLSearchParams {
+    const params = new URLSearchParams()
+    if (criteria.brand) params.set("brand", criteria.brand.trim())
+    if (criteria.format !== null && criteria.format !== undefined) {
+      params.set("format", criteria.format.trim())
+    }
+    if (criteria.zone) params.set("zone", criteria.zone.trim())
+    return params
+  }
+
+  /** URL de la page dédiée aux résultats, criteria inclus dans la query. */
+  buildResultsUrl(criteria: SearchCriteria): string {
+    const query = this.buildCriteriaParams(criteria).toString()
+    return query ? `/resultats-recherche?${query}` : "/resultats-recherche"
+  }
+
+  /** Retour vers le formulaire de la landing, avec les critères pré-remplis. */
+  buildEditSearchUrl(criteria: SearchCriteria): string {
+    const query = this.buildCriteriaParams(criteria).toString()
+    return query ? `/?${query}#recherche-gaz` : `/#recherche-gaz`
   }
 
   /**

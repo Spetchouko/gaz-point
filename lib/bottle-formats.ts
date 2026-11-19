@@ -1,7 +1,7 @@
 /**
  * Source de vérité unique pour les formats/grammages de bouteilles GazPoints.
  *
- * Les 7 formats prédéfinis sont proposés dans les recherches et formulaires.
+ * Les 6 formats prédéfinis sont proposés dans les recherches et formulaires.
  * Les utilisateurs peuvent aussi saisir librement un autre grammage : ces
  * valeurs personnalisées doivent être acceptées, validées, stockées et
  * transmises au backend comme n'importe quelle autre valeur.
@@ -12,7 +12,6 @@ export const PREDEFINED_BOTTLE_FORMATS = [
   "12,5 kg",
   "15 kg",
   "25 kg",
-  "32 kg",
   "35 kg",
   "50 kg",
 ] as const

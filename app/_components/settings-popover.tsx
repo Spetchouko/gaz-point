@@ -5,8 +5,9 @@ import { Settings, Sun, Monitor, Moon, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "@/app/_components/theme-provider"
 import { useTranslation } from "@/lib/i18n"
+import { cn } from "@/lib/utils"
 
-export function SettingsPopover() {
+export function SettingsPopover({ placement = "bottom" }: { placement?: "bottom" | "top" }) {
   const { theme, setTheme } = useTheme()
   const t = useTranslation()
   const [open, setOpen] = useState(false)
@@ -41,7 +42,10 @@ export function SettingsPopover() {
       </Button>
       {open && (
         <div
-          className="absolute right-0 top-full mt-2 z-50 w-64 rounded-xl border bg-card p-4 shadow-sm"
+          className={cn(
+            "absolute right-0 z-50 w-64 rounded-xl border bg-card p-4 shadow-sm",
+            placement === "top" ? "bottom-full mb-2" : "top-full mt-2"
+          )}
           aria-label={t("settings_appearance")}
         >
           <div>

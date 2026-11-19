@@ -2,15 +2,7 @@
 
 import { useCallback, useState } from "react"
 import { useRouter } from "next/navigation"
-import {
-  AlertCircle,
-  ChevronDown,
-  LocateFixed,
-  MapPin,
-  Phone,
-  RefreshCw,
-  Search,
-} from "lucide-react"
+import { AlertCircle, ChevronDown, LocateFixed, MapPin, RefreshCw, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -55,28 +47,43 @@ export type SearchResult = {
 }
 
 /**
- * Bloc de recherche de gaz : formulaire (marque / format / zone),
- * résultats en direct et réservation. Partagé entre la page
- * d'accueil (hero) et le dashboard client.
+ * Bloc de recherche de gaz : formulaire (marque / format / zone), résultats en direct et réservation.
+ * Partagé entre la page d'accueil (hero) et le dashboard client.
  *
  * Chaque recherche interroge réellement l'API (et donc la base de données).
  * Aucun résultat mis en cache n'est affiché sans avoir été actualisé.
  */
-export function RechercheGaz() {
+type RechercheGazProps = {
+  /**
+   * Sur la landing : redirige vers la page dédiée aux résultats au lieu
+   * d'afficher les résultats inline. Le dashboard client conserve le
+   * comportement historique (valeur par défaut `false`).
+   */
+  redirectToResults?: boolean
+  initialBrand?: string
+  initialFormat?: string
+  initialZone?: string
+}
+
+export function RechercheGaz({
+  redirectToResults = false,
+  initialBrand = "",
+  initialFormat = "12,5 kg",
+  initialZone = "",
+}: RechercheGazProps) {
   const router = useRouter()
   const { data: session } = useSafeSession()
-  const [brand, setBrand] = useState("")
-  const [format, setFormat] = useState("12,5 kg")
-  const [zone, setZone] = useState("")
+  const [brand, setBrand] = useState(initialBrand)
+  const [format, setFormat] = useState(initialFormat)
+  const [zone, setZone] = useState(initialZone)
   const [locationLabel, setLocationLabel] = useState<string | null>(null)
   const [results, setResults] = useState<SearchResult[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [reservationPoint, setReservationPoint] = useState<SearchResult | null>(null)
-  const [defaultAmountType, setDefaultAmountType] = useState<"reservation" | "consigne">("reservation")
 
   const handleReserve = async (
-    amountType: "reservation" | "consigne"
+    disponibiliteId: string
   ): Promise<ReservationResult> => {
     if (!reservationPoint) {
       throw new Error("Aucun point sélectionné")
@@ -86,11 +93,11 @@ export function RechercheGaz() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        disponibiliteId: reservationPoint.disponibiliteId,
+        disponibiliteId,
         brand: reservationPoint.brand,
         format: reservationPoint.format,
         quantity: 1,
-        amountType,
+        amountType: "reservation",
       }),
     })
 
@@ -104,7 +111,6 @@ export function RechercheGaz() {
       code: data.reservation.code,
       expiresAt: data.reservation.expiresAt,
       amount: data.reservation.amount,
-      amountType: data.reservation.amountType,
       brand: data.reservation.brand,
       format: data.reservation.format,
       quantity: data.reservation.quantity,
@@ -114,9 +120,8 @@ export function RechercheGaz() {
     }
   }
 
-  const openReservationModal = (point: SearchResult, defaultType?: "reservation" | "consigne") => {
+  const openReservationModal = (point: SearchResult) => {
     setReservationPoint(point)
-    setDefaultAmountType(defaultType ?? "reservation")
   }
 
   const closeReservationModal = () => {
@@ -135,9 +140,23 @@ export function RechercheGaz() {
 
     const criteria = searchService.normalizeCriteria({
       brand: brand || undefined,
-      format: format || undefined,
+      format,
       zone: zone || undefined,
     })
+
+    // Sur la landing, la recherche est lancée puis l'utilisateur est
+    // redirigé vers la page dédiée : aucun résultat n'est rendu ici.
+    if (redirectToResults) {
+      trackEvent({
+        eventType: "search_performed",
+        path: "/resultats-recherche",
+        metadata: { brand, format, zone },
+      })
+      setLoading(true)
+      setError(null)
+      router.push(searchService.buildResultsUrl(criteria))
+      return
+    }
 
     setLoading(true)
     setError(null)
@@ -169,7 +188,7 @@ export function RechercheGaz() {
     } finally {
       setLoading(false)
     }
-  }, [brand, format, zone, session, router])
+  }, [brand, format, zone, session, router, redirectToResults])
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -177,16 +196,6 @@ export function RechercheGaz() {
   }
 
   const handleRetry = () => {
-    runSearch()
-  }
-
-  const handleResetAndSearch = () => {
-    setBrand("")
-    setFormat("")
-    setZone("")
-    setLocationLabel(null)
-    setError(null)
-    setResults(null)
     runSearch()
   }
 
@@ -296,19 +305,19 @@ export function RechercheGaz() {
             disabled={loading}
           >
             <Search className="size-4 mr-2" />
-            {loading ? "Recherche…" : "Trouver du gaz"}
+            {loading ? "Recherche…" : redirectToResults ? "Rechercher le gaz" : "Trouver du gaz"}
           </Button>
         </form>
       </Card>
 
-      {loading && (
+      {!redirectToResults && loading && (
         <div className="mt-4 flex items-center justify-center gap-2 text-sm text-white">
           <Search className="size-4 animate-spin text-white" aria-hidden />
           <span className="text-white">Recherche des disponibilités en cours…</span>
         </div>
       )}
 
-      {error && (
+      {!redirectToResults && error && (
         <div className="mt-5 bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-sm">
           <div className="flex items-center justify-center gap-2">
             <AlertCircle className="size-6 text-destructive" aria-hidden />
@@ -327,7 +336,7 @@ export function RechercheGaz() {
         </div>
       )}
 
-      {results !== null && results.length > 0 && (
+      {!redirectToResults && results !== null && results.length > 0 && (
         <div className="mt-5">
           <h3 className="text-center font-heading text-base sm:text-lg font-semibold text-foreground">
             {results.length} point{results.length > 1 ? "s" : ""} trouvé{results.length > 1 ? "s" : ""}
@@ -350,14 +359,15 @@ export function RechercheGaz() {
                 hasExchange={point.hasExchange}
                 hasGasSale={point.hasGasSale}
                 deliveryFee={point.deliveryFee}
-                onConsigner={() => openReservationModal(point)}
+                displayPhone={point.phone}
+                onReserver={() => openReservationModal(point)}
               />
             ))}
           </div>
         </div>
       )}
 
-      {results !== null && results.length === 0 && (
+      {!redirectToResults && results !== null && results.length === 0 && (
         <div className="mt-5 flex flex-col items-center justify-center text-center bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-sm">
           <div className="flex justify-center mb-2">
             <Search className="size-10 text-primary" aria-hidden />
@@ -380,13 +390,12 @@ export function RechercheGaz() {
         </div>
       )}
 
-      {reservationPoint && (
+      {!redirectToResults && reservationPoint && (
         <ReservationModal
           open={!!reservationPoint}
           onClose={closeReservationModal}
           point={reservationPoint}
           onConfirm={handleReserve}
-          defaultAmountType={defaultAmountType}
         />
       )}
     </>

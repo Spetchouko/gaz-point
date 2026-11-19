@@ -408,11 +408,10 @@ export function validateSearchCriteria(criteria: SearchCriteria): {
  * Formats de bouteille supportés (marché camerounais).
  */
 export const SEARCH_BOTTLE_FORMATS = [
-  "2,75 kg",
   "6 kg",
   "12,5 kg",
-  "20 kg",
-  "28 kg",
+  "15 kg",
+  "25 kg",
   "35 kg",
   "50 kg",
 ] as const

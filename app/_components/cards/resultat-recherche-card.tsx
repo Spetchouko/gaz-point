@@ -16,7 +16,7 @@ import type { AvailabilityStatus } from "@/db/schema"
 
 export type ResultatRechercheCardProps = {
   id: string
-  name: string
+  name: string // nom du point de vente
   district: string
   address: string
   phone: string | null
@@ -28,7 +28,9 @@ export type ResultatRechercheCardProps = {
   hasExchange: boolean
   hasGasSale: boolean
   deliveryFee: number | null
-  onConsigner?: () => void
+  // Nouveaux props
+  displayPhone: string | null // téléphone affiché sur la carte (peut être filtré)
+  onReserver?: () => void // callback pour ouverture formulaire réservation
   className?: string
 }
 
@@ -46,11 +48,20 @@ export function ResultatRechercheCard({
   hasExchange,
   hasGasSale,
   deliveryFee,
-  onConsigner,
+  displayPhone,
+  onReserver,
   className,
 }: ResultatRechercheCardProps) {
   const statusKey = status as AvailabilityStatus
   const isDisponible = status === "disponible"
+
+  // Sélectionne une seule localisation pertinente (préfère le district si disponible,
+  // sinon utilise la première partie de l'adresse pour éviter les doublons)
+  const localisationPertinente = district
+    ? `${district} — ${address}`
+    : address
+      ? address.split(',')[0]
+      : ""
 
   return (
     <Card
@@ -65,9 +76,13 @@ export function ResultatRechercheCard({
           <CardTitle className="flex items-center gap-1.5 text-sm font-semibold tracking-tight text-foreground">
             {name}
           </CardTitle>
+          {/* Numéro de carte discret */}
+          <span className="absolute -top-1 -right-2 text-xs opacity-20 capitalize">
+            {id.substring(0, 2).toUpperCase()}
+          </span>
           <CardDescription className="mt-0.5 flex items-center gap-0.5 text-xs text-muted-foreground">
             <MapPin className="size-2.5 shrink-0" aria-hidden />
-            {district} — {address}
+            {localisationPertinente}
           </CardDescription>
         </div>
 
@@ -126,39 +141,29 @@ export function ResultatRechercheCard({
               <p className="font-medium text-foreground">{format}</p>
             </div>
           )}
-        </div>
 
-        <div className="mt-2 flex items-start gap-1 text-xs text-muted-foreground">
-          {phone && (
-            <span className="flex items-center gap-1">
-              <Phone className="size-2.5 shrink-0" aria-hidden />
-              {phone}
-            </span>
+          {/* Numéro de téléphone affiché uniquement si renseigné */}
+          {displayPhone && (
+            <div className="mt-2 flex items-start gap-1 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Phone className="size-2.5 shrink-0" aria-hidden />
+                {displayPhone}
+              </span>
+            </div>
           )}
-        </div>
 
-        <div className="mt-3">
-          {onConsigner && isDisponible ? (
+          {/* Bouton de réservation - remplace "Consigner cette bouteille" */}
+          {onReserver && isDisponible ? (
             <Button
               variant="default"
               size="sm"
-              onClick={onConsigner}
-              className="w-full gap-1.5 flex-1 sm:flex-none rounded-sm py-1.5 text-sm font-medium transition-colors"
+              onClick={onReserver}
+              className="w-full gap-2 rounded-sm py-1.5 text-sm font-medium transition-colors flex items-center justify-center"
             >
-              <Shield className="size-3 mr-1.5" />
-              Consigner cette bouteille
+              <MapPin className="size-3 mr-1.5" />
+              Réserver cette bouteille
             </Button>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!isDisponible}
-              className="w-full gap-1.5 flex-1 sm:flex-none rounded-sm py-1.5 text-sm font-medium opacity-50 cursor-not-allowed"
-            >
-              <Shield className="size-3 mr-1.5" />
-              {isDisponible ? "Consigner cette bouteille" : "Indisponible"}
-            </Button>
-          )}
+          ) : null}
         </div>
       </CardContent>
     </Card>

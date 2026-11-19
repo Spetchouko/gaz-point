@@ -1,8 +1,9 @@
+import { Suspense } from "react"
 import Link from "next/link"
 import { ArrowRight, Check } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { RechercheGaz } from "@/app/_components/recherche-gaz"
+import { RechercheGazLanding } from "@/app/_components/recherche-gaz-landing"
 import { PubliciteCarousel, type PubliciteBannerData } from "@/app/_components/publicite-banner"
 
 const benefits = [
@@ -63,7 +64,15 @@ export function Hero({
               className="mb-6 py-6 md:py-8"
             />
           )}
-          <RechercheGaz />
+          <Suspense
+            fallback={
+              <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground shadow-sm">
+                Chargement du formulaire de recherche…
+              </div>
+            }
+          >
+            <RechercheGazLanding />
+          </Suspense>
 
           <div className="mt-5 flex justify-center">
             <Button
