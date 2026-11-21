@@ -7,6 +7,7 @@ import {
   type AccountAccessDecision,
   type AuthAccountRecord,
 } from "@/lib/auth-routing"
+import { withTransientRetry } from "@/lib/transient-retry"
 
 export type AuthAccountLoader = (
   userId: string
@@ -35,13 +36,17 @@ export async function getAuthenticatedAccountAccess(
   loadAccount: AuthAccountLoader = loadAuthAccountById
 ): Promise<AccountAccessDecision> {
   try {
-    const session = await auth.api.getSession({ headers: requestHeaders })
+    // Une erreur réseau transitoire ne doit pas être traitée comme une session
+    // invalide : elle redirigerait vers /connexion un utilisateur connecté.
+    const session = await withTransientRetry(() =>
+      auth.api.getSession({ headers: requestHeaders })
+    )
     const userId = session?.user?.id
     if (!userId) {
       return { status: "unauthenticated" }
     }
 
-    const account = await loadAccount(userId)
+    const account = await withTransientRetry(() => loadAccount(userId))
     return evaluateAccountAccess(account)
   } catch {
     return { status: "session_error" }

@@ -11,6 +11,7 @@ import {
   getRoleDashboardPath,
   isAuthRole,
 } from "@/lib/auth-routing"
+import { withTransientRetry } from "@/lib/transient-retry"
 
 /**
  * next/headers et next/navigation sont des API Server Components.
@@ -54,35 +55,42 @@ export type SessionUser = {
 
 export async function getCurrentUser(): Promise<SessionUser | null> {
   try {
-    const session = await auth.api.getSession({ headers: await getHeaders() })
+    // Une erreur réseau transitoire (Neon en HTTP) ne doit pas être confondue
+    // avec une session absente : elle provoquerait une redirection vers
+    // /connexion pour un utilisateur pourtant connecté.
+    const session = await withTransientRetry(async () =>
+      auth.api.getSession({ headers: await getHeaders() })
+    )
     const userId = session?.user?.id
     if (!userId) return null
 
-    const [account] = await db
-      .select({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        emailVerified: user.emailVerified,
-        image: user.image,
-        role: user.role,
-        phoneNumber: user.phoneNumber,
-        phoneVerified: user.phoneVerified,
-        phoneNumberVerified: user.phoneNumberVerified,
-        isActive: user.isActive,
-        mustChangePassword: user.mustChangePassword,
-        approvalStatus: user.approvalStatus,
-        approvalRequestedAt: user.approvalRequestedAt,
-        approvalProcessedAt: user.approvalProcessedAt,
-        approvalProcessedBy: user.approvalProcessedBy,
-        rejectionReason: user.rejectionReason,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        lastLoginAt: user.lastLoginAt,
-      })
-      .from(user)
-      .where(eq(user.id, userId))
-      .limit(1)
+    const [account] = await withTransientRetry(() =>
+      db
+        .select({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          emailVerified: user.emailVerified,
+          image: user.image,
+          role: user.role,
+          phoneNumber: user.phoneNumber,
+          phoneVerified: user.phoneVerified,
+          phoneNumberVerified: user.phoneNumberVerified,
+          isActive: user.isActive,
+          mustChangePassword: user.mustChangePassword,
+          approvalStatus: user.approvalStatus,
+          approvalRequestedAt: user.approvalRequestedAt,
+          approvalProcessedAt: user.approvalProcessedAt,
+          approvalProcessedBy: user.approvalProcessedBy,
+          rejectionReason: user.rejectionReason,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+          lastLoginAt: user.lastLoginAt,
+        })
+        .from(user)
+        .where(eq(user.id, userId))
+        .limit(1)
+    )
 
     const access = evaluateAccountAccess(account)
     if (!account || access.status !== "ready" || !access.role) return null

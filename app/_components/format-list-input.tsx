@@ -17,6 +17,7 @@ export function FormatListInput({
   disabled = false,
   error,
   label = "Formats de bouteilles",
+  hint,
   options = GAS_BOTTLE_FORMATS,
 }: {
   values: string[]
@@ -24,6 +25,7 @@ export function FormatListInput({
   disabled?: boolean
   error?: string
   label?: string
+  hint?: string
   options?: readonly string[]
 }) {
   const [customFormat, setCustomFormat] = useState("")
@@ -97,7 +99,8 @@ export function FormatListInput({
         <div>
           <Label>{label}</Label>
           <p className="mt-1 text-xs text-muted-foreground">
-            Sélectionnez tous les grammages proposés par votre point de dépôt.
+            {hint ??
+              "Sélectionnez tous les grammages proposés par votre point de dépôt."}
           </p>
         </div>
         <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">

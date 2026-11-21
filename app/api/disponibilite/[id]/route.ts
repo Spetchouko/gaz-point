@@ -86,8 +86,8 @@ export async function GET(
       pointExchangeEnabled: pointDeVente.exchangeEnabled,
       pointGasSaleEnabled: pointDeVente.gasSaleEnabled,
       pointIsActive: pointDeVente.isActive,
-      pointLatitude: pointDeVente.latitude,
-      pointLongitude: pointDeVente.longitude,
+      // Colonnes GPS non migrées dans Neon (migration 0011 non appliquée) :
+      // elles ne sont pas sélectionnées pour ne pas faire échouer la requête.
     })
     .from(disponibilite)
     .innerJoin(pointDeVente, eq(disponibilite.pointId, pointDeVente.id))
@@ -153,8 +153,9 @@ export async function GET(
       exchangeEnabled: dispo.pointExchangeEnabled,
       gasSaleEnabled: dispo.pointGasSaleEnabled,
       isActive: dispo.pointIsActive,
-      latitude: dispo.pointLatitude,
-      longitude: dispo.pointLongitude,
+      // Pas de coordonnées GPS tant que la migration 0011 n'est pas appliquée.
+      latitude: null,
+      longitude: null,
     },
   })
 }

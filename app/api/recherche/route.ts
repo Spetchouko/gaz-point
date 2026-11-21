@@ -6,20 +6,10 @@ import { disponibilite, pointDeVente, trafficEvent } from "@/db/schema"
 import { effectiveStatus, isStale } from "@/lib/gaz"
 import { gasBrandMatches } from "@/lib/gas-brands"
 import { getCurrentUser } from "@/lib/session"
-import { calculateDistanceKm } from "@/lib/distance"
 import {
   AD_ATTRIBUTION_COOKIE,
   recordConversionFromRequest,
 } from "@/lib/publicite-attribution"
-
-function haversineDistance(
-  lat1: number | null,
-  lng1: number | null,
-  lat2: number | null,
-  lng2: number | null,
-): number | null {
-  return calculateDistanceKm(lat1, lng1, lat2, lng2)
-}
 
 export async function GET(request: NextRequest) {
   // La recherche est réservée aux comptes : le garde est appliqué côté serveur,
@@ -90,8 +80,9 @@ export async function GET(request: NextRequest) {
       deliveryFee: pointDeVente.deliveryFee,
       exchangeEnabled: pointDeVente.exchangeEnabled,
       gasSaleEnabled: pointDeVente.gasSaleEnabled,
-      latitude: pointDeVente.latitude,
-      longitude: pointDeVente.longitude,
+      // Les colonnes GPS (latitude/longitude) ne sont pas encore migrées dans
+      // Neon (migration 0011 non appliquée) : elles ne sont pas sélectionnées,
+      // sinon toute la requête échouerait (et la recherche avec).
     })
     .from(pointDeVente)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
@@ -187,17 +178,18 @@ export async function GET(request: NextRequest) {
       hasExchange: Boolean(point.exchangeEnabled || report?.exchange),
       hasGasSale: Boolean(point.gasSaleEnabled || report?.gasSale),
       deliveryFee: point.deliveryEnabled ? point.deliveryFee : report?.price ?? null,
-      distanceKm: hasGeolocation
-        ? haversineDistance(userLat, userLng,
-            point.latitude ? Number(point.latitude) : null,
-            point.longitude ? Number(point.longitude) : null)
-        : null,
+      // Pas de coordonnées GPS pour le point (colonnes non migrées) : la
+      // distance n'est jamais calculée plutôt que d'être inventée.
+      distanceKm: null,
     })
   }
 
   // Lorsque la géolocalisation est disponible, trier par distance croissante
-  // (les disponibilités les plus proches en premier).
-  if (hasGeolocation) {
+  // (les disponibilités les plus proches en premier). Sans coordonnées des
+  // points, toutes les distances sont nulles : le tri n'a aucun effet et on
+  // l'évite (comparaisons Infini - Infini).
+  const hasDistances = results.some((result) => result.distanceKm != null)
+  if (hasGeolocation && hasDistances) {
     results.sort((a, b) => {
       const da = a.distanceKm ?? Infinity
       const db_ = b.distanceKm ?? Infinity

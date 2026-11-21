@@ -1,21 +1,27 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  ChevronRight,
   LocateFixed,
   MapPin,
   Package,
   Save,
   Store,
   Truck,
+  Plus,
 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
 import { BrandListInput } from "@/app/_components/brand-list-input"
 import { FormatListInput } from "@/app/_components/format-list-input"
 import {
@@ -25,37 +31,49 @@ import {
   VendorSectionCard,
   VendorStatusBadge,
 } from "@/app/_components/vendor/vendor-ui"
-import { formatDateTime } from "@/lib/gaz"
+import { cn } from "@/lib/utils"
 import type {
   VendorDepotDto,
   VendorOnboardingDto,
 } from "@/lib/vendor-dashboard"
 
-type DepotPayload = VendorDepotDto
+type DepotFormState = {
+  name: string
+  district: string
+  address: string
+  phone: string
+  brands: string[]
+  formats: string[]
+  deliveryEnabled: boolean
+  deliveryFee: string
+  exchangeEnabled: boolean
+  exchangeBrands: string[]
+  exchangeFormats: string[]
+  gasSaleEnabled: boolean
+}
 
-function toPayload(value: unknown): DepotPayload | null {
-  if (!value || typeof value !== "object") return null
-  const row = value as Partial<DepotPayload>
-  if (!row.id || !row.name) return null
+// Étapes du formulaire multiétapes
+const STEPS = [
+  { id: 1, title: "Informations du dépôt", description: "Nom, localisation et contact" },
+  { id: 2, title: "Marques et formats", description: "Sélectionnez les bouteilles proposées" },
+  { id: 3, title: "Services proposés", description: "Livraison, échange et vente de gaz" },
+  { id: 4, title: "Vérification", description: "Récapitulatif avant connexion" },
+] as const
+
+function initialFormState(depot: VendorDepotDto | null, onboarding: VendorOnboardingDto | null): DepotFormState {
   return {
-    id: row.id,
-    name: row.name,
-    district: row.district ?? "",
-    address: row.address ?? "",
-    phone: row.phone ?? null,
-    brands: row.brands ?? [],
-    formats: row.formats ?? [],
-    latitude: row.latitude ?? null,
-    longitude: row.longitude ?? null,
-    deliveryEnabled: Boolean(row.deliveryEnabled),
-    deliveryFee: row.deliveryFee ?? 0,
-    exchangeEnabled: Boolean(row.exchangeEnabled),
-    exchangeBrands: row.exchangeBrands ?? [],
-    exchangeFormats: row.exchangeFormats ?? [],
-    gasSaleEnabled: Boolean(row.gasSaleEnabled),
-    isActive: row.isActive ?? true,
-    createdAt: row.createdAt ?? new Date().toISOString(),
-    updatedAt: row.updatedAt ?? new Date().toISOString(),
+    name: depot?.name ?? onboarding?.pointName ?? "",
+    district: depot?.district ?? onboarding?.district ?? "",
+    address: depot?.address ?? onboarding?.address ?? "",
+    phone: depot?.phone ?? onboarding?.phone ?? "",
+    brands: depot?.brands ?? onboarding?.brands ?? [],
+    formats: depot?.formats ?? [],
+    deliveryEnabled: depot?.deliveryEnabled ?? false,
+    deliveryFee: depot?.deliveryFee?.toString() ?? "",
+    exchangeEnabled: depot?.exchangeEnabled ?? false,
+    exchangeBrands: depot?.exchangeBrands ?? [],
+    exchangeFormats: depot?.exchangeFormats ?? [],
+    gasSaleEnabled: depot?.gasSaleEnabled ?? false,
   }
 }
 
@@ -68,42 +86,101 @@ export function VendorDepotManager({
 }) {
   const router = useRouter()
   const formRef = useRef<HTMLFormElement | null>(null)
-  const [depot, setDepot] = useState(initialDepot)
 
-  const [name, setName] = useState(initialDepot?.name ?? onboarding?.pointName ?? "")
-  const [district, setDistrict] = useState(initialDepot?.district ?? onboarding?.district ?? "")
-  const [address, setAddress] = useState(initialDepot?.address ?? onboarding?.address ?? "")
-  const [phone, setPhone] = useState(initialDepot?.phone ?? onboarding?.phone ?? "")
-  const [latitude, setLatitude] = useState(initialDepot?.latitude ?? "")
-  const [longitude, setLongitude] = useState(initialDepot?.longitude ?? "")
-  const [brands, setBrands] = useState<string[]>(
-    initialDepot?.brands ?? onboarding?.brands ?? []
+  const [currentStep, setCurrentStep] = useState(1)
+  const [form, setForm] = useState<DepotFormState>(() =>
+    initialFormState(initialDepot, onboarding)
   )
-  const [formats, setFormats] = useState<string[]>(initialDepot?.formats ?? [])
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [locating, setLocating] = useState(false)
 
-  // Les props serveur restent la source de vérité après router.refresh().
-  // La resynchronisation a lieu pendant le rendu, sans setState dans un effet.
+  // Resync quand les props serveur changent (après router.refresh)
   const [syncedSource, setSyncedSource] = useState({
     depot: initialDepot,
     onboarding,
   })
   if (syncedSource.depot !== initialDepot || syncedSource.onboarding !== onboarding) {
     setSyncedSource({ depot: initialDepot, onboarding })
-    setDepot(initialDepot)
-    setName(initialDepot?.name ?? onboarding?.pointName ?? "")
-    setDistrict(initialDepot?.district ?? onboarding?.district ?? "")
-    setAddress(initialDepot?.address ?? onboarding?.address ?? "")
-    setPhone(initialDepot?.phone ?? onboarding?.phone ?? "")
-    setLatitude(initialDepot?.latitude ?? "")
-    setLongitude(initialDepot?.longitude ?? "")
-    setBrands(initialDepot?.brands ?? onboarding?.brands ?? [])
-    setFormats(initialDepot?.formats ?? [])
+    setForm(initialFormState(initialDepot, onboarding))
+    setCurrentStep(1)
+    setError(null)
+    setSuccess(null)
   }
 
+  const isCreation = !initialDepot
+  const depotId = initialDepot?.id
+
+  // ---------- Validation par étape ----------
+  // Fonction PURE : elle retourne le message d'erreur (ou null) sans jamais
+  // appeler un setter. Elle est appelée pendant le rendu (barre de progression,
+  // bouton « Continuer ») : un setError ici provoquerait une boucle de rendu
+  // infinie (« Too many re-renders »).
+  const validateStep = (step: number): string | null => {
+    switch (step) {
+      case 1:
+        if (!form.name.trim()) return "Le nom du dépôt est obligatoire."
+        if (!form.district.trim()) return "Le quartier ou la ville est obligatoire."
+        if (!form.address.trim()) return "L'adresse complète est obligatoire."
+        return null
+      case 2:
+        if (form.brands.length === 0) {
+          return "Sélectionnez au moins une marque de bouteilles."
+        }
+        if (form.formats.length === 0) {
+          return "Sélectionnez au moins un grammage de bouteilles."
+        }
+        return null
+      case 3:
+        if (form.deliveryEnabled && !form.deliveryFee.trim()) {
+          return "Les frais de livraison sont obligatoires quand la livraison est activée."
+        }
+        if (form.deliveryEnabled && isNaN(Number(form.deliveryFee))) {
+          return "Les frais de livraison doivent être un nombre valide."
+        }
+        return null
+      case 4:
+        return null
+      default:
+        return null
+    }
+  }
+
+  const canGoTo = (step: number): boolean => {
+    // On ne peut accéder qu'à l'étape actuelle ou aux étapes précédentes déjà validées
+    return step <= currentStep
+  }
+
+  const goToStep = (step: number) => {
+    if (!canGoTo(step)) return
+    setError(null)
+    setSuccess(null)
+    setCurrentStep(step)
+  }
+
+  const nextStep = () => {
+    const stepError = validateStep(currentStep)
+    if (stepError) {
+      setError(stepError)
+      return
+    }
+    setError(null)
+    if (currentStep < STEPS.length) {
+      setCurrentStep(currentStep + 1)
+    }
+  }
+
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1)
+      setError(null)
+      setSuccess(null)
+    }
+  }
+
+  // ---------- Gestion de la géolocalisation (optionnelle, pas dans l'interface form) ----------
   const useCurrentPosition = () => {
     if (!navigator.geolocation) {
       setError("La géolocalisation n'est pas disponible sur cet appareil.")
@@ -112,57 +189,53 @@ export function VendorDepotManager({
     setLocating(true)
     setError(null)
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLatitude(position.coords.latitude.toFixed(6))
-        setLongitude(position.coords.longitude.toFixed(6))
+      () => {
         setLocating(false)
-        toast.success("Position du dépôt renseignée")
+        toast.success("Position détectée (utilisée pour l'affichage sur la carte).")
       },
       () => {
-        setError("Impossible d'obtenir votre position. Vérifiez les autorisations du navigateur.")
         setLocating(false)
+        setError("Impossible d'obtenir votre position. Vous pouvez continuer sans géolocalisation.")
       },
       { enableHighAccuracy: true, timeout: 10000 }
     )
   }
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  // ---------- Soumission ----------
+  const handleSubmit = useCallback(async (event: React.FormEvent) => {
     event.preventDefault()
-    setError(null)
-
-    if (!name.trim() || !district.trim() || !address.trim()) {
-      setError("Le nom, le quartier et l'adresse sont obligatoires.")
-      return
-    }
-    if (brands.length === 0 || formats.length === 0) {
-      setError("Sélectionnez au moins une marque et un grammage.")
-      return
-    }
-    if (
-      (latitude.trim() && !longitude.trim()) ||
-      (!latitude.trim() && longitude.trim())
-    ) {
-      setError("Renseignez la latitude et la longitude, ou laissez les deux vides.")
+    const stepError = validateStep(4)
+    if (stepError) {
+      setError(stepError)
       return
     }
 
     setSaving(true)
+    setError(null)
+    setSuccess(null)
+
     try {
       const body = {
-        name: name.trim(),
-        district: district.trim(),
-        address: address.trim(),
-        phone: phone.trim() || null,
-        latitude: latitude.trim() || null,
-        longitude: longitude.trim() || null,
-        brands,
-        formats,
+        name: form.name.trim(),
+        district: form.district.trim(),
+        address: form.address.trim(),
+        phone: form.phone.trim() || null,
+        brands: form.brands,
+        formats: form.formats,
+        deliveryEnabled: form.deliveryEnabled,
+        deliveryFee: form.deliveryEnabled && form.deliveryFee.trim()
+          ? Number(form.deliveryFee)
+          : 0,
+        exchangeEnabled: form.exchangeEnabled,
+        exchangeBrands: form.exchangeEnabled ? form.exchangeBrands : [],
+        exchangeFormats: form.exchangeEnabled ? form.exchangeFormats : [],
+        gasSaleEnabled: form.gasSaleEnabled,
       }
 
       const response = await fetch(
-        depot ? `/api/depot/${depot.id}` : "/api/depot/create",
+        depotId ? `/api/depot/${depotId}` : "/api/depot/create",
         {
-          method: depot ? "PATCH" : "POST",
+          method: depotId ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         }
@@ -176,9 +249,8 @@ export function VendorDepotManager({
         throw new Error(payload?.error ?? "Impossible d'enregistrer le dépôt")
       }
 
-      const saved = toPayload(payload?.point)
-      if (saved) setDepot(saved)
-      toast.success(depot ? "Dépôt mis à jour" : "Dépôt créé avec succès")
+      setSuccess(depotId ? "Dépôt mis à jour avec succès." : "Dépôt créé avec succès.")
+      toast.success(depotId ? "Dépôt mis à jour" : "Dépôt créé avec succès")
       router.refresh()
     } catch (submitError) {
       setError(
@@ -189,54 +261,115 @@ export function VendorDepotManager({
     } finally {
       setSaving(false)
     }
+  }, [form, depotId, router, saving])
+
+  const currentStepConfig = STEPS.find((s) => s.id === currentStep)!
+
+  const isStepComplete = (stepId: number): boolean => {
+    if (stepId < currentStep) return true
+    if (stepId === currentStep) {
+      try {
+        return validateStep(stepId) === null
+      } catch {
+        return false
+      }
+    }
+    return false
   }
 
+  const progressPercent = ((currentStep - 1) / (STEPS.length - 1)) * 100
+
+  // ---------- Rendu ----------
   return (
     <div className="space-y-4">
+      {/* Header */}
       <VendorPageHeader
-        title="Mes points de vente"
+        title={isCreation ? "Créer mon dépôt" : "Modifier mon dépôt"}
         description={
-          depot
-            ? "Modifiez les informations, la localisation et le catalogue de votre dépôt."
-            : "Créez votre unique point de vente GazPoints."
+          isCreation
+            ? "Configurez votre point de vente en 4 étapes simples."
+            : "Modifiez les informations de votre dépôt GazPoints."
         }
         actions={
           <>
             <Button
               variant="outline"
               size="sm"
-              render={<Link href="/dashboard/vendeur">Retour</Link>}
-            />
-            {depot && (
-              <Button
-                size="sm"
-                render={
-                  <Link href="/dashboard/depot/disponibilites">
-                    <Package className="size-4" aria-hidden />
-                    Disponibilités
-                  </Link>
-                }
-              />
-            )}
+              onClick={() => router.push("/dashboard/vendeur")}
+              disabled={saving}
+            >
+              <ArrowLeft className="size-4 mr-2" aria-hidden />
+              Retour
+            </Button>
           </>
         }
       />
 
-      {depot && (
-        <VendorNotice>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span className="font-medium text-foreground">{depot.name}</span>
-            <VendorStatusBadge
-              status={depot.isActive ? "disponible" : "indisponible"}
-              label={depot.isActive ? "Actif" : "Inactif"}
-            />
-            <span className="text-muted-foreground">
-              Dernière mise à jour : {formatDateTime(depot.updatedAt)}
-            </span>
-          </div>
-        </VendorNotice>
-      )}
+      {/* Barre de progression */}
+      <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Progression de la configuration
+          </span>
+          <span className="text-xs font-medium text-foreground">
+            Étape {currentStep} sur {STEPS.length}
+          </span>
+        </div>
+        <div className="flex gap-2">
+          {STEPS.map((step) => {
+            const completed = isStepComplete(step.id)
+            const active = step.id === currentStep
+            return (
+              <div
+                key={step.id}
+                className="flex-1 relative flex flex-col items-center"
+              >
+                {/* Ligne de connexion entre les étapes */}
+                <div
+                  className={cn(
+                    "absolute -top-2 left-1/2 -right-1/2 h-1",
+                    !active && step.id > 1 ? "hidden" : "",
+                    completed || active ? "bg-primary" : "bg-border"
+                  )}
+                />
+                {/* Cercle d'étape */}
+                <div
+                  className={cn(
+                    "relative z-10 flex size-9 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200",
+                    completed
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : active
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-card text-muted-foreground border-border"
+                  )}
+                >
+                  {completed ? (
+                    <CheckCircle2 className="size-5" aria-hidden />
+                  ) : (
+                    <span className="text-xs font-medium">{step.id}</span>
+                  )}
+                </div>
+                <span
+                  className={cn(
+                    "mt-1.5 text-xs font-medium text-center max-w-[80px]",
+                    active ? "text-primary" : "text-muted-foreground"
+                  )}
+                >
+                  {step.title.split(" ")[0]}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+        <div className="mt-2 h-1.5 rounded-full bg-border">
+          <div
+            className="h-full rounded-full bg-primary transition-all duration-300"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+      </div>
 
+      {/* Erreur globale */}
       {error && (
         <VendorErrorState
           message={error}
@@ -244,189 +377,415 @@ export function VendorDepotManager({
         />
       )}
 
-      <VendorSectionCard
-        title={depot ? "Informations du dépôt" : "Créer mon dépôt"}
-        description={
-          depot
-            ? "Les modifications sont enregistrées immédiatement."
-            : "Les informations de votre inscription sont préremplies."
-        }
-      >
-        <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="depot-name">Nom du dépôt</Label>
-              <Input
-                id="depot-name"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="Ex: Point Gaz Bonamoussadi"
-                maxLength={100}
+      {/* Succès */}
+      {success && currentStep === STEPS.length && (
+        <VendorNotice tone="success">
+          {success}
+        </VendorNotice>
+      )}
+
+      {/* Formulaire multiétapes */}
+      <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+        {/* ÉTAPE 1 — Informations du dépôt */}
+        {currentStep === 1 && (
+          <VendorSectionCard
+            title="Informations du dépôt"
+            description="Nom, ville ou quartier, adresse complète et numéro de téléphone de votre point de vente."
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="depot-name">Nom du dépôt</Label>
+                <Input
+                  id="depot-name"
+                  value={form.name}
+                  onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                  placeholder="Ex: Point Gaz Bonamoussadi"
+                  maxLength={100}
+                  disabled={saving}
+                  required
+                  className="h-11"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="depot-district">Quartier / Ville</Label>
+                <Input
+                  id="depot-district"
+                  value={form.district}
+                  onChange={(e) => setForm((prev) => ({ ...prev, district: e.target.value }))}
+                  placeholder="Ex: Bonamoussadi"
+                  maxLength={100}
+                  disabled={saving}
+                  required
+                  className="h-11"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="depot-address">Adresse complète</Label>
+              <Textarea
+                id="depot-address"
+                value={form.address}
+                onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
+                placeholder="Ex: Rond-point Bonamoussadi, face à la station Total"
+                maxLength={200}
+                rows={2}
                 disabled={saving}
                 required
+                className="h-24"
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="depot-district">Quartier / Ville</Label>
-              <Input
-                id="depot-district"
-                value={district}
-                onChange={(event) => setDistrict(event.target.value)}
-                placeholder="Ex: Bonamoussadi"
-                maxLength={100}
-                disabled={saving}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="depot-address">Adresse précise</Label>
-            <Textarea
-              id="depot-address"
-              value={address}
-              onChange={(event) => setAddress(event.target.value)}
-              placeholder="Ex: Rond-point Bonamoussadi, face à la station"
-              maxLength={200}
-              rows={2}
-              disabled={saving}
-              required
-            />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
-            <div className="space-y-1.5">
-              <Label htmlFor="depot-phone">Téléphone du dépôt</Label>
+            <div className="space-y-2">
+              <Label htmlFor="depot-phone">Numéro de téléphone</Label>
               <Input
                 id="depot-phone"
                 type="tel"
-                value={phone}
-                onChange={(event) => setPhone(event.target.value)}
+                value={form.phone}
+                onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
                 placeholder="Ex: +237 6 99 00 00 00"
                 maxLength={30}
                 disabled={saving}
+                className="h-11"
               />
+              <p className="text-xs text-muted-foreground">
+                Utilisé par les clients pour vous contacter directement.
+              </p>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={useCurrentPosition}
-              disabled={saving || locating}
-              className="sm:mb-0"
-            >
-              <LocateFixed className="size-4" aria-hidden />
-              {locating ? "Localisation…" : "Utiliser ma position"}
-            </Button>
-          </div>
+          </VendorSectionCard>
+        )}
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="depot-latitude">Latitude</Label>
-              <Input
-                id="depot-latitude"
-                value={latitude}
-                onChange={(event) => setLatitude(event.target.value)}
-                placeholder="Ex: 4.0511"
-                inputMode="decimal"
+        {/* ÉTAPE 2 — Marques et formats */}
+        {currentStep === 2 && (
+          <VendorSectionCard
+            title="Marques et formats de bouteilles"
+            description="Sélectionnez toutes les marques de gaz et les formats de bouteilles proposés dans votre dépôt."
+          >
+            <div className="grid gap-5 lg:grid-cols-2">
+              <BrandListInput
+                values={form.brands}
+                onChange={(values) => setForm((prev) => ({ ...prev, brands: values }))}
                 disabled={saving}
+                label="Marques de gaz"
+                hint="Sélectionnez une ou plusieurs marques commercialisées au Cameroun."
               />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="depot-longitude">Longitude</Label>
-              <Input
-                id="depot-longitude"
-                value={longitude}
-                onChange={(event) => setLongitude(event.target.value)}
-                placeholder="Ex: 9.7679"
-                inputMode="decimal"
+              <FormatListInput
+                values={form.formats}
+                onChange={(values) => setForm((prev) => ({ ...prev, formats: values }))}
                 disabled={saving}
+                label="Formats de bouteilles"
               />
             </div>
-          </div>
+          </VendorSectionCard>
+        )}
 
-          <div className="grid gap-5 xl:grid-cols-2">
-            <BrandListInput
-              values={brands}
-              onChange={setBrands}
-              disabled={saving}
-            />
-            <FormatListInput
-              values={formats}
-              onChange={setFormats}
-              disabled={saving}
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <MapPin className="size-3.5" aria-hidden />
-              La localisation permet aux clients de trouver votre dépôt.
-            </p>
-            <div className="flex gap-2">
-              {depot && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  render={
-                    <Link href="/dashboard/depot/services">
-                      <Truck className="size-4" aria-hidden />
-                      Gérer les services
-                    </Link>
-                  }
-                />
-              )}
-              <Button type="submit" size="sm" disabled={saving}>
-                <Save className="size-4" aria-hidden />
-                {saving
-                  ? "Enregistrement…"
-                  : depot
-                    ? "Enregistrer les modifications"
-                    : "Créer le dépôt"}
-              </Button>
-            </div>
-          </div>
-        </form>
-      </VendorSectionCard>
-
-      {depot && (
-        <div className="grid gap-3 sm:grid-cols-3">
-          {[
-            {
-              label: "Livraison",
-              active: depot.deliveryEnabled,
-              icon: Truck,
-            },
-            {
-              label: "Échange",
-              active: depot.exchangeEnabled,
-              icon: Store,
-            },
-            {
-              label: "Vente de gaz",
-              active: depot.gasSaleEnabled,
-              icon: Package,
-            },
-          ].map((item) => {
-            const Icon = item.icon
-            return (
-              <div
-                key={item.label}
-                className="flex items-center justify-between rounded-lg border border-border bg-card p-3 text-sm"
-              >
-                <span className="flex items-center gap-2 text-muted-foreground">
-                  <Icon className="size-4" aria-hidden />
-                  {item.label}
-                </span>
-                <VendorStatusBadge
-                  status={item.active ? "disponible" : "indisponible"}
-                  label={item.active ? "Activé" : "Désactivé"}
-                />
+        {/* ÉTAPE 3 — Services proposés */}
+        {currentStep === 3 && (
+          <VendorSectionCard
+            title="Services proposés"
+            description="Activez ou désactivez les services offerts par votre dépôt. Certains services débloquent des options supplémentaires."
+          >
+            <div className="space-y-5">
+              {/* Livraison */}
+              <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                      <Truck className="size-5" aria-hidden />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">Livraison à domicile</p>
+                      <p className="text-xs text-muted-foreground">
+                        Proposez la livraison des bouteilles chez vos clients
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={form.deliveryEnabled}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, deliveryEnabled: checked }))
+                    }
+                    disabled={saving}
+                  />
+                </div>
+                {form.deliveryEnabled && (
+                  <div className="mt-4 pt-4 border-t border-border/50">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="depot-delivery-fee">Frais de livraison (FCFA)</Label>
+                        <Input
+                          id="depot-delivery-fee"
+                          type="number"
+                          min={0}
+                          value={form.deliveryFee}
+                          onChange={(e) =>
+                            setForm((prev) => ({ ...prev, deliveryFee: e.target.value }))
+                          }
+                          placeholder="Ex: 1000"
+                          disabled={saving}
+                          className="h-11"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-            )
-          })}
+
+              {/* Échange */}
+              <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-green-50 text-green-600">
+                      <Package className="size-5" aria-hidden />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">Échange de bouteilles</p>
+                      <p className="text-xs text-muted-foreground">
+                        Reprise et échange de bouteilles vides contre pleines
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={form.exchangeEnabled}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, exchangeEnabled: checked }))
+                    }
+                    disabled={saving}
+                  />
+                </div>
+                {form.exchangeEnabled && (
+                  <div className="mt-4 pt-4 border-t border-border/50">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                      Marques et formats acceptés pour l'échange
+                    </p>
+                    <div className="grid gap-5 lg:grid-cols-2">
+                      <BrandListInput
+                        values={form.exchangeBrands}
+                        onChange={(values) =>
+                          setForm((prev) => ({ ...prev, exchangeBrands: values }))
+                        }
+                        disabled={saving}
+                        label="Marques acceptées"
+                        hint="Marques que vous acceptez en échange."
+                        options={form.brands.length > 0 ? form.brands : undefined}
+                      />
+                      <FormatListInput
+                        values={form.exchangeFormats}
+                        onChange={(values) =>
+                          setForm((prev) => ({ ...prev, exchangeFormats: values }))
+                        }
+                        disabled={saving}
+                        label="Formats acceptés"
+                        hint="Formats que vous acceptez en échange."
+                        options={form.formats.length > 0 ? form.formats : undefined}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Vente de gaz */}
+              <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600">
+                      <Plus className="size-5" aria-hidden />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">Vente de gaz</p>
+                      <p className="text-xs text-muted-foreground">
+                        Vente directe de bouteilles de gaz chargées
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={form.gasSaleEnabled}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, gasSaleEnabled: checked }))
+                    }
+                    disabled={saving}
+                  />
+                </div>
+              </div>
+            </div>
+          </VendorSectionCard>
+        )}
+
+        {/* ÉTAPE 4 — Vérification */}
+        {currentStep === 4 && (
+          <VendorSectionCard
+            title="Vérification avant connexion"
+            description="Vérifiez les informations de votre dépôt avant de l'enregistrer définitivement."
+          >
+            <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Nom du dépôt
+                  </p>
+                  <p className="text-sm text-foreground">{form.name || "—"}</p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Quartier / Ville
+                  </p>
+                  <p className="text-sm text-foreground">{form.district || "—"}</p>
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Adresse complète
+                  </p>
+                  <p className="text-sm text-foreground">{form.address || "—"}</p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Téléphone
+                  </p>
+                  <p className="text-sm text-foreground">
+                    {form.phone || "Non renseigné"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-border bg-muted/30 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                  Marques sélectionnées
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {form.brands.map((brand) => (
+                    <span
+                      key={brand}
+                      className="rounded-full bg-primary/10 text-primary px-2.5 py-1 text-xs font-medium"
+                    >
+                      {brand}
+                    </span>
+                  ))}
+                  {form.brands.length === 0 && (
+                    <span className="text-xs text-muted-foreground italic">
+                      Aucune marque sélectionnée
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-border bg-muted/30 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                  Formats sélectionnés
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {form.formats.map((format) => (
+                    <span
+                      key={format}
+                      className="rounded-full bg-primary/10 text-primary px-2.5 py-1 text-xs font-medium"
+                    >
+                      {format}
+                    </span>
+                  ))}
+                  {form.formats.length === 0 && (
+                    <span className="text-xs text-muted-foreground italic">
+                      Aucun format sélectionné
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                {[...[
+                  { label: "Livraison", active: form.deliveryEnabled, icon: Truck },
+                  { label: "Échange", active: form.exchangeEnabled, icon: Store },
+                  { label: "Vente de gaz", active: form.gasSaleEnabled, icon: Package },
+                ] as const].map((service) => {
+                  const Icon = service.icon
+                  return (
+                    <div
+                      key={service.label}
+                      className="flex items-center gap-3 rounded-lg border p-3"
+                    >
+                      <div
+                        className={cn(
+                          "flex size-8 shrink-0 items-center justify-center rounded-lg",
+                          service.active
+                            ? "bg-success/10 text-success border-success/20"
+                            : "bg-muted text-muted-foreground border-border"
+                        )}
+                      >
+                        <Icon className="size-4" aria-hidden />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">
+                          {service.label}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {service.active ? "Activé" : "Désactivé"}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {form.deliveryEnabled && form.deliveryFee.trim() && (
+                <div className="flex items-center justify-between py-2 border-t border-border/50">
+                  <span className="text-sm text-muted-foreground">Frais de livraison</span>
+                  <span className="text-sm font-medium text-foreground">
+                    {form.deliveryFee} FCFA
+                  </span>
+                </div>
+              )}
+            </div>
+          </VendorSectionCard>
+        )}
+
+        {/* Pied de formulaire — navigation et action */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-border pt-5">
+          <div className="flex items-center gap-2">
+            {currentStep > 1 && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={prevStep}
+                disabled={saving}
+              >
+                <ArrowLeft className="size-4 mr-2" aria-hidden />
+                Précédent
+              </Button>
+            )}
+          </div>
+
+          <div className="flex gap-2">
+            {currentStep < STEPS.length ? (
+              <Button
+                type="button"
+                variant="default"
+                onClick={nextStep}
+                disabled={saving || validateStep(currentStep) !== null}
+              >
+                Continuer <ArrowRight className="size-4 ml-2" aria-hidden />
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                variant="default"
+                size="lg"
+                disabled={saving}
+                className="flex-1 gap-2 h-11 text-lg font-extrabold tracking-tight shadow-xl shadow-primary/20 transition hover:shadow-2xl hover:scale-[1.01]"
+              >
+                <Save className="size-5" aria-hidden />
+                {saving ? "Enregistrement…" : "Connecter le dépôt"}
+              </Button>
+            )}
+          </div>
         </div>
-      )}
+      </form>
+
+      {/* Aide contextuelle en bas */}
+      <div className="rounded-lg border border-border bg-muted/30 p-3">
+        <p className="text-xs text-muted-foreground flex items-start gap-2">
+          <MapPin className="size-3.5 shrink-0 mt-0.5" aria-hidden />
+          <span>
+            La localisation GPS de votre dépôt peut être ajoutée ultérieurement
+            depuis la page de gestion des services.
+          </span>
+        </p>
+      </div>
     </div>
   )
 }
