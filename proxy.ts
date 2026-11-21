@@ -1,139 +1,117 @@
-import { auth } from "@/lib/auth"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { getAuthenticatedAccountAccess } from "@/lib/auth-access"
+import {
+  ACCOUNT_ACCESS_ERROR_CODES,
+  CLIENT_RESULTS_PATH,
+  resolveClientResultsAccess,
+  resolveDashboardAccess,
+} from "@/lib/auth-routing"
 
-/**
- * Middleware/proxy d'authentification centralisé pour GazPoints.
- *
- * Vérifie la session côté serveur AVANT le rendu de chaque page protégée.
- * Cela élimine le clignotement "connecté/déconnecté" lié à l'hydratation
- * client : l'utilisateur est soit redirigé avant le rendu, soit la page
- * est servie avec la certitude que sa session est valide.
- *
- * Rôles gérés :
- * - client   -> /dashboard
- * - vendor   -> /dashboard/vendeur (+ /dashboard/depot/*)
- * - admin    -> /dashboard/admin (+ sous-routes)
- * - collaborateur -> /dashboard/collaborateur (+ /dashboard/admin/* avec permissions)
- */
+function redirectTo(req: NextRequest, pathname: string): NextResponse {
+  return NextResponse.redirect(new URL(pathname, req.url))
+}
+
+/** Redirection vers la connexion en conservant la page demandée. */
+function redirectToLoginFrom(req: NextRequest): NextResponse {
+  const loginUrl = new URL("/connexion", req.url)
+  loginUrl.searchParams.set(
+    "redirect",
+    `${req.nextUrl.pathname}${req.nextUrl.search}`
+  )
+  return NextResponse.redirect(loginUrl)
+}
+
+function loginPathFor(pathname: string): string {
+  if (
+    pathname === "/dashboard/admin" ||
+    pathname.startsWith("/dashboard/admin/") ||
+    pathname === "/dashboard/collaborateur" ||
+    pathname.startsWith("/dashboard/collaborateur/")
+  ) {
+    return "/connexion-admin"
+  }
+  return "/connexion"
+}
+
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
+  const isAuthPage =
+    pathname === "/connexion" || pathname === "/connexion-admin"
+  const isRegisterPage =
+    pathname === "/inscription" || pathname.startsWith("/inscription/")
+  const isDashboardPath =
+    pathname === "/dashboard" || pathname.startsWith("/dashboard/")
+  const isClientResultsPath = pathname === CLIENT_RESULTS_PATH
+  const isTemporaryPasswordPage = pathname === "/mot-de-passe-temporaire"
 
-  // ── Routes statiques et API : laisser passer sans vérification ────────
-  if (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/api") ||
-    pathname.startsWith("/favicon.ico") ||
-    pathname.startsWith("/sitemap") ||
-    pathname.startsWith("/robots") ||
-    pathname.startsWith("/opengraph-image") ||
-    pathname === "/manifest.json" ||
-    pathname.startsWith("/brand/") ||
-    pathname.startsWith("/images/")
-  ) {
+  const access = await getAuthenticatedAccountAccess(req.headers)
+
+  if (access.status === "ready" && access.role && access.redirectTo) {
+    const mustChangePassword =
+      access.account?.mustChangePassword === true
+
+    if (access.role === "collaborateur" && mustChangePassword) {
+      if (isTemporaryPasswordPage) {
+        return NextResponse.next()
+      }
+      return redirectTo(req, "/mot-de-passe-temporaire")
+    }
+
+    if (isTemporaryPasswordPage) {
+      return redirectTo(req, access.redirectTo)
+    }
+
+    if (isAuthPage || isRegisterPage) {
+      return redirectTo(req, access.redirectTo)
+    }
+
+    if (isDashboardPath) {
+      const decision = resolveDashboardAccess(
+        pathname,
+        access.role,
+        mustChangePassword
+      )
+      if (!decision.allowed && decision.redirectTo) {
+        return redirectTo(req, decision.redirectTo)
+      }
+    }
+
+    if (isClientResultsPath) {
+      const decision = resolveClientResultsAccess(access.role)
+      if (!decision.allowed && decision.redirectTo) {
+        return redirectTo(req, decision.redirectTo)
+      }
+    }
+
     return NextResponse.next()
   }
 
-  // ── Récupération de la session côté serveur ───────────────────────────
-  let session
-  try {
-    session = await auth.api.getSession({ headers: req.headers })
-  } catch {
-    // Base de données indisponible ou session invalide : traiter comme non connecté.
-    session = null
+  if (access.status === "unauthenticated") {
+    if (isDashboardPath) {
+      return redirectTo(req, loginPathFor(pathname))
+    }
+    if (isClientResultsPath) {
+      return redirectToLoginFrom(req)
+    }
+    if (isTemporaryPasswordPage) {
+      return redirectTo(req, "/connexion-admin")
+    }
+    return NextResponse.next()
   }
 
-  const user = session?.user
-  const isAuthenticated = !!user
-  const role = (user?.role ?? "client") as string
-  const mustChangePassword = (user as { mustChangePassword?: boolean } | undefined)
-    ?.mustChangePassword === true
-
-  // ── Détection du type de route ────────────────────────────────────────
-  const isAuthPage = pathname === "/connexion" || pathname === "/connexion-admin"
-  const isRegisterPage = pathname.startsWith("/inscription")
-  const isDashboardClient =
-    pathname === "/dashboard" ||
-    (pathname.startsWith("/dashboard/") &&
-      !pathname.startsWith("/dashboard/admin") &&
-      !pathname.startsWith("/dashboard/vendeur") &&
-      !pathname.startsWith("/dashboard/collaborateur") &&
-      !pathname.startsWith("/dashboard/depot"))
-  const isDashboardVendor =
-    pathname.startsWith("/dashboard/vendeur") ||
-    pathname.startsWith("/dashboard/depot")
-  const isDashboardAdmin = pathname.startsWith("/dashboard/admin")
-  const isDashboardCollaborateur = pathname.startsWith("/dashboard/collaborateur")
-  const isMotDePasseTemporaire = pathname === "/mot-de-passe-temporaire"
-
-  const isDashboardRoute =
-    isDashboardClient || isDashboardVendor || isDashboardAdmin || isDashboardCollaborateur
-
-  // ── 5. Collaborateur avec mot de passe temporaire → la page obligatoire ──
-  if (isAuthenticated && role === "collaborateur" && mustChangePassword && !isMotDePasseTemporaire) {
-    return NextResponse.redirect(new URL("/mot-de-passe-temporaire", req.url))
-  }
-
-  // Si sur la page mot-de-passe-temporaire mais n'est pas un collaborateur
-  // avec mot de passe temporaire, rediriger vers le dashboard approprié.
-  if (isAuthenticated && isMotDePasseTemporaire && !(role === "collaborateur" && mustChangePassword)) {
-    const defaultRedirect =
-      role === "admin" ? "/dashboard/admin" :
-      role === "vendor" ? "/dashboard/vendeur" :
-      role === "collaborateur" ? "/dashboard/collaborateur" :
-      "/dashboard"
-    return NextResponse.redirect(new URL(defaultRedirect, req.url))
-  }
-
-  // ── 1. Utilisateur NON authentifié qui tente d'accéder à un dashboard ──
-  if (!isAuthenticated && isDashboardRoute) {
-    const loginUrl =
-      role === "admin" || role === "collaborateur" ? "/connexion-admin" : "/connexion"
-    return NextResponse.redirect(new URL(loginUrl, req.url))
-  }
-
-  // ── 2. Utilisateur NON authentifié sur la page mot-de-passe-temporaire ──
-  if (!isAuthenticated && isMotDePasseTemporaire) {
-    return NextResponse.redirect(new URL("/connexion-admin", req.url))
-  }
-
-  // ── 3. Utilisateur authentifié sur une page de connexion/inscription ──
-  if (isAuthenticated && (isAuthPage || isRegisterPage)) {
-    if (role === "admin") {
-      return NextResponse.redirect(new URL("/dashboard/admin", req.url))
+  const errorCode =
+    ACCOUNT_ACCESS_ERROR_CODES[access.status] ?? "session_error"
+  if (isDashboardPath || isClientResultsPath || isTemporaryPasswordPage) {
+    const loginUrl = new URL(loginPathFor(pathname), req.url)
+    loginUrl.searchParams.set("error", errorCode)
+    if (isClientResultsPath) {
+      loginUrl.searchParams.set(
+        "redirect",
+        `${req.nextUrl.pathname}${req.nextUrl.search}`
+      )
     }
-    if (role === "collaborateur") {
-      return NextResponse.redirect(new URL("/dashboard/collaborateur", req.url))
-    }
-    if (role === "vendor") {
-      return NextResponse.redirect(new URL("/dashboard/vendeur", req.url))
-    }
-    return NextResponse.redirect(new URL("/dashboard", req.url))
-  }
-
-  // ── 4. Contrôle des rôles sur les dashboards spécifiques ──────────────
-  if (isAuthenticated && isDashboardRoute) {
-    // Admin/collaborateur sur le dashboard générique client -> admin
-    if (isDashboardClient && (role === "admin" || role === "collaborateur")) {
-      return NextResponse.redirect(new URL("/dashboard/admin", req.url))
-    }
-    // Client sur un dashboard vendeur/admin/collaborateur -> dashboard client
-    if (role === "client") {
-      if (isDashboardVendor || isDashboardAdmin || isDashboardCollaborateur) {
-        return NextResponse.redirect(new URL("/dashboard", req.url))
-      }
-    }
-    // Vendeur sur dashboard admin/collaborateur -> dashboard vendeur
-    if (role === "vendor") {
-      if (isDashboardAdmin || isDashboardCollaborateur) {
-        return NextResponse.redirect(new URL("/dashboard/vendeur", req.url))
-      }
-    }
-    // Collaborateur sur dashboard admin -> autorisé (il a accès)
-    // Collaborateur sur dashboard client -> dashboard collaborateur
-    if (role === "collaborateur" && isDashboardClient) {
-      return NextResponse.redirect(new URL("/dashboard/collaborateur", req.url))
-    }
+    return NextResponse.redirect(loginUrl)
   }
 
   return NextResponse.next()
@@ -141,10 +119,11 @@ export async function proxy(req: NextRequest) {
 
 export const config = {
   matcher: [
+    "/resultats-recherche",
     "/dashboard/:path*",
     "/connexion",
     "/connexion-admin",
     "/inscription/:path*",
-    "/mot-de-passe-temporaire"
-  ]
+    "/mot-de-passe-temporaire",
+  ],
 }

@@ -1,10 +1,9 @@
 "use client"
 
 import { useCallback, Suspense, useEffect, useRef, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
-import { useSafeSession } from "@/lib/auth-session"
-import { safeRedirect } from "@/lib/utils"
+import { getServerRoleRedirect } from "@/lib/auth-redirect-client"
 import { Button } from "@/components/ui/button"
 import { LoaderButton } from "@/app/_components/loader-button"
 import { ActionFeedback } from "@/app/_components/action-feedback"
@@ -31,33 +30,19 @@ function validatePassword(password: string): string | null {
 
 function LoginPageContent() {
   const t = useTranslation()
-  const router = useRouter()
   const searchParams = useSearchParams()
-  const explicitRedirect = searchParams.get("redirect")
-  const redirectTo = safeRedirect(explicitRedirect, "/dashboard")
-  const { data: session } = useSafeSession()
-
-  const isStaff = (role?: string | null) =>
-    role === "admin" || role === "collaborateur"
 
   const emailParamFromUrl = (searchParams.get("email") ?? "").trim()
+  const rawRedirect = searchParams.get("redirect")
+  // Seule la page de résultats est reprise après connexion : toute autre
+  // valeur est ignorée pour éviter une redirection externe.
+  const safeResultsRedirect =
+    rawRedirect?.startsWith("/resultats-recherche") &&
+    !rawRedirect.startsWith("//")
+      ? rawRedirect
+      : null
   const emailVerifiedNotice = emailParamFromUrl ? "Votre adresse email est vérifiée. Vous pouvez maintenant vous connecter." : ""
   const passwordRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    if (!session?.user) return
-    const role = (session.user as { role?: string }).role
-    const user = session.user as { role?: string; emailVerified?: boolean }
-    
-    // For vendors: subscription check removed - they can access dashboard without active subscription
-    if (!explicitRedirect && isStaff(role)) {
-      router.push("/dashboard/admin")
-    } else if (!explicitRedirect && role === "vendor") {
-      router.push("/dashboard/vendeur")
-    } else {
-      router.push(redirectTo)
-    }
-  }, [session, router, redirectTo, explicitRedirect])
 
   useEffect(() => {
     if (emailParamFromUrl) {
@@ -75,8 +60,11 @@ function LoginPageContent() {
   const [feedback, setFeedback] = useState<{ state: "idle" | "loading" | "success" | "error"; msg?: string }>({ state: "idle" })
 
   const handleGoogleLogin = useCallback(() => {
-    authClient.signIn.social({ provider: "google", callbackURL: redirectTo })
-  }, [redirectTo])
+    authClient.signIn.social({
+      provider: "google",
+      callbackURL: "/api/auth/role-redirect",
+    })
+  }, [])
 
   const validateForm = () => {
     const emailError = validateEmail(email)
@@ -101,7 +89,7 @@ function LoginPageContent() {
     setFeedback({ state: "loading", msg: "Connexion en cours…" })
 
     try {
-      const { data: signInData, error: signInError } = await authClient.signIn.email({
+      const { error: signInError } = await authClient.signIn.email({
         email: email.trim(),
         password,
       })
@@ -120,23 +108,15 @@ function LoginPageContent() {
         return
       }
 
-      const role = (signInData?.user as { role?: string } | undefined)?.role
-      const mustChange = (signInData?.user as { mustChangePassword?: boolean } | undefined)?.mustChangePassword
-      // Seul un collaborateur avec mot de passe temporaire est redirigé.
-      // Les vendeurs vont sur leur dashboard professionnel, les clients sur
-      // leur dashboard usager, les administrateurs sur l'admin.
-      if (role === "collaborateur" && mustChange === true) {
-        router.push("/mot-de-passe-temporaire")
-      } else if (!explicitRedirect && role === "vendor") {
-        router.push("/dashboard/vendeur")
-      } else if (!explicitRedirect && isStaff(role)) {
-        router.push("/dashboard/admin")
-      } else {
-        router.push(redirectTo)
-      }
-    } catch {
-      setError("Une erreur inattendue est survenue. Veuillez réessayer.")
-      setFeedback({ state: "error", msg: "Une erreur inattendue est survenue. Veuillez réessayer." })
+      const destination = await getServerRoleRedirect()
+      window.location.assign(safeResultsRedirect ?? destination.redirectTo)
+    } catch (caught) {
+      const errorMessage =
+        caught instanceof Error
+          ? caught.message
+          : "Une erreur inattendue est survenue. Veuillez réessayer."
+      setError(errorMessage)
+      setFeedback({ state: "error", msg: errorMessage })
       setLoading(false)
     }
   }
@@ -335,7 +315,7 @@ function LoginPageContent() {
             <p className="text-center text-sm text-muted-foreground">
               {t("login_no_account")}{" "}
               <Link
-                href={`/inscription?redirect=${encodeURIComponent(redirectTo)}`}
+                href="/inscription"
                 className="text-primary hover:underline font-medium"
               >
                 {t("login_create_account")}

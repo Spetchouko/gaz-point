@@ -13,23 +13,30 @@ export async function PATCH(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { name, phone } = body;
+    const { name } = body;
+    // `phone` reste accepté pour les anciens clients. La colonne réelle est
+    // `phoneNumber`, afin que la valeur soit bien relue après enregistrement.
+    const phone = body.phoneNumber ?? body.phone;
 
     // Validation
     if (name !== undefined && (typeof name !== "string" || name.trim().length < 2)) {
       return NextResponse.json({ error: "Le nom doit contenir au moins 2 caractères" }, { status: 400 });
     }
 
-    if (phone !== undefined && phone && typeof phone === "string" && phone.trim().length > 0) {
+    if (phone !== undefined && phone !== null && typeof phone !== "string") {
+      return NextResponse.json({ error: "Format de téléphone invalide" }, { status: 400 });
+    }
+
+    if (typeof phone === "string" && phone.trim().length > 0) {
       const phoneRegex = /^\+?[0-9\s-]{8,}$/;
       if (!phoneRegex.test(phone.trim())) {
         return NextResponse.json({ error: "Format de téléphone invalide" }, { status: 400 });
       }
     }
 
-    const updates: Record<string, any> = {};
+    const updates: { name?: string; phoneNumber?: string | null } = {};
     if (name !== undefined) updates.name = name.trim();
-    if (phone !== undefined) updates.phone = phone?.trim() || null;
+    if (phone !== undefined) updates.phoneNumber = phone?.trim() || null;
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: "Aucune donnée à mettre à jour" }, { status: 400 });

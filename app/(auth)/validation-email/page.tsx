@@ -1,14 +1,14 @@
 "use client"
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { useSafeSession } from "@/lib/auth-session"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { CheckCircle, AlertCircle, Clock, Mail } from "lucide-react"
 
 import { Spinner, ButtonSpinner } from "@/app/_components/spinner"
-import { safeRedirect } from "@/lib/utils"
+import { getServerRoleRedirect } from "@/lib/auth-redirect-client"
 import { trackEvent } from "@/lib/analytics"
 
 const CODE_LENGTH = 6
@@ -16,7 +16,6 @@ const RESEND_COOLDOWN_SECONDS = 60
 
 function ValidationEmailContent() {
   const params = useSearchParams()
-  const router = useRouter()
   const { data: session } = useSafeSession()
 
   const emailParam = (params.get("email") ?? "").trim().toLowerCase()
@@ -24,11 +23,6 @@ function ValidationEmailContent() {
   const linkVerified = params.get("verified") === "1"
   const emailSentFromUrl = params.get("sent") === "1"
   const linkError = params.get("error")
-
-  // Cible demandée par le parcours d'inscription (ex: /dashboard/vendeur pour
-  // un vendeur). Si absente, le client retourne à son dashboard.
-  const redirectTarget = safeRedirect(params.get("redirect"), "")
-  const destination = redirectTarget || "/dashboard"
 
   const linkErrorMessage = (() => {
     switch (linkError) {
@@ -58,20 +52,38 @@ function ValidationEmailContent() {
   const verificationTriggeredRef = useRef<string | null>(null)
 
   useEffect(() => {
-    if (session?.user?.emailVerified) {
-      router.push(destination)
+    if (!session?.user?.emailVerified) return
+
+    let cancelled = false
+    void getServerRoleRedirect()
+      .then((destination) => {
+        if (!cancelled) window.location.assign(destination.redirectTo)
+      })
+      .catch((caught) => {
+        if (!cancelled) {
+          setError(
+            caught instanceof Error
+              ? caught.message
+              : "La destination de votre espace est introuvable."
+          )
+        }
+      })
+
+    return () => {
+      cancelled = true
     }
-  }, [router, session, destination])
+  }, [session])
 
   useEffect(() => {
     if (!linkVerified || !email) return
 
     const timer = setTimeout(() => {
-      router.push(destination)
-      router.refresh()
+      window.location.assign(
+        `/connexion?email=${encodeURIComponent(email)}&verified=1`
+      )
     }, 800)
     return () => clearTimeout(timer)
-  }, [linkVerified, email, router, destination])
+  }, [linkVerified, email])
 
   useEffect(() => {
     if (resendCooldown <= 0) return
@@ -178,14 +190,14 @@ function ValidationEmailContent() {
         verificationTriggeredRef.current = null
         return
       }
+      const destination = await getServerRoleRedirect()
       setSuccess(true)
       setError("")
       setNotice("")
       // Événement analytics : email vérifié
       void trackEvent({ eventType: "email_verified", path: "/validation-email" })
       await new Promise((r) => setTimeout(r, 800))
-      router.push(destination)
-      router.refresh()
+      window.location.assign(destination.redirectTo)
     } catch {
       setError("Une erreur inattendue est survenue. Veuillez reessayer.")
       setLoading(false)
@@ -193,7 +205,7 @@ function ValidationEmailContent() {
       // Reset verification trigger to allow retry with same code
       verificationTriggeredRef.current = null
     }
-  }, [loading, success, email, router, destination])
+  }, [loading, success, email])
 
   // Auto-verification when 6 digits are filled (manual, auto-fill, or paste)
   useEffect(() => {

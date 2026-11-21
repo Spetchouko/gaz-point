@@ -2,28 +2,43 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useCallback, useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertCircle,
   ChevronDown,
-  Cylinder,
   LocateFixed,
   MapPin,
-  Phone,
   RefreshCw,
   Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { GasBrandAutocomplete } from "@/app/_components/gas-brand-autocomplete";
 import { formats } from "@/app/_components/donnees-demo";
-import { useSafeSession } from "@/lib/auth-session";
 import type { AvailabilityStatus } from "@/db/schema";
-import { ReservationModal } from "@/app/_components/reservation-modal";
+import {
+  ReservationModal,
+  type ReservationResult,
+} from "@/app/_components/reservation-modal";
 import { ResultatRechercheCard } from "@/app/_components/cards/resultat-recherche-card";
 import { trackEvent } from "@/lib/analytics";
 import { Spinner, ButtonSpinner } from "@/app/_components/spinner";
+import {
+  ClientRequestError,
+  isUnauthenticatedRequest,
+  requestJson,
+} from "@/lib/client-request";
+
+type SearchCriteria = {
+  brand: string;
+  format: string;
+  zone: string;
+};
+
+type SearchApiResponse = {
+  results?: SearchResult[];
+};
 
 export type SearchResult = {
   id: string;
@@ -54,126 +69,195 @@ export type SearchResult = {
 
 export function RechercheGaz() {
   const router = useRouter();
-  const { data: session } = useSafeSession()
-  const [brand, setBrand] = useState("");
-  const [format, setFormat] = useState("");
-  const [zone, setZone] = useState("");
+  const searchParams = useSearchParams();
+  const initialBrand = searchParams.get("brand")?.trim() ?? "";
+  const initialFormat = searchParams.get("format")?.trim() ?? "";
+  const initialZone = searchParams.get("zone")?.trim() ?? "";
+  const [brand, setBrand] = useState(initialBrand);
+  const [format, setFormat] = useState(initialFormat);
+  const [zone, setZone] = useState(initialZone);
   const [locationLabel, setLocationLabel] = useState<string | null>(null);
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reservationPoint, setReservationPoint] = useState<SearchResult | null>(null);
-  const [defaultAmountType, setDefaultAmountType] = useState<"reservation" | "consigne">("reservation");
+  const requestControllerRef = useRef<AbortController | null>(null);
+  const initialSearchAppliedRef = useRef(false);
 
   const handleReserve = async (
-    amountType: "reservation" | "consigne"
-  ): Promise<{ checkoutUrl: string; reservationCode: string } | null> => {
+    disponibiliteId: string
+  ): Promise<ReservationResult> => {
     if (!reservationPoint) {
       throw new Error("Aucun point sélectionné");
     }
 
-    const res = await fetch("/api/reservation/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        disponibiliteId: reservationPoint.disponibiliteId,
-        brand: reservationPoint.brand,
-        format: reservationPoint.format,
-        quantity: 1,
-        amountType,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok || data.error) {
-      throw new Error(data.error || "Erreur lors de la réservation");
-    }
+    const data = await requestJson<{
+      reservation: {
+        code: string;
+        expiresAt: string;
+        amount: number;
+        brand: string;
+        format: string;
+        quantity: number;
+        pointName: string;
+        pointDistrict: string;
+        reservedAt: string;
+      };
+    }>(
+      "/api/reservation/create",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          disponibiliteId,
+          brand: reservationPoint.brand,
+          format: reservationPoint.format,
+          quantity: 1,
+          amountType: "reservation",
+        }),
+      }
+    );
 
     return {
-      checkoutUrl: data.payment.checkoutUrl,
-      reservationCode: data.reservation.code,
+      code: data.reservation.code,
+      expiresAt: data.reservation.expiresAt,
+      amount: data.reservation.amount,
+      brand: data.reservation.brand,
+      format: data.reservation.format,
+      quantity: data.reservation.quantity,
+      pointName: data.reservation.pointName,
+      pointDistrict: data.reservation.pointDistrict,
+      reservedAt: data.reservation.reservedAt,
     };
   };
 
-  const openReservationModal = (point: SearchResult, defaultType?: "reservation" | "consigne") => {
+  const openReservationModal = (point: SearchResult) => {
     setReservationPoint(point);
-    setDefaultAmountType(defaultType ?? "reservation");
   };
 
   const closeReservationModal = () => {
     setReservationPoint(null);
   };
 
-  const runSearch = useCallback(async () => {
-    if (!session?.user) {
-      router.push("/inscription");
-      return;
-    }
+  const runSearch = useCallback(async (criteria?: SearchCriteria) => {
+    const effectiveCriteria = criteria ?? { brand, format, zone };
+
+    // La mise à jour de l'état commence après la phase de synchronisation de
+    // l'effet. La requête elle-même reste immédiatement annulable.
+    await Promise.resolve()
+
+    requestControllerRef.current?.abort();
+    const controller = new AbortController();
+    requestControllerRef.current = controller;
 
     const params = new URLSearchParams();
-    if (brand) params.set("brand", brand);
-    if (format) params.set("format", format);
-    if (zone) params.set("zone", zone);
+    if (effectiveCriteria.brand) params.set("brand", effectiveCriteria.brand);
+    if (effectiveCriteria.format) params.set("format", effectiveCriteria.format);
+    if (effectiveCriteria.zone) params.set("zone", effectiveCriteria.zone);
+    params.set("history", "1");
 
     setLoading(true);
     setError(null);
     setResults(null);
 
-    trackEvent({
-      eventType: "search_performed",
-      path: "/api/recherche",
-      metadata: { brand, format, zone },
-    });
-
     try {
-      const res = await fetch(`/api/recherche?${params.toString()}`);
-      if (!res.ok) throw new Error("Recherche impossible");
-      const data = await res.json();
-      let searchedResults: SearchResult[] = data.results ?? [];
-
-      if (searchedResults.length > 0 && data.disponibiliteIds?.length > 0) {
-        const dispoIds = data.disponibiliteIds;
-        const dispoRes = await fetch(`/api/disponibilites?ids=${dispoIds.join(",")}`);
-        if (dispoRes.ok) {
-          const dispoData = await dispoRes.json();
-          const dispoMap = new Map(dispoData.map((d: any) => [d.id, d]));
-          searchedResults = searchedResults.map((r) => {
-            const dispo = dispoMap.get(r.disponibiliteId) as { delivery: boolean; exchange: boolean; gasSale: boolean; price: number | null } | undefined;
-            if (dispo) {
-              return {
-                ...r,
-                hasDelivery: dispo.delivery,
-                hasExchange: dispo.exchange,
-                hasGasSale: dispo.gasSale,
-                deliveryFee: dispo.price ?? null,
-              };
-            }
-            return {
-              ...r,
-              hasDelivery: false,
-              hasExchange: false,
-              hasGasSale: false,
-              deliveryFee: null,
-            };
-          });
+      const data = await requestJson<SearchApiResponse>(
+        `/api/recherche?${params.toString()}`,
+        {
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+          signal: controller.signal,
         }
-      }
+      );
+
+      if (controller.signal.aborted) return;
+
+      const searchedResults: SearchResult[] = (data.results ?? []).map(
+        (result) => ({
+          ...result,
+          hasDelivery: Boolean(result.hasDelivery),
+          hasExchange: Boolean(result.hasExchange),
+          hasGasSale: Boolean(result.hasGasSale),
+          deliveryFee:
+            typeof result.deliveryFee === "number" ? result.deliveryFee : null,
+        })
+      );
 
       setResults(searchedResults);
 
       trackEvent({
         eventType: "search_results_viewed",
-        path: "/api/recherche",
-        metadata: { resultCount: searchedResults.length, brand, format, zone },
+        path: "/dashboard/recherches",
+        metadata: {
+          resultCount: searchedResults.length,
+          brand: effectiveCriteria.brand,
+          format: effectiveCriteria.format,
+          zone: effectiveCriteria.zone,
+        },
       });
-    } catch {
-      setError("La recherche n'a pas pu aboutir. Vérifiez votre connexion et réessayez.");
+    } catch (requestError) {
+      if (
+        controller.signal.aborted ||
+        (requestError instanceof ClientRequestError &&
+          requestError.kind === "aborted")
+      ) {
+        return;
+      }
+
+      if (isUnauthenticatedRequest(requestError)) {
+        router.replace(
+          `/connexion?redirect=${encodeURIComponent("/dashboard/recherches")}`
+        );
+        return;
+      }
+
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "La recherche n'a pas pu aboutir. Vérifiez votre connexion et réessayez."
+      );
       setResults(null);
     } finally {
-      setLoading(false);
+      if (requestControllerRef.current === controller) {
+        setLoading(false);
+      }
     }
-  }, [brand, format, zone, session, router]);
+  }, [brand, format, zone, router]);
+
+  useEffect(() => {
+    if (initialSearchAppliedRef.current) return;
+
+    const initialCriteria: SearchCriteria = {
+      brand,
+      format,
+      zone,
+    };
+
+    if (
+      !initialCriteria.brand &&
+      !initialCriteria.format &&
+      !initialCriteria.zone
+    ) {
+      initialSearchAppliedRef.current = true;
+      return;
+    }
+
+    const startTimer = window.setTimeout(() => {
+      if (initialSearchAppliedRef.current) return;
+      initialSearchAppliedRef.current = true;
+      void runSearch(initialCriteria);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(startTimer);
+    };
+  }, [brand, format, zone, runSearch]);
+
+  useEffect(() => {
+    return () => {
+      requestControllerRef.current?.abort();
+    };
+  }, []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -181,17 +265,7 @@ export function RechercheGaz() {
   }
 
   const handleRetry = () => {
-    runSearch();
-  };
-
-  const handleResetAndSearch = () => {
-    setBrand("");
-    setFormat("");
-    setZone("");
-    setLocationLabel(null);
-    setError(null);
-    setResults(null);
-    runSearch();
+    void runSearch();
   };
 
   return (
@@ -210,13 +284,11 @@ export function RechercheGaz() {
               >
                 Marque
               </label>
-              <Input
+              <GasBrandAutocomplete
                 id="recherche-marque"
-                type="text"
                 value={brand}
-                onChange={(e) => setBrand(e.target.value)}
-                placeholder="Exemple : Total, Bocom, Tradex"
-                className="mt-1.5 h-12 w-full rounded-xl border border-input bg-background px-3 pr-10 text-sm text-foreground outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/50"
+                onValueChange={setBrand}
+                className="mt-1.5 rounded-xl border border-input bg-background px-3 outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/50"
               />
             </div>
 
@@ -346,6 +418,7 @@ export function RechercheGaz() {
                 district={point.district}
                 address={point.address}
                 phone={point.phone}
+                displayPhone={point.phone}
                 brand={point.brand}
                 format={point.format}
                 status={point.status}
@@ -354,7 +427,7 @@ export function RechercheGaz() {
                 hasExchange={point.hasExchange}
                 hasGasSale={point.hasGasSale}
                 deliveryFee={point.deliveryFee}
-                onConsigner={() => openReservationModal(point)}
+                onReserver={() => openReservationModal(point)}
               />
             ))}
           </div>
@@ -389,16 +462,22 @@ export function RechercheGaz() {
           open={!!reservationPoint}
           onClose={closeReservationModal}
           point={reservationPoint}
-          onConfirm={async (amountType) => {
-            return handleReserve(amountType)
-          }}
-          defaultAmountType={defaultAmountType}
-          onPaymentRedirect={(checkoutUrl) => {
-            window.location.href = checkoutUrl
-          }}
+          onConfirm={handleReserve}
         />
       )}
     </>
   );
 }
-export default RechercheGaz;
+export default function RecherchePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="rounded-2xl border border-border bg-card px-4 py-12 text-center text-sm text-muted-foreground shadow-sm">
+          Chargement de la recherche…
+        </div>
+      }
+    >
+      <RechercheGaz />
+    </Suspense>
+  );
+}

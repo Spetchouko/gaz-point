@@ -4,15 +4,17 @@ export const dynamic = "force-dynamic"
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { Calendar, Filter, X, Download, Package, Clock, CheckCircle2, AlertCircle, ChevronDown, RefreshCw } from "lucide-react"
+import { Filter, X, Download, Package, Clock, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/app/_components/spinner"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
-import { formatDateTime } from "@/lib/gaz"
+import { requestJson } from "@/lib/client-request"
+import { getReservationStatusLabel } from "@/lib/client-dashboard"
+import { buildCsv, downloadCsv } from "@/lib/csv-export"
+import { toast } from "sonner"
 
 interface Reservation {
   id: string
@@ -31,6 +33,10 @@ interface Reservation {
   expiresAt: string | null
 }
 
+type ReservationApiResponse = {
+  reservations?: Array<Partial<Reservation> & { id: string }>
+}
+
 export default function ReservationsPage() {
   const [filterStatus, setFilterStatus] = useState<string>("all")
   const [searchQuery, setSearchQuery] = useState("")
@@ -38,52 +44,70 @@ export default function ReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [loadAttempt, setLoadAttempt] = useState(0)
 
   useEffect(() => {
+    const controller = new AbortController()
     let cancelled = false
+
     async function loadReservations() {
+      setLoading(true)
+      setError(null)
+
       try {
         const params = new URLSearchParams()
         if (filterStatus !== "all") params.set("status", filterStatus)
         params.set("page", "1")
         params.set("pageSize", "50")
 
-        const res = await fetch(`/api/reservation/my?${params.toString()}`, {
-          headers: { Accept: "application/json" },
-          cache: "no-store",
-        })
-        if (!res.ok) throw new Error("Impossible de charger les réservations")
-        const data = await res.json()
-        if (!cancelled) {
-          setReservations((data.reservations ?? []).map((r: any) => ({
-            id: r.id,
-            reservationCode: r.reservationCode,
-            status: r.status as Reservation["status"],
-            brand: r.brand,
-            format: r.format,
-            quantity: r.quantity,
-            amount: r.amount,
-            amountType: r.amountType,
-            pointName: r.pointName ?? "—",
-            pointDistrict: r.pointDistrict ?? "",
-            reservedAt: r.reservedAt,
-            collectedAt: r.collectedAt,
-            cancelledAt: r.cancelledAt,
-            expiresAt: r.expiresAt,
-          })))
-          setError(null)
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Erreur lors du chargement des réservations")
-        }
+        const data = await requestJson<ReservationApiResponse>(
+          `/api/reservation/my?${params.toString()}`,
+          {
+            headers: { Accept: "application/json" },
+            cache: "no-store",
+            signal: controller.signal,
+          }
+        )
+
+        if (cancelled) return
+
+        setReservations(
+          (data.reservations ?? []).map((reservation) => ({
+            id: reservation.id,
+            reservationCode: reservation.reservationCode ?? "",
+            status: (reservation.status ?? "pending") as Reservation["status"],
+            brand: reservation.brand ?? "",
+            format: reservation.format ?? "",
+            quantity: reservation.quantity ?? 1,
+            amount: reservation.amount ?? 0,
+            amountType:
+              (reservation.amountType ?? "reservation") as Reservation["amountType"],
+            pointName: reservation.pointName ?? "—",
+            pointDistrict: reservation.pointDistrict ?? "",
+            reservedAt: reservation.reservedAt ?? new Date().toISOString(),
+            collectedAt: reservation.collectedAt ?? null,
+            cancelledAt: reservation.cancelledAt ?? null,
+            expiresAt: reservation.expiresAt ?? null,
+          }))
+        )
+      } catch (requestError) {
+        if (cancelled) return
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Erreur lors du chargement des réservations"
+        )
       } finally {
         if (!cancelled) setLoading(false)
       }
     }
-    loadReservations()
-    return () => { cancelled = true }
-  }, [filterStatus])
+
+    void loadReservations()
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [filterStatus, loadAttempt])
 
   const filteredReservations = reservations
     .filter((r) => {
@@ -103,47 +127,80 @@ export default function ReservationsPage() {
       return new Date(b.reservedAt).getTime() - new Date(a.reservedAt).getTime()
     })
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "—"
-    return new Date(dateString).toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  }
-
   const getStatusConfig = (status: string) => {
     switch (status) {
       case "confirmed":
-        return { label: "Confirmée", variant: "default" as const, icon: <CheckCircle2 className="size-3" /> }
+        return { label: getReservationStatusLabel(status), variant: "default" as const, icon: <CheckCircle2 className="size-3" /> }
       case "collected":
-        return { label: "Récupérée", variant: "secondary" as const, icon: <CheckCircle2 className="size-3" /> }
+        return { label: getReservationStatusLabel(status), variant: "secondary" as const, icon: <CheckCircle2 className="size-3" /> }
       case "cancelled":
-        return { label: "Annulée", variant: "destructive" as const, icon: <AlertCircle className="size-3" /> }
+        return { label: getReservationStatusLabel(status), variant: "destructive" as const, icon: <AlertCircle className="size-3" /> }
       case "pending":
-        return { label: "En attente", variant: "outline" as const, icon: <Clock className="size-3" /> }
+        return { label: getReservationStatusLabel(status), variant: "outline" as const, icon: <Clock className="size-3" /> }
       case "expired":
-        return { label: "Expirée", variant: "destructive" as const, icon: <AlertCircle className="size-3" /> }
+        return { label: getReservationStatusLabel(status), variant: "destructive" as const, icon: <AlertCircle className="size-3" /> }
       default:
-        return { label: status, variant: "outline" as const, icon: null }
+        return { label: getReservationStatusLabel(status), variant: "outline" as const, icon: null }
     }
   }
 
   const handleCancel = async (id: string) => {
     if (!window.confirm("Annuler cette réservation ? Le stock sera libéré.")) return
     try {
-      const res = await fetch("/api/reservation/cancel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reservationId: id }),
-      })
-      if (!res.ok) throw new Error("Échec de l'annulation")
+      await requestJson<{ ok: boolean; message?: string }>(
+        "/api/reservation/cancel",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reservationId: id }),
+        }
+      )
       setReservations((prev) => prev.map((r) => r.id === id ? { ...r, status: "cancelled", cancelledAt: new Date().toISOString() } : r))
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur lors de l'annulation")
+      toast.success("Réservation annulée")
+    } catch (requestError) {
+      toast.error(
+        requestError instanceof Error
+          ? requestError.message
+          : "Erreur lors de l'annulation"
+      )
     }
+  }
+
+  const handleExport = () => {
+    const csv = buildCsv(
+      [
+        "Code",
+        "Marque",
+        "Format",
+        "Quantité",
+        "Montant",
+        "Type de montant",
+        "Point de vente",
+        "District",
+        "Statut",
+        "Réservée le",
+        "Collectée le",
+        "Annulée le",
+        "Expire le",
+      ],
+      filteredReservations.map((reservation) => [
+        reservation.reservationCode,
+        reservation.brand,
+        reservation.format,
+        reservation.quantity,
+        reservation.amount,
+        reservation.amountType,
+        reservation.pointName,
+        reservation.pointDistrict,
+        getReservationStatusLabel(reservation.status),
+        reservation.reservedAt,
+        reservation.collectedAt,
+        reservation.cancelledAt,
+        reservation.expiresAt,
+      ])
+    )
+    const date = new Date().toISOString().slice(0, 10)
+    downloadCsv(`reservations-${date}.csv`, csv)
   }
 
   return (
@@ -167,7 +224,13 @@ export default function ReservationsPage() {
               <AlertCircle className="size-4 text-destructive" />
               <span className="text-sm text-destructive">{error}</span>
             </div>
-            <Button variant="outline" size="sm" onClick={() => window.location.reload()} className="mt-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLoadAttempt((value) => value + 1)}
+              className="mt-3"
+              disabled={loading}
+            >
               <RefreshCw className="size-3 mr-2" /> Réessayer
             </Button>
           </CardContent>
@@ -187,7 +250,12 @@ export default function ReservationsPage() {
                 className="pl-10"
               />
             </div>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <Select
+              value={filterStatus}
+              onValueChange={(value) => {
+                if (value !== null) setFilterStatus(value)
+              }}
+            >
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Tous les statuts" />
               </SelectTrigger>
@@ -197,9 +265,17 @@ export default function ReservationsPage() {
                 <SelectItem value="collected">Récupérées</SelectItem>
                 <SelectItem value="cancelled">Annulées</SelectItem>
                 <SelectItem value="pending">En attente</SelectItem>
+                <SelectItem value="expired">Expirées</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={sortBy} onValueChange={setSortBy}>
+            <Select
+              value={sortBy}
+              onValueChange={(value) => {
+                if (value === "date_desc" || value === "date_asc") {
+                  setSortBy(value)
+                }
+              }}
+            >
               <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder="Trier par" />
               </SelectTrigger>
@@ -208,7 +284,12 @@ export default function ReservationsPage() {
                 <SelectItem value="date_asc">Plus anciennes</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" onClick={() => alert("Export des réservations en cours...")}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              disabled={filteredReservations.length === 0}
+            >
               <Download className="size-4 mr-2" />
               Exporter
             </Button>
@@ -224,7 +305,7 @@ export default function ReservationsPage() {
       )}
 
       {/* Reservations list */}
-      {!loading && (
+      {!loading && !error && (
         <div className="space-y-4">
           {filteredReservations.length === 0 ? (
             <Card className="border border-border shadow-sm rounded-lg">
@@ -242,7 +323,10 @@ export default function ReservationsPage() {
           ) : (
             <div className="space-y-3">
               {filteredReservations.map((res) => (
-                <Card key={res.id} className="border border-border shadow-sm rounded-lg transition-all hover:shadow-md hover:border-primary/50">
+                <Card
+                  key={res.id}
+                  className="border border-border shadow-sm rounded-lg transition-all hover:shadow-md hover:border-primary/50"
+                >
                   <CardContent className="pt-4">
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-4 min-w-0 flex-1">

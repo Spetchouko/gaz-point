@@ -10,7 +10,7 @@ export default function DashboardAdminLayoutWrapper({
 }: {
   children: React.ReactNode;
 }) {
-  const { status, user, isAuthenticated, isLoading, role } =
+  const { status, user, isAuthenticated, isLoading } =
     useDashboardSession();
   const [permissions, setPermissions] = useState<Set<string>>(new Set());
 
@@ -53,13 +53,7 @@ export default function DashboardAdminLayoutWrapper({
       window.location.href = "/connexion-admin";
       return;
     }
-    const userRole = (user.role ?? "client") as string;
-    // Seuls admin et collaborateur peuvent accéder à ce dashboard.
-    if (userRole !== "admin" && userRole !== "collaborateur") {
-      window.location.href = "/dashboard";
-      return;
-    }
-  }, [isLoading, isAuthenticated, user, role]);
+  }, [isLoading, isAuthenticated, user]);
 
   // Toujours afficher le contenu : pas de retour null pendant le loading.
   return (

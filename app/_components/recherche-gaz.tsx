@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { AlertCircle, ChevronDown, LocateFixed, MapPin, RefreshCw, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+import { GasBrandAutocomplete } from "@/app/_components/gas-brand-autocomplete"
 import { formats } from "@/app/_components/donnees-demo"
 import { useSafeSession } from "@/lib/auth-session"
 import type { AvailabilityStatus } from "@/db/schema"
@@ -216,13 +216,11 @@ export function RechercheGaz({
               >
                 Marque
               </label>
-              <Input
+              <GasBrandAutocomplete
                 id="recherche-marque"
-                type="text"
                 value={brand}
-                onChange={(e) => setBrand(e.target.value)}
-                placeholder="Exemple : Total, Bocom, Tradex"
-                className="mt-1.5 h-12 w-full rounded-xl border border-input bg-background px-3 pr-10 text-sm text-foreground outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/50"
+                onValueChange={setBrand}
+                className="mt-1.5 rounded-xl border border-input bg-background px-3 outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/50"
               />
             </div>
 

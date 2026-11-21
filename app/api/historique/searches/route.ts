@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, inArray } from "drizzle-orm";
 import { trafficEvent } from "@/db/schema";
 
 interface SearchMetadata {
@@ -36,15 +36,29 @@ export async function GET(req: NextRequest) {
       .where(
         and(
           eq(trafficEvent.userId, session.user.id),
-          eq(trafficEvent.eventType, "search")
+          inArray(trafficEvent.eventType, ["search_performed", "search"])
         )
       )
       .orderBy(desc(trafficEvent.createdAt))
       .limit(limit);
 
-    // Transform traffic events into search history items
+    // Transform traffic events into search history items. Les anciennes lignes
+    // peuvent contenir un JSON sérialisé, les nouvelles un objet JSONB.
     const searches = rows.map((row) => {
-      const metadata = row.metadata as SearchMetadata | null;
+      let rawMetadata: unknown = row.metadata;
+      if (typeof rawMetadata === "string") {
+        try {
+          rawMetadata = JSON.parse(rawMetadata);
+        } catch {
+          rawMetadata = null;
+        }
+      }
+
+      const metadata =
+        rawMetadata && typeof rawMetadata === "object"
+          ? (rawMetadata as SearchMetadata)
+          : null;
+
       return {
         id: row.id,
         brand: metadata?.brand ?? null,

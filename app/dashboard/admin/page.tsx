@@ -171,7 +171,7 @@ export default function AdminOverviewPage() {
         icon={<LayoutDashboard className="size-5" />}
         actions={
           <>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 items-center justify-center">
               <label className="sr-only">Date de début</label>
               <input
                 type="date"
@@ -186,14 +186,14 @@ export default function AdminOverviewPage() {
                 onChange={(e) => setTo(e.target.value)}
                 className="admin-input admin-input--sm w-[150px]"
               />
+              <Button
+                onClick={() => { setFrom(defaultFrom); setTo(defaultTo); }}
+                variant="outline"
+                size="sm"
+              >
+                Mois en cours
+              </Button>
             </div>
-            <Button
-              onClick={() => { setFrom(defaultFrom); setTo(defaultTo); }}
-              variant="outline"
-              size="sm"
-            >
-              Mois en cours
-            </Button>
             <Link href="/dashboard/admin/analytics">
               <Button variant="outline">Rapports détaillés</Button>
             </Link>
@@ -202,25 +202,15 @@ export default function AdminOverviewPage() {
       />
 
       {(from || to) && (
-        <AdminCard className="border-green-200 bg-green-50">
-          <div className="flex items-center gap-3">
-            <CalendarIcon className="size-4 text-green-700" />
-            <span className="text-sm font-medium text-foreground">
-              Filtre de période :{" "}
-              <span className="font-semibold text-green-700">
-                {from ? formatDateFr(from) : "début"} —{" "}
-                {to ? formatDateFr(to) : "aujourd'hui"}
-              </span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-green-700">
+            Filtre de période :{" "}
+            <span className="font-semibold text-green-700">
+              {from ? formatDateFr(from) : "début"} —{" "}
+              {to ? formatDateFr(to) : "aujourd'hui"}
             </span>
-            <Button
-              onClick={() => { setFrom(""); setTo(""); }}
-              variant="outline"
-              size="sm"
-            >
-              Effacer
-            </Button>
-          </div>
-        </AdminCard>
+          </span>
+        </div>
       )}
 
       {/* Stats Grid */}
@@ -312,7 +302,10 @@ export default function AdminOverviewPage() {
                       borderRadius: "8px",
                       boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                     }}
-                    formatter={(value) => [value.toLocaleString(), "Réservations"]}
+                    formatter={(value) => [
+                      Number(value ?? 0).toLocaleString(),
+                      "Réservations",
+                    ]}
                   />
                   <Bar dataKey="count" fill="#ef4444" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -342,7 +335,10 @@ export default function AdminOverviewPage() {
                       borderRadius: "8px",
                       boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                     }}
-                    formatter={(value) => [value.toLocaleString(), "Inscriptions"]}
+                    formatter={(value) => [
+                      Number(value ?? 0).toLocaleString(),
+                      "Inscriptions",
+                    ]}
                   />
                   <Line
                     type="monotone"
@@ -457,7 +453,7 @@ export default function AdminOverviewPage() {
               </div>
             </div>
             <Link href="/dashboard/admin/analytics" className="text-sm text-primary hover:underline block text-center mt-1">
-              Voir tout l'historique →
+              Voir tout l&apos;historique →
             </Link>
           </div>
         </AdminCard>

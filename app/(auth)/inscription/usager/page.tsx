@@ -1,8 +1,9 @@
 "use client"
 
 import { useCallback, Suspense, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
+import { requestSocialSignupIntent } from "@/lib/auth-social-intent-client"
 import { useSafeSession } from "@/lib/auth-session"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,6 +14,7 @@ import Link from "next/link"
 import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, AlertCircle, Loader2 } from "lucide-react"
 import Image from "next/image"
 import { ButtonSpinner, Spinner, PageLoading } from "@/app/_components/spinner"
+import { validateNewPassword } from "@/lib/password-policy"
 import { useState } from "react"
 
 const MODE_EMAIL = "email"
@@ -50,9 +52,7 @@ function validateEmail(email: string): string | null {
 }
 
 function validatePassword(password: string): string | null {
-  if (!password) return "Le mot de passe est requis."
-  if (password.length < 6) return "Le mot de passe doit contenir au moins 6 caractères."
-  return null
+  return validateNewPassword(password)
 }
 
 function validateName(name: string): string | null {
@@ -68,16 +68,11 @@ function validateName(name: string): string | null {
 function InscriptionUsagerContent() {
   const router = useRouter()
   const { data: session } = useSafeSession()
-  const role = "client"
-
-  const searchRedirect = useSearchParams().get("redirect")
-  const redirectTo = searchRedirect ?? "/dashboard"
-
   useEffect(() => {
     if (session?.user) {
-      router.push(redirectTo)
+      window.location.assign("/api/auth/role-redirect")
     }
-  }, [session, router, redirectTo])
+  }, [session])
 
   // ---------- État du formulaire ----------
   const [name, setName] = useState("")
@@ -126,17 +121,12 @@ function InscriptionUsagerContent() {
     setLoading(true)
 
     try {
-      // Nettoyer le numéro de téléphone (non utilisé en mode email)
-      const cleanPhoneNumber = ""
-
       // Inscription mode email
       const { error: signUpError } = await authClient.signUp.email({
         name: name.trim(),
         email: email.trim().toLowerCase(),
         password,
-        phoneNumber: cleanPhoneNumber,
-        role,
-      } as Parameters<typeof authClient.signUp.email>[0])
+      })
 
       if (signUpError) {
         console.error("[signup-usager] signUpError:", JSON.stringify(signUpError, null, 2))
@@ -193,7 +183,7 @@ function InscriptionUsagerContent() {
 
       if (emailSent) {
         router.push(
-          `/validation-email?mode=${MODE_EMAIL}&email=${encodeURIComponent(normalizedEmail)}&redirect=${encodeURIComponent(redirectTo)}&sent=1`
+          `/validation-email?mode=${MODE_EMAIL}&email=${encodeURIComponent(normalizedEmail)}&sent=1`
         )
         router.refresh()
       }
@@ -218,9 +208,34 @@ function InscriptionUsagerContent() {
     if (error) setError("")
   }
 
-  const handleGoogleLogin = useCallback(() => {
-    authClient.signIn.social({ provider: "google", callbackURL: redirectTo })
-  }, [redirectTo])
+  const handleGoogleLogin = useCallback(async () => {
+    if (loading) return
+
+    setLoading(true)
+    setError("")
+    try {
+      await requestSocialSignupIntent("client")
+      const result = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/api/auth/role-redirect",
+        requestSignUp: true,
+      })
+      if (result.error) {
+        setError(
+          result.error.message ??
+            "Impossible de démarrer l'inscription avec Google."
+        )
+        setLoading(false)
+      }
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Impossible de démarrer l'inscription avec Google."
+      )
+      setLoading(false)
+    }
+  }, [loading])
 
   return (
     <div className="min-h-screen bg-background px-4 py-8 flex items-center justify-center">

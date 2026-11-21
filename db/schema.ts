@@ -419,6 +419,8 @@ export const avis = pgTable(
     authorImage: text("author_image"),
     city: text("city"), // ville / quartier (facultatif)
     quote: text("quote").notNull(),
+    /** Note de 1 à 5. Nullable pour les avis historiques sans note. */
+    rating: integer("rating"),
     status: text("status").notNull().default("pending"), // 'pending' | 'approved' | 'rejected' | 'hidden'
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
@@ -429,6 +431,7 @@ export const avis = pgTable(
   (table) => [
     index("avis_status_created_idx").on(table.status, table.createdAt),
     index("avis_user_id_idx").on(table.userId),
+    uniqueIndex("avis_user_id_unique_idx").on(table.userId),
   ]
 )
 

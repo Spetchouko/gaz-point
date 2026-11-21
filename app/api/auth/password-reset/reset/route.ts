@@ -1,73 +1,108 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { and, eq, gt, inArray, lt } from "drizzle-orm";
 import { db } from "@/db";
-import { user, verification, account } from "@/db/schema";
+import {
+  user,
+  verification,
+  account,
+  session as sessionTable,
+} from "@/db/schema";
 import { hashPassword } from "better-auth/crypto";
+import { validateNewPassword } from "@/lib/password-policy";
+import {
+  getPasswordResetTokenIdentifiers,
+  normalizePasswordResetToken,
+} from "@/lib/password-reset";
 
 /**
  * Route POST /api/auth/password-reset/reset
  *
  * Corps : { token: string, newPassword: string }
  *
- * Vérifie le jeton de réinitialisation, hache le nouveau mot de passe et met à
- * jour le compte utilisateur. Le jeton est à usage unique et est supprimé après
- * utilisation réussie.
+ * Consomme un jeton de réinitialisation à usage unique, hache le nouveau mot
+ * de passe et met à jour le compte credential. Toutes les sessions du compte
+ * sont révoquées afin qu'une session antérieure ne reste pas active.
  */
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { token, newPassword } = body;
+    const body = (await req.json().catch(() => null)) as {
+      token?: unknown;
+      newPassword?: unknown;
+    } | null;
 
-    if (!token || typeof token !== "string") {
-      return NextResponse.json({ error: { message: "Jeton de réinitialisation manquant." } }, { status: 400 });
-    }
-
-    if (!newPassword || typeof newPassword !== "string") {
-      return NextResponse.json({ error: { message: "Nouveau mot de passe manquant." } }, { status: 400 });
-    }
-
-    // Validation de la complexité du nouveau mot de passe.
-    if (newPassword.length < 8) {
-      return NextResponse.json({ error: { message: "Le mot de passe doit contenir au moins 8 caractères." } }, { status: 400 });
-    }
-    if (!/[A-Z]/.test(newPassword)) {
-      return NextResponse.json({ error: { message: "Le mot de passe doit contenir au moins une majuscule (A-Z)." } }, { status: 400 });
-    }
-    if (!/[a-z]/.test(newPassword)) {
-      return NextResponse.json({ error: { message: "Le mot de passe doit contenir au moins une minuscule (a-z)." } }, { status: 400 });
-    }
-    if (!/[0-9]/.test(newPassword)) {
-      return NextResponse.json({ error: { message: "Le mot de passe doit contenir au moins un chiffre (0-9)." } }, { status: 400 });
-    }
-    if (!/[^A-Za-z0-9]/.test(newPassword)) {
-      return NextResponse.json({ error: { message: "Le mot de passe doit contenir au moins un caractère spécial." } }, { status: 400 });
+    const token = normalizePasswordResetToken(body?.token);
+    if (!token) {
+      return NextResponse.json(
+        { error: { message: "Jeton de réinitialisation manquant ou invalide." } },
+        { status: 400 }
+      );
     }
 
-    // 1) Récupérer l'enregistrement de vérification associé au jeton.
-    const [record] = await db
-      .select({ value: verification.value, expiresAt: verification.expiresAt })
-      .from(verification)
-      .where(eq(verification.identifier, `password-reset-${token}`))
-      .limit(1);
-
-    if (!record) {
-      return NextResponse.json({ error: { message: "Jeton de réinitialisation invalide ou déjà utilisé." } }, { status: 400 });
+    const passwordError = validateNewPassword(body?.newPassword);
+    if (passwordError) {
+      return NextResponse.json(
+        { error: { message: passwordError } },
+        { status: 400 }
+      );
     }
 
-    // 2) Vérifier l'expiration.
+    const newPassword = body?.newPassword as string;
     const now = new Date();
-    if (new Date(record.expiresAt) < now) {
-      // Supprimer le jeton expiré.
-      await db
-        .delete(verification)
-        .where(eq(verification.identifier, `password-reset-${token}`))
-        .catch(() => {});
-      return NextResponse.json({ error: { message: "Ce lien de réinitialisation a expiré. Demandez-en un nouveau." } }, { status: 400 });
+    const identifiers = getPasswordResetTokenIdentifiers(token);
+
+    // La suppression conditionnelle réclame le jeton en une seule opération.
+    // Un second essai avec le même jeton ne peut donc pas aboutir.
+    const [claimed] = await db
+      .delete(verification)
+      .where(
+        and(
+          inArray(verification.identifier, identifiers),
+          gt(verification.expiresAt, now)
+        )
+      )
+      .returning({
+        value: verification.value,
+        expiresAt: verification.expiresAt,
+      });
+
+    if (!claimed) {
+      const [expired] = await db
+        .select({ id: verification.id })
+        .from(verification)
+        .where(
+          and(
+            inArray(verification.identifier, identifiers),
+            lt(verification.expiresAt, now)
+          )
+        )
+        .limit(1);
+
+      if (expired) {
+        await db
+          .delete(verification)
+          .where(eq(verification.id, expired.id))
+          .catch(() => undefined);
+        return NextResponse.json(
+          {
+            error: {
+              message: "Ce lien de réinitialisation a expiré. Demandez-en un nouveau.",
+            },
+          },
+          { status: 400 }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          error: {
+            message: "Jeton de réinitialisation invalide ou déjà utilisé.",
+          },
+        },
+        { status: 400 }
+      );
     }
 
-    const email = record.value;
-
-    // 3) Récupérer l'utilisateur associé.
+    const email = claimed.value.toLowerCase().trim();
     const [userRow] = await db
       .select({ id: user.id, email: user.email })
       .from(user)
@@ -75,32 +110,34 @@ export async function POST(req: NextRequest) {
       .limit(1);
 
     if (!userRow) {
-      await db
-        .delete(verification)
-        .where(eq(verification.identifier, `password-reset-${token}`))
-        .catch(() => {});
-      return NextResponse.json({ error: { message: "Utilisateur introuvable." } }, { status: 400 });
+      return NextResponse.json(
+        { error: { message: "Utilisateur introuvable." } },
+        { status: 400 }
+      );
     }
 
-    // 4) Hacher le nouveau mot de passe avec le même algorithme que Better Auth.
     const hashedPassword = await hashPassword(newPassword);
-
-    // 5) Mettre à jour ou créer le compte credential (mot de passe local).
-    const [existingAccount] = await db
+    const [credentialAccount] = await db
       .select({ id: account.id })
       .from(account)
-      .where(eq(account.userId, userRow.id))
+      .where(
+        and(
+          eq(account.userId, userRow.id),
+          eq(account.providerId, "credential"),
+          eq(account.accountId, userRow.id)
+        )
+      )
       .limit(1);
 
-    if (existingAccount) {
+    if (credentialAccount) {
       await db
         .update(account)
         .set({ password: hashedPassword, updatedAt: now })
-        .where(eq(account.id, existingAccount.id));
+        .where(eq(account.id, credentialAccount.id));
     } else {
       await db.insert(account).values({
         id: crypto.randomUUID(),
-        accountId: userRow.email,
+        accountId: userRow.id,
         providerId: "credential",
         userId: userRow.id,
         password: hashedPassword,
@@ -109,11 +146,11 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 6) Supprimer le jeton utilisé (usage unique).
+    await db.delete(sessionTable).where(eq(sessionTable.userId, userRow.id));
     await db
-      .delete(verification)
-      .where(eq(verification.identifier, `password-reset-${token}`))
-      .catch(() => {});
+      .update(user)
+      .set({ updatedAt: now })
+      .where(eq(user.id, userRow.id));
 
     return NextResponse.json({ ok: true });
   } catch (err) {

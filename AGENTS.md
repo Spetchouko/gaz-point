@@ -6,6 +6,8 @@
 | Dev server | `pnpm dev` |
 | Build | `pnpm build` |
 | Lint | `pnpm lint` |
+| Tests | `pnpm test` |
+| Authentication tests | `pnpm test:auth` |
 | Typecheck | `npx tsc --noEmit` |
 
 ## Key facts
@@ -34,6 +36,9 @@ tables) va dans le dossier db/.
 - Utiliser l'objet "db" exporté depuis db/index.ts pour parler à la
 base. Ne jamais recréer une connexion.
 - L'auth est gérée par Better Auth :fichier central lib/auth.ts, client lib/auth-client.ts.
+- Le rôle autorisé est `user.role` dans la base. Les dashboards, destinations et règles d'accès sont centralisés dans `lib/auth-routing.ts`; la relecture serveur de la session et du compte est dans `lib/auth-access.ts`.
+- Une inscription publique crée au maximum `client` ou `vendor`. Les rôles `admin` et `collaborateur` sont attribués uniquement par une API administrative sécurisée.
+- Une inscription Google exige une intention serveur signée et limitée à `client` ou `vendor`. Ne jamais accepter un rôle social ou une destination de dashboard fournis par le navigateur.
 - Peut modifier à la main db/schema.ts.
 - Pour inscrire ou connecter un utilisateur, toujours passer par notre client d'authentification.
 - Tous les secrets vont dans .env.

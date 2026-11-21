@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
     let userId: string
 
     if (existing) {
-      if (existing.emailVerified || existing.role !== "vendor") {
+      if (existing.emailVerified) {
         return NextResponse.json(
           {
             error: {
@@ -139,7 +139,6 @@ export async function POST(req: NextRequest) {
             name: data.name,
             email: data.email,
             password: data.password,
-            role: "vendor",
           },
         })
         userId = result.user.id
@@ -178,6 +177,7 @@ export async function POST(req: NextRequest) {
       .update(user)
       .set({
         name: data.name,
+        role: "vendor",
         approvalStatus: "pending",
         approvalRequestedAt: now,
       })

@@ -417,6 +417,7 @@ export const SEARCH_BOTTLE_FORMATS = [
 ] as const
 
 /**
- * Marques de bouteille courantes (à afficher comme suggestions).
+ * Marques de bouteille proposées comme suggestions.
+ * Liste unique définie dans `lib/gas-brands.ts`.
  */
-export const SEARCH_BRANDS = ["Tradex", "Total", "SCTM", "Bocom"] as const
+export { OFFICIAL_GAS_BRANDS as SEARCH_BRANDS } from "@/lib/gas-brands"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -11,6 +11,7 @@ import {
   Calendar,
   History,
   Bell,
+  MessageSquare,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -35,7 +36,7 @@ import { useNotificationUnreadCount } from "@/lib/use-notification-unread-count"
 
 const CLIENT_NAV_ITEMS = [
   {
-    href: "/dashboard",
+    href: "/dashboard/client",
     label: "Vue d'ensemble",
     icon: LayoutDashboard,
   },
@@ -63,6 +64,11 @@ const CLIENT_NAV_ITEMS = [
     href: "/dashboard/notifications",
     label: "Notifications",
     icon: Bell,
+  },
+  {
+    href: "/dashboard/avis",
+    label: "Donner mon avis",
+    icon: MessageSquare,
   },
   {
     href: "/dashboard/parametres",
@@ -112,6 +118,11 @@ const VENDOR_NAV_ITEMS = [
     label: "Mon profil",
     icon: User,
   },
+  {
+    href: "/dashboard/avis",
+    label: "Donner mon avis",
+    icon: MessageSquare,
+  },
 ] as const;
 
 export function DashboardClientLayout({
@@ -133,20 +144,19 @@ export function DashboardClientLayout({
   const status = statusProp;
   const isAuthenticated = Boolean(user);
   const isVendor = user?.role === "vendor";
+  const dashboardHomeHref = isVendor ? "/dashboard/vendeur" : "/dashboard/client";
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const { unreadCount } = useNotificationUnreadCount(isAuthenticated);
-  const [buttonDisabled, setButtonDisabled] = useState(false);
+  const buttonDisabled = status === "loading";
   const notificationsHref = "/dashboard/notifications";
 
-  // Synchroniser l'état disabled du bouton après hydratation pour éviter
-  // un mismatch entre le rendu serveur (status undefined) et le client
-  // (status "loading" au démarrage).
-  useEffect(() => {
-    setButtonDisabled(status === "loading");
-  }, [status]);
-
-  const isActive = (href: string) =>
-    href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
+  const isActive = (href: string) => {
+    if (href === "/dashboard/client") return pathname === href;
+    if (href === "/dashboard/recherches") {
+      return pathname === href || pathname === "/resultats-recherche";
+    }
+    return pathname.startsWith(href);
+  };
 
   const handleSignOut = async () => {
     await authClient.signOut();
@@ -220,7 +230,7 @@ export function DashboardClientLayout({
           )}
         >
           <Link
-            href="/dashboard"
+            href={dashboardHomeHref}
             className="flex items-center gap-2 font-bold text-lg"
             onClick={() => setSidebarOpen(false)}
           >
@@ -411,7 +421,7 @@ export function DashboardClientLayout({
         {/* Top bar - Mobile menu button */}
         <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-border bg-card/80 backdrop-blur-md px-4 sm:px-6 lg:px-8 lg:hidden">
           <Link
-            href="/dashboard"
+            href={dashboardHomeHref}
             className="flex items-center gap-2 font-bold text-lg"
             onClick={() => setSidebarOpen(false)}
           >
@@ -442,17 +452,35 @@ export function DashboardClientLayout({
         </header>
 
         {/* Desktop top bar */}
-        <header className="hidden lg:sticky lg:top-0 lg:z-10 lg:flex lg:h-14 lg:items-center lg:justify-between lg:border-b lg:border-border lg:bg-card/80 lg:backdrop-blur-md lg:px-6 lg:px-8">
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-muted-foreground">
-              {isVendor ? "Espace Vendeur" : "Espace Client"}
+        <header className="hidden lg:sticky lg:top-0 lg:z-10 lg:flex lg:h-14 lg:items-center lg:justify-between lg:border-b lg:border-border lg:bg-card/80 lg:backdrop-blur-md lg:px-8">
+          <Link
+            href={dashboardHomeHref}
+            className="flex items-center gap-2"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Image
+                src="/brand/logo.png"
+                alt="GazPoints"
+                width={24}
+                height={24}
+                className="h-5 w-5 object-contain"
+                style={{ width: "auto", height: "auto" }}
+              />
             </span>
-          </div>
+            <span className="font-heading text-lg font-bold tracking-tight text-primary">
+              GazPoints
+            </span>
+          </Link>
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.push("/dashboard/recherches")}
+              onClick={() =>
+                router.push(
+                  isVendor ? "/dashboard/recherches" : "/resultats-recherche"
+                )
+              }
               className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
               aria-label="Nouvelle recherche"
             >

@@ -38,7 +38,7 @@ export function MotDePasseDemanderPageContent() {
     const emailError = validateEmail(email)
     const errors: { email?: string } = {}
     if (emailError) errors.email = emailError
-    setFieldError(errors.email)
+    setFieldError(errors.email ?? null)
     return !emailError
   }
 

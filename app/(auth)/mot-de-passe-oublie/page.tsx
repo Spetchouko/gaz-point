@@ -2,34 +2,46 @@
 
 import { Suspense, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { authClient } from "@/lib/auth-client"
 import { useSafeSession } from "@/lib/auth-session"
+import { getServerRoleRedirect } from "@/lib/auth-redirect-client"
+import { validateNewPassword } from "@/lib/password-policy"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import { Lock, Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Lock, Eye, EyeOff, AlertCircle, CheckCircle2 } from "lucide-react"
 import { useCallback, useState } from "react"
 import Image from "next/image"
 import { ButtonSpinner } from "@/app/_components/spinner"
 
+const PASSWORD_RESET_REDIRECT = "/connexion"
+
 function validatePassword(password: string): string | null {
-  if (!password) return "Le mot de passe est requis."
-  if (password.length < 8) return "Le mot de passe doit contenir au moins 8 caractères."
-  return null
+  return validateNewPassword(password)
 }
 
 function ResetPasswordPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
-  const redirectTo = searchParams.get("redirect") ?? "/connexion"
   const { data: session } = useSafeSession()
 
   useEffect(() => {
-    if (session?.user) {
-      router.push("/dashboard")
+    if (!session?.user) return
+
+    let cancelled = false
+    void getServerRoleRedirect()
+      .then((destination) => {
+        if (!cancelled) router.push(destination.redirectTo)
+      })
+      .catch(() => {
+        // Un compte non vérifié ou désactivé peut encore réinitialiser son
+        // mot de passe. L'accès à son dashboard reste bloqué par le serveur.
+      })
+
+    return () => {
+      cancelled = true
     }
   }, [session, router])
 
@@ -76,13 +88,20 @@ function ResetPasswordPageContent() {
     setLoading(true)
 
     try {
-      const { error: resetError } = await authClient.resetPassword({
-        token,
-        newPassword: password,
+      const response = await fetch("/api/auth/password-reset/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, newPassword: password }),
       })
+      const payload = (await response.json().catch(() => null)) as
+        | { error?: { message?: string } }
+        | null
 
-      if (resetError) {
-        setError(resetError.message ?? "Impossible de réinitialiser le mot de passe.")
+      if (!response.ok || payload?.error) {
+        setError(
+          payload?.error?.message ??
+            "Impossible de réinitialiser le mot de passe."
+        )
         setLoading(false)
         return
       }
@@ -91,7 +110,7 @@ function ResetPasswordPageContent() {
       setLoading(false)
 
       setTimeout(() => {
-        router.push(redirectTo)
+        router.push(PASSWORD_RESET_REDIRECT)
       }, 2000)
     } catch {
       setError("Une erreur inattendue est survenue. Veuillez réessayer.")
@@ -122,7 +141,7 @@ function ResetPasswordPageContent() {
             </p>
           </CardHeader>
           <CardContent className="text-center">
-            <Button className="w-full" onClick={() => router.push(redirectTo)}>
+            <Button className="w-full" onClick={() => router.push(PASSWORD_RESET_REDIRECT)}>
               Se connecter
             </Button>
           </CardContent>

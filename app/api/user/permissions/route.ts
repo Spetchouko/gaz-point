@@ -24,6 +24,7 @@ export async function GET() {
         "marketing",
         "avis",
         "statistiques",
+        "abonnements",
       ]
       return NextResponse.json({
         role,

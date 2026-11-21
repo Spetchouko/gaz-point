@@ -59,18 +59,11 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-  const role = 'client';
   return (
     <html lang="fr" suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("gaz-theme");var d=t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);}catch(e){}})();`,
-          }}
-        />
-      </head>
+      <head></head>
       <body>
-        <LayoutClient role={role}>
+        <LayoutClient role="client">
           <LangProvider>
             <PublicHeader />
             {children}

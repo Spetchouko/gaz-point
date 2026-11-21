@@ -2,6 +2,7 @@ import {
   MAX_VENDOR_BRANDS,
   cleanCatalogValues,
 } from "@/lib/vendor-catalog"
+import { validateNewPassword } from "@/lib/password-policy"
 
 /**
  * Validation partagée pour l'inscription vendeur.
@@ -63,12 +64,20 @@ export function validateVendorSignupPayload(
     }
   }
 
-  // Mot de passe (requis, 6+ caractères)
+  // Mot de passe (requis, 8 caractères minimum)
   const password = data.password
-  if (typeof password !== "string" || password.length < 6) {
+  if (typeof password !== "string") {
     return {
       ok: false,
-      message: "Le mot de passe doit contenir au moins 6 caractères.",
+      message: "Le mot de passe est requis.",
+      field: "password",
+    }
+  }
+  const passwordError = validateNewPassword(password)
+  if (passwordError) {
+    return {
+      ok: false,
+      message: passwordError,
       field: "password",
     }
   }

@@ -1,21 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, eq, gt } from "drizzle-orm";
+import { and, desc, eq, gt, like } from "drizzle-orm";
 import { db } from "@/db";
 import { user, verification } from "@/db/schema";
 import { sendPasswordResetEmail, buildPasswordResetLink } from "@/lib/email";
+import {
+  PASSWORD_RESET_TOKEN_PREFIX,
+  getPasswordResetTokenIdentifier,
+} from "@/lib/password-reset";
+import { passwordResetRateLimiter } from "@/lib/rate-limit";
 
 // Un seul envoi par adresse email toutes les 60 secondes (anti-spam).
 const RESEND_COOLDOWN_SECONDS = 60;
 // Le jeton de réinitialisation expire après 60 minutes.
 const TOKEN_EXPIRY_MINUTES = 60;
 const TOKEN_EXPIRY_SECONDS = TOKEN_EXPIRY_MINUTES * 60;
-
-/**
- * Identifiant utilisé pour stocker le jeton de réinitialisation de mot de passe.
- */
-function resetTokenIdentifier(token: string) {
-  return `password-reset-${token}`;
-}
 
 /**
  * Génère un jeton de réinitialisation cryptographiquement sécurisé.
@@ -35,6 +33,14 @@ function generateResetToken(): string {
  * éviter l'énumération de comptes.
  */
 export async function POST(req: NextRequest) {
+  const limit = passwordResetRateLimiter.checkRateLimit(req);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: { message: "Trop de demandes. Réessayez dans quelques instants." } },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = (await req.json().catch(() => null)) as { email?: string } | null;
     const email = body?.email?.toLowerCase().trim();
@@ -62,40 +68,41 @@ export async function POST(req: NextRequest) {
       .from(verification)
       .where(
         and(
+          eq(verification.value, email),
+          like(verification.identifier, `${PASSWORD_RESET_TOKEN_PREFIX}%`),
           gt(verification.createdAt, new Date(now.getTime() - RESEND_COOLDOWN_SECONDS * 1000))
         )
       )
-      .orderBy({ createdAt: "desc" })
+      .orderBy(desc(verification.createdAt))
       .limit(1);
 
-    if (recent.length > 0) {
-      const elapsed = Math.floor((now.getTime() - new Date(recent[0].createdAt).getTime()) / 1000);
-      const remaining = Math.max(1, RESEND_COOLDOWN_SECONDS - elapsed);
-      return NextResponse.json(
-        {
-          error: {
-            message: `Veuillez patienter ${remaining}s avant de demander une nouvelle réinitialisation.`,
-            retryAfter: remaining,
-          },
-        },
-        { status: 429 }
-      );
+    if (recent[0]) {
+      // La réponse reste identique à celle d'une adresse inconnue afin de ne
+      // pas révéler l'existence d'un compte. La limite par IP reste active.
+      return NextResponse.json({ ok: true });
     }
 
-    // 3) Invalider les anciens jetons de réinitialisation pour cet email.
+    // 3) Invalider uniquement les anciens jetons de réinitialisation de cet
+    // email. Les codes OTP et les liens de vérification email restent intacts.
     await db
       .delete(verification)
-      .where(eq(verification.value, email))
+      .where(
+        and(
+          eq(verification.value, email),
+          like(verification.identifier, `${PASSWORD_RESET_TOKEN_PREFIX}%`)
+        )
+      )
       .catch(() => {});
 
-    // 4) Générer et stocker un nouveau jeton (empreinte sécurisée = le token lui-même
-    //    est stocké comme identifiant, seule sa présence prouve qu'il est valide).
+    // 4) Générer et stocker un nouveau jeton. La base ne contient que son
+    // empreinte SHA-256. Le jeton clair reste uniquement dans le lien envoyé.
     const token = generateResetToken();
+    const identifier = getPasswordResetTokenIdentifier(token);
     const expiresAt = new Date(now.getTime() + TOKEN_EXPIRY_SECONDS * 1000);
 
     await db.insert(verification).values({
-      id: token,
-      identifier: resetTokenIdentifier(token),
+      id: crypto.randomUUID(),
+      identifier,
       value: email,
       expiresAt,
       createdAt: now,
@@ -117,7 +124,7 @@ export async function POST(req: NextRequest) {
       // Nettoyer le jeton non délivré pour permettre une nouvelle tentative immédiate.
       await db
         .delete(verification)
-        .where(eq(verification.identifier, resetTokenIdentifier(token)))
+        .where(eq(verification.identifier, identifier))
         .catch(() => {});
       console.error("[password-reset/send] Email send failed:", emailError);
       return NextResponse.json(

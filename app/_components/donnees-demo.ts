@@ -1,6 +1,8 @@
 import { bottleFormats } from "@/lib/gaz"
+import { OFFICIAL_GAS_BRANDS } from "@/lib/gas-brands"
 
-export const brands = ["Tradex", "Total", "SCTM", "Bocom"] as const
+/** Liste officielle unique, partagée avec les outils de recherche. */
+export const brands = OFFICIAL_GAS_BRANDS
 export const formats = bottleFormats
 
 export type Availability = "disponible" | "à_confirmer" | "indisponible"

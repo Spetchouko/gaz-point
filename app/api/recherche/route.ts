@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { and, desc, ilike, inArray, or } from "drizzle-orm"
+import { randomUUID } from "node:crypto"
 import { db } from "@/db"
-import { disponibilite, pointDeVente } from "@/db/schema"
+import { disponibilite, pointDeVente, trafficEvent } from "@/db/schema"
 import { effectiveStatus, isStale } from "@/lib/gaz"
+import { gasBrandMatches } from "@/lib/gas-brands"
 import { getCurrentUser } from "@/lib/session"
 import {
   AD_ATTRIBUTION_COOKIE,
@@ -21,6 +23,30 @@ export async function GET(request: NextRequest) {
   const brand = searchParams.get("brand")?.trim() || null
   const format = searchParams.get("format")?.trim() || null
   const zone = searchParams.get("zone")?.trim() || null
+  const shouldRecordHistory = searchParams.get("history") === "1"
+
+  const recordSearchHistory = async (resultsCount: number) => {
+    if (!shouldRecordHistory) return
+
+    try {
+      await db.insert(trafficEvent).values({
+        id: randomUUID(),
+        eventType: "search",
+        path: "/dashboard/recherches",
+        userId: currentUser.id,
+        consented: false,
+        metadata: {
+          brand: brand?.slice(0, 100) ?? null,
+          format: format?.slice(0, 50) ?? null,
+          zone: zone?.slice(0, 200) ?? null,
+          resultsCount,
+        },
+      })
+    } catch (error) {
+      // L'historique ne doit pas faire échouer une recherche valide.
+      console.error("[GET /api/recherche] Search history error:", error)
+    }
+  }
 
   // Chaque recherche interroge réellement la base de données. Aucun court-circuit
   // par le cache : on évite ainsi de renvoyer des disponibilités périmées.
@@ -45,13 +71,18 @@ export async function GET(request: NextRequest) {
       phone: pointDeVente.phone,
       brands: pointDeVente.brands,
       formats: pointDeVente.formats,
+      deliveryEnabled: pointDeVente.deliveryEnabled,
+      deliveryFee: pointDeVente.deliveryFee,
+      exchangeEnabled: pointDeVente.exchangeEnabled,
+      gasSaleEnabled: pointDeVente.gasSaleEnabled,
     })
     .from(pointDeVente)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .limit(50)
 
   if (points.length === 0) {
-    return NextResponse.json({ results: [] })
+    await recordSearchHistory(0)
+    return NextResponse.json({ results: [], count: 0, disponibiliteIds: [] })
   }
 
   // Une seule requête pour tous les points (au lieu d'une requête par point).
@@ -69,6 +100,9 @@ export async function GET(request: NextRequest) {
       createdAt: disponibilite.createdAt,
       reportedByName: disponibilite.reportedByName,
       source: disponibilite.source,
+      delivery: disponibilite.delivery,
+      exchange: disponibilite.exchange,
+      gasSale: disponibilite.gasSale,
     })
     .from(disponibilite)
     .where(inArray(disponibilite.pointId, points.map((p) => p.id)))
@@ -94,7 +128,7 @@ export async function GET(request: NextRequest) {
     const report =
       pointReports.find(
         (item) =>
-          (!brand || (item.brand ?? "").toLowerCase() === brand.toLowerCase()) &&
+          gasBrandMatches(item.brand, brand) &&
           (!format || (item.format ?? "").toLowerCase() === format.toLowerCase())
       ) ?? null
 
@@ -132,6 +166,10 @@ export async function GET(request: NextRequest) {
       stale: report ? isStale(report.createdAt) : false,
       expired,
       disponibiliteId: report?.id ?? "",
+      hasDelivery: Boolean(point.deliveryEnabled || report?.delivery),
+      hasExchange: Boolean(point.exchangeEnabled || report?.exchange),
+      hasGasSale: Boolean(point.gasSaleEnabled || report?.gasSale),
+      deliveryFee: point.deliveryEnabled ? point.deliveryFee : report?.price ?? null,
     })
   }
 
@@ -141,5 +179,13 @@ export async function GET(request: NextRequest) {
     await recordConversionFromRequest(request, "search", { userId: currentUser.id })
   }
 
-  return NextResponse.json({ results })
+  await recordSearchHistory(results.length)
+
+  return NextResponse.json({
+    results,
+    count: results.length,
+    disponibiliteIds: results
+      .map((result) => result.disponibiliteId)
+      .filter((id): id is string => Boolean(id)),
+  })
 }

@@ -3,6 +3,8 @@
 import { useState } from "react"
 import Image from "next/image"
 import { authClient } from "@/lib/auth-client"
+import { requestSocialSignupIntent } from "@/lib/auth-social-intent-client"
+import { getServerRoleRedirect } from "@/lib/auth-redirect-client"
 import { useAuthModal } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import {
@@ -37,12 +39,20 @@ export function AuthGateModal() {
 
     try {
       if (mode === "forgot-password") {
-        const { error: resetError } = await authClient.requestPasswordReset({
-          email,
-          redirectTo: "/mot-de-passe-oublie",
+        const response = await fetch("/api/auth/password-reset/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email.trim().toLowerCase() }),
         })
-        if (resetError) {
-          setError(resetError.message || "Impossible d'envoyer l'email de réinitialisation.")
+        const payload = (await response.json().catch(() => null)) as
+          | { error?: { message?: string } }
+          | null
+
+        if (!response.ok || payload?.error) {
+          setError(
+            payload?.error?.message ??
+              "Impossible d'envoyer l'email de réinitialisation."
+          )
           setLoading(false)
           return
         }
@@ -51,38 +61,63 @@ export function AuthGateModal() {
         return
       }
 
-      let home = "/dashboard"
       if (mode === "register") {
+        if (role === "vendor") {
+          closeAuthModal()
+          window.location.assign("/inscription/vendeur")
+          return
+        }
+
         const { error: signUpError } = await authClient.signUp.email({
           name,
           email,
           password,
-          phoneNumber,
-          role,
-        } as Parameters<typeof authClient.signUp.email>[0])
+        })
 
         if (signUpError) {
           setError(signUpError.message || "Impossible de créer le compte.")
           setLoading(false)
           return
         }
-        home = role === "vendor" ? "/dashboard/pro" : "/dashboard"
-      } else {
-        const { error: signInError, data: signInData } = await authClient.signIn.email({
-          email,
-          password,
-        })
-        if (signInError) {
-          setError(signInError.message || "Identifiants incorrects.")
+
+        const verificationResponse = await fetch(
+          "/api/auth/email-otp/send-verification",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email.trim().toLowerCase(), resend: false }),
+          }
+        )
+        if (!verificationResponse.ok) {
+          const payload = await verificationResponse.json().catch(() => null)
+          setError(
+            payload?.error?.message ??
+              "L'envoi du code de vérification a échoué. Veuillez réessayer."
+          )
           setLoading(false)
           return
         }
-        const signedRole = (signInData?.user as { role?: string } | undefined)?.role
-        home = signedRole === "vendor" || signedRole === "admin" ? "/dashboard/pro" : "/dashboard"
+
+        closeAuthModal()
+        window.location.assign(
+          `/validation-email?email=${encodeURIComponent(email.trim().toLowerCase())}&sent=1`
+        )
+        return
       }
 
+      const { error: signInError } = await authClient.signIn.email({
+        email,
+        password,
+      })
+      if (signInError) {
+        setError(signInError.message || "Identifiants incorrects.")
+        setLoading(false)
+        return
+      }
+
+      const destination = await getServerRoleRedirect()
       closeAuthModal()
-      window.location.href = home
+      window.location.assign(destination.redirectTo)
     } catch {
       setError("Une erreur inattendue est survenue.")
     } finally {
@@ -355,7 +390,41 @@ export function AuthGateModal() {
             <Button
               variant="outline"
               className="w-full gap-2"
-              onClick={() => authClient.signIn.social({ provider: "google", callbackURL: "/dashboard" })}
+              disabled={loading}
+              onClick={async () => {
+                if (loading) return
+                if (mode === "register" && role === "vendor") {
+                  window.location.assign("/inscription/vendeur")
+                  return
+                }
+
+                setLoading(true)
+                setError(null)
+                try {
+                  if (mode === "register") {
+                    await requestSocialSignupIntent("client")
+                  }
+                  const result = await authClient.signIn.social({
+                    provider: "google",
+                    callbackURL: "/api/auth/role-redirect",
+                    requestSignUp: mode === "register",
+                  })
+                  if (result.error) {
+                    setError(
+                      result.error.message ??
+                        "Impossible de démarrer la connexion avec Google."
+                    )
+                    setLoading(false)
+                  }
+                } catch (caught) {
+                  setError(
+                    caught instanceof Error
+                      ? caught.message
+                      : "Impossible de démarrer la connexion avec Google."
+                  )
+                  setLoading(false)
+                }
+              }}
             >
               <Image src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width={16} height={16} className="size-4" />
               Continuer avec Google

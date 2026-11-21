@@ -1,7 +1,16 @@
 import { eq } from "drizzle-orm"
 import { db } from "@/db"
-import { collaborateurPermission, user } from "@/db/schema"
+import {
+  collaborateurPermission,
+  session as sessionTable,
+  user,
+} from "@/db/schema"
 import { auth } from "@/lib/auth"
+import {
+  evaluateAccountAccess,
+  getRoleDashboardPath,
+  isAuthRole,
+} from "@/lib/auth-routing"
 
 /**
  * next/headers et next/navigation sont des API Server Components.
@@ -29,10 +38,10 @@ export type SessionUser = {
   image?: string | null
   role?: string | null
   phoneNumber?: string | null
-  phoneVerified?: boolean
-  phoneNumberVerified?: boolean
-  isActive?: boolean
-  mustChangePassword?: boolean
+  phoneVerified?: boolean | null
+  phoneNumberVerified?: boolean | null
+  isActive?: boolean | null
+  mustChangePassword?: boolean | null
   approvalStatus?: string
   approvalRequestedAt?: Date | null
   approvalProcessedAt?: Date | null
@@ -42,10 +51,52 @@ export type SessionUser = {
   updatedAt?: Date
 }
 
-export async function getCurrentUser() {
-  const session = await auth.api.getSession({ headers: await getHeaders() })
-  const user = session?.user
-  return (user as SessionUser | undefined) ?? null
+export async function getCurrentUser(): Promise<SessionUser | null> {
+  try {
+    const session = await auth.api.getSession({ headers: await getHeaders() })
+    const userId = session?.user?.id
+    if (!userId) return null
+
+    const [account] = await db
+      .select({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        emailVerified: user.emailVerified,
+        image: user.image,
+        role: user.role,
+        phoneNumber: user.phoneNumber,
+        phoneVerified: user.phoneVerified,
+        phoneNumberVerified: user.phoneNumberVerified,
+        isActive: user.isActive,
+        mustChangePassword: user.mustChangePassword,
+        approvalStatus: user.approvalStatus,
+        approvalRequestedAt: user.approvalRequestedAt,
+        approvalProcessedAt: user.approvalProcessedAt,
+        approvalProcessedBy: user.approvalProcessedBy,
+        rejectionReason: user.rejectionReason,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        lastLoginAt: user.lastLoginAt,
+      })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1)
+
+    const access = evaluateAccountAccess(account)
+    if (!account || access.status !== "ready" || !access.role) return null
+
+    return {
+      ...account,
+      role: access.role,
+    }
+  } catch {
+    return null
+  }
+}
+
+export async function revokeUserSessions(userId: string): Promise<void> {
+  await db.delete(sessionTable).where(eq(sessionTable.userId, userId))
 }
 
 /**
@@ -71,13 +122,14 @@ export async function getProUser(): Promise<{ user: SessionUser; role: ProRole }
   if (!user) return null
   const role = user.role ?? "client"
   if (role !== "vendor" && role !== "admin" && role !== "collaborateur") return null
+  if (role === "collaborateur" && user.mustChangePassword === true) return null
   return { user, role: role as ProRole }
 }
 
 export async function getAdminUser(): Promise<SessionUser | null> {
   const user = await getCurrentUser()
   if (!user) return null
-  if ((user.role ?? "client") !== "admin") return null
+  if (user.role !== "admin") return null
   return user
 }
 
@@ -103,27 +155,33 @@ export async function requirePro() {
   const role = user.role ?? "client"
   if (role !== "vendor" && role !== "admin" && role !== "collaborateur") {
     const redirect = await getRedirect()
-    redirect("/dashboard")
+    redirect("/dashboard/client")
   }
   return { user, role: role as ProRole }
 }
 
 export async function requireAdmin() {
   const user = await requireUser()
-  const role = user.role ?? "client"
-  if (role !== "admin") {
+  if (user.role !== "admin") {
     const redirect = await getRedirect()
-    redirect("/dashboard")
+    redirect(
+      isAuthRole(user.role)
+        ? getRoleDashboardPath(user.role)
+        : "/connexion"
+    )
   }
   return user
 }
 
 export async function requireCollaborator() {
   const user = await requireUser()
-  const role = user.role ?? "client"
-  if (role !== "collaborateur" && role !== "admin") {
+  if (user.role !== "collaborateur" && user.role !== "admin") {
     const redirect = await getRedirect()
-    redirect("/dashboard")
+    redirect(
+      isAuthRole(user.role)
+        ? getRoleDashboardPath(user.role)
+        : "/connexion"
+    )
   }
   return user
 }
@@ -137,14 +195,17 @@ export async function getStaff(): Promise<StaffUser> {
   const user = await getCurrentUser()
   if (!user) {
     const redirect = await getRedirect()
-    return redirect("/admin/login")
+    return redirect("/connexion-admin")
   }
   const role = user.role ?? "client"
   if (role !== "admin" && role !== "collaborateur") {
     const redirect = await getRedirect()
-    redirect("/admin/login")
+    redirect(
+      isAuthRole(role)
+        ? getRoleDashboardPath(role)
+        : "/connexion"
+    )
   }
-  // Seul un collaborateur avec mot de passe temporaire est redirigé.
   await requirePasswordChangeIfNeeded(user)
   const permissions =
     role === "admin"
@@ -170,6 +231,7 @@ export type AdminModule =
   | "marketing"
   | "avis"
   | "statistiques"
+  | "abonnements"
 
 export const ADMIN_MODULES: AdminModule[] = [
   "utilisateurs",
@@ -182,6 +244,7 @@ export const ADMIN_MODULES: AdminModule[] = [
   "marketing",
   "avis",
   "statistiques",
+  "abonnements",
 ] as const
 
 export async function getAdminPermissions(userId: string): Promise<Set<AdminModule>> {
@@ -239,15 +302,46 @@ export async function isPrincipalAdmin(userId: string): Promise<boolean> {
 }
 
 export async function canModifyUserRole(
-  actor: SessionUser,
-  target: SessionUser
+  actor: Pick<SessionUser, "id" | "role">,
+  target: Pick<SessionUser, "id" | "role">,
+  desiredRole?: string
 ): Promise<{ allowed: boolean; reason?: string }> {
-  if (actor.role !== "admin" && target.role === "admin") {
-    return { allowed: false, reason: "Un collaborateur ne peut pas modifier un compte administrateur." }
+  if (desiredRole !== undefined && !isAuthRole(desiredRole)) {
+    return { allowed: false, reason: "Le rôle demandé n'est pas valide." }
   }
-  if (target.role === "admin" && (await isPrincipalAdmin(target.id))) {
-    return { allowed: false, reason: "L'administrateur principal ne peut pas être rétrogradé ni supprimé." }
+
+  if (actor.role !== "admin") {
+    if (target.role === "admin") {
+      return {
+        allowed: false,
+        reason: "Un collaborateur ne peut pas modifier un compte administrateur.",
+      }
+    }
+    if (
+      desiredRole !== undefined &&
+      desiredRole !== target.role &&
+      (desiredRole === "admin" || desiredRole === "collaborateur")
+    ) {
+      return {
+        allowed: false,
+        reason:
+          "Un collaborateur ne peut pas attribuer un rôle administrateur ou collaborateur.",
+      }
+    }
   }
+
+  if (
+    target.role === "admin" &&
+    desiredRole !== undefined &&
+    desiredRole !== "admin" &&
+    (await isPrincipalAdmin(target.id))
+  ) {
+    return {
+      allowed: false,
+      reason: "L'administrateur principal ne peut pas être rétrogradé.",
+    }
+  }
+
   return { allowed: true }
 }
 
@@ -270,8 +364,7 @@ export async function getStaffApi(): Promise<StaffUser | null> {
   if (!user) return null
   const role = user.role ?? "client"
   if (role !== "admin" && role !== "collaborateur") return null
-  // Seul un collaborateur avec mot de passe temporaire est bloqué côté client via requirePasswordChangeIfNeeded
-  // Ici on ne redirige pas, on laisse passer (la vérification côté client fera le redirect)
+  if (role === "collaborateur" && user.mustChangePassword === true) return null
   const permissions =
     role === "admin"
       ? new Set<AdminModule>(ADMIN_MODULES)
@@ -294,7 +387,7 @@ export async function requireModuleApi(module: AdminModule): Promise<StaffUser |
 export async function requireAdminApi(): Promise<SessionUser | null> {
   const user = await getCurrentUser()
   if (!user) return null
-  if ((user.role ?? "client") !== "admin") return null
+  if (user.role !== "admin") return null
   return user
 }
 
@@ -303,5 +396,6 @@ export async function requireCollaboratorApi(): Promise<SessionUser | null> {
   if (!user) return null
   const role = user.role ?? "client"
   if (role !== "collaborateur" && role !== "admin") return null
+  if (role === "collaborateur" && user.mustChangePassword === true) return null
   return user
 }

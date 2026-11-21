@@ -1,13 +1,12 @@
 "use client"
 
 import { Suspense, useEffect, useRef, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { AlertCircle, ArrowLeft, Eye, EyeOff, Lock, Mail, Shield } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
-import { useSafeSession } from "@/lib/auth-session"
-import { safeRedirect } from "@/lib/utils"
+import { getServerRoleRedirect } from "@/lib/auth-redirect-client"
 import { LoaderButton } from "@/app/_components/loader-button"
 import { ActionFeedback } from "@/app/_components/action-feedback"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -27,30 +26,9 @@ function validatePassword(password: string): string | null {
 }
 
 function LoginAdminPageContent() {
-  const router = useRouter()
   const searchParams = useSearchParams()
-  const explicitRedirect = searchParams.get("redirect")
-  const defaultRedirect = "/dashboard/admin"
-  const redirectTo = safeRedirect(explicitRedirect, defaultRedirect)
-  const { data: session } = useSafeSession()
 
   const passwordRef = useRef<HTMLInputElement>(null)
-
-  // Déjà connecté en tant qu'admin/collaborateur : rediriger vers le dashboard approprié.
-  useEffect(() => {
-    if (!session?.user) return
-    const role = (session.user as { role?: string }).role
-    const mustChange = (session.user as { mustChangePassword?: boolean })?.mustChangePassword
-    if (role === "admin") {
-      router.push(redirectTo)
-    } else if (role === "collaborateur") {
-      if (mustChange === true) {
-        router.push("/mot-de-passe-temporaire")
-      } else {
-        router.push("/dashboard/collaborateur")
-      }
-    }
-  }, [session, router, redirectTo])
 
   const emailParamFromUrl = (searchParams.get("email") ?? "").trim()
 
@@ -92,7 +70,7 @@ function LoginAdminPageContent() {
     setFeedback({ state: "loading", msg: "Connexion administrateur en cours…" })
 
     try {
-      const { data: signInData, error: signInError } = await authClient.signIn.email({
+      const { error: signInError } = await authClient.signIn.email({
         email: email.trim(),
         password,
       })
@@ -111,26 +89,18 @@ function LoginAdminPageContent() {
         return
       }
 
-      const role = (signInData?.user as { role?: string } | undefined)?.role
-
-      // Ce canal est réservé aux administrateurs et collaborateurs uniquement.
-      if (role !== "admin" && role !== "collaborateur") {
-        setError("Ce canal est réservé aux administrateurs et collaborateurs.")
-        setFeedback({ state: "error", msg: "Ce canal est réservé aux administrateurs et collaborateurs." })
+      try {
+        const destination = await getServerRoleRedirect("staff")
+        window.location.assign(destination.redirectTo)
+      } catch (caught) {
+        await authClient.signOut().catch(() => undefined)
+        const errorMessage =
+          caught instanceof Error
+            ? caught.message
+            : "Ce canal est réservé aux administrateurs et collaborateurs."
+        setError(errorMessage)
+        setFeedback({ state: "error", msg: errorMessage })
         setLoading(false)
-        return
-      }
-
-      // Un collaborateur avec mot de passe temporaire doit d'abord le changer.
-      const mustChange = (signInData?.user as { mustChangePassword?: boolean } | undefined)?.mustChangePassword
-      if (role === "collaborateur" && mustChange === true) {
-        router.push("/mot-de-passe-temporaire")
-      } else if (role === "collaborateur") {
-        // Collaborateur sans mot de passe temporaire -> dashboard collaborateur
-        router.push("/dashboard/collaborateur")
-      } else {
-        // Admin -> dashboard admin
-        router.push(redirectTo)
       }
     } catch {
       setError("Une erreur inattendue est survenue. Veuillez réessayer.")

@@ -13,7 +13,67 @@ export function DashboardOverview() {
   const { data: session, isPending } = useSafeSession();
   const user = session?.user;
   const isLoading = isPending;
-  const firstName = user?.name ? user.name.split(" ")[0] : null;
+
+  // Determine the welcome message based on available user data
+  let welcomeHeading: React.ReactNode;
+  let subtitle: React.ReactNode | null = null;
+
+  if (isLoading) {
+    // Afficher un état de chargement discret pendant le premier rendu
+    welcomeHeading = (
+      <span className="text-muted-foreground animate-pulse">
+        Chargement du profil…
+      </span>
+    );
+  } else if (user?.name) {
+    // Nom disponible : extraire le prénom ou utiliser le nom complet
+    const nameParts = user.name.trim().split(/\s+/);
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(" ");
+
+    if (firstName && lastName) {
+      // Prénom et nom complets disponibles → montrer le prénom
+      welcomeHeading = (
+        <>
+          Bienvenue{" "}
+          <span className="text-primary font-semibold">
+            {firstName}
+          </span>{" "}
+          dans votre espace client GazPoints !
+        </>
+      );
+    } else if (firstName) {
+      // Seul le prénom disponible
+      welcomeHeading = (
+        <>
+          Bienvenue{" "}
+          <span className="text-primary font-semibold">
+            {firstName}
+          </span>{" "}
+          dans votre espace client GazPoints !
+        </>
+      );
+    } else {
+      // Seul le nom complet (pas de prénom séparé) disponible
+      welcomeHeading = (
+        <>
+          Bienvenue{" "}
+          <span className="text-primary font-semibold">
+            {user.name}
+          </span>{" "}
+          dans votre espace client GazPoints !
+        </>
+      );
+    }
+  } else {
+    // Profil incomplete : utilisateur connecté mais informations manquantes
+    // Ne jamais afficher "Utilisateur" lorsque les informations du compte sont disponibles
+    welcomeHeading = (
+      <>
+        Bienvenue dans votre espace client GazPoints !
+      </>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -21,31 +81,28 @@ export function DashboardOverview() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            {isLoading ? (
-              <span className="text-muted-foreground animate-pulse">
-                Chargement du profil…
-              </span>
-            ) : (
-              <>
-                Bienvenue{" "}
-                <span className="text-primary font-semibold">
-                  {firstName ?? "Utilisateur"}
-                </span>{" "}
-                à votre espace client GazPoints !
-              </>
-            )}
+            {welcomeHeading}
           </h1>
           {isLoading && (
             <p className="mt-1 text-xs text-muted-foreground">
               Récupération de vos informations en cours…
             </p>
           )}
-          {!isLoading && (
-            <p className="mt-1 text-sm text-muted-foreground">
-              Gérez vos recherches, vos réservations et consultez votre
-              historique.
-            </p>
-          )}
+          {!isLoading &&
+            user?.name &&
+            (
+              <p className="mt-1 text-sm text-muted-foreground">
+                Gérez vos recherches, vos réservations et consultez votre
+                historique.
+              </p>
+            )}
+          {!isLoading &&
+            !user?.name &&
+            (
+              <p className="mt-1 text-sm text-muted-foreground">
+                Vos informations de profil sont en cours de mise à jour.
+              </p>
+            )}
         </div>
       </div>
 

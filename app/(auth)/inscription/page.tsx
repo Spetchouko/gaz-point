@@ -10,22 +10,15 @@ import Link from "next/link"
 
 const CARD_HEIGHT = "max-h-[250px]"
 
-function setRegisterRoleCookie(role: "user" | "vendor") {
-  const roleKey = role === "user" ? "client" : "vendor"
-  document.cookie = `gazpoint_register_role=${roleKey}; path=/; max-age=300; SameSite=Lax`
-}
-
 export default function InscriptionPage() {
   const router = useRouter()
   const [selectedRole, setSelectedRole] = useState<"user" | "vendor" | null>(null)
 
   const handleUsager = () => {
-    setRegisterRoleCookie("user")
     setSelectedRole("user")
     router.push("/inscription/usager")
   }
   const handleVendor = () => {
-    setRegisterRoleCookie("vendor")
     setSelectedRole("vendor")
     router.push("/inscription/vendeur")
   }

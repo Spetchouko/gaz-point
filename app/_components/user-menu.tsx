@@ -36,7 +36,7 @@ export function UserMenu({ isMobile = false, iconOnly = false }: UserMenuProps) 
         ? "/dashboard/vendeur"
         : role === "collaborateur"
           ? "/dashboard/collaborateur"
-          : "/dashboard"
+          : "/dashboard/client"
   const espaceLabel = "Dashboard"
   const profilHref =
     role === "admin"

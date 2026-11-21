@@ -9,10 +9,15 @@ import {
 import { errorMessage } from "@/lib/errors"
 
 export {
+  AVIS_RATING_MAX,
+  AVIS_RATING_MIN,
   AVIS_STATUSES,
   AVIS_STATUS_LABELS,
+  avisFirstName,
   avisTypeFromRole,
+  avisTypeLabel,
   toAvisStatus,
+  type AvisMine,
   type AvisStatus,
   type AvisType,
   type AvisPublic,
@@ -39,6 +44,7 @@ export async function getApprovedAvis(): Promise<AvisPublic[]> {
       name: row.authorName,
       city: row.city,
       quote: row.quote,
+      rating: row.rating,
       type: avisTypeFromRole(row.authorRole),
       avatarUrl: row.authorImage,
     }))

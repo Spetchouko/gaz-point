@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
 import { user } from "@/db/schema"
 import { eq } from "drizzle-orm"
-import { requireAdmin } from "@/lib/session"
+import { requireAdminApi, revokeUserSessions } from "@/lib/session"
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = await requireAdmin()
+    const admin = await requireAdminApi()
     if (!admin) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 })
     }
@@ -44,6 +44,10 @@ export async function PATCH(
       .update(user)
       .set({ isActive: body.isActive, updatedAt: new Date() })
       .where(eq(user.id, id))
+
+    if (body.isActive === false) {
+      await revokeUserSessions(id)
+    }
 
     return NextResponse.json({
       ok: true,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
 import { reservation, pointDeVente } from "@/db/schema"
-import { eq, desc, and, count } from "drizzle-orm"
+import { eq, desc, and, count, lt } from "drizzle-orm"
 import { getCurrentUser } from "@/lib/session"
 import { formatDateTime } from "@/lib/gaz"
 import { generateReservationQRCode } from "@/lib/qrcode"
@@ -17,8 +17,16 @@ export async function GET(req: NextRequest) {
     const page = parseInt(searchParams.get("page") ?? "1", 10) || 1
     const pageSize = parseInt(searchParams.get("pageSize") ?? "50", 10) || 50
 
+    const now = new Date()
     const conditions = [eq(reservation.userId, currentUser.id)]
-    if (status) {
+    if (status === "expired") {
+      conditions.push(
+        and(
+          eq(reservation.status, "confirmed"),
+          lt(reservation.expiresAt, now)
+        )!
+      )
+    } else if (status) {
       conditions.push(eq(reservation.status, status))
     }
 
@@ -26,7 +34,7 @@ export async function GET(req: NextRequest) {
       .select({ count: count() })
       .from(reservation)
       .leftJoin(pointDeVente, eq(reservation.pointId, pointDeVente.id))
-      .where(conditions.length > 1 ? and(...conditions) : conditions[0])
+      .where(conditions.length > 1 ? and(...conditions)! : conditions[0]!)
       .catch(() => [{ count: 0 }])
 
     const total = totalResult[0]?.count ?? 0
@@ -56,13 +64,12 @@ export async function GET(req: NextRequest) {
       })
       .from(reservation)
       .leftJoin(pointDeVente, eq(reservation.pointId, pointDeVente.id))
-      .where(conditions.length > 1 ? and(...conditions) : conditions[0])
+      .where(conditions.length > 1 ? and(...conditions)! : conditions[0]!)
       .limit(Math.max(pageSize, 1))
       .offset((page - 1) * pageSize)
       .orderBy(desc(reservation.reservedAt))
 
     // Add computed status (check expiry) and QR Code
-    const now = new Date()
     const reservationsWithStatus = await Promise.all(
       reservations.map(async (r) => {
         const isExpired = r.expiresAt && new Date(r.expiresAt) < now

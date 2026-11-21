@@ -14,6 +14,7 @@ import {
   Star,
   Eye,
   AlertCircle,
+  Trash2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -34,6 +35,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import { Spinner } from "@/app/_components/spinner"
@@ -47,6 +57,7 @@ interface Avis {
   authorImage: string | null
   city: string | null
   quote: string
+  rating: number | null
   status: "pending" | "approved" | "rejected" | "hidden"
   createdAt: string
   updatedAt: string
@@ -89,19 +100,35 @@ function formatDate(dateString: string | null, withTime = false) {
   })
 }
 
-function truncate(text: string, maxLength: number) {
-  if (text.length <= maxLength) return text
-  return text.slice(0, maxLength).trim() + "..."
+function RatingStars({ rating }: { rating: number | null }) {
+  if (!rating) return <span className="text-xs text-muted-foreground">Sans note</span>
+  return (
+    <span className="inline-flex items-center gap-0.5" aria-label={`Note : ${rating} sur 5`}>
+      {Array.from({ length: 5 }, (_, index) => (
+        <Star
+          key={index}
+          className={cn(
+            "size-3.5",
+            index < rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40"
+          )}
+        />
+      ))}
+      <span className="ml-1 text-xs font-medium text-muted-foreground">{rating}/5</span>
+    </span>
+  )
 }
 
 export default function AdminAvisPage() {
   const [filterStatus, setFilterStatus] = useState<string>("all")
+  const [filterRole, setFilterRole] = useState<string>("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [avisList, setAvisList] = useState<Avis[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState<Set<string>>(new Set())
   const [viewAvis, setViewAvis] = useState<Avis | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Avis | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const [pagination, setPagination] = useState({ total: 0, page: 1, pageSize: 20, totalPages: 1 })
 
   useEffect(() => {
@@ -113,6 +140,7 @@ export default function AdminAvisPage() {
         params.set("page", String(pagination.page))
         params.set("pageSize", String(pagination.pageSize))
         if (filterStatus !== "all") params.set("status", filterStatus)
+        if (filterRole !== "all") params.set("role", filterRole)
         if (searchQuery) params.set("search", searchQuery)
 
         const res = await fetch(`/api/admin/avis?${params.toString()}`, {
@@ -134,7 +162,7 @@ export default function AdminAvisPage() {
     }
     loadAvis()
     return () => { cancelled = true }
-  }, [filterStatus, searchQuery, pagination.page, pagination.pageSize])
+  }, [filterStatus, filterRole, searchQuery, pagination.page, pagination.pageSize])
 
   const updateAvisStatus = async (id: string, action: "approve" | "reject" | "hide") => {
     setSaving((prev) => new Set([...prev, id]))
@@ -166,6 +194,27 @@ export default function AdminAvisPage() {
     }
   }
 
+  const deleteAvis = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/admin/avis/${deleteTarget.id}`, { method: "DELETE" })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || "Échec de la suppression")
+      }
+      setAvisList((prev) => prev.filter((a) => a.id !== deleteTarget.id))
+      setPagination((prev) => ({ ...prev, total: Math.max(0, prev.total - 1) }))
+      if (viewAvis?.id === deleteTarget.id) setViewAvis(null)
+      setDeleteTarget(null)
+      toast.success("Avis supprimé")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Échec de la suppression")
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="admin-section">
@@ -183,11 +232,20 @@ export default function AdminAvisPage() {
         subtitle="Consultez et modérez les avis soumis par les clients et vendeurs"
         icon={<MessageSquare className="size-5" />}
         actions={
-          <Link href="/dashboard/admin">
-            <Button variant="outline">
-              <ArrowLeft className="size-4 mr-2" /> Retour
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={filterStatus === "approved" ? "default" : "outline"}
+              size="sm"
+              onClick={() => { setFilterStatus("approved"); setPagination((p) => ({ ...p, page: 1 })) }}
+            >
+              <Eye className="size-4 mr-2" /> Avis publiés
             </Button>
-          </Link>
+            <Link href="/dashboard/admin">
+              <Button variant="outline">
+                <ArrowLeft className="size-4 mr-2" /> Retour
+              </Button>
+            </Link>
+          </div>
         }
       />
 
@@ -230,6 +288,16 @@ export default function AdminAvisPage() {
                   <SelectItem value="approved">Validés</SelectItem>
                   <SelectItem value="rejected">Refusés</SelectItem>
                   <SelectItem value="hidden">Masqués</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterRole} onValueChange={(value: string | null) => { setFilterRole(value ?? "all"); setPagination(p => ({ ...p, page: 1 })) }}>
+                <SelectTrigger className="w-full sm:w-[160px]">
+                  <SelectValue placeholder="Tous les rôles" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les rôles</SelectItem>
+                  <SelectItem value="client">Clients</SelectItem>
+                  <SelectItem value="vendor">Vendeurs</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -281,6 +349,9 @@ export default function AdminAvisPage() {
                             {statusLabel(a.status)}
                           </Badge>
                         </div>
+                        <div className="mt-2">
+                          <RatingStars rating={a.rating} />
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
@@ -316,6 +387,14 @@ export default function AdminAvisPage() {
                         </Button>
                       </div>
                     )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="mt-3 w-full text-destructive hover:text-destructive"
+                      onClick={(e) => { e.stopPropagation(); setDeleteTarget(a) }}
+                    >
+                      <Trash2 className="size-4 mr-2" /> Supprimer cet avis
+                    </Button>
                   </CardContent>
                 </Card>
               ))}
@@ -405,6 +484,14 @@ export default function AdminAvisPage() {
                 </div>
               </div>
 
+              {/* Rating */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-foreground">Note attribuée</h4>
+                <div className="p-3 bg-card border border-border rounded-xl">
+                  <RatingStars rating={viewAvis.rating} />
+                </div>
+              </div>
+
               {/* Full Quote */}
               <div className="space-y-2">
                 <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -434,7 +521,7 @@ export default function AdminAvisPage() {
                         disabled={saving.has(viewAvis.id)}
                       >
                         {saving.has(viewAvis.id) ? <Loader2 className="size-4 mr-2 animate-spin" /> : <CheckCircle2 className="size-4 mr-2" />}
-                        Valider l'avis
+                        Valider l’avis
                       </Button>
                       <Button
                         variant="destructive"
@@ -443,7 +530,7 @@ export default function AdminAvisPage() {
                         disabled={saving.has(viewAvis.id)}
                       >
                         {saving.has(viewAvis.id) ? <Loader2 className="size-4 mr-2 animate-spin" /> : <XCircle className="size-4 mr-2" />}
-                        Refuser l'avis
+                        Refuser l’avis
                       </Button>
                     </>
                   )}
@@ -455,7 +542,7 @@ export default function AdminAvisPage() {
                       disabled={saving.has(viewAvis.id)}
                     >
                       <XCircle className="size-4 mr-2" />
-                      Masquer l'avis
+                      Masquer l’avis
                     </Button>
                   )}
                   {viewAvis.status === "rejected" && (
@@ -484,6 +571,12 @@ export default function AdminAvisPage() {
               </div>
 
               <DialogFooter>
+                <Button
+                  variant="destructive"
+                  onClick={() => { setDeleteTarget(viewAvis); setViewAvis(null) }}
+                >
+                  <Trash2 className="size-4 mr-2" /> Supprimer
+                </Button>
                 <Button variant="outline" onClick={() => setViewAvis(null)}>
                   Fermer
                 </Button>
@@ -492,6 +585,24 @@ export default function AdminAvisPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cet avis ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              L’avis de {deleteTarget?.authorName} sera définitivement supprimé, y compris s’il est publié.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+            <Button variant="destructive" onClick={deleteAvis} disabled={deleting}>
+              {deleting ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Trash2 className="size-4 mr-2" />}
+              Supprimer
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

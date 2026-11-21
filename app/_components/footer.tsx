@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Mail } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { FOOTER_COPYRIGHT, FOOTER_TAGLINE } from "@/lib/footer-text";
 
 export function Footer() {
   const shortcutsMobileTablet = [
@@ -228,10 +229,10 @@ export function Footer() {
           <Separator className="h-px w-24 border-primary/40 bg-primary/40 sm:w-32 md:w-40 lg:w-full" />
         </div>
 
-        {/* Copyright et signature (inchangé, centré) */}
+        {/* Copyright et signature (centrés) */}
         <div className="w-full pt-6 text-center md:pt-8">
-          <p className="text-xs text-muted-foreground">© 2026 GazPoints. Tous droits réservés.</p>
-          <p className="mt-1 text-xs text-muted-foreground">Fait pour faciliter l&apos;accès au gaz au Cameroun.</p>
+          <p className="text-xs text-muted-foreground">{FOOTER_COPYRIGHT}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{FOOTER_TAGLINE}</p>
         </div>
       </div>
     </footer>

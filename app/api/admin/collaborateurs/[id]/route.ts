@@ -6,7 +6,15 @@ import {
   adminAction,
 } from "@/db/schema"
 import { eq, count, and, or } from "drizzle-orm"
-import { requireAdmin, isPrincipalAdmin } from "@/lib/session"
+import {
+  requireAdminApi,
+  revokeUserSessions,
+  isPrincipalAdmin,
+} from "@/lib/session"
+import {
+  ADMIN_EMAIL_CHANGE_ERROR,
+  isSameAdminEmail,
+} from "@/lib/auth-routing"
 
 const VALID_MODULES = [
   "utilisateurs",
@@ -19,6 +27,7 @@ const VALID_MODULES = [
   "marketing",
   "avis",
   "statistiques",
+  "abonnements",
 ]
 
 /**
@@ -32,7 +41,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = await requireAdmin()
+    const admin = await requireAdminApi()
     if (!admin) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 })
     }
@@ -46,8 +55,22 @@ export async function PATCH(
       permissions?: string[]
     } | null
 
+    if (!body) {
+      return NextResponse.json(
+        { error: "Corps de requête invalide" },
+        { status: 400 }
+      )
+    }
+
     const [existing] = await db
-      .select({ id: user.id, name: user.name, email: user.email, role: user.role, isActive: user.isActive })
+      .select({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        role: user.role,
+        isActive: user.isActive,
+      })
       .from(user)
       .where(eq(user.id, id))
       .limit(1)
@@ -80,15 +103,30 @@ export async function PATCH(
       }
     }
 
+    // Aucun changement direct d'adresse email n'est accepté sans confirmation
+    // de l'ancienne et de la nouvelle adresse par le titulaire du compte.
+    if (
+      body.email !== undefined &&
+      !isSameAdminEmail(existing.email, body.email)
+    ) {
+      return NextResponse.json(
+        { error: ADMIN_EMAIL_CHANGE_ERROR },
+        { status: 400 }
+      )
+    }
+
     const updates: Record<string, unknown> = {}
     if (body.name !== undefined) updates.name = body.name
-    if (body.email !== undefined) updates.email = body.email
     if (body.phoneNumber !== undefined) updates.phoneNumber = body.phoneNumber || null
     if (body.isActive !== undefined) updates.isActive = body.isActive
     updates.updatedAt = new Date()
 
     if (Object.keys(updates).length > 0) {
       await db.update(user).set(updates).where(eq(user.id, id))
+    }
+
+    if (body.isActive === false) {
+      await revokeUserSessions(id)
     }
 
     // Mettre à jour les permissions si fournies
@@ -107,11 +145,11 @@ export async function PATCH(
         .where(eq(collaborateurPermission.collaboratorId, id))
 
       // Insérer les nouvelles
-      for (const module of body.permissions) {
+      for (const permissionModule of body.permissions) {
         await db.insert(collaborateurPermission).values({
           id: crypto.randomUUID(),
           collaboratorId: id,
-          module,
+          module: permissionModule,
           createdAt: new Date(),
         })
       }
@@ -176,7 +214,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = await requireAdmin()
+    const admin = await requireAdminApi()
     if (!admin) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 })
     }

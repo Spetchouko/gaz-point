@@ -3,13 +3,14 @@ import { useEffect } from "react";
 import { DashboardClientLayout } from "@/app/_components/dashboard/client-layout";
 import { useRouter, usePathname } from "next/navigation";
 import { useDashboardSession, useAutoRefreshSession } from "@/lib/auth-session";
+import { isUnauthenticatedRequest, requestJson } from "@/lib/client-request";
 
 export default function DashboardClientLayoutWrapper({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { status, user, isAuthenticated, isLoading, role } =
+  const { status, user, isAuthenticated, isLoading } =
     useDashboardSession();
   const router = useRouter();
   const pathname = usePathname();
@@ -18,35 +19,50 @@ export default function DashboardClientLayoutWrapper({
   // pour détecter les changements faits dans d'autres onglets
   useAutoRefreshSession()
 
-  // Si la session est définitivement invalide (expiration en cours de navigation),
-  // rediriger vers la connexion. Pendant le chargement (isLoading), on affiche
-  // le contenu pour éviter tout clignotement : le middleware a déjà protégé
-  // la route côté serveur, donc un utilisateur authentifié ne verra jamais
-  // d'état déconnecté au premier rendu.
+  // La session client peut rester temporairement indisponible pendant un
+  // rafraîchissement. La redirection vers la connexion n'est donc déclenchée
+  // qu'après une confirmation serveur explicite (HTTP 401).
   useEffect(() => {
-    if (isLoading) {
-      return;
-    }
-    if (!isAuthenticated || !user) {
-      router.push("/connexion");
-      return;
-    }
-    // Si l'utilisateur est sur le dashboard générique (/dashboard) mais a un rôle
-    // spécifique, le rediriger vers son dashboard dédié (gardé pour cohérence,
-    // bien que le middleware traite déjà ce cas côté serveur).
-    if (pathname === "/dashboard") {
-      if (role === "admin" || role === "collaborateur") {
-        router.push("/dashboard/admin");
-      } else if (role === "vendor") {
-        router.push("/dashboard/vendeur");
+    if (isLoading || isAuthenticated) return;
+
+    const controller = new AbortController();
+    let cancelled = false;
+
+    async function confirmInvalidSession() {
+      try {
+        await requestJson(
+          "/api/user/me",
+          {
+            headers: { Accept: "application/json" },
+            cache: "no-store",
+            signal: controller.signal,
+          }
+        );
+      } catch (error) {
+        if (cancelled || !isUnauthenticatedRequest(error)) return;
+        router.replace(
+          `/connexion?redirect=${encodeURIComponent(pathname)}`
+        );
       }
     }
-  }, [isLoading, isAuthenticated, user, router, pathname, role]);
 
-  // L'espace admin a sa propre coquille (sidebar + en-tête) dans son layout
-  // dédié. La coquille générique du dashboard ne doit pas être rendue sur ces
-  // routes, sinon deux sidebars s'affichent en même temps.
-  if (pathname.startsWith("/dashboard/admin")) {
+    void confirmInvalidSession();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [isLoading, isAuthenticated, pathname, router]);
+
+  // Les espaces admin, vendeur et collaborateur ont leur propre coquille
+  // (sidebar + en-tête + footer) dans leur layout dédié. La coquille générique
+  // du dashboard ne doit pas être rendue sur ces routes, sinon deux coquilles
+  // et deux footers s'affichent en même temps.
+  const hasDedicatedShell =
+    pathname.startsWith("/dashboard/admin") ||
+    pathname.startsWith("/dashboard/vendeur") ||
+    pathname.startsWith("/dashboard/collaborateur");
+
+  if (hasDedicatedShell) {
     return <>{children}</>;
   }
 

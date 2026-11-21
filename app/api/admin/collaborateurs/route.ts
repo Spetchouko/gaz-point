@@ -6,8 +6,12 @@ import {
   collaborateurPermission,
   adminAction,
 } from "@/db/schema"
-import { eq, count, desc, ilike, or, and } from "drizzle-orm"
-import { requireAdmin, isPrincipalAdmin, canModifyUserRole } from "@/lib/session"
+import { eq, count, desc, ilike, or, and, type SQL } from "drizzle-orm"
+import {
+  requireAdminApi,
+  revokeUserSessions,
+  ADMIN_MODULES,
+} from "@/lib/session"
 import { hashPassword } from "better-auth/crypto"
 
 export type Collaborator = {
@@ -38,7 +42,7 @@ export type CollaboratorStats = {
  */
 export async function GET(req: NextRequest) {
   try {
-    const admin = await requireAdmin()
+    const admin = await requireAdminApi()
     if (!admin) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 })
     }
@@ -49,11 +53,11 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get("search") ?? ""
     const status = searchParams.get("status") ?? ""
 
-    const conditions = [eq(user.role, "collaborateur")]
+    const conditions: SQL[] = [eq(user.role, "collaborateur")]
 
     if (search) {
       conditions.push(
-        or(ilike(user.name, `%${search}%`), ilike(user.email, `%${search}%`))
+        or(ilike(user.name, `%${search}%`), ilike(user.email, `%${search}%`))!
       )
     }
     if (status === "active") {
@@ -110,6 +114,9 @@ export async function GET(req: NextRequest) {
 
     const data: Collaborator[] = collaborators.map((c) => ({
       ...c,
+      createdAt: c.createdAt.toISOString(),
+      updatedAt: c.updatedAt.toISOString(),
+      lastLoginAt: c.lastLoginAt?.toISOString() ?? null,
       permissions: permissionsByCollab[c.id] ?? [],
     }))
 
@@ -148,8 +155,10 @@ export async function GET(req: NextRequest) {
  * collaborateur à sa première connexion (mustChangePassword = true).
  */
 export async function POST(req: NextRequest) {
+  let createdCollaboratorId: string | null = null
+
   try {
-    const admin = await requireAdmin()
+    const admin = await requireAdminApi()
     if (!admin) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 })
     }
@@ -170,11 +179,26 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const normalizedEmail = body.email.trim().toLowerCase()
+    const normalizedName = body.name.trim()
+    if (!normalizedName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      return NextResponse.json(
+        { error: "Le nom ou l'adresse email est invalide." },
+        { status: 400 }
+      )
+    }
+    if (body.password.length < 8) {
+      return NextResponse.json(
+        { error: "Le mot de passe doit contenir au moins 8 caractères." },
+        { status: 400 }
+      )
+    }
+
     // Vérifier l'unicité de l'email
     const [existing] = await db
       .select({ id: user.id })
       .from(user)
-      .where(eq(user.email, body.email))
+      .where(eq(user.email, normalizedEmail))
       .limit(1)
     if (existing) {
       return NextResponse.json(
@@ -184,20 +208,17 @@ export async function POST(req: NextRequest) {
     }
 
     // Valider les permissions demandées
-    const validModules = [
-      "utilisateurs",
-      "clients",
-      "vendeurs",
-      "disponibilites",
-      "reservations",
-      "publicite",
-      "collaborateurs",
-      "marketing",
-      "avis",
-      "statistiques",
-    ]
     const permissions = Array.isArray(body.permissions)
-      ? body.permissions.filter((p) => validModules.includes(p))
+      ? Array.from(
+          new Set(
+            body.permissions.filter(
+              (permission): permission is (typeof ADMIN_MODULES)[number] =>
+                ADMIN_MODULES.includes(
+                  permission as (typeof ADMIN_MODULES)[number]
+                )
+            )
+          )
+        )
       : []
     if (permissions.length === 0) {
       return NextResponse.json(
@@ -207,12 +228,14 @@ export async function POST(req: NextRequest) {
     }
 
     const id = crypto.randomUUID()
+    createdCollaboratorId = id
 
     // Créer le compte utilisateur avec rôle collaborateur
     await db.insert(user).values({
       id,
-      name: body.name,
-      email: body.email,
+      name: normalizedName,
+      email: normalizedEmail,
+      emailVerified: true,
       phoneNumber: body.phoneNumber || null,
       role: "collaborateur",
       isActive: body.isActive !== undefined ? body.isActive : true,
@@ -225,7 +248,7 @@ export async function POST(req: NextRequest) {
     const hashedPassword = await hashPassword(body.password)
     await db.insert(account).values({
       id: crypto.randomUUID(),
-      accountId: body.email,
+      accountId: id,
       providerId: "credential",
       userId: id,
       password: hashedPassword,
@@ -234,14 +257,16 @@ export async function POST(req: NextRequest) {
     })
 
     // Attribuer les permissions
-    for (const module of permissions) {
+    for (const permissionModule of permissions) {
       await db.insert(collaborateurPermission).values({
         id: crypto.randomUUID(),
         collaboratorId: id,
-        module,
+        module: permissionModule,
         createdAt: new Date(),
       })
     }
+
+    await revokeUserSessions(id)
 
     // Traçabilité
     try {
@@ -252,8 +277,8 @@ export async function POST(req: NextRequest) {
         targetId: id,
         action: "create",
         details: JSON.stringify({
-          name: body.name,
-          email: body.email,
+          name: normalizedName,
+          email: normalizedEmail,
           role: "collaborateur",
           permissions,
         }),
@@ -269,14 +294,20 @@ export async function POST(req: NextRequest) {
       message: "Collaborateur créé avec succès",
       collaborator: {
         id,
-        name: body.name,
-        email: body.email,
+        name: normalizedName,
+        email: normalizedEmail,
         role: "collaborateur",
-        isActive: true,
+        isActive: body.isActive !== undefined ? body.isActive : true,
         permissions,
       },
     })
   } catch (err) {
+    if (createdCollaboratorId) {
+      await db
+        .delete(user)
+        .where(eq(user.id, createdCollaboratorId))
+        .catch(() => undefined)
+    }
     console.error("[admin/collaborateurs POST] error:", err)
     return NextResponse.json(
       { error: "Erreur lors de la création du collaborateur" },

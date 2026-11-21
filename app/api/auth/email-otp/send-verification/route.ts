@@ -5,6 +5,7 @@ import { db } from "@/db"
 import { user, verification } from "@/db/schema"
 import { sendVerificationEmail, sendVerificationEmailResend, buildVerificationLink } from "@/lib/email"
 import { verificationSendRateLimiter } from "@/lib/rate-limit"
+import { getOtpSendPublicResponse } from "@/lib/auth-routing"
 
 // Doit rester coherent avec le décompte affiché dans l'interface (60 s).
 const RESEND_COOLDOWN_SECONDS = 60
@@ -85,7 +86,10 @@ export async function POST(req: NextRequest) {
     // inconnu ou deja verifie (aucune fuite d'information sur les comptes).
     if (!account || account.emailVerified) {
       logDiag("SKIP_SEND", { email, reason: !account ? "unknown_account" : "already_verified" })
-      return NextResponse.json({ ok: true })
+      const response = getOtpSendPublicResponse(
+        account ? "already_verified" : "unknown"
+      )
+      return NextResponse.json(response.body, { status: response.status })
     }
 
     logDiag("ACCOUNT_FOUND", { email, userId: account.id, emailVerified: account.emailVerified })
@@ -114,15 +118,11 @@ export async function POST(req: NextRequest) {
       )
       const remaining = Math.max(1, RESEND_COOLDOWN_SECONDS - elapsed)
       logDiag("RATE_LIMITED", { email, elapsed, remaining })
-      return NextResponse.json(
-        {
-          error: {
-            message: `Veuillez patienter ${remaining}s avant de demander un nouveau code.`,
-            retryAfter: remaining,
-          },
-        },
-        { status: 429 }
-      )
+
+      // Le cooldown ne doit pas devenir un oracle permettant de distinguer
+      // un compte existant d'une adresse inconnue.
+      const response = getOtpSendPublicResponse("cooldown")
+      return NextResponse.json(response.body, { status: response.status })
     }
 
     // 3) Invalide les eventuels anciens codes et anciens jetons de lien.
@@ -196,7 +196,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    return NextResponse.json({ ok: true })
+    const response = getOtpSendPublicResponse("sent")
+    return NextResponse.json(response.body, { status: response.status })
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err)
     logDiag("UNEXPECTED_ERROR", { error: errMsg })

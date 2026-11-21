@@ -94,9 +94,9 @@ const document: LegalDocument = {
             "Cookie (ou localStorage) mémorisant votre choix sur le bandeau cookies (« accepted » ou « rejected »). Durée : 12 mois. Nécessaire pour respecter votre préférence.",
         },
         {
-          term: "gazpoint_register_role",
+          term: "gazpoint_social_signup_intent",
           value:
-            "Cookie temporaire (5 minutes) déposé lors du choix du rôle à l'inscription (usager ou vendeur). Transmis au serveur pour créer le compte avec le bon rôle. Supprimé automatiquement.",
+            "Cookie HTTP-only, signé et temporaire (5 minutes), déposé uniquement lorsqu'une inscription sociale Google est demandée. Il autorise le serveur à créer un compte client ou vendeur explicite. Il ne permet aucune attribution de rôle staff.",
         },
         {
           term: "Cloudflare Turnstile (cf_chl_*, __cf_bm)",

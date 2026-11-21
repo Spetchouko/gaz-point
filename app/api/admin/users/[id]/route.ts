@@ -6,17 +6,24 @@ import {
   disponibilite,
   reservation,
   adminAction,
+  collaborateurPermission,
 } from "@/db/schema"
 import { eq, count, and, or } from "drizzle-orm"
 import {
   requireModuleApi,
   canModifyUserRole,
-  getCurrentUser,
+  revokeUserSessions,
 } from "@/lib/session"
+import {
+  ADMIN_EMAIL_CHANGE_ERROR,
+  isAuthRole,
+  isSameAdminEmail,
+  shouldClearCollaboratorPermissions,
+} from "@/lib/auth-routing"
 
 /**
  * PATCH /api/admin/users/[id]
- * Modifie les informations d'un utilisateur : nom, email, téléphone, rôle, isActive.
+ * Modifie les informations d'un utilisateur : nom, téléphone, rôle, isActive.
  * Protégé côté serveur : seul un administrateur peut modifier, et un collaborateur
  * ne peut jamais toucher à un compte administrateur ni rétrograder l'admin principal.
  */
@@ -40,8 +47,23 @@ export async function PATCH(
       isActive?: boolean
     } | null
 
+    if (!body) {
+      return NextResponse.json(
+        { error: "Corps de requête invalide" },
+        { status: 400 }
+      )
+    }
+
     const [existing] = await db
-      .select({ id: user.id, name: user.name, email: user.email, role: user.role, isActive: user.isActive })
+      .select({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        role: user.role,
+        emailVerified: user.emailVerified,
+        isActive: user.isActive,
+      })
       .from(user)
       .where(eq(user.id, id))
       .limit(1)
@@ -66,10 +88,61 @@ export async function PATCH(
       }
     }
 
-    // Un collaborateur ne peut pas modifier un compte administrateur
-    if (admin.role === "collaborateur" && existing.role === "admin") {
+    if (body.role !== undefined && !isAuthRole(body.role)) {
       return NextResponse.json(
-        { error: "Un collaborateur ne peut pas modifier un compte administrateur." },
+        { error: "Le rôle demandé n'est pas valide." },
+        { status: 400 }
+      )
+    }
+
+    const roleChange =
+      body.role !== undefined && body.role !== existing.role
+    if (roleChange) {
+      const roleDecision = await canModifyUserRole(
+        admin,
+        existing,
+        body.role
+      )
+      if (!roleDecision.allowed) {
+        return NextResponse.json(
+          { error: roleDecision.reason ?? "Modification du rôle refusée." },
+          { status: 403 }
+        )
+      }
+      if (
+        (body.role === "admin" || body.role === "collaborateur") &&
+        existing.emailVerified !== true
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "Le compte doit avoir une adresse email vérifiée avant de recevoir un rôle d'administration.",
+          },
+          { status: 400 }
+        )
+      }
+    }
+
+    if (
+      admin.role === "collaborateur" &&
+      (existing.role === "admin" || existing.role === "collaborateur")
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Un collaborateur ne peut pas modifier un compte administrateur ou collaborateur.",
+        },
+        { status: 403 }
+      )
+    }
+
+    if (
+      admin.role === "collaborateur" &&
+      body.isActive === false &&
+      (existing.role === "admin" || existing.role === "collaborateur")
+    ) {
+      return NextResponse.json(
+        { error: "Un collaborateur ne peut pas désactiver un compte staff." },
         { status: 403 }
       )
     }
@@ -90,30 +163,46 @@ export async function PATCH(
       }
     }
 
-    // Vérifier l'unicité de l'email si modifié
-    if (body.email && body.email !== existing.email) {
-      const [taken] = await db
-        .select({ id: user.id })
-        .from(user)
-        .where(eq(user.email, body.email))
-        .limit(1)
-      if (taken) {
-        return NextResponse.json(
-          { error: "Cet email est déjà utilisé par un autre compte" },
-          { status: 400 }
-        )
-      }
+    // Aucun changement direct d'adresse email n'est accepté sans confirmation
+    // de l'ancienne et de la nouvelle adresse par le titulaire du compte.
+    if (
+      body.email !== undefined &&
+      !isSameAdminEmail(existing.email, body.email)
+    ) {
+      return NextResponse.json(
+        { error: ADMIN_EMAIL_CHANGE_ERROR },
+        { status: 400 }
+      )
     }
 
-    const updates: Record<string, unknown> = {}
+    const updates: Partial<typeof user.$inferInsert> = {}
     if (body.name !== undefined) updates.name = body.name
-    if (body.email !== undefined) updates.email = body.email
     if (body.phoneNumber !== undefined) updates.phoneNumber = body.phoneNumber || null
     if (body.role !== undefined) updates.role = body.role
     if (body.isActive !== undefined) updates.isActive = body.isActive
+    if (roleChange) {
+      // Tout nouveau collaborateur doit choisir un mot de passe personnel avant
+      // d'accéder à son espace. Une rétrogradation retire ce verrou temporaire.
+      updates.mustChangePassword = body.role === "collaborateur"
+    }
     updates.updatedAt = new Date()
 
+    // La suppression précède le changement de rôle. Si elle échoue, le compte
+    // reste collaborateur sans permissions, jamais l'inverse.
+    if (
+      roleChange &&
+      shouldClearCollaboratorPermissions(existing.role, body.role)
+    ) {
+      await db
+        .delete(collaborateurPermission)
+        .where(eq(collaborateurPermission.collaboratorId, id))
+    }
+
     await db.update(user).set(updates).where(eq(user.id, id))
+
+    if (roleChange || body.isActive === false) {
+      await revokeUserSessions(id)
+    }
 
     // Traçabilité de l'action administrative
     try {
@@ -195,10 +284,16 @@ export async function DELETE(
       )
     }
 
-    // Un collaborateur ne peut pas supprimer un compte administrateur
-    if (admin.role === "collaborateur" && existing.role === "admin") {
+    // Un collaborateur ne peut pas supprimer un compte staff.
+    if (
+      admin.role === "collaborateur" &&
+      (existing.role === "admin" || existing.role === "collaborateur")
+    ) {
       return NextResponse.json(
-        { error: "Un collaborateur ne peut pas supprimer un compte administrateur." },
+        {
+          error:
+            "Un collaborateur ne peut pas supprimer un compte administrateur ou collaborateur.",
+        },
         { status: 403 }
       )
     }

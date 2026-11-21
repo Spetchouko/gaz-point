@@ -1,0 +1,10 @@
+const fs = require('fs');
+const c = fs.readFileSync('/home/solomon/gaz-point/app/dashboard/admin/page.tsx', 'utf8');
+const linkOpen = (c.match(/<Link\b/g) || []).length;
+const linkClose = (c.match(/<\/Link>/g) || []).length;
+const arrowOpen = (c.match(/<ArrowRight\b/g) || []).length;
+const arrowClose = (c.match(/<\/ArrowRight>/g) || []).length;
+console.log('Link - open:close', linkOpen, ':', linkClose);
+console.log('ArrowRight - open:close', arrowOpen, ':', arrowClose);
+console.log('Difference Link:', linkOpen - linkClose);
+console.log('Difference ArrowRight:', arrowOpen - arrowClose);

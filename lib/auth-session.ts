@@ -14,6 +14,7 @@ export const DASHBOARD_PERMISSION_KEYS = [
   "marketing",
   "avis",
   "statistiques",
+  "abonnements",
 ] as const
 
 export type DashboardPermission = (typeof DASHBOARD_PERMISSION_KEYS)[number]
@@ -127,7 +128,7 @@ export function useDashboardSession(): DashboardSession {
         rawRole === "vendor" ||
         rawRole === "client"
       ? rawRole
-      : "client"
+      : null
     : null
 
   const isAdmin = role === "admin"
@@ -154,7 +155,7 @@ export function useDashboardSession(): DashboardSession {
           id: user.id,
           name: user.name,
           email: user.email,
-          image: user.image,
+          image: user.image ?? null,
           role: user.role ?? null,
           emailVerified: user.emailVerified,
           isActive: user.isActive ?? null,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { reservation, pointDeVente } from "@/db/schema";
 
 export async function GET(req: NextRequest) {
@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
         reservedAt: reservation.reservedAt,
         collectedAt: reservation.collectedAt,
         cancelledAt: reservation.cancelledAt,
+        expiresAt: reservation.expiresAt,
         pointName: pointDeVente.name,
         pointDistrict: pointDeVente.district,
       })
@@ -38,6 +39,7 @@ export async function GET(req: NextRequest) {
       .limit(limit);
 
     // Transform to match the expected interface
+    const now = new Date()
     const reservations = rows.map((row) => ({
       id: row.id,
       reservationCode: row.reservationCode,
@@ -48,7 +50,12 @@ export async function GET(req: NextRequest) {
       amountType: row.amountType ?? "reservation",
       pointName: row.pointName ?? "Point de vente",
       pointDistrict: row.pointDistrict ?? "",
-      status: row.status,
+      status:
+        row.status === "confirmed" &&
+        row.expiresAt &&
+        new Date(row.expiresAt).getTime() < now.getTime()
+          ? "expired"
+          : row.status,
       reservedAt: row.reservedAt,
       collectedAt: row.collectedAt,
       cancelledAt: row.cancelledAt,

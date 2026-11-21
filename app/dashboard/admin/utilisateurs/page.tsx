@@ -517,9 +517,15 @@ export default function AdminUsersPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Adresse e-mail</FormLabel>
+                    <FormLabel>Adresse e-mail (non modifiable)</FormLabel>
                     <FormControl>
-                      <Input type="email" {...field} />
+                      <Input
+                        type="email"
+                        {...field}
+                        readOnly
+                        aria-readonly="true"
+                        className="bg-muted/50"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -1,6 +1,6 @@
 "use client"
 
-import { MapPin, Phone, Shield, Truck, RotateCcw, Package } from "lucide-react"
+import { MapPin, Navigation, Phone, Truck, RotateCcw, Package } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -54,6 +54,12 @@ export function ResultatRechercheCard({
 }: ResultatRechercheCardProps) {
   const statusKey = status as AvailabilityStatus
   const isDisponible = status === "disponible"
+
+  const phoneHref = displayPhone
+    ? `tel:${displayPhone.replace(/[^\d+]/g, "")}`
+    : null
+  const mapsDestination = [name, district, address].filter(Boolean).join(", ")
+  const mapsHref = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mapsDestination)}`
 
   // Sélectionne une seule localisation pertinente (préfère le district si disponible,
   // sinon utilise la première partie de l'adresse pour éviter les doublons)
@@ -145,12 +151,40 @@ export function ResultatRechercheCard({
           {/* Numéro de téléphone affiché uniquement si renseigné */}
           {displayPhone && (
             <div className="mt-2 flex items-start gap-1 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
+              <a href={phoneHref ?? "#"} className="flex items-center gap-1 hover:text-primary">
                 <Phone className="size-2.5 shrink-0" aria-hidden />
                 {displayPhone}
-              </span>
+              </a>
             </div>
           )}
+
+          {/* Appel et itinéraire : actions disponibles sur chaque point de vente */}
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {phoneHref && (
+              <Button
+                nativeButton={false}
+                render={<a href={phoneHref} />}
+                variant="outline"
+                size="sm"
+                className="h-9 w-full gap-1.5 rounded-lg px-2 text-xs"
+              >
+                <Phone className="size-3.5 shrink-0" aria-hidden />
+                Appeler
+              </Button>
+            )}
+            <Button
+              nativeButton={false}
+              render={
+                <a href={mapsHref} target="_blank" rel="noopener noreferrer" />
+              }
+              variant="outline"
+              size="sm"
+              className="h-9 w-full gap-1.5 rounded-lg px-2 text-xs"
+            >
+              <Navigation className="size-3.5 shrink-0" aria-hidden />
+              Itinéraire
+            </Button>
+          </div>
 
           {/* Bouton de réservation - remplace "Consigner cette bouteille" */}
           {onReserver && isDisponible ? (

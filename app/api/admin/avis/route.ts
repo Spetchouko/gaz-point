@@ -15,12 +15,16 @@ export async function GET(req: Request) {
     const page = parseInt(searchParams.get("page") ?? "1", 10) || 1
     const pageSize = parseInt(searchParams.get("pageSize") ?? "20", 10) || 20
     const status = searchParams.get("status") ?? "all"
+    const role = searchParams.get("role") ?? "all"
     const search = searchParams.get("search") ?? ""
 
     // Build where conditions
     const conditions = []
     if (status !== "all") {
       conditions.push(eq(avis.status, status))
+    }
+    if (role === "client" || role === "vendor") {
+      conditions.push(eq(avis.authorRole, role))
     }
     if (search) {
       conditions.push(
@@ -49,6 +53,7 @@ export async function GET(req: Request) {
         authorImage: avis.authorImage,
         city: avis.city,
         quote: avis.quote,
+        rating: avis.rating,
         status: avis.status,
         createdAt: avis.createdAt,
         updatedAt: avis.updatedAt,

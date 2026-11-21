@@ -4,7 +4,6 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { nextCookies } from "better-auth/next-js";
-import { headers } from "next/headers";
 import {
   emailOTP,
   phoneNumber,
@@ -14,25 +13,20 @@ import {
 import { sendVerificationEmail } from "@/lib/email";
 import { recordConversionFromHeaders } from "@/lib/publicite-attribution";
 import { isBuildPhase, optionalEnv } from "@/lib/env";
+import { resolveAuthSecret } from "@/lib/auth-secret";
+import {
+  createSocialSignupBeforeHook,
+  getServerTrustedSocialSignupRole,
+  GOOGLE_SOCIAL_PROVIDER_POLICY,
+} from "@/lib/auth-social-intent";
 import { createNotification, buildNotificationLink } from "@/lib/notifications";
+import {
+    AUTH_ROLE_ADDITIONAL_FIELD,
+    isAuthRole,
+    normalizePublicSignupRole,
+} from "@/lib/auth-routing";
 
-// Valeurs utilisées uniquement pendant `next build` et en développement.
-// En production (`next start`), l'absence de configuration lève une erreur
-// explicite au démarrage plutôt que de laisser Better Auth utiliser un secret
-// par défaut (faille de sécurité) ou déduire l'origine de chaque requête.
-const DEV_SECRET = "gazpoints-development-only-secret-do-not-use-in-production";
-const BUILD_SECRET = "gazpoints-build-time-only-secret-do-not-use-in-production";
 const DEV_BASE_URL = "http://localhost:3000";
-
-function resolveAuthSecret(): string {
-  const secret = optionalEnv("BETTER_AUTH_SECRET");
-  if (secret) return secret;
-  if (isBuildPhase) return BUILD_SECRET;
-  if (process.env.NODE_ENV !== "production") return DEV_SECRET;
-  throw new Error(
-    "[auth] BETTER_AUTH_SECRET est requis en production. Générez-en un avec `openssl rand -base64 32`."
-  );
-}
 
 function resolveBaseURL(): string {
   const configured =
@@ -57,21 +51,10 @@ const socialProviders =
         google: {
           clientId: googleClientId,
           clientSecret: googleClientSecret,
+          ...GOOGLE_SOCIAL_PROVIDER_POLICY,
         },
       }
     : {};
-
-async function getRoleFromRegisterCookie(): Promise<"client" | "vendor"> {
-  // Lecture côté serveur via l'en-tête cookie.
-  // Seul "vendor" est un rôle auto-attribuable à l'inscription ;
-  // les rôles "admin" et "collaborateur" sont créés uniquement par promotion manuelle.
-  const headersList = await headers()
-  const cookieHeader = headersList.get("cookie") ?? ""
-  const match = cookieHeader.match(/gazpoint_register_role=([^;]+)/)
-  const roleFromCookie = match?.[1]
-  if (roleFromCookie === "vendor") return "vendor"
-  return "client"
-}
 
 export const auth = betterAuth({
     baseURL: authBaseURL,
@@ -107,12 +90,7 @@ export const auth = betterAuth({
                 defaultValue: false,
                 input: false,
             },
-            role: {
-                type: "string",
-                required: false,
-                defaultValue: "client",
-                input: true,
-            },
+            role: AUTH_ROLE_ADDITIONAL_FIELD,
             image: {
                 type: "string",
                 required: false,
@@ -171,6 +149,7 @@ export const auth = betterAuth({
         // Exiger une vérification email avant toute connexion autorisée.
         requireEmailVerification: true,
         autoSignIn: false, // compte créé mais session bloquée tant que non vérifié
+        minPasswordLength: 8,
     },
     // Vérification par code OTP à 6 chiffres (plugin emailOTP ci-dessous).
     // L'envoi initial est déclenché explicitement APRÈS l'inscription, via la route
@@ -215,28 +194,29 @@ export const auth = betterAuth({
         // mise à jour ces champs via ses hooks internes quand verifyPhoneNumber
         // ou verifyEmailOTP réussit.
     },
+    hooks: {
+        before: createSocialSignupBeforeHook(),
+    },
     databaseHooks: {
         user: {
             create: {
-                // Sécurité : seuls les rôles "client" et "vendor" peuvent être
-                // créés par une inscription (email OU Google).
-                // Le rôle est déterminé AVANT la création :
-                // - Si inscription email classique : rôle par défaut "client"
-                // - Si Google Auth : rôle lu depuis cookie gazpoint_register_role
-                // Toute tentative d'élévation (ex: role: "admin" ou "collaborateur")
-                // est ignorée et retombe en "client".
-                // Un compte admin/collaborateur se crée uniquement par promotion manuelle en base.
+                // Sécurité : une inscription publique ne peut créer que les
+                // rôles "client" ou "vendor". Le corps HTTP ne peut pas fournir
+                // de rôle. Pour Google, le rôle "vendor" vient uniquement de
+                // l'intention d'inscription vérifiée et signée par le serveur,
+                // puis transportée dans l'état OAuth de Better Auth. Les rôles
+                // "admin" et "collaborateur" restent hors du parcours public.
                 before: async (user: Record<string, unknown>, ctx: unknown) => {
-                    // Déterminer le rôle depuis le cookie si Google Auth
-                    const roleFromCookie = await getRoleFromRegisterCookie()
-
-                    // Pour email/password : les champs additionnels sont dans ctx.body ou ctx.request
-                    const ctxTyped = ctx as { body?: Record<string, unknown>; request?: Record<string, unknown> } | undefined
-                    const roleFromBody = (ctxTyped?.body as { role?: string })?.role || (ctxTyped?.request as { role?: string })?.role
-                    const phoneNumber = (ctxTyped?.body as { phoneNumber?: string })?.phoneNumber || (ctxTyped?.request as { phoneNumber?: string })?.phoneNumber
-
-                    // Seul "vendor" peut être auto-attribué à l'inscription (body OU cookie).
-                    const role = roleFromBody === "vendor" || roleFromCookie === "vendor" ? "vendor" : "client"
+                    const ctxTyped = ctx as {
+                        body?: Record<string, unknown>
+                        request?: Record<string, unknown>
+                    } | undefined
+                    const phoneNumber =
+                        (ctxTyped?.body as { phoneNumber?: string })?.phoneNumber ||
+                        (ctxTyped?.request as { phoneNumber?: string })?.phoneNumber
+                    const role = normalizePublicSignupRole(
+                        await getServerTrustedSocialSignupRole()
+                    )
 
                     return { data: { ...user, role, phoneNumber } }
                 },
@@ -268,12 +248,12 @@ export const auth = betterAuth({
                     
                     // Notifier les administrateurs de la nouvelle inscription
                     try {
-                        const [admins] = await db
+                        const admins = await db
                           .select({ id: schema.user.id })
                           .from(schema.user)
                           .where(eq(schema.user.role, "admin"))
                           .limit(10)
-                        
+
                         for (const admin of admins) {
                           await createNotification({
                             userId: admin.id,
@@ -292,8 +272,10 @@ export const auth = betterAuth({
             // mettre à jour phoneVerified / emailVerified si Better Auth ne le fait pas seul.
             update: {
                 before: async (data: Record<string, unknown>) => {
-                    // Exemple : si le champ phoneNumber a changé et qu'on veut
-                    // marquer phoneVerified à false par défaut.
+                    // Le rôle n'est jamais modifié par une mise à jour de profil.
+                    // Seules les APIs administratives écrivent ce champ en base.
+                    delete data.role
+
                     if (data.phoneNumber !== undefined && data.phoneNumber === null) {
                         (data as Record<string, unknown>).phoneVerified = false
                     }
@@ -311,7 +293,11 @@ export const auth = betterAuth({
                     const userId = String(session.userId ?? "")
                     if (!userId) return true
                     const [row] = await db
-                        .select({ isActive: schema.user.isActive, emailVerified: schema.user.emailVerified })
+                        .select({
+                            isActive: schema.user.isActive,
+                            emailVerified: schema.user.emailVerified,
+                            role: schema.user.role,
+                        })
                         .from(schema.user)
                         .where(eq(schema.user.id, userId))
                         .limit(1)
@@ -320,6 +306,9 @@ export const auth = betterAuth({
                     }
                     if (row.emailVerified === false) {
                         throw new Error("Veuillez vérifier votre adresse email avant de vous connecter. Un code de vérification vous a été envoyé.")
+                    }
+                    if (!isAuthRole(row.role)) {
+                        throw new Error("Ce compte ne possède aucun rôle valide. Contactez le support.")
                     }
                     return true
                 },

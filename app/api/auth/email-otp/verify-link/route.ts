@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import { db } from "@/db"
 import { user, verification } from "@/db/schema"
-
-const LINK_MAX_AGE_SECONDS = 600 // 10 minutes, identique au code OTP
 
 export async function GET(req: NextRequest) {
   try {
@@ -51,9 +49,15 @@ export async function GET(req: NextRequest) {
 
     await db.delete(verification).where(eq(verification.identifier, `email-verification-link-${token}`))
 
-    // 4) Redirige vers la page de confirmation avec succes.
+    await db
+      .update(user)
+      .set({ approvalStatus: "approved", approvalProcessedAt: new Date() })
+      .where(and(eq(user.email, email), eq(user.role, "vendor")))
+
+    // 4) Le lien ne crée pas de session. La connexion reprend avec le rôle
+    // relu dans la base par la route serveur de redirection.
     return NextResponse.redirect(
-      `${new URL(req.url).origin}/validation-email?verified=1&email=${encodeURIComponent(email)}`
+      `${new URL(req.url).origin}/connexion?email=${encodeURIComponent(email)}&verified=1`
     )
   } catch (err) {
     console.error("[verify-link] error:", err)

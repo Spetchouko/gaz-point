@@ -19,43 +19,37 @@ import {
 
 export default function MotDePasseTemporairePage() {
   const router = useRouter()
-  const { data: session } = useSafeSession()
-  const user = session?.user as {
-    id?: string
-    role?: string
-    mustChangePassword?: boolean
-    name?: string
-    email?: string
-  } | undefined
+  const { data: session, isPending: isSessionPending } = useSafeSession()
 
-  const [open, setOpen] = useState(true)
   const [isPending, setIsPending] = useState(false)
   const [feedback, setFeedback] = useState<ActionResult | null>(null)
+  const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [fieldErrors, setFieldErrors] = useState<{
+    currentPassword?: string
     newPassword?: string
     confirmPassword?: string
   }>({})
 
-  // Vérifier que l'utilisateur est authentifié et doit changer son mot de passe
+  // La route est déjà protégée côté serveur. Cette vérification évite seulement
+  // d'afficher le formulaire pendant que la session est encore en chargement.
   useEffect(() => {
-    if (!user) {
+    if (isSessionPending) return
+    if (!session?.user) {
       router.push("/connexion-admin")
-      return
     }
-    // Si ce n'est pas un collaborateur avec mot de passe temporaire, rediriger normalement
-    if (!(user.role === "collaborateur" && user.mustChangePassword === true)) {
-      const role = user.role
-      router.push(role === "admin" ? "/dashboard/admin" : "/dashboard/collaborateur")
-      return
-    }
-    // Garder le modal ouvert (impossible de le fermer avant validation)
-    setOpen(true)
-  }, [user, router])
+  }, [isSessionPending, session, router])
 
   const validateForm = () => {
-    const errors: { newPassword?: string; confirmPassword?: string } = {}
+    const errors: {
+      currentPassword?: string
+      newPassword?: string
+      confirmPassword?: string
+    } = {}
+    if (!currentPassword) {
+      errors.currentPassword = "Le mot de passe temporaire est requis."
+    }
     if (!newPassword) errors.newPassword = "Le nouveau mot de passe est requis."
     else if (newPassword.length < 8)
       errors.newPassword = "Le mot de passe doit contenir au moins 8 caractères."
@@ -75,6 +69,7 @@ export default function MotDePasseTemporairePage() {
 
     try {
       const formData = new FormData()
+      formData.set("currentPassword", currentPassword)
       formData.set("newPassword", newPassword)
       formData.set("confirmPassword", confirmPassword)
 
@@ -83,8 +78,7 @@ export default function MotDePasseTemporairePage() {
 
       if (result.ok) {
         setTimeout(() => {
-          router.push("/dashboard/collaborateur")
-          router.refresh()
+          window.location.assign("/api/auth/role-redirect")
         }, 1000)
       }
     } catch {
@@ -94,20 +88,15 @@ export default function MotDePasseTemporairePage() {
     }
   }
 
-  // Le modal ne peut pas être fermé : on le force à rester ouvert
-  const handleOpenChange = (next: boolean) => {
-    if (!next) setOpen(true)
-  }
-
-  // Si l'utilisateur n'est pas dans le bon état, on ne rend rien (redirection gérée par useEffect)
-  if (!user || !(user.role === "collaborateur" && user.mustChangePassword === true)) {
+  // Si la session n'est pas disponible, la redirection est gérée par useEffect.
+  if (isSessionPending || !session?.user) {
     return null
   }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
-      <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="sm:max-w-md bg-card">
+      <Dialog open>
+        <DialogContent className="sm:max-w-md bg-card" showCloseButton={false}>
           <DialogHeader className="text-center">
             <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-warning/10 text-warning ring-1 ring-warning/20">
               <Lock className="size-6" />
@@ -120,6 +109,28 @@ export default function MotDePasseTemporairePage() {
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4 p-6">
+            <div className="space-y-2">
+              <PasswordField
+                id="current-password"
+                name="currentPassword"
+                label="Mot de passe temporaire"
+                placeholder="Votre mot de passe actuel"
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={setCurrentPassword}
+                required
+                ariaInvalid={!!fieldErrors.currentPassword}
+                ariaDescribedby={
+                  fieldErrors.currentPassword ? "current-password-error" : undefined
+                }
+              />
+              {fieldErrors.currentPassword && (
+                <p id="current-password-error" className="text-sm text-destructive" role="alert">
+                  {fieldErrors.currentPassword}
+                </p>
+              )}
+            </div>
+
             <div className="space-y-2">
               <PasswordField
                 id="new-password"

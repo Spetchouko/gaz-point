@@ -1,8 +1,9 @@
 "use client"
 
 import { Suspense, useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
+import { requestSocialSignupIntent } from "@/lib/auth-social-intent-client"
 import { useSafeSession } from "@/lib/auth-session"
 import { Button } from "@/components/ui/button"
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -36,14 +37,11 @@ function InscriptionVendeurContent() {
   const router = useRouter()
   const { data: session } = useSafeSession()
 
-  const searchRedirect = useSearchParams().get("redirect")
-  const redirectTo = searchRedirect ?? "/dashboard/vendeur"
-
   useEffect(() => {
     if (session?.user) {
-      router.push(redirectTo)
+      window.location.assign("/api/auth/role-redirect")
     }
-  }, [session, router, redirectTo])
+  }, [session])
 
   // ---------- État du formulaire (création de compte + point de vente) ----------
   const [pointName, setPointName] = useState("")
@@ -165,17 +163,38 @@ function InscriptionVendeurContent() {
     router.push(
       `/validation-email?mode=${MODE_EMAIL}&email=${encodeURIComponent(
         data.email
-      )}&redirect=${encodeURIComponent("/dashboard/vendeur")}&sent=1`
+      )}&sent=1`
     )
     router.refresh()
   }
 
   const handleGoogle = async () => {
-    document.cookie = `gazpoint_register_role=vendor; path=/; max-age=300`
-    await authClient.signIn.social({
-      provider: "google",
-      callbackURL: "/dashboard/vendeur",
-    })
+    if (loading) return
+
+    setLoading(true)
+    setError("")
+    try {
+      await requestSocialSignupIntent("vendor")
+      const result = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/api/auth/role-redirect",
+        requestSignUp: true,
+      })
+      if (result.error) {
+        setError(
+          result.error.message ??
+            "Impossible de démarrer l'inscription avec Google."
+        )
+        setLoading(false)
+      }
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Impossible de démarrer l'inscription avec Google."
+      )
+      setLoading(false)
+    }
   }
 
   return (

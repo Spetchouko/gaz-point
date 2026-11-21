@@ -34,7 +34,6 @@ export class RateLimiter {
   }
 
   checkRateLimit(keyOrReq: string | Request): RateLimitResult {
-    const req = typeof keyOrReq === "string" ? null : keyOrReq
     const key = typeof keyOrReq === "string" ? keyOrReq : this.keyFn(keyOrReq as Request)
     const now = Date.now()
     const cutoff = now - this.windowMs
@@ -76,6 +75,9 @@ export const verificationSendRateLimiter = RateLimiter.ipOnly(5, 60 * 60 * 1000)
 
 /** Vendor signup limiter: max 10 account creations per hour per IP address. */
 export const vendorSignupRateLimiter = RateLimiter.ipOnly(10, 60 * 60 * 1000)
+
+/** Password reset limiter: max 5 reset emails per hour per IP address. */
+export const passwordResetRateLimiter = RateLimiter.ipOnly(5, 60 * 60 * 1000)
 
 function getClientIp(req: Request): string {
   const ip =

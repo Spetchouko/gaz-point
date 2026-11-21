@@ -5,11 +5,8 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   User,
-  Mail,
-  Phone,
   Lock,
   Save,
   AlertCircle,
@@ -18,6 +15,7 @@ import {
   Eye,
   EyeOff,
   Camera,
+  RefreshCw,
 } from "lucide-react";
 import { Spinner, PageLoading, ButtonSpinner } from "@/app/_components/spinner";
 import { Button } from "@/components/ui/button";
@@ -30,11 +28,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { useSafeSession, useRefreshSession } from "@/lib/auth-session";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { optimizeImageFile } from "@/lib/image-utils";
+import {
+  ClientRequestError,
+  requestJson,
+} from "@/lib/client-request";
 
 type UserProfile = {
   id: string;
@@ -43,19 +44,20 @@ type UserProfile = {
   phoneNumber: string | null;
   image: string | null;
   role: string;
-  lastLoginAt: string | null;
-  createdAt: string | null;
+  lastLoginAt: string | Date | null;
+  createdAt: string | Date | null;
   emailVerified: boolean;
 };
 
 export default function ProfilPage() {
-  const router = useRouter();
-  const { data: session } = useSafeSession()
+  const { data: session, isPending: sessionPending } = useSafeSession()
   const refreshSession = useRefreshSession()
   const sessionUser = session?.user;
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
+  const [profileLoadError, setProfileLoadError] = useState<string | null>(null);
+  const [profileAttempt, setProfileAttempt] = useState(0);
 
   // Informations personnelles
   const [firstName, setFirstName] = useState("");
@@ -84,7 +86,6 @@ export default function ProfilPage() {
   } | null>(null);
 
   // Avatar
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
 
@@ -103,33 +104,54 @@ export default function ProfilPage() {
 
   // Récupérer le profil complet (incluant lastLoginAt) depuis l'API
   useEffect(() => {
+    const controller = new AbortController();
     let cancelled = false;
+
     async function loadProfile() {
+      setLoadingProfile(true);
+      setProfileLoadError(null);
+
       try {
-        setLoadingProfile(true);
-        const res = await fetch("/api/user/me", {
-          headers: { Accept: "application/json" },
-          cache: "no-store",
-        });
-        if (!res.ok) throw new Error("Impossible de charger le profil");
-        const data = await res.json();
-        if (!cancelled && data.user) {
-          const u = data.user;
-          const nameParts = u.name.split(" ");
-          setFirstName(nameParts[0] || "");
-          setLastName(nameParts.slice(1).join(" ") || "");
-          setEmail(u.email);
-          setPhone(u.phoneNumber ?? "");
-          setProfile(u);
+        const data = await requestJson<{ user: UserProfile }>(
+          "/api/user/me",
+          {
+            headers: { Accept: "application/json" },
+            cache: "no-store",
+            signal: controller.signal,
+          }
+        );
+
+        if (cancelled || !data.user) return;
+
+        const u = data.user;
+        const nameParts = (u.name || "").split(" ");
+        setFirstName(nameParts[0] || "");
+        setLastName(nameParts.slice(1).join(" ") || "");
+        setEmail(u.email);
+        setPhone(u.phoneNumber ?? "");
+        setProfile(u);
+      } catch (error) {
+        if (
+          cancelled ||
+          (error instanceof ClientRequestError && error.kind === "aborted")
+        ) {
+          return;
         }
-      } catch {
-        // Erreur silencieuse, le profil affichera les valeurs de la session
-        if (!cancelled && sessionUser) {
+
+        setProfileLoadError(
+          error instanceof Error
+            ? error.message
+            : "Impossible de charger le profil. Réessayez."
+        );
+
+        // Les données de session restent visibles pendant l'erreur. Elles ne
+        // remplacent jamais l'avertissement et ne masquent pas le retry.
+        if (sessionUser) {
           const nameParts = (sessionUser.name || "").split(" ");
           setFirstName(nameParts[0] || "");
           setLastName(nameParts.slice(1).join(" ") || "");
           setEmail(sessionUser.email || "");
-          setPhone(sessionUser.phoneNumber ?? null ?? "");
+          setPhone(sessionUser.phoneNumber ?? "");
           setProfile({
             id: sessionUser.id,
             name: sessionUser.name || "",
@@ -146,11 +168,13 @@ export default function ProfilPage() {
         if (!cancelled) setLoadingProfile(false);
       }
     }
-    loadProfile();
+
+    void loadProfile();
     return () => {
       cancelled = true;
+      controller.abort();
     };
-  }, [sessionUser]);
+  }, [sessionUser, profileAttempt]);
 
   // ---------- Mise à jour des informations personnelles ----------
   const validateProfile = (): boolean => {
@@ -192,21 +216,24 @@ export default function ProfilPage() {
     try {
       const fullName = `${firstName.trim()} ${lastName.trim()}`;
 
-      const res = await fetch("/api/user/profile", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: fullName,
-          phone: phone.trim() || null,
-        }),
-      });
+      await requestJson<{ ok: boolean }>(
+        "/api/user/profile",
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: fullName,
+            phoneNumber: phone.trim() || null,
+          }),
+        }
+      );
 
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || "Erreur lors de la mise à jour");
-
-      // Rafraîchir le prénom affiché
-      setProfile((prev) => (prev ? { ...prev, name: fullName } : prev));
+      // Rafraîchir les informations affichées.
+      setProfile((prev) =>
+        prev
+          ? { ...prev, name: fullName, phoneNumber: phone.trim() || null }
+          : prev
+      );
       setProfileMessage({
         type: "success",
         text: "Vos informations ont été mises à jour avec succès.",
@@ -215,7 +242,7 @@ export default function ProfilPage() {
 
       // Rafraîchir la session pour refléter immédiatement les modifications
       await refreshSession();
-    } catch (error) {
+    } catch {
       setProfileMessage({
         type: "error",
         text:
@@ -251,17 +278,16 @@ export default function ProfilPage() {
       }
 
       setAvatarPreview(result.dataUrl);
-      setAvatarFile(file);
 
       // Envoyer au serveur
-      const res = await fetch("/api/user/avatar", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: result.dataUrl }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erreur lors du téléversement");
+      await requestJson<{ ok: boolean; image: string | null }>(
+        "/api/user/avatar",
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: result.dataUrl }),
+        }
+      );
 
       setProfile((prev) => (prev ? { ...prev, image: result.dataUrl } : prev));
       setProfileMessage({
@@ -288,16 +314,16 @@ export default function ProfilPage() {
     setProfileMessage(null);
 
     try {
-      const res = await fetch("/api/user/avatar", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ remove: true }),
-      });
-
-      if (!res.ok) throw new Error("Erreur lors de la suppression");
+      await requestJson<{ ok: boolean; image: string | null }>(
+        "/api/user/avatar",
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ remove: true }),
+        }
+      );
 
       setAvatarPreview(null);
-      setAvatarFile(null);
       setProfile((prev) => (prev ? { ...prev, image: null } : prev));
       setProfileMessage({ type: "success", text: "Photo de profil supprimée." });
       toast.success("Avatar supprimé");
@@ -362,15 +388,14 @@ export default function ProfilPage() {
     }
 
     try {
-      const res = await fetch("/api/user/password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentPassword, newPassword }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || "Erreur lors du changement de mot de passe");
+      await requestJson<{ ok: boolean }>(
+        "/api/user/password",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ currentPassword, newPassword }),
+        }
+      );
 
       setCurrentPassword("");
       setNewPassword("");
@@ -398,9 +423,30 @@ export default function ProfilPage() {
     }
   };
 
-  if (loadingProfile || !sessionUser) {
+  if (sessionPending || (loadingProfile && !sessionUser)) {
+    return <PageLoading />;
+  }
+
+  if (!sessionUser) {
     return (
-      <PageLoading />
+      <Card className="mx-auto max-w-3xl border border-border shadow-sm rounded-lg">
+        <CardContent className="p-6 text-center">
+          <AlertCircle className="mx-auto size-8 text-destructive" aria-hidden />
+          <h1 className="mt-4 text-lg font-semibold">Session indisponible</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Les informations de votre compte ne peuvent pas être chargées pour le moment.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-4"
+            onClick={() => setProfileAttempt((value) => value + 1)}
+          >
+            <RefreshCw className="mr-2 size-4" aria-hidden />
+            Réessayer
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -425,6 +471,37 @@ export default function ProfilPage() {
           Gérez vos informations personnelles et votre sécurité
         </p>
       </div>
+
+      {profileLoadError && (
+        <Card className="border border-destructive/30 shadow-sm rounded-lg" role="alert">
+          <CardContent className="p-4 bg-destructive/5">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm text-destructive">{profileLoadError}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Les valeurs de session restent affichées, mais elles peuvent être incomplètes.
+                </p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-3"
+              disabled={loadingProfile}
+              onClick={() => setProfileAttempt((value) => value + 1)}
+            >
+              {loadingProfile ? (
+                <Spinner size="sm" />
+              ) : (
+                <RefreshCw className="mr-2 size-3" aria-hidden />
+              )}
+              Réessayer
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Profile info */}
       <Card className="border border-border shadow-sm rounded-lg">
@@ -481,7 +558,7 @@ export default function ProfilPage() {
                   className="bg-muted cursor-not-allowed"
                 />
                 <p className="text-xs text-muted-foreground">
-                  L'adresse e-mail ne peut pas être modifiée depuis ici.
+                  L&apos;adresse e-mail ne peut pas être modifiée depuis ici.
                 </p>
               </div>
               <div className="space-y-1.5 sm:col-span-2">
@@ -513,7 +590,7 @@ export default function ProfilPage() {
                   <label
                     htmlFor="avatar"
                     className="cursor-pointer group"
-                    disabled={avatarUploading || saving}
+                    aria-disabled={avatarUploading || saving}
                   >
                     <div className="flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0 overflow-hidden border border-primary/20 relative group-hover:ring-2 group-hover:ring-primary/50 transition-all">
                       {avatarPreview || userProfile.image ? (
@@ -781,7 +858,7 @@ export default function ProfilPage() {
   );
 }
 
-function formatLastLogin(isoString: string | null): string {
+function formatLastLogin(isoString: string | Date | null): string {
   if (!isoString) return "Première connexion";
   try {
     return new Intl.DateTimeFormat("fr-FR", {
@@ -795,6 +872,6 @@ function formatLastLogin(isoString: string | null): string {
       hour12: false,
     }).format(new Date(isoString));
   } catch {
-    return isoString;
+    return isoString instanceof Date ? isoString.toISOString() : isoString;
   }
 }

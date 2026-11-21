@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Bell,
   Check,
@@ -9,16 +9,21 @@ import {
   Trash2,
   Archive,
   Inbox,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { NotificationItem } from "./notification-item";
 import { dispatchNotificationsUpdated } from "@/lib/use-notification-unread-count";
-import { AdminPageHeader, AdminCard, AdminBadge } from "@/app/_components/dashboard/admin";
+import { AdminPageHeader, AdminCard } from "@/app/_components/dashboard/admin";
+import {
+  ClientRequestError,
+  requestJson,
+} from "@/lib/client-request";
 
 type Notification = {
   id: string;
@@ -41,12 +46,15 @@ export function NotificationCenter() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkMode, setBulkMode] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const loadControllerRef = useRef<AbortController | null>(null);
 
   const filteredNotifications = useMemo(() => {
     return notifications
       .filter((n) => {
-        if (tab === "unread") return !n.read && !n.archived;
-        if (tab === "archived") return n.archived;
+        if (tab === "unread" && (n.read || n.archived)) return false;
+        if (tab === "archived" && !n.archived) return false;
         if (tab === "all" && n.archived) return false;
         if (searchQuery) {
           const q = searchQuery.toLowerCase();
@@ -63,86 +71,195 @@ export function NotificationCenter() {
       );
   }, [notifications, tab, searchQuery]);
 
-  const loadNotifications = useCallback(async () => {
+  const loadNotifications = useCallback(async (showLoading = true) => {
+    // Laisse l'effet terminer sa phase de synchronisation avant de modifier
+    // l'état. Cela évite un rendu en cascade tout en conservant le chargement.
+    await Promise.resolve()
+
+    loadControllerRef.current?.abort();
+    const controller = new AbortController();
+    loadControllerRef.current = controller;
+
+    if (showLoading) setLoading(true);
+    setLoadError(null);
+
     try {
       const archivedParam = tab === "archived" ? "true" : "false";
-      const res = await fetch(`/api/notifications?archived=${archivedParam}&limit=100`, {
+      const data = await requestJson<{
+        notifications?: Notification[];
+        unreadCount?: number;
+      }>(`/api/notifications?archived=${archivedParam}&limit=100`, {
         headers: { Accept: "application/json" },
         cache: "no-store",
+        signal: controller.signal,
       });
-      if (!res.ok) throw new Error("Échec du chargement");
-      const data = await res.json();
+
+      if (controller.signal.aborted) return;
+
       setNotifications(Array.isArray(data.notifications) ? data.notifications : []);
       setUnreadCount(Number(data.unreadCount || 0));
       dispatchNotificationsUpdated();
-    } catch {
-      // Conserver l'état courant en cas d'erreur réseau.
+    } catch (requestError) {
+      if (
+        controller.signal.aborted ||
+        (requestError instanceof ClientRequestError &&
+          requestError.kind === "aborted")
+      ) {
+        return;
+      }
+
+      setLoadError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Impossible de charger les notifications. Réessayez."
+      );
     } finally {
-      setLoading(false);
+      if (loadControllerRef.current === controller) {
+        if (showLoading) setLoading(false);
+        loadControllerRef.current = null;
+      }
     }
   }, [tab]);
 
   useEffect(() => {
-    setLoading(true);
-    void loadNotifications();
+    const startTimer = window.setTimeout(() => {
+      void loadNotifications();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(startTimer);
+      loadControllerRef.current?.abort();
+    };
   }, [loadNotifications]);
 
   const syncAfterMutation = useCallback(async () => {
-    await loadNotifications();
+    await loadNotifications(false);
   }, [loadNotifications]);
 
   const handleMarkRead = useCallback(async (id: string) => {
-    const res = await fetch("/api/notifications", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, read: true }),
-    });
-    if (!res.ok) return;
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
-    setUnreadCount((prev) => Math.max(0, prev - (notifications.find((n) => n.id === id && !n.read) ? 1 : 0)));
-    dispatchNotificationsUpdated();
+    const target = notifications.find((notification) => notification.id === id);
+    if (!target || target.read) return;
+
+    setActionError(null);
+    try {
+      await requestJson<{ ok: boolean; id: string }>(
+        "/api/notifications",
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, read: true }),
+        }
+      );
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          notification.id === id ? { ...notification, read: true } : notification
+        )
+      );
+      setUnreadCount((prev) =>
+        target.archived ? prev : Math.max(0, prev - 1)
+      );
+      dispatchNotificationsUpdated();
+    } catch (requestError) {
+      setActionError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Impossible de marquer la notification comme lue."
+      );
+    }
   }, [notifications]);
 
   const handleMarkUnread = useCallback(async (id: string) => {
-    const res = await fetch("/api/notifications", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, read: false }),
-    });
-    if (!res.ok) return;
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: false } : n)));
-    setUnreadCount((prev) => prev + (notifications.find((n) => n.id === id && n.read) ? 1 : 0));
-    dispatchNotificationsUpdated();
+    const target = notifications.find((notification) => notification.id === id);
+    if (!target || !target.read) return;
+
+    setActionError(null);
+    try {
+      await requestJson<{ ok: boolean; id: string }>(
+        "/api/notifications",
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, read: false }),
+        }
+      );
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          notification.id === id ? { ...notification, read: false } : notification
+        )
+      );
+      setUnreadCount((prev) => (target.archived ? prev : prev + 1));
+      dispatchNotificationsUpdated();
+    } catch (requestError) {
+      setActionError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Impossible de marquer la notification comme non lue."
+      );
+    }
   }, [notifications]);
 
   const handleArchive = useCallback(async (id: string) => {
-    const res = await fetch("/api/notifications", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, archived: true }),
-    });
-    if (!res.ok) return;
-    setSelectedIds((prev) => prev.filter((sid) => sid !== id));
-    await syncAfterMutation();
+    setActionError(null);
+    try {
+      await requestJson<{ ok: boolean; id: string }>(
+        "/api/notifications",
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, archived: true }),
+        }
+      );
+      setSelectedIds((prev) => prev.filter((sid) => sid !== id));
+      await syncAfterMutation();
+    } catch (requestError) {
+      setActionError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Impossible d'archiver la notification."
+      );
+    }
   }, [syncAfterMutation]);
 
   const handleRestore = useCallback(async (id: string) => {
-    const res = await fetch("/api/notifications", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, archived: false }),
-    });
-    if (!res.ok) return;
-    setSelectedIds((prev) => prev.filter((sid) => sid !== id));
-    await syncAfterMutation();
+    setActionError(null);
+    try {
+      await requestJson<{ ok: boolean; id: string }>(
+        "/api/notifications",
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, archived: false }),
+        }
+      );
+      setSelectedIds((prev) => prev.filter((sid) => sid !== id));
+      await syncAfterMutation();
+    } catch (requestError) {
+      setActionError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Impossible de restaurer la notification."
+      );
+    }
   }, [syncAfterMutation]);
 
   const handleDelete = useCallback(async (id: string) => {
     if (!window.confirm("Supprimer définitivement cette notification ?")) return;
-    const res = await fetch(`/api/notifications/${id}`, { method: "DELETE" });
-    if (!res.ok) return;
-    setSelectedIds((prev) => prev.filter((sid) => sid !== id));
-    await syncAfterMutation();
+
+    setActionError(null);
+    try {
+      await requestJson<{ ok: boolean; id: string }>(
+        `/api/notifications/${id}`,
+        { method: "DELETE" }
+      );
+      setSelectedIds((prev) => prev.filter((sid) => sid !== id));
+      await syncAfterMutation();
+    } catch (requestError) {
+      setActionError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Impossible de supprimer la notification."
+      );
+    }
   }, [syncAfterMutation]);
 
   const toggleSelect = (id: string) => {
@@ -161,41 +278,79 @@ export function NotificationCenter() {
   const handleBulkArchive = async () => {
     if (selectedIds.length === 0) return;
     if (!window.confirm(`Archiver ${selectedIds.length} notification(s) ?`)) return;
-    const res = await fetch("/api/notifications/bulk", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "archive", ids: selectedIds }),
-    });
-    if (!res.ok) return;
-    setSelectedIds([]);
-    setBulkMode(false);
-    await syncAfterMutation();
+
+    setActionError(null);
+    try {
+      await requestJson<{ ok: boolean; action: string; count: number }>(
+        "/api/notifications/bulk",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "archive", ids: selectedIds }),
+        }
+      );
+      setSelectedIds([]);
+      setBulkMode(false);
+      await syncAfterMutation();
+    } catch (requestError) {
+      setActionError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Impossible d'archiver les notifications."
+      );
+    }
   };
 
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
     if (!window.confirm(`Supprimer définitivement ${selectedIds.length} notification(s) ?`)) return;
-    const res = await fetch("/api/notifications/bulk", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "delete", ids: selectedIds }),
-    });
-    if (!res.ok) return;
-    setSelectedIds([]);
-    setBulkMode(false);
-    await syncAfterMutation();
+
+    setActionError(null);
+    try {
+      await requestJson<{ ok: boolean; action: string; count: number }>(
+        "/api/notifications/bulk",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "delete", ids: selectedIds }),
+        }
+      );
+      setSelectedIds([]);
+      setBulkMode(false);
+      await syncAfterMutation();
+    } catch (requestError) {
+      setActionError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Impossible de supprimer les notifications."
+      );
+    }
   };
 
   const handleMarkAllRead = async () => {
-    const unreadIds = notifications.filter((n) => !n.read && !n.archived).map((n) => n.id);
+    const unreadIds = notifications
+      .filter((notification) => !notification.read && !notification.archived)
+      .map((notification) => notification.id);
     if (unreadIds.length === 0) return;
-    const res = await fetch("/api/notifications/bulk", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "mark-read", ids: unreadIds }),
-    });
-    if (!res.ok) return;
-    await syncAfterMutation();
+
+    setActionError(null);
+    try {
+      await requestJson<{ ok: boolean; action: string; count: number }>(
+        "/api/notifications/bulk",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "mark-read", ids: unreadIds }),
+        }
+      );
+      await syncAfterMutation();
+    } catch (requestError) {
+      setActionError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Impossible de marquer les notifications comme lues."
+      );
+    }
   };
 
   const tabLabels: Record<Tab, string> = {
@@ -239,6 +394,29 @@ export function NotificationCenter() {
           )
         }
       />
+
+      {(loadError || actionError) && (
+        <div role="alert">
+          <AdminCard className="border-destructive/30 bg-destructive/5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
+                <p className="text-sm text-destructive">
+                  {loadError || actionError}
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void loadNotifications(false)}
+              >
+                <RefreshCw className="mr-2 size-3" aria-hidden />
+                Réessayer
+              </Button>
+            </div>
+          </AdminCard>
+        </div>
+      )}
 
       {bulkMode && (
         <AdminCard className="border-green-200 bg-green-50">
@@ -322,6 +500,7 @@ export function NotificationCenter() {
 
       <div className="space-y-2">
         {filteredNotifications.length === 0 ? (
+          loadError ? null : (
           <AdminCard className="text-center py-12">
             <div className="flex flex-col items-center gap-2">
               {tab === "archived" ? (
@@ -347,6 +526,7 @@ export function NotificationCenter() {
               </p>
             </div>
           </AdminCard>
+          )
         ) : (
           <div className="space-y-2">
             {filteredNotifications.map((n) => (
