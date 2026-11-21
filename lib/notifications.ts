@@ -2,7 +2,12 @@ import { db } from "@/db";
 import { notification } from "@/db/schema";
 import { randomUUID } from "node:crypto";
 
-export type NotificationType = "reservation" | "availability" | "system" | "admin";
+export type NotificationType =
+  | "reservation"
+  | "availability"
+  | "system"
+  | "promo"
+  | "admin";
 
 export interface CreateNotificationInput {
   userId: string;
@@ -50,19 +55,23 @@ export function buildNotificationLink(
   switch (targetType) {
     case "reservation":
     case "client-reservations":
-      // Page liste des réservations client avec recherche par code
-      return referenceId ? `/dashboard/reservations?search=${encodeURIComponent(referenceId)}` : "/dashboard/reservations";
+      // Page liste des réservations client avec deep link vers la réservation
+      return referenceId
+        ? `/dashboard/reservations?reservation=${encodeURIComponent(referenceId)}`
+        : "/dashboard/reservations";
     case "vendor-reservations":
       // Page liste des réservations vendeur avec recherche par code
       return referenceId ? `/dashboard/depot/reservations?search=${encodeURIComponent(referenceId)}` : "/dashboard/depot/reservations";
     case "point":
-      return `/dashboard/depot${referenceId ? `/${referenceId}` : ""}`;
+      return referenceId
+        ? `/dashboard/admin/points-de-vente/${referenceId}`
+        : "/dashboard/admin/points-de-vente";
     case "disponibilite":
-      return `/dashboard/depot/disponibilites`;
+      return "/dashboard/depot/disponibilites";
     case "profil":
-      return "/dashboard/profil";
+      return "/dashboard/vendeur/profil";
     case "admin":
-      return referenceId ? `/dashboard/admin${referenceId}` : "/dashboard/admin";
+      return referenceId ? `/dashboard/admin/${referenceId}` : "/dashboard/admin";
     default:
       return null;
   }

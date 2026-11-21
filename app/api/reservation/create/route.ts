@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
-import { reservation, disponibilite, pointDeVente, user, paymentTransaction } from "@/db/schema"
+import { reservation, disponibilite, pointDeVente, paymentTransaction } from "@/db/schema"
 import { eq, and, sql } from "drizzle-orm"
 import { randomUUID } from "node:crypto"
 import { getCurrentUser } from "@/lib/session"
@@ -8,21 +8,22 @@ import {
   AD_ATTRIBUTION_COOKIE,
   recordConversionFromRequest,
 } from "@/lib/publicite-attribution"
-import { sendNewConsignationEmail } from "@/lib/email"
-import { generateReservationQRCode } from "@/lib/qrcode"
 import { initiatePayment } from "@/lib/geniuspay"
+import {
+  RESERVATION_CODE_LENGTH,
+  randomReservationCodeSuffix,
+} from "@/lib/reservation-code"
 import { optionalEnv } from "@/lib/env"
+import { validatePaymentCheckoutUrl } from "@/lib/payment-checkout"
 
 const DEFAULT_RESERVATION_AMOUNT = 1000 // FCFA
 const RESERVATION_EXPIRY_MINUTES = 1440 // 24 heures
 const MAX_RESERVATION_QUANTITY = 20
-const RESERVATION_PAYMENT_CODE_LENGTH = 10
-
-const CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789" // sans 0,1,O,I,L,S pour éviter les confusions
+const RESERVATION_PAYMENT_CODE_LENGTH = RESERVATION_CODE_LENGTH
 
 /**
- * Génère un code de réservation au format GP + DDMMYY + 2 premières lettres du dépôt.
- * Exemple : dépôt "Total Bonamoussadi" le 13/11/26 → GP131126TO (10 caractères).
+ * Génère le préfixe lisible GP + DDMMYY + 2 premières lettres du dépôt.
+ * Le suffixe aléatoire est ajouté ensuite pour atteindre 12 caractères.
  */
 function buildBaseReservationCode(depotName: string): string {
   const now = new Date()
@@ -37,21 +38,20 @@ function buildBaseReservationCode(depotName: string): string {
     .slice(0, 2)
     .padEnd(2, "X") // 2 lettres, padding avec X si besoin
 
-  return `GP${datePart}${depotLetters}` // GP (2) + DDMMYY (6) + 2 lettres = 10 caractères
+  return `GP${datePart}${depotLetters}` // Préfixe de 10 caractères
 }
 
 async function ensureUniqueCode(baseCode: string): Promise<string> {
-  let code = baseCode
+  const suffixLength = RESERVATION_PAYMENT_CODE_LENGTH - baseCode.length
   let attempts = 0
-  while (attempts < RESERVATION_PAYMENT_CODE_LENGTH) {
+  while (attempts < 20) {
+    const code = `${baseCode}${randomReservationCodeSuffix(suffixLength)}`
     const existing = await db
       .select({ id: reservation.id })
       .from(reservation)
       .where(eq(reservation.reservationCode, code))
       .limit(1)
     if (!existing || existing.length === 0) return code
-    // Variante : remplace le dernier caractère par un chiffre pour garder le format 10 chars
-    code = baseCode.slice(0, -1) + String(attempts % 10)
     attempts++
   }
   throw new Error("Impossible de générer un code de réservation unique")
@@ -84,20 +84,15 @@ export async function POST(req: NextRequest) {
 
     const disponibiliteId = cleanText(body.disponibiliteId, 100)
     const pointId = cleanText(body.pointId, 100)
-    const brand = cleanText(body.brand, 80)
-    const format = cleanText(body.format, 80)
+    const requestedBrand = cleanText(body.brand, 80)
+    const requestedFormat = cleanText(body.format, 80)
     const rawQuantity = body.quantity ?? 1
     const amountType =
       body.amountType === "consigne" || body.amountType === "mixed"
         ? body.amountType
         : "reservation"
-
-    if (!brand || !format) {
-      return NextResponse.json(
-        { error: "Marque et format sont requis" },
-        { status: 400 }
-      )
-    }
+    let brand: string | null = null
+    let format: string | null = null
 
     // La quantité doit être un entier strictement positif et borné : sans ce
     // contrôle une quantité négative réduirait le stock réservé.
@@ -159,6 +154,18 @@ export async function POST(req: NextRequest) {
         )
       }
 
+      // La marque et le format proviennent toujours de la disponibilité
+      // sélectionnée. Les valeurs envoyées par le navigateur ne sont pas
+      // utilisées pour décrire le stock réservé.
+      brand = dispo.brand
+      format = dispo.format
+      if (!brand || !format) {
+        return NextResponse.json(
+          { error: "Cette disponibilité ne précise pas la marque et le format" },
+          { status: 400 }
+        )
+      }
+
       // Vérifie le stock uniquement si le vendeur a renseigné une quantité.
       if (dispo.quantity !== null && dispo.quantity !== undefined) {
         const available = (dispo.quantity ?? 0) - (dispo.reservedQuantity ?? 0)
@@ -170,17 +177,21 @@ export async function POST(req: NextRequest) {
         }
       }
     } else if (pointId) {
+      const pointConditions = [
+        eq(disponibilite.pointId, pointId),
+        eq(disponibilite.status, "disponible"),
+      ]
+      if (requestedBrand) {
+        pointConditions.push(eq(disponibilite.brand, requestedBrand))
+      }
+      if (requestedFormat) {
+        pointConditions.push(eq(disponibilite.format, requestedFormat))
+      }
+
       const [dispo] = await db
         .select(dispoColumns)
         .from(disponibilite)
-        .where(
-          and(
-            eq(disponibilite.pointId, pointId),
-            eq(disponibilite.brand, brand),
-            eq(disponibilite.format, format),
-            eq(disponibilite.status, "disponible")
-          )
-        )
+        .where(and(...pointConditions))
         .orderBy(sql`${disponibilite.createdAt} DESC`)
         .limit(1)
 
@@ -194,6 +205,15 @@ export async function POST(req: NextRequest) {
       if (dispo.expiresAt && new Date(dispo.expiresAt) < new Date()) {
         return NextResponse.json(
           { error: "Cette disponibilité a expiré" },
+          { status: 400 }
+        )
+      }
+
+      brand = dispo.brand
+      format = dispo.format
+      if (!brand || !format) {
+        return NextResponse.json(
+          { error: "Cette disponibilité ne précise pas la marque et le format" },
           { status: 400 }
         )
       }
@@ -218,15 +238,20 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    if (!brand || !format) {
+      return NextResponse.json(
+        { error: "La disponibilité sélectionnée est incomplète" },
+        { status: 400 }
+      )
+    }
+
     const [point] = await db
       .select({
         name: pointDeVente.name,
         district: pointDeVente.district,
         vendorId: pointDeVente.vendorId,
-        vendorEmail: user.email,
       })
       .from(pointDeVente)
-      .leftJoin(user, eq(pointDeVente.vendorId, user.id))
       .where(eq(pointDeVente.id, targetPointId))
       .limit(1)
 
@@ -304,36 +329,7 @@ export async function POST(req: NextRequest) {
       throw insertError
     }
 
-    // Enregistrement de la transaction de paiement en attente
-    const paymentId = randomUUID()
-    const siteUrl = optionalEnv("NEXT_PUBLIC_SITE_URL") ?? "http://localhost:3000"
-    const successUrl = `${siteUrl}/paiement/succes`
-    const errorUrl = `${siteUrl}/paiement/echec`
-
-    // Initiation du paiement GeniusPay (1 000 FCFA fixes)
-    const paymentResult = await initiatePayment({
-      amount: DEFAULT_RESERVATION_AMOUNT,
-      currency: "XAF",
-      description: `Réservation gaz ${brand} ${format} - ${point.name}`,
-      customer: {
-        name: currentUser.name,
-        email: currentUser.email ?? "",
-        phone: currentUser.phoneNumber ?? undefined,
-        country: "CM",
-      },
-      successUrl,
-      errorUrl,
-      metadata: {
-        type: "reservation",
-        reservation_id: reservationId,
-        user_id: currentUser.id,
-        amount: String(DEFAULT_RESERVATION_AMOUNT),
-      },
-    })
-
-    if (!paymentResult.success || !paymentResult.data) {
-      console.error("[reservation/create] GeniusPay error:", paymentResult.error)
-      // Annulation de la réservation et libération du stock en cas d'échec d'initiation
+    const cancelPendingReservation = async () => {
       await db
         .update(reservation)
         .set({ status: "cancelled", cancelledAt: new Date(), updatedAt: new Date() })
@@ -345,6 +341,58 @@ export async function POST(req: NextRequest) {
           updatedAt: new Date(),
         })
         .where(eq(disponibilite.id, targetDisponibiliteId))
+    }
+
+    // Enregistrement de la transaction de paiement en attente
+    const paymentId = randomUUID()
+    const siteUrl = optionalEnv("NEXT_PUBLIC_SITE_URL") ?? req.nextUrl.origin
+    const successUrl = `${siteUrl}/paiement/retour?reservation=${encodeURIComponent(reservationId)}`
+    const errorUrl = `${siteUrl}/paiement/retour?reservation=${encodeURIComponent(reservationId)}&status=error`
+    const paymentMetadata = {
+      type: "reservation",
+      reservation_id: reservationId,
+      vendor_id: point.vendorId,
+      user_id: currentUser.id,
+      amount: String(DEFAULT_RESERVATION_AMOUNT),
+      currency: "XAF",
+    }
+
+    // Initiation du paiement GeniusPay (1 000 FCFA fixes)
+    let paymentResult: Awaited<ReturnType<typeof initiatePayment>>
+    try {
+      paymentResult = await initiatePayment({
+        amount: DEFAULT_RESERVATION_AMOUNT,
+        currency: "XAF",
+        description: `Réservation gaz ${brand} ${format} - ${point.name}`,
+        customer: {
+          name: currentUser.name,
+          email: currentUser.email ?? "",
+          phone: currentUser.phoneNumber ?? undefined,
+          country: "CM",
+        },
+        successUrl,
+        errorUrl,
+        metadata: paymentMetadata,
+      })
+    } catch (paymentError) {
+      console.error("[reservation/create] GeniusPay exception:", paymentError)
+      await cancelPendingReservation()
+      return NextResponse.json(
+        { error: "Échec de l'initialisation du paiement" },
+        { status: 500 }
+      )
+    }
+
+    const paymentData = paymentResult.data
+    if (
+      !paymentResult.success ||
+      !paymentData ||
+      !paymentData.reference ||
+      Number(paymentData.amount) !== DEFAULT_RESERVATION_AMOUNT ||
+      paymentData.currency !== "XAF"
+    ) {
+      console.error("[reservation/create] GeniusPay error:", paymentResult.error)
+      await cancelPendingReservation()
       return NextResponse.json(
         {
           error: paymentResult.error?.message ?? "Échec de l'initialisation du paiement",
@@ -353,22 +401,40 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    let checkoutUrl: string
+    try {
+      checkoutUrl = validatePaymentCheckoutUrl(paymentData.checkout_url)
+    } catch (checkoutError) {
+      console.error("[reservation/create] checkout URL invalide:", checkoutError)
+      await cancelPendingReservation()
+      return NextResponse.json(
+        { error: "Échec de l'initialisation du paiement" },
+        { status: 500 }
+      )
+    }
+
     // Stockage de la transaction de paiement
-    await db.insert(paymentTransaction).values({
-      id: paymentId,
-      vendorId: point.vendorId,
-      geniuspayReference: paymentResult.data.reference,
-      geniuspayId: paymentResult.data.id,
-      amount: paymentResult.data.amount,
-      currency: paymentResult.data.currency,
-      status: paymentResult.data.status,
-      checkoutUrl: paymentResult.data.checkout_url,
-      successUrl,
-      errorUrl,
-      metadata: JSON.stringify(paymentResult.data.metadata),
-      environment: paymentResult.data.environment,
-      initiatedAt: new Date(),
-    })
+    try {
+      await db.insert(paymentTransaction).values({
+        id: paymentId,
+        vendorId: point.vendorId,
+        geniuspayReference: paymentData.reference,
+        geniuspayId: paymentData.id,
+        amount: paymentData.amount,
+        currency: paymentData.currency,
+        status: paymentData.status,
+        checkoutUrl,
+        successUrl,
+        errorUrl,
+        metadata: JSON.stringify(paymentMetadata),
+        environment: paymentData.environment,
+        initiatedAt: new Date(),
+      })
+    } catch (transactionError) {
+      console.error("[reservation/create] transaction insert failed:", transactionError)
+      await cancelPendingReservation()
+      throw transactionError
+    }
 
     // Attribution publicitaire : réservation faite dans les 30 jours après un clic.
     if (req.cookies.get(AD_ATTRIBUTION_COOKIE)) {
@@ -392,8 +458,8 @@ export async function POST(req: NextRequest) {
         reservedAt: new Date().toISOString(),
       },
       payment: {
-        checkoutUrl: paymentResult.data.checkout_url,
-        reference: paymentResult.data.reference,
+        checkoutUrl,
+        reference: paymentData.reference,
       },
     })
   } catch (err) {

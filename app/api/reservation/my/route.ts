@@ -14,8 +14,18 @@ export async function GET(req: NextRequest) {
     }
     const { searchParams } = new URL(req.url)
     const status = searchParams.get("status")
-    const page = parseInt(searchParams.get("page") ?? "1", 10) || 1
-    const pageSize = parseInt(searchParams.get("pageSize") ?? "50", 10) || 50
+    const reservationId = searchParams.get("reservation")
+    const page = Math.max(
+      1,
+      Number.parseInt(searchParams.get("page") ?? "1", 10) || 1
+    )
+    const pageSize = Math.min(
+      100,
+      Math.max(
+        1,
+        Number.parseInt(searchParams.get("pageSize") ?? "50", 10) || 50
+      )
+    )
 
     const now = new Date()
     const conditions = [eq(reservation.userId, currentUser.id)]
@@ -29,13 +39,14 @@ export async function GET(req: NextRequest) {
     } else if (status) {
       conditions.push(eq(reservation.status, status))
     }
+    if (reservationId) {
+      conditions.push(eq(reservation.id, reservationId))
+    }
 
     const totalResult = await db
       .select({ count: count() })
       .from(reservation)
-      .leftJoin(pointDeVente, eq(reservation.pointId, pointDeVente.id))
       .where(conditions.length > 1 ? and(...conditions)! : conditions[0]!)
-      .catch(() => [{ count: 0 }])
 
     const total = totalResult[0]?.count ?? 0
 

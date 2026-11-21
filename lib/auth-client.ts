@@ -1,3 +1,5 @@
+"use client"
+
 import { createAuthClient } from "better-auth/react"
 
 export const authClient = createAuthClient({
@@ -5,9 +7,11 @@ export const authClient = createAuthClient({
 })
 
 /**
- * Force refresh the session from the server.
- * Useful after profile/avatar updates to immediately reflect changes.
+ * Rafraîchit la session Better Auth depuis le serveur. Le hook doit être
+ * utilisé dans un composant React, car Better Auth expose cette action via
+ * useSession().refetch.
  */
-export async function refreshSession() {
-  await authClient.$fetch("/session", { method: "GET" })
+export function useRefreshSession() {
+  const { refetch } = authClient.useSession()
+  return refetch
 }

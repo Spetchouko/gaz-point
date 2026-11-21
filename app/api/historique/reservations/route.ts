@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, count } from "drizzle-orm";
 import { reservation, pointDeVente } from "@/db/schema";
 
 export async function GET(req: NextRequest) {
@@ -13,7 +13,27 @@ export async function GET(req: NextRequest) {
 
   try {
     const { searchParams } = new URL(req.url);
-    const limit = parseInt(searchParams.get("limit") || "50", 10);
+    const page = Math.max(
+      1,
+      Number.parseInt(searchParams.get("page") ?? "1", 10) || 1
+    );
+    const pageSize = Math.min(
+      100,
+      Math.max(
+        1,
+        Number.parseInt(
+          searchParams.get("pageSize") ?? searchParams.get("limit") ?? "50",
+          10
+        ) || 50
+      )
+    );
+
+    const totalResult = await db
+      .select({ count: count() })
+      .from(reservation)
+      .where(eq(reservation.userId, session.user.id));
+
+    const total = totalResult[0]?.count ?? 0;
 
     const rows = await db
       .select({
@@ -36,7 +56,8 @@ export async function GET(req: NextRequest) {
       .leftJoin(pointDeVente, eq(reservation.pointId, pointDeVente.id))
       .where(eq(reservation.userId, session.user.id))
       .orderBy(desc(reservation.reservedAt))
-      .limit(limit);
+      .limit(pageSize)
+      .offset((page - 1) * pageSize);
 
     // Transform to match the expected interface
     const now = new Date()
@@ -61,7 +82,15 @@ export async function GET(req: NextRequest) {
       cancelledAt: row.cancelledAt,
     }));
 
-    return NextResponse.json({ reservations });
+    return NextResponse.json({
+      reservations,
+      pagination: {
+        total,
+        page,
+        pageSize,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    });
   } catch (error) {
     console.error("[GET /api/historique/reservations] Error:", error);
     return NextResponse.json(

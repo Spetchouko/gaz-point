@@ -1,4 +1,5 @@
 import QRCode from "qrcode"
+import { isValidReservationCode as validateReservationCode } from "@/lib/reservation-code"
 
 /**
  * Génère un QR Code au format Data URL (base64 PNG) à partir du code de réservation.
@@ -40,7 +41,5 @@ export async function generateReservationQRCodeSVG(
  * Valide qu'une chaîne correspond au format de code de réservation (12 chars alphanum sans 0,1,O,I,L,S).
  */
 export function isValidReservationCode(code: string): boolean {
-  const CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-  if (code.length !== 12) return false
-  return code.split("").every((c) => CHARS.includes(c.toUpperCase()))
+  return validateReservationCode(code)
 }

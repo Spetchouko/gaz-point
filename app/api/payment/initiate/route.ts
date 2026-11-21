@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
       checkoutUrl: result.data.checkout_url,
       successUrl,
       errorUrl,
-      metadata: JSON.stringify(result.data.metadata),
+      metadata: JSON.stringify(buildVendorSubscriptionMetadata(vendorId, user.email)),
       environment: result.data.environment,
       initiatedAt: new Date(),
     })

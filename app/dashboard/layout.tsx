@@ -1,6 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import { DashboardClientLayout } from "@/app/_components/dashboard/client-layout";
+import { DashboardShell } from "@/app/_components/dashboard/dashboard-shell";
 import { useRouter, usePathname } from "next/navigation";
 import { useDashboardSession, useAutoRefreshSession } from "@/lib/auth-session";
 import { isUnauthenticatedRequest, requestJson } from "@/lib/client-request";
@@ -23,7 +24,7 @@ export default function DashboardClientLayoutWrapper({
   // rafraîchissement. La redirection vers la connexion n'est donc déclenchée
   // qu'après une confirmation serveur explicite (HTTP 401).
   useEffect(() => {
-    if (isLoading || isAuthenticated) return;
+    if (isLoading) return;
 
     const controller = new AbortController();
     let cancelled = false;
@@ -40,8 +41,12 @@ export default function DashboardClientLayoutWrapper({
         );
       } catch (error) {
         if (cancelled || !isUnauthenticatedRequest(error)) return;
+        const currentPath =
+          typeof window !== "undefined"
+            ? `${window.location.pathname}${window.location.search}`
+            : pathname;
         router.replace(
-          `/connexion?redirect=${encodeURIComponent(pathname)}`
+          `/connexion?redirect=${encodeURIComponent(currentPath)}`
         );
       }
     }
@@ -64,6 +69,20 @@ export default function DashboardClientLayoutWrapper({
 
   if (hasDedicatedShell) {
     return <>{children}</>;
+  }
+
+  const usesVendorShell =
+    pathname === "/dashboard/depot" ||
+    pathname.startsWith("/dashboard/depot/") ||
+    pathname === "/dashboard/reservations/vendor" ||
+    pathname === "/dashboard/reservations/verify";
+
+  if (usesVendorShell) {
+    return (
+      <DashboardShell role="vendor" session={user} status={status}>
+        {children}
+      </DashboardShell>
+    );
   }
 
   // Toujours afficher le contenu : pas de retour null pendant le loading,

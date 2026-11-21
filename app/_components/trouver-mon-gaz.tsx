@@ -28,7 +28,7 @@ export function TrouverMonGaz() {
       </div>
 
       <div className="mx-auto mt-10 max-w-3xl">
-        <RechercheGaz />
+        <RechercheGaz redirectToResults />
       </div>
     </section>
   )

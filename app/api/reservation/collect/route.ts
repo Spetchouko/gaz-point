@@ -3,6 +3,7 @@ import { db } from "@/db"
 import { reservation, disponibilite } from "@/db/schema"
 import { eq, and, sql } from "drizzle-orm"
 import { getProUser } from "@/lib/session"
+import { isValidReservationCodeLength } from "@/lib/reservation-code"
 
 /**
  * Libère le stock réservé par une réservation qui ne sera jamais retirée.
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
     const body = (await req.json().catch(() => null)) as { code?: string } | null
     const code = body?.code?.trim().toUpperCase()
 
-    if (!code || code.length !== 12) {
+    if (!code || !isValidReservationCodeLength(code)) {
       return NextResponse.json(
         { error: "Code de réservation invalide" },
         { status: 400 }
@@ -76,10 +77,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (res.status === "cancelled") {
+    if (res.status === "cancelled" || res.status === "expired") {
       return NextResponse.json(
         { error: "Cette réservation a été annulée" },
         { status: 400 }
+      )
+    }
+
+    if (res.status === "pending") {
+      return NextResponse.json(
+        { error: "Le paiement de cette réservation n’est pas encore confirmé" },
+        { status: 409 }
       )
     }
 
@@ -90,7 +98,7 @@ export async function POST(req: NextRequest) {
       const [expired] = await db
         .update(reservation)
         .set({
-          status: "cancelled",
+          status: "expired",
           cancelledAt: new Date(),
           updatedAt: new Date(),
         })

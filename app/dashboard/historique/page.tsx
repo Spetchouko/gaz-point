@@ -12,6 +12,8 @@ import {
   Package,
   RefreshCw,
   Search,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,6 +37,7 @@ import {
   type HistoryDateFilter,
 } from "@/lib/client-dashboard";
 import { buildCsv, downloadCsv } from "@/lib/csv-export";
+import { toast } from "sonner";
 
 interface SearchHistoryItem {
   id: string;
@@ -61,8 +64,21 @@ interface ReservationHistoryItem {
   cancelledAt: string | null;
 }
 
-type SearchHistoryResponse = { searches?: SearchHistoryItem[] };
-type ReservationHistoryResponse = { reservations?: ReservationHistoryItem[] };
+type HistoryPagination = {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+type SearchHistoryResponse = {
+  searches?: SearchHistoryItem[];
+  pagination?: HistoryPagination;
+};
+type ReservationHistoryResponse = {
+  reservations?: ReservationHistoryItem[];
+  pagination?: HistoryPagination;
+};
 
 export default function HistoriquePage() {
   const [activeTab, setActiveTab] = useState<"searches" | "reservations">("searches");
@@ -71,7 +87,22 @@ export default function HistoriquePage() {
 
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const [reservationHistory, setReservationHistory] = useState<ReservationHistoryItem[]>([]);
+  const [searchPage, setSearchPage] = useState(1);
+  const [reservationPage, setReservationPage] = useState(1);
+  const [searchPagination, setSearchPagination] = useState<HistoryPagination>({
+    total: 0,
+    page: 1,
+    pageSize: 20,
+    totalPages: 0,
+  });
+  const [reservationPagination, setReservationPagination] = useState<HistoryPagination>({
+    total: 0,
+    page: 1,
+    pageSize: 20,
+    totalPages: 0,
+  });
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
 
@@ -94,7 +125,7 @@ export default function HistoriquePage() {
       try {
         const [searchData, reservationData] = await Promise.all([
           requestJson<SearchHistoryResponse>(
-            "/api/historique/searches",
+            `/api/historique/searches?page=${searchPage}&pageSize=20`,
             {
               headers: { Accept: "application/json" },
               cache: "no-store",
@@ -102,7 +133,7 @@ export default function HistoriquePage() {
             }
           ),
           requestJson<ReservationHistoryResponse>(
-            "/api/historique/reservations",
+            `/api/historique/reservations?page=${reservationPage}&pageSize=20`,
             {
               headers: { Accept: "application/json" },
               cache: "no-store",
@@ -121,6 +152,10 @@ export default function HistoriquePage() {
             ? reservationData.reservations
             : []
         );
+        if (searchData.pagination) setSearchPagination(searchData.pagination);
+        if (reservationData.pagination) {
+          setReservationPagination(reservationData.pagination);
+        }
       } catch (requestError) {
         if (cancelled) return;
         setError(
@@ -138,7 +173,7 @@ export default function HistoriquePage() {
       cancelled = true;
       controller.abort();
     };
-  }, [loadAttempt]);
+  }, [loadAttempt, searchPage, reservationPage]);
 
   const filteredSearches = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -178,55 +213,142 @@ export default function HistoriquePage() {
 
   const hasActiveFilters = searchQuery.trim().length > 0 || dateFilter !== "all";
 
-  const handleExport = () => {
-    if (activeTab === "searches") {
+  const fetchAllHistory = async () => {
+    const exportPageSize = 100;
+    const searchItems: SearchHistoryItem[] = [];
+    const reservationItems: ReservationHistoryItem[] = [];
+
+    let searchPageNumber = 1;
+    let reservationPageNumber = 1;
+    let searchDone = false;
+    let reservationDone = false;
+
+    while (!searchDone || !reservationDone) {
+      const requests: Array<Promise<SearchHistoryResponse | ReservationHistoryResponse>> = [];
+
+      if (!searchDone) {
+        requests.push(
+          requestJson<SearchHistoryResponse>(
+            `/api/historique/searches?page=${searchPageNumber}&pageSize=${exportPageSize}`,
+            { headers: { Accept: "application/json" }, cache: "no-store" }
+          )
+        );
+      }
+      if (!reservationDone) {
+        requests.push(
+          requestJson<ReservationHistoryResponse>(
+            `/api/historique/reservations?page=${reservationPageNumber}&pageSize=${exportPageSize}`,
+            { headers: { Accept: "application/json" }, cache: "no-store" }
+          )
+        );
+      }
+
+      const responses = await Promise.all(requests);
+      let responseIndex = 0;
+      if (!searchDone) {
+        const response = responses[responseIndex++] as SearchHistoryResponse;
+        const rows = Array.isArray(response.searches) ? response.searches : [];
+        searchItems.push(...rows);
+        searchDone =
+          rows.length === 0 ||
+          searchPageNumber >= (response.pagination?.totalPages ?? 0);
+        if (!searchDone) searchPageNumber += 1;
+      }
+      if (!reservationDone) {
+        const response = responses[responseIndex] as ReservationHistoryResponse;
+        const rows = Array.isArray(response.reservations) ? response.reservations : [];
+        reservationItems.push(...rows);
+        reservationDone =
+          rows.length === 0 ||
+          reservationPageNumber >= (response.pagination?.totalPages ?? 0);
+        if (!reservationDone) reservationPageNumber += 1;
+      }
+    }
+
+    return { searchItems, reservationItems };
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const { searchItems, reservationItems } = await fetchAllHistory();
+      const query = searchQuery.trim().toLowerCase();
+
+      if (activeTab === "searches") {
+        const rows = searchItems.filter((item) => {
+          const matchesQuery =
+            !query ||
+            item.brand?.toLowerCase().includes(query) ||
+            item.format?.toLowerCase().includes(query) ||
+            item.zone?.toLowerCase().includes(query);
+          return matchesQuery && isInHistoryDateRange(item.searchedAt, dateFilter);
+        });
+        const csv = buildCsv(
+          ["Marque", "Format", "Zone", "Résultats", "Recherche le"],
+          rows.map((item) => [
+            item.brand,
+            item.format,
+            item.zone,
+            item.resultsCount,
+            item.searchedAt,
+          ])
+        );
+        const date = new Date().toISOString().slice(0, 10);
+        downloadCsv(`historique-recherches-${date}.csv`, csv);
+        return;
+      }
+
+      const rows = reservationItems.filter((item) => {
+        const matchesQuery =
+          !query ||
+          item.reservationCode.toLowerCase().includes(query) ||
+          item.brand.toLowerCase().includes(query) ||
+          item.format.toLowerCase().includes(query) ||
+          item.pointName.toLowerCase().includes(query) ||
+          item.pointDistrict.toLowerCase().includes(query);
+        return matchesQuery && isInHistoryDateRange(item.reservedAt, dateFilter);
+      });
       const csv = buildCsv(
-        ["Marque", "Format", "Zone", "Résultats", "Recherche le"],
-        filteredSearches.map((item) => [
+        [
+          "Code",
+          "Marque",
+          "Format",
+          "Quantité",
+          "Montant",
+          "Type de montant",
+          "Point de vente",
+          "District",
+          "Statut",
+          "Réservée le",
+          "Collectée le",
+          "Annulée le",
+        ],
+        rows.map((item) => [
+          item.reservationCode,
           item.brand,
           item.format,
-          item.zone,
-          item.resultsCount,
-          item.searchedAt,
+          item.quantity,
+          item.amount,
+          item.amountType,
+          item.pointName,
+          item.pointDistrict,
+          getReservationStatusLabel(item.status),
+          item.reservedAt,
+          item.collectedAt,
+          item.cancelledAt,
         ])
       );
       const date = new Date().toISOString().slice(0, 10);
-      downloadCsv(`historique-recherches-${date}.csv`, csv);
-      return;
+      downloadCsv(`historique-reservations-${date}.csv`, csv);
+    } catch (requestError) {
+      toast.error(
+        requestError instanceof Error
+          ? requestError.message
+          : "Erreur lors de l'export de l'historique"
+      );
+    } finally {
+      setExporting(false);
     }
-
-    const csv = buildCsv(
-      [
-        "Code",
-        "Marque",
-        "Format",
-        "Quantité",
-        "Montant",
-        "Type de montant",
-        "Point de vente",
-        "District",
-        "Statut",
-        "Réservée le",
-        "Collectée le",
-        "Annulée le",
-      ],
-      filteredReservations.map((item) => [
-        item.reservationCode,
-        item.brand,
-        item.format,
-        item.quantity,
-        item.amount,
-        item.amountType,
-        item.pointName,
-        item.pointDistrict,
-        getReservationStatusLabel(item.status),
-        item.reservedAt,
-        item.collectedAt,
-        item.cancelledAt,
-      ])
-    );
-    const date = new Date().toISOString().slice(0, 10);
-    downloadCsv(`historique-reservations-${date}.csv`, csv);
   };
 
   const clearFilters = () => {
@@ -313,15 +435,16 @@ export default function HistoriquePage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={handleExport}
+              onClick={() => void handleExport()}
               disabled={
-                activeTab === "searches"
+                exporting ||
+                (activeTab === "searches"
                   ? filteredSearches.length === 0
-                  : filteredReservations.length === 0
+                  : filteredReservations.length === 0)
               }
             >
               <Download className="size-4 mr-2" />
-              Exporter
+              {exporting ? "Export…" : "Exporter"}
             </Button>
           </div>
         </CardContent>
@@ -435,6 +558,31 @@ export default function HistoriquePage() {
               ))}
             </ol>
           )}
+          {searchPagination.totalPages > 1 && (
+            <div className="mt-4 flex flex-col items-center justify-between gap-3 border-t border-border pt-4 sm:flex-row">
+              <p className="text-sm text-muted-foreground">
+                Page {searchPagination.page} sur {searchPagination.totalPages} · {searchPagination.total} recherche{searchPagination.total > 1 ? "s" : ""}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSearchPage((current) => Math.max(1, current - 1))}
+                  disabled={searchPage <= 1 || loading}
+                >
+                  <ChevronLeft className="size-4" /> Précédent
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSearchPage((current) => Math.min(searchPagination.totalPages, current + 1))}
+                  disabled={searchPage >= searchPagination.totalPages || loading}
+                >
+                  Suivant <ChevronRight className="size-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </section>
       )}
 
@@ -540,6 +688,31 @@ export default function HistoriquePage() {
                 </li>
               ))}
             </ol>
+          )}
+          {reservationPagination.totalPages > 1 && (
+            <div className="mt-4 flex flex-col items-center justify-between gap-3 border-t border-border pt-4 sm:flex-row">
+              <p className="text-sm text-muted-foreground">
+                Page {reservationPagination.page} sur {reservationPagination.totalPages} · {reservationPagination.total} réservation{reservationPagination.total > 1 ? "s" : ""}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setReservationPage((current) => Math.max(1, current - 1))}
+                  disabled={reservationPage <= 1 || loading}
+                >
+                  <ChevronLeft className="size-4" /> Précédent
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setReservationPage((current) => Math.min(reservationPagination.totalPages, current + 1))}
+                  disabled={reservationPage >= reservationPagination.totalPages || loading}
+                >
+                  Suivant <ChevronRight className="size-4" />
+                </Button>
+              </div>
+            </div>
           )}
         </section>
       )}

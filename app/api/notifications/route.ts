@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { notification } from "@/db/schema";
 import { eq, and, desc, ilike, or, count } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
+import { getSafeInternalRedirect } from "@/lib/auth-routing";
 
 type NotificationType = "reservation" | "availability" | "system" | "promo" | "admin";
 
@@ -26,9 +27,25 @@ export async function POST(req: NextRequest) {
     const body: CreateNotificationBody = await req.json();
     const { userId, type, title, message, link } = body;
 
-    if (!userId || !type || !title || !message) {
+    if (
+      !userId ||
+      !type ||
+      !title ||
+      !message ||
+      !["reservation", "availability", "system", "promo", "admin"].includes(type)
+    ) {
       return NextResponse.json(
         { error: "userId, type, title et message sont requis" },
+        { status: 400 }
+      );
+    }
+
+    const safeLink = link === undefined || link === null
+      ? null
+      : getSafeInternalRedirect(link);
+    if (link && !safeLink) {
+      return NextResponse.json(
+        { error: "Le lien de notification doit être interne" },
         { status: 400 }
       );
     }
@@ -49,7 +66,7 @@ export async function POST(req: NextRequest) {
       type,
       title,
       message,
-      link: link ?? null,
+      link: safeLink,
       read: false,
       archived: false,
       createdAt: new Date(),
@@ -78,7 +95,20 @@ export async function GET(req: NextRequest) {
     const archivedParam = searchParams.get("archived");
     const readParam = searchParams.get("read");
     const search = searchParams.get("search")?.trim() || null;
-    const limit = parseInt(searchParams.get("limit") || "50", 10);
+    const page = Math.max(
+      1,
+      Number.parseInt(searchParams.get("page") ?? "1", 10) || 1
+    );
+    const pageSize = Math.min(
+      100,
+      Math.max(
+        1,
+        Number.parseInt(
+          searchParams.get("pageSize") ?? searchParams.get("limit") ?? "50",
+          10
+        ) || 50
+      )
+    );
 
     const conditions = [eq(notification.userId, session.user.id)];
 
@@ -102,9 +132,16 @@ export async function GET(req: NextRequest) {
         or(
           ilike(notification.title, `%${search}%`),
           ilike(notification.message, `%${search}%`)
-        )
+        )!
       );
     }
+
+    const where = and(...conditions);
+    const totalResult = await db
+      .select({ c: count() })
+      .from(notification)
+      .where(where);
+    const total = Number(totalResult[0]?.c ?? 0);
 
     const rows = await db
       .select({
@@ -119,25 +156,58 @@ export async function GET(req: NextRequest) {
         updatedAt: notification.updatedAt,
       })
       .from(notification)
-      .where(and(...conditions))
-      .orderBy(desc(notification.createdAt))
-      .limit(limit);
+      .where(where)
+      .orderBy(desc(notification.createdAt), desc(notification.id))
+      .limit(pageSize)
+      .offset((page - 1) * pageSize);
 
-    // Compteur non lus (toujours sur les non-archivés)
-    const [unreadResult] = await db
-      .select({ c: count() })
-      .from(notification)
-      .where(
-        and(
-          eq(notification.userId, session.user.id),
-          eq(notification.archived, false),
-          eq(notification.read, false)
-        )
-      );
+    // Compteursglobaux, calculés sur le compte de l'utilisateur et non sur
+    // la page affichée.
+    const [unreadResult, activeResult, archivedResult] = await Promise.all([
+      db
+        .select({ c: count() })
+        .from(notification)
+        .where(
+          and(
+            eq(notification.userId, session.user.id),
+            eq(notification.archived, false),
+            eq(notification.read, false)
+          )
+        ),
+      db
+        .select({ c: count() })
+        .from(notification)
+        .where(
+          and(
+            eq(notification.userId, session.user.id),
+            eq(notification.archived, false)
+          )
+        ),
+      db
+        .select({ c: count() })
+        .from(notification)
+        .where(
+          and(
+            eq(notification.userId, session.user.id),
+            eq(notification.archived, true)
+          )
+        ),
+    ]);
 
     return NextResponse.json({
       notifications: rows,
-      unreadCount: Number(unreadResult?.c || 0),
+      unreadCount: Number(unreadResult[0]?.c || 0),
+      counts: {
+        all: Number(activeResult[0]?.c || 0),
+        unread: Number(unreadResult[0]?.c || 0),
+        archived: Number(archivedResult[0]?.c || 0),
+      },
+      pagination: {
+        total,
+        page,
+        pageSize,
+        totalPages: Math.ceil(total / pageSize),
+      },
     });
   } catch (error) {
     console.error("[GET /api/notifications] Error:", error);
@@ -164,8 +234,24 @@ export async function PATCH(req: NextRequest) {
     }
 
     const updates: Record<string, unknown> = {};
-    if (read !== undefined) updates.read = Boolean(read);
-    if (archived !== undefined) updates.archived = Boolean(archived);
+    if (read !== undefined) {
+      if (typeof read !== "boolean") {
+        return NextResponse.json(
+          { error: "read doit être un booléen" },
+          { status: 400 }
+        );
+      }
+      updates.read = read;
+    }
+    if (archived !== undefined) {
+      if (typeof archived !== "boolean") {
+        return NextResponse.json(
+          { error: "archived doit être un booléen" },
+          { status: 400 }
+        );
+      }
+      updates.archived = archived;
+    }
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: "Aucune mise à jour fournie" }, { status: 400 });
@@ -183,7 +269,22 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Notification introuvable" }, { status: 404 });
     }
 
-    return NextResponse.json({ ok: true, id: updated.id });
+    const [unreadResult] = await db
+      .select({ c: count() })
+      .from(notification)
+      .where(
+        and(
+          eq(notification.userId, session.user.id),
+          eq(notification.archived, false),
+          eq(notification.read, false)
+        )
+      );
+
+    return NextResponse.json({
+      ok: true,
+      id: updated.id,
+      unreadCount: Number(unreadResult?.c || 0),
+    });
   } catch (error) {
     console.error("[PATCH /api/notifications] Error:", error);
     return NextResponse.json(

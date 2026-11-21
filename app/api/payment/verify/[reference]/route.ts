@@ -5,6 +5,21 @@ import { eq } from "drizzle-orm"
 import { requireUser } from "@/lib/session"
 import { getPayment } from "@/lib/geniuspay"
 
+function parseMetadata(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "string") return {}
+  try {
+    const parsed = JSON.parse(value)
+    if (!parsed || typeof parsed !== "object") return {}
+    return Object.fromEntries(
+      Object.entries(parsed as Record<string, unknown>)
+        .filter(([, entry]) => typeof entry === "string")
+        .map(([key, entry]) => [key, entry as string])
+    )
+  } catch {
+    return {}
+  }
+}
+
 /**
  * GET /api/payment/verify/[reference]
  * Verify payment status with GeniusPay API
@@ -40,8 +55,15 @@ export async function GET(
       )
     }
     
-    // Verify the transaction belongs to the current user (or user is admin)
-    if (transaction.vendorId !== user.id && user.role !== "admin") {
+    // Le principal autorisé dépend du type de transaction. Une réservation
+    // appartient au client payeur, pas au vendeur bénéficiaire.
+    const metadata = parseMetadata(transaction.metadata)
+    const paymentType = metadata.type ?? "vendor_subscription"
+    const isOwner =
+      paymentType === "reservation"
+        ? metadata.user_id === user.id
+        : transaction.vendorId === user.id
+    if (!isOwner && user.role !== "admin") {
       return NextResponse.json(
         { error: "Non autorisé" },
         { status: 403 }
@@ -74,8 +96,9 @@ export async function GET(
       })
       .where(eq(paymentTransaction.id, transaction.id))
     
-    // If payment completed and subscription not yet active, activate it
-    if (payment.status === "completed") {
+    // If payment completed and this is a subscription, activate it.
+    // A reservation remains pending until the signed webhook confirms it.
+    if (payment.status === "completed" && paymentType !== "reservation") {
       const [subscription] = await db
         .select()
         .from(vendorSubscription)
@@ -112,6 +135,7 @@ export async function GET(
       paymentProvider: payment.payment_provider,
       completedAt: payment.completed_at,
       metadata: payment.metadata,
+      paymentType,
     })
   } catch (err) {
     console.error("[payment/verify] Error:", err)

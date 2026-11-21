@@ -1,6 +1,6 @@
 # Harmonisation du Dashboard Vendeur avec le Dashboard Client
 
-**Status**: Proposed
+**Status**: Superseded by [0004](0004-reconstruction-dashboard-vendeur/index.md)
 **Date**: 2026-11-10
 **Mode**: ENHANCEMENT
 

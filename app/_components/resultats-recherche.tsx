@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
 import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   AlertCircle,
   ChevronDown,
@@ -11,6 +11,7 @@ import {
   MapPin,
   RefreshCw,
   Search,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -25,27 +26,34 @@ import { formats } from "@/app/_components/donnees-demo"
 import { useSafeSession } from "@/lib/auth-session"
 import { trackEvent } from "@/lib/analytics"
 import {
+  normalizeCoordinate,
+  SearchError,
   searchService,
   type SearchCriteria,
   type SearchResultItem,
 } from "@/lib/search-service"
+import { RESULTS_PATH } from "@/lib/auth-routing"
 
-type ViewState = "loading" | "results" | "empty" | "error" | "auth"
+import { createClientReservation } from "@/lib/client-reservation"
 
-function Criterion({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-      <p className="mt-0.5 truncate text-sm font-medium text-foreground" title={value}>
-        {value}
-      </p>
-    </div>
-  )
+type ViewState =
+  | "loading"
+  | "results"
+  | "empty"
+  | "error"
+  | "auth"
+  | "unauthorized"
+
+type ResultatsRechercheState = {
+  view: ViewState
+  errorMessage?: string
 }
 
-/** Formulaire de recherche utilisé directement sur la page de résultats. */
+type RequestError = { code: string; status?: number; message: string }
+
+/**
+ * Formulaire de recherche utilisé directement sur la page de résultats.
+ */
 function SearchForm({
   initialBrand,
   initialFormat,
@@ -63,6 +71,13 @@ function SearchForm({
   const [format, setFormat] = useState(initialFormat)
   const [zone, setZone] = useState(initialZone)
   const [locationLabel, setLocationLabel] = useState<string | null>(null)
+  const [geoState, setGeoState] = useState<
+    "idle" | "requesting" | "granted" | "denied" | "unavailable"
+  >("idle")
+  const [coordinates, setCoordinates] = useState<{
+    lat: number
+    lng: number
+  } | null>(null)
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -71,8 +86,38 @@ function SearchForm({
         brand: brand || undefined,
         format,
         zone: zone || undefined,
+        lat: coordinates?.lat ?? null,
+        lng: coordinates?.lng ?? null,
       })
     )
+  }
+
+  const handleGeolocate = async () => {
+    if (!navigator.geolocation) {
+      setGeoState("unavailable")
+      return
+    }
+    setGeoState("requesting")
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation!.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        })
+      })
+      const lat = normalizeCoordinate(position.coords.latitude, 90)
+      const lng = normalizeCoordinate(position.coords.longitude, 180)
+      if (lat == null || lng == null) {
+        setGeoState("unavailable")
+        return
+      }
+      setCoordinates({ lat, lng })
+      setGeoState("granted")
+      setLocationLabel("Ma position actuelle")
+    } catch {
+      setGeoState("denied")
+    }
   }
 
   return (
@@ -91,6 +136,8 @@ function SearchForm({
               setFormat("")
               setZone("")
               setLocationLabel(null)
+              setCoordinates(null)
+              setGeoState("idle")
               onSearch(searchService.normalizeCriteria({ format: "" }))
             }}
             className="h-9 text-xs text-muted-foreground hover:text-foreground"
@@ -166,6 +213,8 @@ function SearchForm({
               onChange={(event) => {
                 setZone(event.target.value)
                 setLocationLabel(null)
+                setCoordinates(null)
+                setGeoState("idle")
               }}
               placeholder="Quartier, rue ou point de repère (ex: Akwa, Bonanjo)"
               className="h-12 w-full min-w-0 rounded-xl border border-input bg-background px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/50"
@@ -174,19 +223,32 @@ function SearchForm({
               type="button"
               variant="outline"
               className="h-12 shrink-0 gap-2"
-              onClick={() => {
-                setZone("Douala")
-                setLocationLabel("Ma position actuelle")
-              }}
+              disabled={geoState === "requesting"}
+              onClick={handleGeolocate}
             >
-              <LocateFixed className="size-4" aria-hidden />
-              Utiliser ma position
+              {geoState === "requesting" ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Détection…
+                </>
+              ) : (
+                <>
+                  <LocateFixed className="size-4" aria-hidden />
+                  Utiliser ma position
+                </>
+              )}
             </Button>
           </div>
           {locationLabel && (
             <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
               <MapPin className="size-3.5 text-primary" aria-hidden />
               Position détectée&nbsp;: {locationLabel}
+            </p>
+          )}
+          {geoState === "denied" && (
+            <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <AlertCircle className="size-3.5 text-muted-foreground" aria-hidden />
+              Géolocalisation refusée — recherche dans tous les dépôts.
             </p>
           )}
         </div>
@@ -205,10 +267,7 @@ function SearchForm({
 }
 
 /**
- * Page de résultats native de l'espace client. Elle consomme le même moteur
- * (`searchService` → `/api/recherche`) que le formulaire de la landing, mais
- * le formulaire est intégré ici : une nouvelle recherche met à jour l'URL et
- * les résultats sans quitter cette page.
+ * Page de résultats native de l'espace client.
  */
 export function ResultatsRecherche() {
   const params = useSearchParams()
@@ -216,6 +275,10 @@ export function ResultatsRecherche() {
   const brand = params.get("brand")?.trim() ?? ""
   const format = params.get("format")?.trim() ?? ""
   const zone = params.get("zone")?.trim() ?? ""
+  const latParam = params.get("lat")
+  const lngParam = params.get("lng")
+  const userLat = latParam ? Number(latParam) : null
+  const userLng = lngParam ? Number(lngParam) : null
 
   const criteria = useMemo(
     () =>
@@ -223,8 +286,10 @@ export function ResultatsRecherche() {
         brand: brand || undefined,
         format,
         zone: zone || undefined,
+        lat: userLat != null && !Number.isNaN(userLat) ? userLat : null,
+        lng: userLng != null && !Number.isNaN(userLng) ? userLng : null,
       }),
-    [brand, format, zone]
+    [brand, format, zone, userLat, userLng]
   )
 
   const { data: session, isPending } = useSafeSession()
@@ -232,22 +297,18 @@ export function ResultatsRecherche() {
 
   const [results, setResults] = useState<SearchResultItem[]>([])
   const [fetchState, setFetchState] = useState<ViewState>("loading")
-  const [settledRequestKey, setSettledRequestKey] = useState<string | null>(
-    null
-  )
+  const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined)
+  const [settledRequestKey, setSettledRequestKey] = useState<string | null>(null)
   const [reservationPoint, setReservationPoint] =
     useState<SearchResultItem | null>(null)
   const [attempt, setAttempt] = useState(0)
   const [, startTransition] = useTransition()
 
   const requestKey = useMemo(
-    () => JSON.stringify([brand, format, zone, attempt]),
-    [brand, format, zone, attempt]
+    () => JSON.stringify([brand, format, zone, userLat, userLng, attempt]),
+    [brand, format, zone, userLat, userLng, attempt]
   )
 
-  // L'état d'authentification est dérivé de la session. L'état de chargement
-  // est lui aussi dérivé : tant que la réponse ne correspond pas à la requête
-  // courante, aucune mutation d'état synchrone n'est nécessaire dans l'effet.
   const state: ViewState =
     !isPending && !userId
       ? "auth"
@@ -264,8 +325,14 @@ export function ResultatsRecherche() {
       .search(criteria)
       .then((response) => {
         if (cancelled) return
-        setResults(response.results)
-        setFetchState(response.results.length > 0 ? "results" : "empty")
+        // Enrichir avec distance côté client si nécessaire
+        const resultsWithDistance = response.results.map((item) => {
+          if (item.distanceKm != null) return item
+          return item
+        })
+        setResults(resultsWithDistance)
+        // 200 OK avec un tableau vide → état vide, jamais une erreur technique
+        setFetchState(resultsWithDistance.length > 0 ? "results" : "empty")
         setSettledRequestKey(requestKey)
         trackEvent({
           eventType: "search_results_viewed",
@@ -273,17 +340,44 @@ export function ResultatsRecherche() {
           metadata: { resultCount: response.count, brand, format, zone },
         })
       })
-      .catch(() => {
+      .catch((error) => {
         if (cancelled) return
-        setResults([])
-        setFetchState("error")
+        // Classer l'erreur par code SearchError
+        if (error instanceof SearchError) {
+          const { code, status } = error
+          // NETWORK_ERROR → message connexion Internet (justifié)
+          // AUTH_REQUIRED → redirection vers connexion (déjà géré par la garde serveur, mais on l'affiche ici si on y arrive)
+          // SERVER_ERROR → erreur serveur, réessayer plus tard
+          // SEARCH_FAILED → échec de la recherche, réessayer
+          // INVALID_RESPONSE → réponse malformée, message contractuel
+          if (code === "NETWORK_ERROR") {
+            setFetchState("error")
+            setErrorMessage("Impossible de joindre le serveur. Vérifiez votre connexion Internet, puis réessayez.")
+          } else if (code === "AUTH_REQUIRED") {
+            setFetchState("auth")
+            setErrorMessage(error.message ?? "Votre session a expiré. Reconnectez-vous pour consulter vos résultats.")
+          } else if (code === "SERVER_ERROR" || code === "SEARCH_FAILED") {
+            setFetchState("error")
+            setErrorMessage("La recherche n'a pas pu aboutir. Réessayez plus tard.")
+          } else if (code === "INVALID_RESPONSE") {
+            setFetchState("error")
+            setErrorMessage("La réponse du serveur est invalide. Contactez l'administration.")
+          } else {
+            setFetchState("error")
+            setErrorMessage(error.message ?? "Une erreur inattendue est survenue.")
+          }
+        } else {
+          // Erreur non SearchError (ex: DOMException abort) → réseau
+          setFetchState("error")
+          setErrorMessage("Impossible de joindre le serveur. Vérifiez votre connexion Internet, puis réessayez.")
+        }
         setSettledRequestKey(requestKey)
       })
 
     return () => {
       cancelled = true
     }
-  }, [criteria, brand, format, zone, isPending, userId, attempt, requestKey])
+  }, [criteria, brand, format, zone, userLat, userLng, isPending, userId, attempt, requestKey])
 
   const handleSearch = useCallback(
     (nextCriteria: SearchCriteria) => {
@@ -294,13 +388,16 @@ export function ResultatsRecherche() {
           brand: nextCriteria.brand ?? "",
           format: nextCriteria.format ?? "",
           zone: nextCriteria.zone ?? "",
+          lat: nextCriteria.lat ?? null,
+          lng: nextCriteria.lng ?? null,
         },
       })
       setFetchState("loading")
+      setErrorMessage(undefined)
 
-      const nextUrl = searchService.buildResultsUrl(nextCriteria)
-      // Critères identiques : l'URL ne change pas, on relance donc la requête.
-      if (nextUrl === searchService.buildResultsUrl(criteria)) {
+      const targetPath = RESULTS_PATH
+      const nextUrl = searchService.buildResultsUrl(nextCriteria, targetPath)
+      if (nextUrl === searchService.buildResultsUrl(criteria, targetPath)) {
         setAttempt((value) => value + 1)
         return
       }
@@ -322,65 +419,21 @@ export function ResultatsRecherche() {
         throw new Error("Aucun point sélectionné")
       }
 
-      const res = await fetch("/api/reservation/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          disponibiliteId,
-          brand: reservationPoint.brand,
-          format: reservationPoint.format,
-          quantity: 1,
-          amountType: "reservation",
-        }),
+      return createClientReservation({
+        disponibiliteId,
+        brand: reservationPoint.brand,
+        format: reservationPoint.format,
+        quantity: 1,
+        amountType: "reservation",
       })
-
-      const data = await res.json()
-      if (!res.ok || data.error) {
-        throw new Error(data.error || "Erreur lors de la réservation")
-      }
-
-      const reservation = data.reservation
-      return {
-        code: reservation.code,
-        expiresAt: reservation.expiresAt,
-        amount: reservation.amount,
-        brand: reservation.brand,
-        format: reservation.format,
-        quantity: reservation.quantity,
-        pointName: reservation.pointName,
-        pointDistrict: reservation.pointDistrict,
-        reservedAt: reservation.reservedAt,
-      }
     },
     [reservationPoint]
   )
 
   return (
     <div className="space-y-6">
-      <Card className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
-        <div className="min-w-0">
-          <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
-            <Search className="size-3.5" aria-hidden />
-            Recherche de gaz
-          </p>
-          <h1 className="mt-2 font-heading text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
-            Résultats de votre recherche
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Modifiez vos critères ci-dessous pour actualiser les points de vente
-            sans quitter cette page.
-          </p>
-        </div>
-
-        <div className="mt-5 grid gap-3 border-t border-border pt-5 sm:grid-cols-3">
-          <Criterion label="Marque" value={brand || "Toutes les marques"} />
-          <Criterion label="Format de bouteille" value={format || "Tous les formats"} />
-          {zone && <Criterion label="Zone" value={zone} />}
-        </div>
-      </Card>
-
       <SearchForm
-        key={`${brand}|${format}|${zone}`}
+        key={`${brand}|${format}|${zone}|${userLat}|${userLng}`}
         initialBrand={brand}
         initialFormat={format}
         initialZone={zone}
@@ -424,7 +477,7 @@ export function ResultatsRecherche() {
               La recherche n&apos;a pas pu aboutir
             </p>
             <p className="mt-1 max-w-md text-sm text-muted-foreground">
-              Vérifiez votre connexion, puis réessayez ou modifiez vos critères.
+              {errorMessage ?? "Vérifiez votre connexion, puis réessayez ou modifiez vos critères."}
             </p>
             <Button
               onClick={() => {
@@ -443,11 +496,10 @@ export function ResultatsRecherche() {
           <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-card px-4 py-12 text-center shadow-sm">
             <Search className="size-10 text-primary" aria-hidden />
             <p className="mt-4 text-base font-bold text-foreground">
-              Aucun gaz disponible pour ces critères
+              Aucune disponibilité trouvée pour le moment.
             </p>
             <p className="mt-1 max-w-md text-sm text-muted-foreground">
-              Essayez une autre marque, un autre format ou une autre zone, ou
-              réessayez un peu plus tard.
+              Nous n&apos;avons pas encore trouvé de point de vente correspondant à votre recherche. Nous vous invitons à réessayer ultérieurement.
             </p>
             <Button
               variant="outline"
@@ -463,12 +515,30 @@ export function ResultatsRecherche() {
           </div>
         )}
 
+        {state === "auth" && (
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-card px-4 py-12 text-center shadow-sm">
+            <LogIn className="size-10 text-primary" aria-hidden />
+            <p className="mt-4 text-base font-semibold text-foreground">
+              Connectez-vous pour consulter vos résultats
+            </p>
+            <p className="mt-1 max-w-md text-sm text-muted-foreground">
+              La recherche de disponibilités est réservée aux clients GazPoints.
+            </p>
+            <Button
+              nativeButton={false}
+              render={<Link href="/connexion" />}
+              className="mt-6 h-11 w-full rounded-xl sm:w-auto"
+            >
+              Se connecter
+            </Button>
+          </div>
+        )}
+
         {state === "results" && (
           <>
-            <p className="text-sm font-medium text-muted-foreground">
-              {results.length} point{results.length > 1 ? "s" : ""} trouvé
-              {results.length > 1 ? "s" : ""}
-            </p>
+            <h1 className="font-heading text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+              Vos résultats de recherche
+            </h1>
             <div className="resultats-grid grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4 lg:gap-4">
               {results.map((point) => (
                 <ResultatRechercheCard
@@ -487,6 +557,7 @@ export function ResultatsRecherche() {
                   hasExchange={point.hasExchange}
                   hasGasSale={point.hasGasSale}
                   deliveryFee={point.deliveryFee}
+                  distanceKm={point.distanceKm}
                   onReserver={() => openReservationModal(point)}
                   className="h-full"
                 />

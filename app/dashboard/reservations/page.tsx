@@ -2,9 +2,10 @@
 
 export const dynamic = "force-dynamic"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import Link from "next/link"
-import { Filter, X, Download, Package, Clock, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react"
+import { useSearchParams } from "next/navigation"
+import { Filter, X, Download, Package, Clock, CheckCircle2, AlertCircle, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/app/_components/spinner"
 import { Card, CardContent } from "@/components/ui/card"
@@ -35,16 +36,57 @@ interface Reservation {
 
 type ReservationApiResponse = {
   reservations?: Array<Partial<Reservation> & { id: string }>
+  pagination?: {
+    total: number
+    page: number
+    pageSize: number
+    totalPages: number
+  }
 }
 
-export default function ReservationsPage() {
+const PAGE_SIZE = 20
+
+function normalizeReservation(
+  reservation: Partial<Reservation> & { id: string }
+): Reservation {
+  return {
+    id: reservation.id,
+    reservationCode: reservation.reservationCode ?? "",
+    status: (reservation.status ?? "pending") as Reservation["status"],
+    brand: reservation.brand ?? "",
+    format: reservation.format ?? "",
+    quantity: reservation.quantity ?? 1,
+    amount: reservation.amount ?? 0,
+    amountType:
+      (reservation.amountType ?? "reservation") as Reservation["amountType"],
+    pointName: reservation.pointName ?? "—",
+    pointDistrict: reservation.pointDistrict ?? "",
+    reservedAt: reservation.reservedAt ?? new Date().toISOString(),
+    collectedAt: reservation.collectedAt ?? null,
+    cancelledAt: reservation.cancelledAt ?? null,
+    expiresAt: reservation.expiresAt ?? null,
+  }
+}
+
+function ReservationsPageContent() {
+  const searchParams = useSearchParams()
+  const selectedReservationId = searchParams.get("reservation")
+  const legacySearch = searchParams.get("search")
   const [filterStatus, setFilterStatus] = useState<string>("all")
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchQuery, setSearchQuery] = useState(legacySearch ?? "")
   const [sortBy, setSortBy] = useState<"date_desc" | "date_asc">("date_desc")
   const [reservations, setReservations] = useState<Reservation[]>([])
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(0)
+  const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [loadAttempt, setLoadAttempt] = useState(0)
+  const [exporting, setExporting] = useState(false)
+
+  useEffect(() => {
+    setPage(1)
+  }, [filterStatus, selectedReservationId])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -57,8 +99,9 @@ export default function ReservationsPage() {
       try {
         const params = new URLSearchParams()
         if (filterStatus !== "all") params.set("status", filterStatus)
-        params.set("page", "1")
-        params.set("pageSize", "50")
+        if (selectedReservationId) params.set("reservation", selectedReservationId)
+        params.set("page", String(page))
+        params.set("pageSize", String(PAGE_SIZE))
 
         const data = await requestJson<ReservationApiResponse>(
           `/api/reservation/my?${params.toString()}`,
@@ -72,24 +115,10 @@ export default function ReservationsPage() {
         if (cancelled) return
 
         setReservations(
-          (data.reservations ?? []).map((reservation) => ({
-            id: reservation.id,
-            reservationCode: reservation.reservationCode ?? "",
-            status: (reservation.status ?? "pending") as Reservation["status"],
-            brand: reservation.brand ?? "",
-            format: reservation.format ?? "",
-            quantity: reservation.quantity ?? 1,
-            amount: reservation.amount ?? 0,
-            amountType:
-              (reservation.amountType ?? "reservation") as Reservation["amountType"],
-            pointName: reservation.pointName ?? "—",
-            pointDistrict: reservation.pointDistrict ?? "",
-            reservedAt: reservation.reservedAt ?? new Date().toISOString(),
-            collectedAt: reservation.collectedAt ?? null,
-            cancelledAt: reservation.cancelledAt ?? null,
-            expiresAt: reservation.expiresAt ?? null,
-          }))
+          (data.reservations ?? []).map(normalizeReservation)
         )
+        setTotal(data.pagination?.total ?? 0)
+        setTotalPages(data.pagination?.totalPages ?? 0)
       } catch (requestError) {
         if (cancelled) return
         setError(
@@ -107,7 +136,7 @@ export default function ReservationsPage() {
       cancelled = true
       controller.abort()
     }
-  }, [filterStatus, loadAttempt])
+  }, [filterStatus, loadAttempt, page, selectedReservationId])
 
   const filteredReservations = reservations
     .filter((r) => {
@@ -166,41 +195,92 @@ export default function ReservationsPage() {
     }
   }
 
-  const handleExport = () => {
-    const csv = buildCsv(
-      [
-        "Code",
-        "Marque",
-        "Format",
-        "Quantité",
-        "Montant",
-        "Type de montant",
-        "Point de vente",
-        "District",
-        "Statut",
-        "Réservée le",
-        "Collectée le",
-        "Annulée le",
-        "Expire le",
-      ],
-      filteredReservations.map((reservation) => [
-        reservation.reservationCode,
-        reservation.brand,
-        reservation.format,
-        reservation.quantity,
-        reservation.amount,
-        reservation.amountType,
-        reservation.pointName,
-        reservation.pointDistrict,
-        getReservationStatusLabel(reservation.status),
-        reservation.reservedAt,
-        reservation.collectedAt,
-        reservation.cancelledAt,
-        reservation.expiresAt,
-      ])
-    )
-    const date = new Date().toISOString().slice(0, 10)
-    downloadCsv(`reservations-${date}.csv`, csv)
+  const fetchAllReservations = async (): Promise<Reservation[]> => {
+    const allReservations: Reservation[] = []
+    const exportPageSize = 100
+    let currentPage = 1
+
+    while (true) {
+      const params = new URLSearchParams()
+      if (filterStatus !== "all") params.set("status", filterStatus)
+      params.set("page", String(currentPage))
+      params.set("pageSize", String(exportPageSize))
+
+      const data = await requestJson<ReservationApiResponse>(
+        `/api/reservation/my?${params.toString()}`,
+        {
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+        }
+      )
+      const rows = (data.reservations ?? []).map(normalizeReservation)
+      allReservations.push(...rows)
+
+      const totalPages = data.pagination?.totalPages ?? 0
+      if (rows.length === 0 || currentPage >= totalPages) break
+      currentPage += 1
+    }
+
+    return allReservations
+  }
+
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const allReservations = await fetchAllReservations()
+      const query = searchQuery.trim().toLowerCase()
+      const exportedReservations = allReservations.filter((reservation) => {
+        if (!query) return true
+        return (
+          reservation.reservationCode.toLowerCase().includes(query) ||
+          reservation.brand.toLowerCase().includes(query) ||
+          reservation.pointName.toLowerCase().includes(query) ||
+          reservation.pointDistrict.toLowerCase().includes(query)
+        )
+      })
+      const csv = buildCsv(
+        [
+          "Code",
+          "Marque",
+          "Format",
+          "Quantité",
+          "Montant",
+          "Type de montant",
+          "Point de vente",
+          "District",
+          "Statut",
+          "Réservée le",
+          "Collectée le",
+          "Annulée le",
+          "Expire le",
+        ],
+        exportedReservations.map((reservation) => [
+          reservation.reservationCode,
+          reservation.brand,
+          reservation.format,
+          reservation.quantity,
+          reservation.amount,
+          reservation.amountType,
+          reservation.pointName,
+          reservation.pointDistrict,
+          getReservationStatusLabel(reservation.status),
+          reservation.reservedAt,
+          reservation.collectedAt,
+          reservation.cancelledAt,
+          reservation.expiresAt,
+        ])
+      )
+      const date = new Date().toISOString().slice(0, 10)
+      downloadCsv(`reservations-${date}.csv`, csv)
+    } catch (requestError) {
+      toast.error(
+        requestError instanceof Error
+          ? requestError.message
+          : "Erreur lors de l'export des réservations"
+      )
+    } finally {
+      setExporting(false)
+    }
   }
 
   return (
@@ -287,11 +367,11 @@ export default function ReservationsPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={handleExport}
-              disabled={filteredReservations.length === 0}
+              onClick={() => void handleExport()}
+              disabled={exporting || filteredReservations.length === 0}
             >
               <Download className="size-4 mr-2" />
-              Exporter
+              {exporting ? "Export…" : "Exporter"}
             </Button>
           </div>
         </CardContent>
@@ -311,11 +391,17 @@ export default function ReservationsPage() {
             <Card className="border border-border shadow-sm rounded-lg">
               <CardContent className="py-12 text-center">
                 <Package className="size-12 mx-auto text-muted-foreground/50" />
-                <h3 className="mt-4 font-semibold">Aucune réservation</h3>
+                <h3 className="mt-4 font-semibold">
+                  {selectedReservationId
+                    ? "Réservation introuvable"
+                    : "Aucune réservation"}
+                </h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {searchQuery || filterStatus !== "all"
-                    ? "Aucune réservation ne correspond à vos filtres."
-                    : "Vous n'avez pas encore de réservations. Commencez par rechercher du gaz !"}
+                  {selectedReservationId
+                    ? "Cette réservation n'existe plus ou n'est pas accessible depuis votre compte."
+                    : searchQuery || filterStatus !== "all"
+                      ? "Aucune réservation ne correspond à vos filtres."
+                      : "Vous n'avez pas encore de réservations. Commencez par rechercher du gaz !"}
                 </p>
                 <Button render={<Link href="/dashboard/recherches">Rechercher du gaz</Link>} className="mt-4" variant="outline" />
               </CardContent>
@@ -393,10 +479,49 @@ export default function ReservationsPage() {
                   </CardContent>
                 </Card>
               ))}
+              {totalPages > 1 && (
+                <div className="flex flex-col items-center justify-between gap-3 border-t border-border pt-4 sm:flex-row">
+                  <p className="text-sm text-muted-foreground">
+                    Page {page} sur {totalPages} · {total} réservation{total > 1 ? "s" : ""}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((current) => Math.max(1, current - 1))}
+                      disabled={page <= 1 || loading}
+                    >
+                      <ChevronLeft className="size-4" /> Précédent
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                      disabled={page >= totalPages || loading}
+                    >
+                      Suivant <ChevronRight className="size-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
       )}
     </div>
+  )
+}
+
+export default function ReservationsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="rounded-2xl border border-border bg-card px-4 py-12 text-center text-sm text-muted-foreground shadow-sm">
+          Chargement des réservations…
+        </div>
+      }
+    >
+      <ReservationsPageContent />
+    </Suspense>
   )
 }

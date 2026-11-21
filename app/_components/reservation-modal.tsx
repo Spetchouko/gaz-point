@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { AlertCircle, CheckCircle, Loader2, Shield } from "lucide-react"
+import { AlertCircle, Clock3, CreditCard, Loader2, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -12,20 +12,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { formatPrice } from "@/lib/gaz"
-import { QRCodeDisplay } from "@/app/_components/qr-code-display"
+import type { ClientReservationResult } from "@/lib/client-reservation"
 
-export type ReservationResult = {
-  code: string
-  expiresAt: string
-  amount: number
-  brand: string
-  format: string
-  quantity: number
-  pointName: string
-  pointDistrict: string
-  reservedAt: string
-  qrCode?: string
-}
+export type ReservationResult = ClientReservationResult
 
 type PointData = {
   id: string
@@ -36,7 +25,6 @@ type PointData = {
   brand: string | null
   format: string | null
   disponibiliteId: string
-  // Services
   hasDelivery: boolean
   hasExchange: boolean
   hasGasSale: boolean
@@ -57,7 +45,7 @@ export function ReservationModal({
 }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<ReservationResult | null>(null)
+  const [pending, setPending] = useState<ReservationResult | null>(null)
 
   const handleConfirm = async () => {
     if (!point) return
@@ -68,10 +56,10 @@ export function ReservationModal({
     try {
       const result = await onConfirm(point.disponibiliteId)
       if (!result) {
-        setError("La réservation n'a pas pu être confirmée.")
+        setError("La réservation n’a pas pu être créée.")
         return
       }
-      setSuccess(result)
+      setPending(result)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur lors de la réservation")
     } finally {
@@ -80,80 +68,74 @@ export function ReservationModal({
   }
 
   const handleClose = () => {
-    setSuccess(null)
+    setPending(null)
     setError(null)
     onClose()
   }
 
+  const handlePayment = () => {
+    if (!pending) return
+    window.location.assign(pending.checkoutUrl)
+  }
+
   if (!open) return null
 
-  if (success) {
+  if (pending) {
     return (
       <Dialog open={true} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-success">
-              <CheckCircle className="size-5" />
-              Réservation confirmée
+            <DialogTitle className="flex items-center gap-2 text-warning">
+              <Clock3 className="size-5" />
+              En attente de paiement
             </DialogTitle>
             <DialogDescription>
-              Votre réservation a été enregistrée avec succès.
+              Votre réservation est enregistrée. Elle sera confirmée après
+              validation du paiement par GeniusPay.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            {success.qrCode && (
-              <QRCodeDisplay qrCodeDataUrl={success.qrCode} reservationCode={success.code} />
-            )}
-            <div className="rounded-lg bg-success/5 border border-success/20 p-4">
-              <p className="text-center text-xs font-medium uppercase tracking-wide text-success">
+            <div className="rounded-lg border border-warning/20 bg-warning/5 p-4 text-center">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Code de réservation
               </p>
-              <p className="mt-1 text-center font-mono text-lg font-bold tracking-wider text-success">
-                {success.code}
+              <p className="mt-1 font-mono text-lg font-bold tracking-wider text-foreground">
+                {pending.code}
               </p>
-              <p className="mt-1 text-center text-sm text-success">
-                À présenter au vendeur pour le retrait
-              </p>
-              <p className="mt-2 text-center text-xs text-success">
-                Expire le{" "}
-                {new Date(success.expiresAt).toLocaleString("fr-FR", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+              <p className="mt-2 text-xs text-muted-foreground">
+                Ce code ne pourra être utilisé qu’après confirmation du paiement.
               </p>
             </div>
             <div className="grid gap-2 sm:grid-cols-2 text-sm text-muted-foreground">
               <div>
                 <p className="text-xs font-semibold text-foreground">Point de vente</p>
-                <p className="text-sm">{success.pointName}</p>
+                <p className="text-sm">{pending.pointName}</p>
               </div>
               <div>
                 <p className="text-xs font-semibold text-foreground">Quartier</p>
-                <p className="text-sm">{success.pointDistrict}</p>
+                <p className="text-sm">{pending.pointDistrict}</p>
               </div>
               <div>
                 <p className="text-xs font-semibold text-foreground">Bouteille</p>
                 <p className="text-sm">
-                  {success.brand} {success.format}
+                  {pending.brand} {pending.format}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-semibold text-foreground">Date</p>
-                <p className="text-sm">
-                  {new Date(success.reservedAt).toLocaleString("fr-FR", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </p>
+                <p className="text-xs font-semibold text-foreground">Montant</p>
+                <p className="text-sm">{formatPrice(pending.amount)}</p>
               </div>
             </div>
           </div>
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button variant="outline" onClick={handleClose}>
+              Plus tard
+            </Button>
+            <Button className="gap-2" onClick={handlePayment}>
+              <CreditCard className="size-4" />
+              Payer maintenant
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     )
@@ -169,12 +151,13 @@ export function ReservationModal({
           </DialogTitle>
           <DialogDescription>
             Vous allez réserver une bouteille de gaz au dépôt {point?.name}.
+            Le paiement de {formatPrice(RESERVATION_AMOUNT)} sera demandé à
+            l’étape suivante.
           </DialogDescription>
         </DialogHeader>
 
         {point && (
           <div className="space-y-4 py-2">
-            {/* Récapitulatif automatique de la disponibilité */}
             <div className="rounded-lg border bg-primary/5 p-4">
               <p className="font-medium text-primary">
                 {point.brand ?? "—"} {point.format ?? "—"}
@@ -189,11 +172,12 @@ export function ReservationModal({
               )}
             </div>
 
-            {/* Autres services disponibles au dépôt */}
-            {point.hasDelivery || point.hasExchange || point.hasGasSale && (
+            {(point.hasDelivery || point.hasExchange || point.hasGasSale) && (
               <div className="rounded-lg bg-muted/30 p-3">
-                <p className="font-medium text-muted-foreground">Autres services disponibles au dépôt</p>
-                <ul className="mt-2 space-y-1 text-xs text-muted-foreground list-disc list-inside">
+                <p className="font-medium text-muted-foreground">
+                  Autres services disponibles au dépôt
+                </p>
+                <ul className="mt-2 list-inside list-disc space-y-1 text-xs text-muted-foreground">
                   {point.hasDelivery && (
                     <li>
                       <span className="font-medium">Livraison</span> à domicile
@@ -214,7 +198,10 @@ export function ReservationModal({
             )}
 
             {error && (
-              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive flex items-center gap-2">
+              <div
+                role="alert"
+                className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive"
+              >
                 <AlertCircle className="size-4 shrink-0" />
                 {error}
               </div>
@@ -224,8 +211,20 @@ export function ReservationModal({
               <Button variant="outline" onClick={handleClose} disabled={loading}>
                 Annuler
               </Button>
-              <Button size="lg" onClick={handleConfirm} disabled={loading} className="flex-1 gap-2 h-14 text-lg font-extrabold tracking-tight shadow-xl shadow-primary/20 transition hover:shadow-2xl hover:scale-[1.01]">
-                Réserver
+              <Button
+                size="lg"
+                onClick={handleConfirm}
+                disabled={loading}
+                className="flex h-14 flex-1 gap-2 text-lg font-extrabold tracking-tight shadow-xl shadow-primary/20 transition hover:scale-[1.01] hover:shadow-2xl"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    Préparation…
+                  </>
+                ) : (
+                  "Réserver et payer"
+                )}
               </Button>
             </DialogFooter>
           </div>

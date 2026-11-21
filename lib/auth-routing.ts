@@ -76,8 +76,61 @@ export const ROLE_DASHBOARD_PATHS: Record<AuthRole, string> = {
   collaborateur: "/dashboard/collaborateur",
 }
 
-/** Page de résultats, réservée aux clients authentifiés. */
-export const CLIENT_RESULTS_PATH = "/resultats-recherche"
+/**
+ * Route canonique des résultats. Les tableaux de bord ont une page de
+ * résultats dans leur propre segment afin de conserver leur navigation, mais
+ * tous réutilisent le même composant et la même source de données.
+ */
+export const RESULTS_PATH = "/resultats-recherche"
+
+/** @deprecated Utiliser `RESULTS_PATH`. */
+export const CLIENT_RESULTS_PATH = RESULTS_PATH
+
+export const RESULTS_PATHS: Record<AuthRole, string> = {
+  client: RESULTS_PATH,
+  vendor: "/dashboard/vendeur/resultats-recherche",
+  admin: "/dashboard/admin/resultats-recherche",
+  collaborateur: "/dashboard/collaborateur/resultats-recherche",
+}
+
+/** Destination des résultats adaptée au rôle connecté. */
+export function getResultsPathForRole(role: string | null | undefined): string {
+  return role === "vendor" || role === "admin" || role === "collaborateur"
+    ? RESULTS_PATHS[role]
+    : RESULTS_PATH
+}
+
+/**
+ * Retourne uniquement une destination interne autorisée après connexion.
+ * Les URL externes, les chemins protocolaires et les destinations ambiguës
+ * sont ignorées afin de ne jamais créer une open redirect.
+ */
+export function getSafeInternalRedirect(value: unknown): string | null {
+  if (
+    typeof value !== "string" ||
+    !value.startsWith("/") ||
+    value.startsWith("//") ||
+    value.includes("\\") ||
+    /[\r\n]/.test(value)
+  ) {
+    return null
+  }
+
+  try {
+    const base = new URL("https://gazpoints.local")
+    const parsed = new URL(value, base)
+    if (parsed.origin !== base.origin) return null
+
+    const isDashboardPath =
+      parsed.pathname === "/dashboard" || parsed.pathname.startsWith("/dashboard/")
+    const isResultsPath = parsed.pathname === CLIENT_RESULTS_PATH
+    if (!isDashboardPath && !isResultsPath) return null
+
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`
+  } catch {
+    return null
+  }
+}
 
 export type AccountAccessStatus =
   | "ready"
@@ -191,6 +244,13 @@ export function classifyDashboardPath(pathname: string): DashboardArea | null {
   }
   if (pathname.startsWith("/dashboard/vendeur/")) return "vendor"
   if (
+    pathname === "/dashboard/reservations/vendor" ||
+    pathname === "/dashboard/reservations/verify" ||
+    pathname.startsWith("/dashboard/reservations/vendor/")
+  ) {
+    return "vendor"
+  }
+  if (
     pathname === "/dashboard/admin" ||
     pathname.startsWith("/dashboard/admin/")
   ) {
@@ -264,19 +324,32 @@ export function resolveDashboardAccess(
 }
 
 /**
- * Contrôle serveur de la page de résultats : seuls les clients peuvent la
- * consulter. Les autres rôles sont renvoyés vers leur propre tableau de bord.
+ * Contrôle serveur de la page de résultats : tout compte authentifié peut
+ * consulter ses recherches. Le shell adapté au rôle est fourni par la route
+ * correspondante, sans modifier les navigations des tableaux de bord.
  */
 export function resolveClientResultsAccess(
-  role: AuthRole | undefined,
-  fallbackPath = ROLE_DASHBOARD_PATHS.client
+  role: AuthRole | undefined
 ): { allowed: boolean; redirectTo?: string } {
   if (role === "client") {
     return { allowed: true }
   }
-
   return {
     allowed: false,
-    redirectTo: role ? ROLE_DASHBOARD_PATHS[role] : fallbackPath,
+    redirectTo: role ? ROLE_DASHBOARD_PATHS[role] : ROLE_DASHBOARD_PATHS.client,
   }
+}
+
+/**
+ * Autorisation élargie : tout compte authentifié peut accéder à sa page
+ * de résultats dans son propre segment dashboard. Utilisé par le proxy
+ * et les nouvelles routes role-specific.
+ */
+export function resolveResultsAccess(
+  role: AuthRole | undefined
+): { allowed: boolean; redirectTo?: string } {
+  if (role && AUTH_ROLES.includes(role)) {
+    return { allowed: true }
+  }
+  return { allowed: false, redirectTo: ROLE_DASHBOARD_PATHS.client }
 }

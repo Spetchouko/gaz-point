@@ -49,6 +49,7 @@ export type SessionUser = {
   rejectionReason?: string | null
   createdAt?: Date
   updatedAt?: Date
+  lastLoginAt?: Date | null
 }
 
 export async function getCurrentUser(): Promise<SessionUser | null> {
@@ -147,6 +148,19 @@ export async function requireUser() {
   // Seul un collaborateur avec mot de passe temporaire est redirigé.
   // Les admins, vendeurs et clients ne sont jamais impactés.
   await requirePasswordChangeIfNeeded(user)
+  return user
+}
+
+export async function requireVendor() {
+  const user = await requireUser()
+  if (user.role !== "vendor") {
+    const redirect = await getRedirect()
+    redirect(
+      isAuthRole(user.role)
+        ? getRoleDashboardPath(user.role)
+        : "/connexion"
+    )
+  }
   return user
 }
 

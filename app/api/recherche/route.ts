@@ -6,10 +6,20 @@ import { disponibilite, pointDeVente, trafficEvent } from "@/db/schema"
 import { effectiveStatus, isStale } from "@/lib/gaz"
 import { gasBrandMatches } from "@/lib/gas-brands"
 import { getCurrentUser } from "@/lib/session"
+import { calculateDistanceKm } from "@/lib/distance"
 import {
   AD_ATTRIBUTION_COOKIE,
   recordConversionFromRequest,
 } from "@/lib/publicite-attribution"
+
+function haversineDistance(
+  lat1: number | null,
+  lng1: number | null,
+  lat2: number | null,
+  lng2: number | null,
+): number | null {
+  return calculateDistanceKm(lat1, lng1, lat2, lng2)
+}
 
 export async function GET(request: NextRequest) {
   // La recherche est réservée aux comptes : le garde est appliqué côté serveur,
@@ -23,6 +33,11 @@ export async function GET(request: NextRequest) {
   const brand = searchParams.get("brand")?.trim() || null
   const format = searchParams.get("format")?.trim() || null
   const zone = searchParams.get("zone")?.trim() || null
+  const latParam = searchParams.get("lat")
+  const lngParam = searchParams.get("lng")
+  const userLat = latParam ? Number(latParam) : null
+  const userLng = lngParam ? Number(lngParam) : null
+  const hasGeolocation = userLat != null && userLng != null && !Number.isNaN(userLat) && !Number.isNaN(userLng)
   const shouldRecordHistory = searchParams.get("history") === "1"
 
   const recordSearchHistory = async (resultsCount: number) => {
@@ -75,6 +90,8 @@ export async function GET(request: NextRequest) {
       deliveryFee: pointDeVente.deliveryFee,
       exchangeEnabled: pointDeVente.exchangeEnabled,
       gasSaleEnabled: pointDeVente.gasSaleEnabled,
+      latitude: pointDeVente.latitude,
+      longitude: pointDeVente.longitude,
     })
     .from(pointDeVente)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
@@ -170,6 +187,21 @@ export async function GET(request: NextRequest) {
       hasExchange: Boolean(point.exchangeEnabled || report?.exchange),
       hasGasSale: Boolean(point.gasSaleEnabled || report?.gasSale),
       deliveryFee: point.deliveryEnabled ? point.deliveryFee : report?.price ?? null,
+      distanceKm: hasGeolocation
+        ? haversineDistance(userLat, userLng,
+            point.latitude ? Number(point.latitude) : null,
+            point.longitude ? Number(point.longitude) : null)
+        : null,
+    })
+  }
+
+  // Lorsque la géolocalisation est disponible, trier par distance croissante
+  // (les disponibilités les plus proches en premier).
+  if (hasGeolocation) {
+    results.sort((a, b) => {
+      const da = a.distanceKm ?? Infinity
+      const db_ = b.distanceKm ?? Infinity
+      return da - db_
     })
   }
 

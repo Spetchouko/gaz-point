@@ -2,9 +2,40 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
 import { vendorSubscription, paymentTransaction, reservation, disponibilite, user } from "@/db/schema"
 import { eq, and, sql } from "drizzle-orm"
-import { verifyWebhook, isPaymentCompletedEvent, isPaymentFailedEvent, extractVendorIdFromMetadata } from "@/lib/geniuspay-webhook"
+import { verifyWebhook } from "@/lib/geniuspay-webhook"
 import { getPayment } from "@/lib/geniuspay"
 import { createNotification, buildNotificationLink } from "@/lib/notifications"
+
+function parseMetadata(value: unknown): Record<string, string> {
+  if (!value) return {}
+  if (typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .filter(([, entry]) => typeof entry === "string")
+        .map(([key, entry]) => [key, entry as string])
+    )
+  }
+  if (typeof value !== "string") return {}
+  try {
+    const parsed = JSON.parse(value)
+    if (!parsed || typeof parsed !== "object") return {}
+    return Object.fromEntries(
+      Object.entries(parsed as Record<string, unknown>)
+        .filter(([, entry]) => typeof entry === "string")
+        .map(([key, entry]) => [key, entry as string])
+    )
+  } catch {
+    return {}
+  }
+}
+
+function isCompletedStatus(status: string): boolean {
+  return status === "completed"
+}
+
+function isFailureStatus(status: string): boolean {
+  return ["failed", "cancelled", "expired"].includes(status)
+}
 
 /**
  * POST /api/payment/webhook
@@ -34,40 +65,52 @@ export async function POST(req: NextRequest) {
       )
     }
     
-    const { event, data, environment: webhookEnvironment } = webhook
-    const { reference, status, metadata, id: geniuspayId, amount, currency, fees, net_amount, payment_method, provider, customer_name, customer_phone } = data
-    
+    const { event, data } = webhook
+    const { reference, status, metadata, id: geniuspayId, fees, net_amount, payment_method, provider, customer_name, customer_phone } = data
+
     console.log(`[payment/webhook] Received event: ${event} for reference: ${reference}`)
-    
+
     // Find transaction by GeniusPay reference
     const [transaction] = await db
       .select()
       .from(paymentTransaction)
       .where(eq(paymentTransaction.geniuspayReference, reference))
       .limit(1)
-    
+
     if (!transaction) {
       console.error(`[payment/webhook] Transaction not found for reference: ${reference}`)
-      // Don't return 404 - acknowledge receipt to prevent retries
-      return NextResponse.json({ received: true })
+      // Une transaction inconnue doit pouvoir être retentée par le provider.
+      return NextResponse.json({ error: "Transaction introuvable" }, { status: 404 })
     }
-    
-    // Extract vendor ID from metadata
-    const vendorId = extractVendorIdFromMetadata(metadata)
+
+    // Les métadonnées de la transaction locale sont la source de vérité.
+    // Les métadonnées du webhook ne servent qu'à compléter les anciennes lignes.
+    const transactionMetadata = parseMetadata(transaction.metadata)
+    const webhookMetadata = parseMetadata(metadata)
+    const mergedMetadata = { ...webhookMetadata, ...transactionMetadata }
+    const vendorId = mergedMetadata.vendor_id
     if (!vendorId || vendorId !== transaction.vendorId) {
       console.error(`[payment/webhook] Vendor ID mismatch: metadata=${vendorId}, transaction=${transaction.vendorId}`)
       return NextResponse.json({ error: "Vendor mismatch" }, { status: 400 })
     }
-    
-    // Verify payment status with GeniusPay API (defense in depth)
+
+    // Vérifier le statut auprès du provider avant toute transition métier.
+    // Une réponse provider indisponible doit rester retentable.
     let verifiedStatus = status
-    if (isPaymentCompletedEvent(event) || isPaymentFailedEvent(event)) {
-      const verification = await getPayment(reference)
-      if (verification.success && verification.data) {
-        verifiedStatus = verification.data.status
-        console.log(`[payment/webhook] API verification: ${verifiedStatus} (webhook: ${status})`)
-      }
+    const verification = await getPayment(reference)
+    if (!verification.success || !verification.data) {
+      console.error(`[payment/webhook] Provider verification failed for ${reference}`)
+      return NextResponse.json({ error: "Vérification du paiement indisponible" }, { status: 503 })
     }
+    verifiedStatus = verification.data.status
+    if (
+      Number(verification.data.amount) !== Number(transaction.amount) ||
+      verification.data.currency !== transaction.currency
+    ) {
+      console.error(`[payment/webhook] Amount or currency mismatch for ${reference}`)
+      return NextResponse.json({ error: "Montant ou devise incohérent" }, { status: 400 })
+    }
+    console.log(`[payment/webhook] API verification: ${verifiedStatus} (webhook: ${status})`)
     
     // Update transaction record
     const updateData: Record<string, unknown> = {
@@ -91,22 +134,21 @@ export async function POST(req: NextRequest) {
       .set(updateData)
       .where(eq(paymentTransaction.id, transaction.id))
     
-    // Détermination du type de paiement via les métadonnées
-    const paymentType = metadata?.type ?? "vendor_subscription"
+    // Détermination du type de paiement via les métadonnées canoniques
+    const paymentType = mergedMetadata.type ?? "vendor_subscription"
 
-    // Handle activation/désactivation selon le type de paiement
+    // Handle activation/désactivation selon le type de paiement et le statut
+    // vérifié, et non selon le seul nom de l'événement.
     if (paymentType === "reservation") {
-      if (isPaymentCompletedEvent(event)) {
+      if (isCompletedStatus(verifiedStatus)) {
         await handleReservationPaymentSuccess(reference, verifiedStatus)
-      } else if (isPaymentFailedEvent(event)) {
-        await handleReservationPaymentFailure(reference, event)
+      } else if (isFailureStatus(verifiedStatus)) {
+        await handleReservationPaymentFailure(reference, verifiedStatus)
       }
-    } else {
-      if (isPaymentCompletedEvent(event)) {
-        await handlePaymentSuccess(vendorId, reference, verifiedStatus)
-      } else if (isPaymentFailedEvent(event)) {
-        await handlePaymentFailure(vendorId, reference, event)
-      }
+    } else if (isCompletedStatus(verifiedStatus)) {
+      await handlePaymentSuccess(vendorId, reference, verifiedStatus)
+    } else if (isFailureStatus(verifiedStatus)) {
+      await handlePaymentFailure(vendorId, reference, verifiedStatus)
     }
     
     return NextResponse.json({ received: true })
@@ -190,7 +232,12 @@ async function handleReservationPaymentSuccess(reference: string, status: string
   }
 
   const [transaction] = await db
-    .select({ metadata: paymentTransaction.metadata })
+    .select({
+      metadata: paymentTransaction.metadata,
+      vendorId: paymentTransaction.vendorId,
+      amount: paymentTransaction.amount,
+      currency: paymentTransaction.currency,
+    })
     .from(paymentTransaction)
     .where(eq(paymentTransaction.geniuspayReference, reference))
     .limit(1)
@@ -200,18 +247,34 @@ async function handleReservationPaymentSuccess(reference: string, status: string
     return
   }
 
-  let meta: Record<string, string> = {}
-  try {
-    meta = JSON.parse(transaction.metadata ?? "{}")
-  } catch {
-    console.error(`[payment/webhook] Invalid metadata for transaction: ${reference}`)
+  const meta = parseMetadata(transaction.metadata)
+  const reservationId = meta.reservation_id
+  const userId = meta.user_id
+  if (!reservationId || !userId || meta.vendor_id !== transaction.vendorId) {
+    console.error(`[payment/webhook] Missing or invalid reservation metadata for reference: ${reference}`)
     return
   }
 
-  const reservationId = meta.reservation_id
-  const userId = meta.user_id
-  if (!reservationId || !userId) {
-    console.error(`[payment/webhook] Missing reservation_id or user_id in metadata for reference: ${reference}`)
+  const [reservationRow] = await db
+    .select({
+      id: reservation.id,
+      userId: reservation.userId,
+      vendorId: reservation.vendorId,
+      amount: reservation.amount,
+    })
+    .from(reservation)
+    .where(eq(reservation.id, reservationId))
+    .limit(1)
+
+  if (
+    !reservationRow ||
+    reservationRow.userId !== userId ||
+    reservationRow.vendorId !== transaction.vendorId ||
+    Number(reservationRow.amount) !== Number(transaction.amount) ||
+    (meta.amount && Number(meta.amount) !== Number(transaction.amount)) ||
+    (meta.currency && meta.currency !== transaction.currency)
+  ) {
+    console.error(`[payment/webhook] Reservation metadata mismatch for reference: ${reference}`)
     return
   }
 
@@ -260,7 +323,12 @@ async function handleReservationPaymentSuccess(reference: string, status: string
  */
 async function handleReservationPaymentFailure(reference: string, event: string) {
   const [transaction] = await db
-    .select({ metadata: paymentTransaction.metadata })
+    .select({
+      metadata: paymentTransaction.metadata,
+      vendorId: paymentTransaction.vendorId,
+      amount: paymentTransaction.amount,
+      currency: paymentTransaction.currency,
+    })
     .from(paymentTransaction)
     .where(eq(paymentTransaction.geniuspayReference, reference))
     .limit(1)
@@ -270,18 +338,11 @@ async function handleReservationPaymentFailure(reference: string, event: string)
     return
   }
 
-  let meta: Record<string, string> = {}
-  try {
-    meta = JSON.parse(transaction.metadata ?? "{}")
-  } catch {
-    console.error(`[payment/webhook] Invalid metadata for transaction: ${reference}`)
-    return
-  }
-
+  const meta = parseMetadata(transaction.metadata)
   const reservationId = meta.reservation_id
   const userId = meta.user_id
-  if (!reservationId || !userId) {
-    console.error(`[payment/webhook] Missing reservation_id or user_id in metadata for reference: ${reference}`)
+  if (!reservationId || !userId || meta.vendor_id !== transaction.vendorId) {
+    console.error(`[payment/webhook] Missing or invalid reservation metadata for reference: ${reference}`)
     return
   }
 
@@ -289,17 +350,26 @@ async function handleReservationPaymentFailure(reference: string, event: string)
   const [res] = await db
     .select({
       id: reservation.id,
+      userId: reservation.userId,
       disponibiliteId: reservation.disponibiliteId,
       quantity: reservation.quantity,
       status: reservation.status,
       vendorId: reservation.vendorId,
+      amount: reservation.amount,
     })
     .from(reservation)
     .where(eq(reservation.id, reservationId))
     .limit(1)
 
-  if (!res) {
-    console.error(`[payment/webhook] Reservation not found: ${reservationId}`)
+  if (
+    !res ||
+    res.userId !== userId ||
+    res.vendorId !== transaction.vendorId ||
+    Number(res.amount) !== Number(transaction.amount) ||
+    (meta.amount && Number(meta.amount) !== Number(transaction.amount)) ||
+    (meta.currency && meta.currency !== transaction.currency)
+  ) {
+    console.error(`[payment/webhook] Reservation metadata mismatch for reference: ${reference}`)
     return
   }
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
 import { reservation, pointDeVente } from "@/db/schema"
-import { eq, desc, and, inArray, sql, count } from "drizzle-orm"
+import { eq, desc, and, inArray, count } from "drizzle-orm"
 import { getProUser } from "@/lib/session"
 import { formatDateTime } from "@/lib/gaz"
 import { generateReservationQRCode } from "@/lib/qrcode"
@@ -91,8 +91,6 @@ export async function GET(req: NextRequest) {
         // Map statuses to the new system
         let effectiveStatus = r.status
         let statusLabel = r.status
-        const isReservedAtOld = r.reservedAt && new Date(r.reservedAt) < new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // 30 days old
-
         switch (r.status) {
           case "confirmed":
             effectiveStatus = "confirmed"
@@ -163,41 +161,58 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Accès réservé aux vendeurs" }, { status: 403 })
     }
 
-    const body = await req.json()
-    const { action, reservationId, newStatus } = body
+    const body = (await req.json().catch(() => null)) as {
+      action?: string
+      reservationId?: string
+    } | null
 
-    switch (action) {
-      case "confirm": {
-        await db
-          .update(reservation)
-          .set({ status: "confirmed", collectedAt: null })
-          .where(eq(reservation.id, reservationId))
-        return NextResponse.json({ ok: true, message: "Réservation confirmée" })
-      }
-      case "cancel": {
-        await db
-          .update(reservation)
-          .set({ status: "cancelled", cancelledAt: new Date() })
-          .where(eq(reservation.id, reservationId))
-        return NextResponse.json({ ok: true, message: "Réservation annulée" })
-      }
-      case "terminee": {
-        await db
-          .update(reservation)
-          .set({ status: "terminee", collectedAt: new Date() })
-          .where(eq(reservation.id, reservationId))
-        return NextResponse.json({ ok: true, message: "Réservation marquée comme terminée" })
-      }
-      case "en_attente": {
-        await db
-          .update(reservation)
-          .set({ status: "en_attente" })
-          .where(eq(reservation.id, reservationId))
-        return NextResponse.json({ ok: true, message: "Réservation en attente" })
-      }
-      default:
-        return NextResponse.json({ error: "Action inconnue" }, { status: 400 })
+    const action = body?.action
+    const reservationId = body?.reservationId
+
+    if (
+      !reservationId ||
+      typeof reservationId !== "string" ||
+      !["confirm", "cancel", "terminee", "en_attente"].includes(action ?? "")
+    ) {
+      return NextResponse.json({ error: "Action invalide" }, { status: 400 })
     }
+
+    const updates: Record<
+      string,
+      Partial<typeof reservation.$inferInsert>
+    > = {
+      confirm: { status: "confirmed", collectedAt: null, cancelledAt: null },
+      cancel: { status: "cancelled", cancelledAt: new Date() },
+      terminee: { status: "terminee", collectedAt: new Date() },
+      en_attente: { status: "en_attente" },
+    }
+
+    const messages: Record<string, string> = {
+      confirm: "Réservation confirmée",
+      cancel: "Réservation annulée",
+      terminee: "Réservation marquée comme terminée",
+      en_attente: "Réservation en attente",
+    }
+
+    const [updated] = await db
+      .update(reservation)
+      .set(updates[action!])
+      .where(
+        and(
+          eq(reservation.id, reservationId),
+          eq(reservation.vendorId, user.id)
+        )
+      )
+      .returning({ id: reservation.id })
+
+    if (!updated) {
+      return NextResponse.json(
+        { error: "Réservation introuvable" },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json({ ok: true, message: messages[action!] })
   } catch (err) {
     console.error("[reservation/vendor/action] error:", err)
     return NextResponse.json(

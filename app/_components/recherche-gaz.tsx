@@ -2,7 +2,15 @@
 
 import { useCallback, useState } from "react"
 import { useRouter } from "next/navigation"
-import { AlertCircle, ChevronDown, LocateFixed, MapPin, RefreshCw, Search } from "lucide-react"
+import {
+  AlertCircle,
+  ChevronDown,
+  LocateFixed,
+  MapPin,
+  RefreshCw,
+  Search,
+  Loader2,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { GasBrandAutocomplete } from "@/app/_components/gas-brand-autocomplete"
@@ -15,8 +23,10 @@ import {
 } from "@/app/_components/reservation-modal"
 import { ResultatRechercheCard } from "@/app/_components/cards/resultat-recherche-card"
 import { trackEvent } from "@/lib/analytics"
-import { searchService } from "@/lib/search-service"
+import { SearchError, searchService } from "@/lib/search-service"
 import type { SearchResponse } from "@/lib/search-service"
+import { getResultsPathForRole } from "@/lib/auth-routing"
+import { createClientReservation } from "@/lib/client-reservation"
 
 export type SearchResult = {
   id: string
@@ -44,7 +54,10 @@ export type SearchResult = {
   hasExchange: boolean
   hasGasSale: boolean
   deliveryFee: number | null
+  distanceKm: number | null
 }
+
+type GeolocationState = "idle" | "requesting" | "granted" | "denied" | "unavailable"
 
 /**
  * Bloc de recherche de gaz : formulaire (marque / format / zone), résultats en direct et réservation.
@@ -52,6 +65,10 @@ export type SearchResult = {
  *
  * Chaque recherche interroge réellement l'API (et donc la base de données).
  * Aucun résultat mis en cache n'est affiché sans avoir été actualisé.
+ *
+ * Géolocalisation : lorsque l'utilisateur lance une recherche sans critère,
+ * l'API de géolocalisation du navigateur est demandée. Les coordonnées GPS
+ * sont transmises à l'API pour trier les résultats par distance.
  */
 type RechercheGazProps = {
   /**
@@ -60,6 +77,8 @@ type RechercheGazProps = {
    * comportement historique (valeur par défaut `false`).
    */
   redirectToResults?: boolean
+  /** Surcharge facultative de la route de résultats (par défaut : selon le rôle). */
+  resultsPath?: string
   initialBrand?: string
   initialFormat?: string
   initialZone?: string
@@ -67,6 +86,7 @@ type RechercheGazProps = {
 
 export function RechercheGaz({
   redirectToResults = false,
+  resultsPath,
   initialBrand = "",
   initialFormat = "12,5 kg",
   initialZone = "",
@@ -81,6 +101,9 @@ export function RechercheGaz({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [reservationPoint, setReservationPoint] = useState<SearchResult | null>(null)
+  const [geoState, setGeoState] = useState<GeolocationState>("idle")
+  const [userLat, setUserLat] = useState<number | null>(null)
+  const [userLng, setUserLng] = useState<number | null>(null)
 
   const handleReserve = async (
     disponibiliteId: string
@@ -89,35 +112,13 @@ export function RechercheGaz({
       throw new Error("Aucun point sélectionné")
     }
 
-    const res = await fetch("/api/reservation/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        disponibiliteId,
-        brand: reservationPoint.brand,
-        format: reservationPoint.format,
-        quantity: 1,
-        amountType: "reservation",
-      }),
+    return createClientReservation({
+      disponibiliteId,
+      brand: reservationPoint.brand,
+      format: reservationPoint.format,
+      quantity: 1,
+      amountType: "reservation",
     })
-
-    const data = await res.json()
-
-    if (!res.ok || data.error) {
-      throw new Error(data.error || "Erreur lors de la réservation")
-    }
-
-    return {
-      code: data.reservation.code,
-      expiresAt: data.reservation.expiresAt,
-      amount: data.reservation.amount,
-      brand: data.reservation.brand,
-      format: data.reservation.format,
-      quantity: data.reservation.quantity,
-      pointName: data.reservation.pointName,
-      pointDistrict: data.reservation.pointDistrict,
-      reservedAt: data.reservation.reservedAt,
-    }
   }
 
   const openReservationModal = (point: SearchResult) => {
@@ -129,8 +130,41 @@ export function RechercheGaz({
   }
 
   /**
+   * Demande la géolocalisation du navigateur.
+   * Retourne les coordonnées si l'autorisation est accordée, null sinon.
+   */
+  const requestGeolocation = useCallback((): Promise<{ lat: number; lng: number } | null> => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        setGeoState("unavailable")
+        resolve(null)
+        return
+      }
+
+      setGeoState("requesting")
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords
+          setGeoState("granted")
+          setUserLat(latitude)
+          setUserLng(longitude)
+          setLocationLabel("Ma position actuelle")
+          resolve({ lat: latitude, lng: longitude })
+        },
+        (error) => {
+          setGeoState(error.code === error.PERMISSION_DENIED ? "denied" : "unavailable")
+          setUserLat(null)
+          setUserLng(null)
+          resolve(null)
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+      )
+    })
+  }, [])
+
+  /**
    * Effectue réellement la recherche auprès de l'API (base de données).
-   * Utilisé par le formulaire et par les boutons "Relancer / Réessayer".
    */
   const runSearch = useCallback(async () => {
     if (!session?.user) {
@@ -138,23 +172,34 @@ export function RechercheGaz({
       return
     }
 
+    // Si aucun critère n'est renseigné, demander la géolocalisation
+    const hasCriteria = brand || format || zone
+    let geoCoords: { lat: number; lng: number } | null = null
+
+    if (!hasCriteria) {
+      geoCoords = await requestGeolocation()
+    }
+
     const criteria = searchService.normalizeCriteria({
       brand: brand || undefined,
       format,
       zone: zone || undefined,
+      lat: geoCoords?.lat ?? null,
+      lng: geoCoords?.lng ?? null,
     })
 
     // Sur la landing, la recherche est lancée puis l'utilisateur est
     // redirigé vers la page dédiée : aucun résultat n'est rendu ici.
     if (redirectToResults) {
+      const targetPath = resultsPath ?? getResultsPathForRole(session.user.role)
       trackEvent({
         eventType: "search_performed",
-        path: "/resultats-recherche",
-        metadata: { brand, format, zone },
+        path: targetPath,
+        metadata: { brand, format, zone, lat: criteria.lat, lng: criteria.lng },
       })
       setLoading(true)
       setError(null)
-      router.push(searchService.buildResultsUrl(criteria))
+      router.push(searchService.buildResultsUrl(criteria, targetPath))
       return
     }
 
@@ -162,11 +207,10 @@ export function RechercheGaz({
     setError(null)
     setResults(null)
 
-    // Événement analytics : recherche effectuée
     trackEvent({
       eventType: "search_performed",
       path: "/api/recherche",
-      metadata: { brand, format, zone },
+      metadata: { brand, format, zone, lat: criteria.lat, lng: criteria.lng },
     })
 
     try {
@@ -174,21 +218,22 @@ export function RechercheGaz({
 
       setResults(response.results as SearchResult[])
 
-      // Événement analytics : résultats de recherche consultés
       trackEvent({
         eventType: "search_results_viewed",
         path: "/api/recherche",
         metadata: { resultCount: response.count, brand, format, zone },
       })
-    } catch {
+    } catch (error) {
       setError(
-        "La recherche n'a pas pu aboutir. Vérifiez votre connexion et réessayez."
+        error instanceof SearchError
+          ? error.message
+          : "La recherche n'a pas pu aboutir. Réessayez."
       )
       setResults(null)
     } finally {
       setLoading(false)
     }
-  }, [brand, format, zone, session, router, redirectToResults])
+  }, [brand, format, zone, session, router, redirectToResults, resultsPath, requestGeolocation])
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -198,6 +243,8 @@ export function RechercheGaz({
   const handleRetry = () => {
     runSearch()
   }
+
+  const isGeoPending = geoState === "requesting"
 
   return (
     <>
@@ -243,8 +290,8 @@ export function RechercheGaz({
                     item === "12,5 kg"
                       ? " ★ Le plus recherché"
                       : item === "6 kg"
-                      ? " ★ Très recherché"
-                      : ""
+                        ? " ★ Très recherché"
+                        : ""
                   return (
                     <option key={item} value={item}>
                       {item}{badge}
@@ -281,18 +328,33 @@ export function RechercheGaz({
                 type="button"
                 variant="outline"
                 className="h-12 shrink-0 gap-2 cursor-pointer"
+                disabled={isGeoPending}
                 onClick={() => {
-                  setZone("Douala")
-                  setLocationLabel("Ma position actuelle")
+                  void requestGeolocation()
                 }}
               >
-                <LocateFixed className="size-4" />
-                Utiliser ma position
+                {isGeoPending ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    Détection…
+                  </>
+                ) : (
+                  <>
+                    <LocateFixed className="size-4" />
+                    Utiliser ma position
+                  </>
+                )}
               </Button>
             </div>
             {locationLabel && (
               <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
                 <MapPin className="size-3.5 text-primary" /> Position détectée&nbsp;: {locationLabel}
+              </p>
+            )}
+            {geoState === "denied" && (
+              <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                <AlertCircle className="size-3.5 text-muted-foreground" aria-hidden />
+                Géolocalisation refusée — recherche dans tous les dépôts.
               </p>
             )}
           </div>
@@ -358,6 +420,7 @@ export function RechercheGaz({
                 hasGasSale={point.hasGasSale}
                 deliveryFee={point.deliveryFee}
                 displayPhone={point.phone}
+                distanceKm={point.distanceKm}
                 onReserver={() => openReservationModal(point)}
               />
             ))}

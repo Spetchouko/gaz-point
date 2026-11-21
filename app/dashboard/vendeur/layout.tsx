@@ -1,27 +1,33 @@
-"use client"
-
-import { redirect } from "next/navigation"
-import { ThemeProvider } from "@/app/_components/theme-provider"
-import { DashboardClientLayout } from "@/app/_components/dashboard/client-layout"
-import { useAuthModal } from "@/lib/auth-context"
-import { useDashboardSession, useAutoRefreshSession } from "@/lib/auth-session"
-import { cn } from "@/lib/utils"
+import { DashboardShell } from "@/app/_components/dashboard/dashboard-shell"
+import type { DashboardUser } from "@/lib/auth-session"
+import { requireVendor } from "@/lib/session"
 
 export const dynamic = "force-dynamic"
 
-export default function VendorLayout({
+export default async function VendorLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  // Rafraîchir automatiquement la session au focus de la fenêtre
-  useAutoRefreshSession()
+  const user = await requireVendor()
+
+  const sessionUser: DashboardUser = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    image: user.image ?? null,
+    role: user.role ?? null,
+    emailVerified: user.emailVerified,
+    isActive: user.isActive ?? null,
+    phoneNumber: user.phoneNumber ?? null,
+    createdAt: user.createdAt ?? null,
+    lastLoginAt: user.lastLoginAt ?? null,
+    mustChangePassword: user.mustChangePassword ?? null,
+  }
 
   return (
-    <ThemeProvider>
-      <DashboardClientLayout>
-        {children}
-      </DashboardClientLayout>
-    </ThemeProvider>
+    <DashboardShell role="vendor" session={sessionUser} status="authenticated">
+      {children}
+    </DashboardShell>
   )
 }

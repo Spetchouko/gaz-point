@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef } from "react";
 import Link from "next/link";
 import {
   Bell,
@@ -39,6 +39,7 @@ export type NotificationItemType = {
 
 type NotificationItemProps = {
   notification: NotificationItemType;
+  pending?: boolean;
   selected?: boolean;
   onSelectChange?: (id: string, checked: boolean) => void;
   onMarkRead: (id: string) => Promise<void> | void;
@@ -66,6 +67,7 @@ const TYPE_LABELS: Record<string, string> = {
 
 export function NotificationItem({
   notification,
+  pending = false,
   selected = false,
   onSelectChange,
   onMarkRead,
@@ -75,6 +77,7 @@ export function NotificationItem({
   onDelete,
 }: NotificationItemProps) {
   const TypeIcon = TYPE_ICONS[notification.type] || Bell;
+  const openingRef = useRef(false);
 
   const formatDate = (iso: string) => {
     const date = new Date(iso);
@@ -94,8 +97,12 @@ export function NotificationItem({
   };
 
   const handleOpen = async () => {
-    if (!notification.read) {
+    if (pending || openingRef.current || notification.read) return;
+    openingRef.current = true;
+    try {
       await onMarkRead(notification.id);
+    } finally {
+      openingRef.current = false;
     }
   };
 
@@ -225,7 +232,10 @@ export function NotificationItem({
             {notification.link ? (
               <Link
                 href={notification.link}
-                onClick={handleOpen}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  void handleOpen();
+                }}
                 className="text-xs font-medium text-green-700 hover:underline"
               >
                 Voir l'élément lié →

@@ -16,6 +16,16 @@ function cleanText(value: unknown, max: number): string | null {
   return trimmed.length > 0 ? trimmed : null
 }
 
+function cleanCoordinate(value: unknown): string | null | undefined {
+  if (value === undefined) return undefined
+  if (value === null || value === "") return null
+  const numeric = typeof value === "number" ? value : Number(value)
+  if (!Number.isFinite(numeric) || numeric < -180 || numeric > 180) {
+    return undefined
+  }
+  return String(numeric)
+}
+
 export async function POST(req: NextRequest) {
   try {
     const auth = await getProUser()
@@ -32,6 +42,8 @@ export async function POST(req: NextRequest) {
       district?: string
       address?: string
       phone?: string
+      latitude?: unknown
+      longitude?: unknown
       brands?: string[]
       formats?: string[]
     } | null
@@ -44,6 +56,18 @@ export async function POST(req: NextRequest) {
     const district = cleanText(body.district, 100)
     const address = cleanText(body.address, 200)
     const phone = cleanText(body.phone, 30)
+    const latitude = cleanCoordinate(body.latitude)
+    const longitude = cleanCoordinate(body.longitude)
+
+    if (
+      (body.latitude !== undefined && latitude === undefined) ||
+      (body.longitude !== undefined && longitude === undefined)
+    ) {
+      return NextResponse.json(
+        { error: "Les coordonnées GPS sont invalides" },
+        { status: 400 }
+      )
+    }
 
     if (!name || !district || !address) {
       return NextResponse.json(
@@ -96,6 +120,8 @@ export async function POST(req: NextRequest) {
         district,
         address,
         phone,
+        latitude,
+        longitude,
         brands,
         formats,
         vendorId: user.id,

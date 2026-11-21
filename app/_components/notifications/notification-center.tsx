@@ -11,6 +11,9 @@ import {
   Inbox,
   AlertCircle,
   RefreshCw,
+  Download,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,11 +22,13 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { NotificationItem } from "./notification-item";
 import { dispatchNotificationsUpdated } from "@/lib/use-notification-unread-count";
-import { AdminPageHeader, AdminCard } from "@/app/_components/dashboard/admin";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   ClientRequestError,
   requestJson,
 } from "@/lib/client-request";
+import { buildCsv, downloadCsv } from "@/lib/csv-export";
+import { toast } from "sonner";
 
 type Notification = {
   id: string;
@@ -38,17 +43,49 @@ type Notification = {
 
 type Tab = "all" | "unread" | "archived";
 
+type NotificationPagination = {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+type NotificationResponse = {
+  notifications?: Notification[];
+  unreadCount?: number;
+  counts?: Record<Tab, number>;
+  pagination?: NotificationPagination;
+};
+
 export function NotificationCenter() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [counts, setCounts] = useState<Record<Tab, number>>({
+    all: 0,
+    unread: 0,
+    archived: 0,
+  });
+  const [pagination, setPagination] = useState<NotificationPagination>({
+    total: 0,
+    page: 1,
+    pageSize: 20,
+    totalPages: 0,
+  });
   const [tab, setTab] = useState<Tab>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkMode, setBulkMode] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const loadControllerRef = useRef<AbortController | null>(null);
+  const loadSequenceRef = useRef(0);
+  const mutationSequenceRef = useRef(0);
+  const mutationVersionsRef = useRef<Map<string, number>>(new Map());
+  const pendingIdsRef = useRef<Set<string>>(new Set());
 
   const filteredNotifications = useMemo(() => {
     return notifications
@@ -79,29 +116,44 @@ export function NotificationCenter() {
     loadControllerRef.current?.abort();
     const controller = new AbortController();
     loadControllerRef.current = controller;
+    const sequence = ++loadSequenceRef.current;
 
     if (showLoading) setLoading(true);
     setLoadError(null);
 
     try {
-      const archivedParam = tab === "archived" ? "true" : "false";
-      const data = await requestJson<{
-        notifications?: Notification[];
-        unreadCount?: number;
-      }>(`/api/notifications?archived=${archivedParam}&limit=100`, {
-        headers: { Accept: "application/json" },
-        cache: "no-store",
-        signal: controller.signal,
-      });
+      const params = new URLSearchParams();
+      params.set("archived", tab === "archived" ? "true" : "false");
+      if (tab === "unread") params.set("read", "false");
+      if (searchQuery.trim()) params.set("search", searchQuery.trim());
+      params.set("page", String(page));
+      params.set("pageSize", "20");
 
-      if (controller.signal.aborted) return;
+      const data = await requestJson<NotificationResponse>(
+        `/api/notifications?${params.toString()}`,
+        {
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+          signal: controller.signal,
+        }
+      );
+
+      if (
+        controller.signal.aborted ||
+        sequence !== loadSequenceRef.current
+      ) {
+        return;
+      }
 
       setNotifications(Array.isArray(data.notifications) ? data.notifications : []);
       setUnreadCount(Number(data.unreadCount || 0));
+      if (data.counts) setCounts(data.counts);
+      if (data.pagination) setPagination(data.pagination);
       dispatchNotificationsUpdated();
     } catch (requestError) {
       if (
         controller.signal.aborted ||
+        sequence !== loadSequenceRef.current ||
         (requestError instanceof ClientRequestError &&
           requestError.kind === "aborted")
       ) {
@@ -119,7 +171,7 @@ export function NotificationCenter() {
         loadControllerRef.current = null;
       }
     }
-  }, [tab]);
+  }, [page, searchQuery, tab]);
 
   useEffect(() => {
     const startTimer = window.setTimeout(() => {
@@ -132,17 +184,51 @@ export function NotificationCenter() {
     };
   }, [loadNotifications]);
 
+  // La page et la sélection sont réinitialisées directement dans les
+  // gestionnaires de recherche et d'onglet : aucun setState dans un effet.
+
   const syncAfterMutation = useCallback(async () => {
     await loadNotifications(false);
   }, [loadNotifications]);
 
+  const beginMutation = useCallback((id: string) => {
+    if (pendingIdsRef.current.has(id)) return false;
+
+    const nextPending = new Set(pendingIdsRef.current);
+    nextPending.add(id);
+    pendingIdsRef.current = nextPending;
+    setPendingIds(nextPending);
+
+    const version = (mutationVersionsRef.current.get(id) ?? 0) + 1;
+    mutationVersionsRef.current.set(id, version);
+    loadControllerRef.current?.abort();
+    mutationSequenceRef.current += 1;
+    return version;
+  }, []);
+
+  const endMutation = useCallback((id: string) => {
+    const nextPending = new Set(pendingIdsRef.current);
+    nextPending.delete(id);
+    pendingIdsRef.current = nextPending;
+    setPendingIds(nextPending);
+  }, []);
+
+  const isCurrentMutation = useCallback((id: string, version: number) => {
+    return mutationVersionsRef.current.get(id) === version;
+  }, []);
+
   const handleMarkRead = useCallback(async (id: string) => {
     const target = notifications.find((notification) => notification.id === id);
-    if (!target || target.read) return;
+    if (!target || target.read || pendingIdsRef.current.has(id)) return;
 
+    const version = beginMutation(id);
     setActionError(null);
     try {
-      await requestJson<{ ok: boolean; id: string }>(
+      const response = await requestJson<{
+        ok: boolean;
+        id: string;
+        unreadCount?: number;
+      }>(
         "/api/notifications",
         {
           method: "PATCH",
@@ -150,14 +236,19 @@ export function NotificationCenter() {
           body: JSON.stringify({ id, read: true }),
         }
       );
+      if (!isCurrentMutation(id, version)) return;
       setNotifications((prev) =>
         prev.map((notification) =>
           notification.id === id ? { ...notification, read: true } : notification
         )
       );
-      setUnreadCount((prev) =>
-        target.archived ? prev : Math.max(0, prev - 1)
-      );
+      if (typeof response.unreadCount === "number") {
+        setUnreadCount(response.unreadCount);
+      } else {
+        setUnreadCount((prev) =>
+          target.archived ? prev : Math.max(0, prev - 1)
+        );
+      }
       dispatchNotificationsUpdated();
     } catch (requestError) {
       setActionError(
@@ -165,16 +256,23 @@ export function NotificationCenter() {
           ? requestError.message
           : "Impossible de marquer la notification comme lue."
       );
+    } finally {
+      endMutation(id);
     }
-  }, [notifications]);
+  }, [beginMutation, endMutation, isCurrentMutation, notifications]);
 
   const handleMarkUnread = useCallback(async (id: string) => {
     const target = notifications.find((notification) => notification.id === id);
-    if (!target || !target.read) return;
+    if (!target || !target.read || pendingIdsRef.current.has(id)) return;
 
+    const version = beginMutation(id);
     setActionError(null);
     try {
-      await requestJson<{ ok: boolean; id: string }>(
+      const response = await requestJson<{
+        ok: boolean;
+        id: string;
+        unreadCount?: number;
+      }>(
         "/api/notifications",
         {
           method: "PATCH",
@@ -182,12 +280,17 @@ export function NotificationCenter() {
           body: JSON.stringify({ id, read: false }),
         }
       );
+      if (!isCurrentMutation(id, version)) return;
       setNotifications((prev) =>
         prev.map((notification) =>
           notification.id === id ? { ...notification, read: false } : notification
         )
       );
-      setUnreadCount((prev) => (target.archived ? prev : prev + 1));
+      if (typeof response.unreadCount === "number") {
+        setUnreadCount(response.unreadCount);
+      } else {
+        setUnreadCount((prev) => (target.archived ? prev : prev + 1));
+      }
       dispatchNotificationsUpdated();
     } catch (requestError) {
       setActionError(
@@ -195,10 +298,14 @@ export function NotificationCenter() {
           ? requestError.message
           : "Impossible de marquer la notification comme non lue."
       );
+    } finally {
+      endMutation(id);
     }
-  }, [notifications]);
+  }, [beginMutation, endMutation, isCurrentMutation, notifications]);
 
   const handleArchive = useCallback(async (id: string) => {
+    if (pendingIdsRef.current.has(id)) return;
+    const version = beginMutation(id);
     setActionError(null);
     try {
       await requestJson<{ ok: boolean; id: string }>(
@@ -209,6 +316,7 @@ export function NotificationCenter() {
           body: JSON.stringify({ id, archived: true }),
         }
       );
+      if (!isCurrentMutation(id, version)) return;
       setSelectedIds((prev) => prev.filter((sid) => sid !== id));
       await syncAfterMutation();
     } catch (requestError) {
@@ -217,10 +325,14 @@ export function NotificationCenter() {
           ? requestError.message
           : "Impossible d'archiver la notification."
       );
+    } finally {
+      endMutation(id);
     }
-  }, [syncAfterMutation]);
+  }, [beginMutation, endMutation, isCurrentMutation, syncAfterMutation]);
 
   const handleRestore = useCallback(async (id: string) => {
+    if (pendingIdsRef.current.has(id)) return;
+    const version = beginMutation(id);
     setActionError(null);
     try {
       await requestJson<{ ok: boolean; id: string }>(
@@ -231,6 +343,7 @@ export function NotificationCenter() {
           body: JSON.stringify({ id, archived: false }),
         }
       );
+      if (!isCurrentMutation(id, version)) return;
       setSelectedIds((prev) => prev.filter((sid) => sid !== id));
       await syncAfterMutation();
     } catch (requestError) {
@@ -239,18 +352,23 @@ export function NotificationCenter() {
           ? requestError.message
           : "Impossible de restaurer la notification."
       );
+    } finally {
+      endMutation(id);
     }
-  }, [syncAfterMutation]);
+  }, [beginMutation, endMutation, isCurrentMutation, syncAfterMutation]);
 
   const handleDelete = useCallback(async (id: string) => {
+    if (pendingIdsRef.current.has(id)) return;
     if (!window.confirm("Supprimer définitivement cette notification ?")) return;
 
+    const version = beginMutation(id);
     setActionError(null);
     try {
       await requestJson<{ ok: boolean; id: string }>(
         `/api/notifications/${id}`,
         { method: "DELETE" }
       );
+      if (!isCurrentMutation(id, version)) return;
       setSelectedIds((prev) => prev.filter((sid) => sid !== id));
       await syncAfterMutation();
     } catch (requestError) {
@@ -259,8 +377,10 @@ export function NotificationCenter() {
           ? requestError.message
           : "Impossible de supprimer la notification."
       );
+    } finally {
+      endMutation(id);
     }
-  }, [syncAfterMutation]);
+  }, [beginMutation, endMutation, isCurrentMutation, syncAfterMutation]);
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -328,10 +448,7 @@ export function NotificationCenter() {
   };
 
   const handleMarkAllRead = async () => {
-    const unreadIds = notifications
-      .filter((notification) => !notification.read && !notification.archived)
-      .map((notification) => notification.id);
-    if (unreadIds.length === 0) return;
+    if (counts.unread === 0) return;
 
     setActionError(null);
     try {
@@ -340,7 +457,7 @@ export function NotificationCenter() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "mark-read", ids: unreadIds }),
+          body: JSON.stringify({ action: "mark-all-read" }),
         }
       );
       await syncAfterMutation();
@@ -353,17 +470,51 @@ export function NotificationCenter() {
     }
   };
 
+  const handleExport = async () => {
+    setExporting(true);
+    setActionError(null);
+    try {
+      const data = await requestJson<{ notifications?: Notification[] }>(
+        "/api/notifications/export",
+        {
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+        }
+      );
+      const rows = Array.isArray(data.notifications) ? data.notifications : [];
+      const csv = buildCsv(
+        ["Type", "Titre", "Message", "Lien", "Lue", "Archivée", "Date"],
+        rows.map((notification) => [
+          notification.type,
+          notification.title,
+          notification.message,
+          notification.link,
+          notification.read ? "Oui" : "Non",
+          notification.archived ? "Oui" : "Non",
+          notification.createdAt,
+        ])
+      );
+      const date = new Date().toISOString().slice(0, 10);
+      downloadCsv(`notifications-${date}.csv`, csv);
+    } catch (requestError) {
+      const message =
+        requestError instanceof Error
+          ? requestError.message
+          : "Impossible d'exporter les notifications.";
+      setActionError(message);
+      toast.error(message);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const tabLabels: Record<Tab, string> = {
     all: "Toutes",
     unread: "Non lues",
     archived: "Archivées",
   };
 
-  const tabCounts: Record<Tab, number> = {
-    all: notifications.filter((n) => !n.archived).length,
-    unread: notifications.filter((n) => !n.read && !n.archived).length,
-    archived: notifications.filter((n) => n.archived).length,
-  };
+  const tabCounts = counts;
 
   const someSelected = selectedIds.length > 0;
   const isAllSelected =
@@ -381,24 +532,45 @@ export function NotificationCenter() {
 
   return (
     <div className="admin-section">
-      <AdminPageHeader
-        title="Notifications"
-        subtitle="Gérez vos notifications et alertes GazPoints"
-        icon={<Bell className="size-5" />}
-        actions={
-          unreadCount > 0 && !bulkMode && (
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-start gap-3 min-w-0">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+            <Bell className="size-5" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="font-heading text-2xl font-extrabold tracking-tight text-foreground">
+              Notifications
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Gérez vos notifications et alertes GazPoints
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0 ml-auto">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void handleExport()}
+            disabled={exporting}
+            className="text-sm"
+          >
+            <Download className="size-3 mr-1" />
+            {exporting ? "Export…" : "Exporter"}
+          </Button>
+          {unreadCount > 0 && !bulkMode && (
             <Button variant="outline" size="sm" onClick={handleMarkAllRead} className="text-sm">
               <Check className="size-3 mr-1" />
               Tout marquer comme lu
             </Button>
-          )
-        }
-      />
+          )}
+        </div>
+      </div>
 
       {(loadError || actionError) && (
         <div role="alert">
-          <AdminCard className="border-destructive/30 bg-destructive/5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <Card className="border-destructive/30 bg-destructive/5">
+            <CardContent>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-2">
                 <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
                 <p className="text-sm text-destructive">
@@ -408,19 +580,24 @@ export function NotificationCenter() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => void loadNotifications(false)}
+                onClick={() => {
+                  setActionError(null);
+                  void loadNotifications(false);
+                }}
               >
                 <RefreshCw className="mr-2 size-3" aria-hidden />
                 Réessayer
               </Button>
             </div>
-          </AdminCard>
+            </CardContent>
+          </Card>
         </div>
       )}
 
       {bulkMode && (
-        <AdminCard className="border-green-200 bg-green-50">
-          <div className="flex items-center justify-between gap-3">
+        <Card className="border-green-200 bg-green-50">
+          <CardContent>
+            <div className="flex items-center justify-between gap-3">
             <span className="text-sm font-medium text-foreground">
               {selectedIds.length} notification(s) sélectionnée(s)
             </span>
@@ -437,8 +614,9 @@ export function NotificationCenter() {
                 Annuler
               </Button>
             </div>
-          </div>
-        </AdminCard>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       <div className="flex gap-2 flex-wrap mb-4">
@@ -451,6 +629,7 @@ export function NotificationCenter() {
               size="sm"
               onClick={() => {
                 setTab(t);
+                setPage(1);
                 setSelectedIds([]);
                 setBulkMode(false);
               }}
@@ -477,7 +656,11 @@ export function NotificationCenter() {
             <Input
               placeholder="Rechercher dans les notifications…"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setPage(1);
+                setSelectedIds([]);
+              }}
               className="pl-10 admin-input"
             />
           </div>
@@ -501,8 +684,9 @@ export function NotificationCenter() {
       <div className="space-y-2">
         {filteredNotifications.length === 0 ? (
           loadError ? null : (
-          <AdminCard className="text-center py-12">
-            <div className="flex flex-col items-center gap-2">
+          <Card className="text-center py-12">
+            <CardContent>
+              <div className="flex flex-col items-center gap-2">
               {tab === "archived" ? (
                 <Archive className="size-12 mx-auto text-muted-foreground/50" />
               ) : (
@@ -524,8 +708,9 @@ export function NotificationCenter() {
                   ? "Toutes vos notifications ont été lues."
                   : "Vous n'avez aucune notification pour le moment."}
               </p>
-            </div>
-          </AdminCard>
+              </div>
+            </CardContent>
+          </Card>
           )
         ) : (
           <div className="space-y-2">
@@ -533,6 +718,7 @@ export function NotificationCenter() {
               <NotificationItem
                 key={n.id}
                 notification={n}
+                pending={pendingIds.has(n.id)}
                 selected={selectedIds.includes(n.id)}
                 onSelectChange={(id) => toggleSelect(id)}
                 onMarkRead={handleMarkRead}
@@ -542,6 +728,31 @@ export function NotificationCenter() {
                 onDelete={handleDelete}
               />
             ))}
+          </div>
+        )}
+        {pagination.totalPages > 1 && (
+          <div className="mt-4 flex flex-col items-center justify-between gap-3 border-t border-border pt-4 sm:flex-row">
+            <p className="text-sm text-muted-foreground">
+              Page {pagination.page} sur {pagination.totalPages} · {pagination.total} notification{pagination.total > 1 ? "s" : ""}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                disabled={page <= 1 || loading}
+              >
+                <ChevronLeft className="size-4" /> Précédent
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((current) => Math.min(pagination.totalPages, current + 1))}
+                disabled={page >= pagination.totalPages || loading}
+              >
+                Suivant <ChevronRight className="size-4" />
+              </Button>
+            </div>
           </div>
         )}
       </div>

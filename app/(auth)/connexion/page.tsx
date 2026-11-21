@@ -4,6 +4,7 @@ import { useCallback, Suspense, useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
 import { getServerRoleRedirect } from "@/lib/auth-redirect-client"
+import { getSafeInternalRedirect } from "@/lib/auth-routing"
 import { Button } from "@/components/ui/button"
 import { LoaderButton } from "@/app/_components/loader-button"
 import { ActionFeedback } from "@/app/_components/action-feedback"
@@ -34,13 +35,7 @@ function LoginPageContent() {
 
   const emailParamFromUrl = (searchParams.get("email") ?? "").trim()
   const rawRedirect = searchParams.get("redirect")
-  // Seule la page de résultats est reprise après connexion : toute autre
-  // valeur est ignorée pour éviter une redirection externe.
-  const safeResultsRedirect =
-    rawRedirect?.startsWith("/resultats-recherche") &&
-    !rawRedirect.startsWith("//")
-      ? rawRedirect
-      : null
+  const safeRedirect = getSafeInternalRedirect(rawRedirect)
   const emailVerifiedNotice = emailParamFromUrl ? "Votre adresse email est vérifiée. Vous pouvez maintenant vous connecter." : ""
   const passwordRef = useRef<HTMLInputElement>(null)
 
@@ -109,7 +104,7 @@ function LoginPageContent() {
       }
 
       const destination = await getServerRoleRedirect()
-      window.location.assign(safeResultsRedirect ?? destination.redirectTo)
+      window.location.assign(safeRedirect ?? destination.redirectTo)
     } catch (caught) {
       const errorMessage =
         caught instanceof Error

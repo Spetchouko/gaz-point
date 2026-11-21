@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { MapPin, Navigation, Phone, Truck, RotateCcw, Package } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -12,11 +13,12 @@ import {
 } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { availabilityLabel, availabilityBadgeClass } from "@/lib/gaz"
+import { formatDistanceKm } from "@/lib/distance"
 import type { AvailabilityStatus } from "@/db/schema"
 
 export type ResultatRechercheCardProps = {
   id: string
-  name: string // nom du point de vente
+  name: string
   district: string
   address: string
   phone: string | null
@@ -28,9 +30,10 @@ export type ResultatRechercheCardProps = {
   hasExchange: boolean
   hasGasSale: boolean
   deliveryFee: number | null
-  // Nouveaux props
-  displayPhone: string | null // téléphone affiché sur la carte (peut être filtré)
-  onReserver?: () => void // callback pour ouverture formulaire réservation
+  displayPhone: string | null
+  onReserver?: () => void
+  onVoirDisponibilite?: () => void
+  distanceKm?: number | null
   className?: string
 }
 
@@ -50,8 +53,11 @@ export function ResultatRechercheCard({
   deliveryFee,
   displayPhone,
   onReserver,
+  onVoirDisponibilite,
+  distanceKm,
   className,
 }: ResultatRechercheCardProps) {
+  const router = useRouter()
   const statusKey = status as AvailabilityStatus
   const isDisponible = status === "disponible"
 
@@ -61,28 +67,41 @@ export function ResultatRechercheCard({
   const mapsDestination = [name, district, address].filter(Boolean).join(", ")
   const mapsHref = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mapsDestination)}`
 
-  // Sélectionne une seule localisation pertinente (préfère le district si disponible,
-  // sinon utilise la première partie de l'adresse pour éviter les doublons)
   const localisationPertinente = district
     ? `${district} — ${address}`
     : address
       ? address.split(',')[0]
       : ""
 
+  const handleCardClick = () => {
+    if (onVoirDisponibilite) {
+      onVoirDisponibilite()
+    } else {
+      router.push(`/disponibilite/${disponibiliteId}`)
+    }
+  }
+
+  const handleReserverClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (onReserver) {
+      onReserver()
+    }
+  }
+
   return (
     <Card
       key={id}
       className={cn(
-        "border border-border rounded-xl bg-card shadow-sm hover:shadow-md transition-all duration-200 group",
-        className
+        "border border-border rounded-xl bg-card shadow-sm hover:shadow-md transition-all duration-200 group cursor-pointer",
+        className,
       )}
+      onClick={handleCardClick}
     >
       <CardHeader className="flex flex-wrap items-start justify-between gap-2.5 pb-2.5">
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
           <CardTitle className="flex items-center gap-1.5 text-sm font-semibold tracking-tight text-foreground">
             {name}
           </CardTitle>
-          {/* Numéro de carte discret */}
           <span className="absolute -top-1 -right-2 text-xs opacity-20 capitalize">
             {id.substring(0, 2).toUpperCase()}
           </span>
@@ -90,20 +109,25 @@ export function ResultatRechercheCard({
             <MapPin className="size-2.5 shrink-0" aria-hidden />
             {localisationPertinente}
           </CardDescription>
+          {distanceKm != null && (
+            <CardDescription className="mt-0.5 flex items-center gap-0.5 text-xs text-primary font-medium">
+              <MapPin className="size-2.5 shrink-0" aria-hidden />
+              {formatDistanceKm(distanceKm)}
+            </CardDescription>
+          )}
         </div>
 
         <Badge
           variant="outline"
           className={cn(
             "mt-0.5 shrink-0 whitespace-nowrap",
-            availabilityBadgeClass[statusKey]
+            availabilityBadgeClass[statusKey],
           )}
         >
           {availabilityLabel[statusKey]}
         </Badge>
 
-        {/* Services badges */}
-        {hasDelivery || hasExchange || hasGasSale && (
+        {(hasDelivery || hasExchange || hasGasSale) && (
           <div className="mt-1 flex items-center gap-2">
             {hasGasSale && (
               <Badge variant="secondary" className="text-xs">
@@ -148,7 +172,6 @@ export function ResultatRechercheCard({
             </div>
           )}
 
-          {/* Numéro de téléphone affiché uniquement si renseigné */}
           {displayPhone && (
             <div className="mt-2 flex items-start gap-1 text-xs text-muted-foreground">
               <a href={phoneHref ?? "#"} className="flex items-center gap-1 hover:text-primary">
@@ -158,7 +181,6 @@ export function ResultatRechercheCard({
             </div>
           )}
 
-          {/* Appel et itinéraire : actions disponibles sur chaque point de vente */}
           <div className="mt-3 grid grid-cols-2 gap-2">
             {phoneHref && (
               <Button
@@ -167,6 +189,7 @@ export function ResultatRechercheCard({
                 variant="outline"
                 size="sm"
                 className="h-9 w-full gap-1.5 rounded-lg px-2 text-xs"
+                onClick={(e) => e.stopPropagation()}
               >
                 <Phone className="size-3.5 shrink-0" aria-hidden />
                 Appeler
@@ -180,22 +203,22 @@ export function ResultatRechercheCard({
               variant="outline"
               size="sm"
               className="h-9 w-full gap-1.5 rounded-lg px-2 text-xs"
+              onClick={(e) => e.stopPropagation()}
             >
               <Navigation className="size-3.5 shrink-0" aria-hidden />
               Itinéraire
             </Button>
           </div>
 
-          {/* Bouton de réservation - remplace "Consigner cette bouteille" */}
           {onReserver && isDisponible ? (
             <Button
               variant="default"
               size="sm"
-              onClick={onReserver}
+              onClick={handleReserverClick}
               className="w-full gap-2 rounded-sm py-1.5 text-sm font-medium transition-colors flex items-center justify-center"
             >
               <MapPin className="size-3 mr-1.5" />
-              Réserver cette bouteille
+              Réserver
             </Button>
           ) : null}
         </div>

@@ -14,8 +14,8 @@ import {
   evaluateAccountAccess,
   getOtpSendPublicResponse,
   isSameAdminEmail,
-  resolveClientResultsAccess,
   resolveDashboardAccess,
+  resolveResultsAccess,
   shouldClearCollaboratorPermissions,
   type AuthRole,
 } from "@/lib/auth-routing"
@@ -501,9 +501,20 @@ async function testTemporaryCollaboratorPasswordBlocksDashboards() {
   assert.equal(decision.redirectTo, "/mot-de-passe-temporaire")
 }
 
-async function testClientResultsPageIsClientOnly() {
-  assert.deepEqual(resolveClientResultsAccess("client"), { allowed: true })
+async function testResultsAccessByRole() {
+  // Tout compte authentifié peut accéder à sa page de résultats dans son dashboard
+  assert.deepEqual(resolveResultsAccess("client"), { allowed: true })
+  assert.deepEqual(resolveResultsAccess("vendor"), { allowed: true })
+  assert.deepEqual(resolveResultsAccess("admin"), { allowed: true })
+  assert.deepEqual(resolveResultsAccess("collaborateur"), { allowed: true })
+  // Aucun compte → redirection vers dashboard client
+  assert.deepEqual(resolveResultsAccess(undefined), {
+    allowed: false,
+    redirectTo: "/dashboard/client",
+  })
 
+  // resolveClientResultsAccess est conservé pour rétrocompatibilité
+  assert.deepEqual(resolveClientResultsAccess("client"), { allowed: true })
   assert.deepEqual(resolveClientResultsAccess("vendor"), {
     allowed: false,
     redirectTo: "/dashboard/vendeur",

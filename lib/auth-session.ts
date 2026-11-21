@@ -1,6 +1,6 @@
 "use client"
 
-import { authClient, refreshSession } from "@/lib/auth-client"
+import { authClient, useRefreshSession } from "@/lib/auth-client"
 import { useEffect, useRef } from "react"
 
 export const DASHBOARD_PERMISSION_KEYS = [
@@ -81,9 +81,7 @@ export function useSafeSession(): SafeSession {
  * Hook pour forcer le rafraîchissement de la session depuis le serveur.
  * Utile après mise à jour du profil/avatar pour refléter immédiatement les changements.
  */
-export function useRefreshSession() {
-  return refreshSession
-}
+export { useRefreshSession }
 
 /**
  * Hook pour rafraîchir automatiquement la session quand la fenêtre retrouve le focus.
@@ -93,6 +91,7 @@ export function useRefreshSession() {
  */
 export function useAutoRefreshSession(enabled = true, debounceMs = 2000) {
   const lastRefreshRef = useRef<number>(0)
+  const refreshSession = useRefreshSession()
 
   useEffect(() => {
     if (!enabled) return
@@ -101,13 +100,13 @@ export function useAutoRefreshSession(enabled = true, debounceMs = 2000) {
       const now = Date.now()
       if (now - lastRefreshRef.current >= debounceMs) {
         lastRefreshRef.current = now
-        refreshSession()
+        void refreshSession().catch(() => undefined)
       }
     }
 
     window.addEventListener("focus", handleFocus)
     return () => window.removeEventListener("focus", handleFocus)
-  }, [enabled, debounceMs])
+  }, [enabled, debounceMs, refreshSession])
 }
 
 /**

@@ -3,8 +3,7 @@ import { db } from "@/db"
 import { reservation, pointDeVente } from "@/db/schema"
 import { eq } from "drizzle-orm"
 import { getProUser } from "@/lib/session"
-
-const RESERVATION_CODE_LENGTH = 10
+import { isValidReservationCodeLength } from "@/lib/reservation-code"
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,9 +19,9 @@ export async function POST(req: NextRequest) {
     const body = (await req.json().catch(() => null)) as { code?: string } | null
     const code = body?.code?.trim().toUpperCase()
 
-    if (!code || code.length !== RESERVATION_CODE_LENGTH) {
+    if (!code || !isValidReservationCodeLength(code)) {
       return NextResponse.json(
-        { error: `Code de réservation invalide (${RESERVATION_CODE_LENGTH} caractères requis)` },
+        { error: "Code de réservation invalide" },
         { status: 400 }
       )
     }

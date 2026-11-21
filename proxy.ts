@@ -4,8 +4,9 @@ import { getAuthenticatedAccountAccess } from "@/lib/auth-access"
 import {
   ACCOUNT_ACCESS_ERROR_CODES,
   CLIENT_RESULTS_PATH,
-  resolveClientResultsAccess,
+  RESULTS_PATH,
   resolveDashboardAccess,
+  resolveClientResultsAccess,
 } from "@/lib/auth-routing"
 
 function redirectTo(req: NextRequest, pathname: string): NextResponse {
@@ -13,12 +14,17 @@ function redirectTo(req: NextRequest, pathname: string): NextResponse {
 }
 
 /** Redirection vers la connexion en conservant la page demandée. */
-function redirectToLoginFrom(req: NextRequest): NextResponse {
-  const loginUrl = new URL("/connexion", req.url)
-  loginUrl.searchParams.set(
-    "redirect",
-    `${req.nextUrl.pathname}${req.nextUrl.search}`
-  )
+function redirectToLoginFrom(
+  req: NextRequest,
+  loginPath = "/connexion"
+): NextResponse {
+  const loginUrl = new URL(loginPath, req.url)
+  if (loginPath === "/connexion") {
+    loginUrl.searchParams.set(
+      "redirect",
+      `${req.nextUrl.pathname}${req.nextUrl.search}`
+    )
+  }
   return NextResponse.redirect(loginUrl)
 }
 
@@ -42,7 +48,10 @@ export async function proxy(req: NextRequest) {
     pathname === "/inscription" || pathname.startsWith("/inscription/")
   const isDashboardPath =
     pathname === "/dashboard" || pathname.startsWith("/dashboard/")
-  const isClientResultsPath = pathname === CLIENT_RESULTS_PATH
+  const isResultsPath = pathname === CLIENT_RESULTS_PATH
+  const isResultsPathCanonical = pathname === CLIENT_RESULTS_PATH
+  const isDashboardResultsPath =
+    pathname.startsWith("/dashboard/") && pathname.includes("/resultats-recherche")
   const isTemporaryPasswordPage = pathname === "/mot-de-passe-temporaire"
 
   const access = await getAuthenticatedAccountAccess(req.headers)
@@ -77,7 +86,10 @@ export async function proxy(req: NextRequest) {
       }
     }
 
-    if (isClientResultsPath) {
+    // Gestion de la page de résultats canonique : seuls les clients
+    // authentifiés peuvent y accéder directement ; les autres rôles sont
+    // redirigés vers leur propre dashboard de résultats.
+    if (isResultsPathCanonical) {
       const decision = resolveClientResultsAccess(access.role)
       if (!decision.allowed && decision.redirectTo) {
         return redirectTo(req, decision.redirectTo)
@@ -89,9 +101,10 @@ export async function proxy(req: NextRequest) {
 
   if (access.status === "unauthenticated") {
     if (isDashboardPath) {
-      return redirectTo(req, loginPathFor(pathname))
+      return redirectToLoginFrom(req, loginPathFor(pathname))
     }
-    if (isClientResultsPath) {
+    // Rediriger vers connexion pour les deux types de routes résultats
+    if (isResultsPathCanonical || pathname.startsWith("/dashboard/") && pathname.includes("/resultats-recherche")) {
       return redirectToLoginFrom(req)
     }
     if (isTemporaryPasswordPage) {
@@ -102,10 +115,11 @@ export async function proxy(req: NextRequest) {
 
   const errorCode =
     ACCOUNT_ACCESS_ERROR_CODES[access.status] ?? "session_error"
-  if (isDashboardPath || isClientResultsPath || isTemporaryPasswordPage) {
-    const loginUrl = new URL(loginPathFor(pathname), req.url)
+  if (isDashboardPath || isResultsPath || isTemporaryPasswordPage) {
+    const loginPath = loginPathFor(pathname)
+    const loginUrl = new URL(loginPath, req.url)
     loginUrl.searchParams.set("error", errorCode)
-    if (isClientResultsPath) {
+    if (loginPath === "/connexion") {
       loginUrl.searchParams.set(
         "redirect",
         `${req.nextUrl.pathname}${req.nextUrl.search}`

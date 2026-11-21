@@ -1,10 +1,14 @@
 "use client"
 
+import { RESULTS_PATH } from "@/lib/auth-routing"
+
 export type SearchCriteria = {
   brand?: string | null
   format?: string | null
   zone?: string | null
   available?: boolean | null
+  lat?: number | null
+  lng?: number | null
 }
 
 export type SearchResultItem = {
@@ -32,6 +36,7 @@ export type SearchResultItem = {
   hasExchange: boolean
   hasGasSale: boolean
   deliveryFee: number | null
+  distanceKm: number | null
 }
 
 export type SearchResponse = {
@@ -42,12 +47,24 @@ export type SearchResponse = {
 
 export class SearchError extends Error {
   readonly code: string
+  readonly status?: number
 
-  constructor(code: string, message: string) {
+  constructor(code: string, message: string, status?: number) {
     super(message)
     this.name = "SearchError"
     this.code = code
+    this.status = status
   }
+}
+
+/** Coordonnée GPS valide, ou null pour une valeur absente ou incohérente. */
+export function normalizeCoordinate(
+  value: number | null | undefined,
+  limit: number
+): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null
+  if (value < -limit || value > limit) return null
+  return value
 }
 
 /**
@@ -78,6 +95,11 @@ export class SearchService {
       format: criteria.format ?? null,
       zone: criteria.zone ?? null,
       available: criteria.available ?? null,
+      // La localisation fait partie des critères : elle doit survivre à la
+      // normalisation, sinon l'API ne reçoit jamais lat/lng et ne peut ni trier
+      // par distance ni renseigner distanceKm.
+      lat: normalizeCoordinate(criteria.lat, 90),
+      lng: normalizeCoordinate(criteria.lng, 180),
     }
   }
 
@@ -89,6 +111,8 @@ export class SearchService {
     if (criteria.brand) params.set("brand", criteria.brand)
     if (criteria.format) params.set("format", criteria.format)
     if (criteria.zone) params.set("zone", criteria.zone)
+    if (criteria.lat != null) params.set("lat", String(criteria.lat))
+    if (criteria.lng != null) params.set("lng", String(criteria.lng))
     if (criteria.available !== null && criteria.available !== undefined) {
       params.set("available", String(criteria.available))
     }
@@ -107,13 +131,19 @@ export class SearchService {
       params.set("format", criteria.format.trim())
     }
     if (criteria.zone) params.set("zone", criteria.zone.trim())
+    if (criteria.lat != null) params.set("lat", String(criteria.lat))
+    if (criteria.lng != null) params.set("lng", String(criteria.lng))
     return params
   }
 
-  /** URL de la page dédiée aux résultats, criteria inclus dans la query. */
-  buildResultsUrl(criteria: SearchCriteria): string {
+  /**
+   * URL de la page dédiée aux résultats, criteria inclus dans la query.
+   * `path` permet de rester dans l'espace du dashboard qui a lancé la
+   * recherche, sans toucher à sa navigation.
+   */
+  buildResultsUrl(criteria: SearchCriteria, path = RESULTS_PATH): string {
     const query = this.buildCriteriaParams(criteria).toString()
-    return query ? `/resultats-recherche?${query}` : "/resultats-recherche"
+    return query ? `${path}?${query}` : path
   }
 
   /** Retour vers le formulaire de la landing, avec les critères pré-remplis. */
@@ -130,36 +160,63 @@ export class SearchService {
    *
    * @throws SearchError en cas d'échec réseau ou de réponse invalide.
    */
-  async search(criteria: SearchCriteria): Promise<SearchResponse> {
+  async search(
+    criteria: SearchCriteria,
+    signal?: AbortSignal
+  ): Promise<SearchResponse> {
     const url = this.buildSearchUrl(criteria)
 
+    let res: Response
     try {
-      const res = await fetch(url, {
+      res = await fetch(url, {
         method: "GET",
-        headers: {
-          Accept: "application/json",
-        },
+        headers: { Accept: "application/json" },
+        signal,
       })
-
-      if (!res.ok) {
-        throw new SearchError(
-          "SEARCH_FAILED",
-          `La recherche a échoué (${res.status}). Vérifiez votre connexion et réessayez.`
-        )
-      }
-
-      const data = (await res.json()) as unknown
-
-      return this.normalizeResponse(data)
-    } catch (err) {
-      if (err instanceof SearchError) {
-        throw err
+    } catch (error) {
+      if (signal?.aborted || (error instanceof DOMException && error.name === "AbortError")) {
+        throw new SearchError("ABORTED", "Recherche annulée.")
       }
       throw new SearchError(
         "NETWORK_ERROR",
-        "La recherche n'a pas pu aboutir. Vérifiez votre connexion et réessayez."
+        "Impossible de joindre le serveur. Vérifiez votre connexion Internet, puis réessayez."
       )
     }
+
+    if (!res.ok) {
+      const status = res.status
+      if (status === 401 || status === 403) {
+        throw new SearchError(
+          "AUTH_REQUIRED",
+          "Votre session a expiré. Reconnectez-vous pour consulter vos résultats.",
+          status
+        )
+      }
+      if (status >= 500) {
+        throw new SearchError(
+          "SERVER_ERROR",
+          "Le service de recherche est momentanément indisponible. Réessayez plus tard.",
+          status
+        )
+      }
+      throw new SearchError(
+        "SEARCH_FAILED",
+        "La recherche n'a pas pu être effectuée. Vérifiez vos critères et réessayez.",
+        status
+      )
+    }
+
+    let data: unknown
+    try {
+      data = await res.json()
+    } catch {
+      throw new SearchError(
+        "INVALID_RESPONSE",
+        "La réponse du serveur est invalide."
+      )
+    }
+
+    return this.normalizeResponse(data)
   }
 
   /**
@@ -175,9 +232,18 @@ export class SearchService {
     }
 
     const raw = data as Record<string, unknown>
-    const results: SearchResultItem[] = Array.isArray(raw.results)
-      ? raw.results.map((item) => this.normalizeResultItem(item))
-      : []
+    // Une réponse 200 sans tableau de résultats est un défaut de contrat :
+    // ce n'est pas une recherche sans disponibilité.
+    if (!Array.isArray(raw.results)) {
+      throw new SearchError(
+        "INVALID_RESPONSE",
+        "La réponse du serveur est invalide."
+      )
+    }
+
+    const results: SearchResultItem[] = raw.results.map((item) =>
+      this.normalizeResultItem(item)
+    )
 
     const disponibiliteIds: string[] = Array.isArray(
       raw.disponibiliteIds
@@ -185,9 +251,14 @@ export class SearchService {
       ? raw.disponibiliteIds.filter((id) => typeof id === "string")
       : []
 
+    const count =
+      typeof raw.count === "number" && Number.isFinite(raw.count)
+        ? raw.count
+        : results.length
+
     return {
       results,
-      count: results.length,
+      count,
       disponibiliteIds,
     }
   }
@@ -231,6 +302,10 @@ export class SearchService {
           ? raw.deliveryFee
           : raw.deliveryFee
           ? Number(raw.deliveryFee)
+          : null,
+      distanceKm:
+        raw.distanceKm != null && !Number.isNaN(Number(raw.distanceKm))
+          ? Number(raw.distanceKm)
           : null,
     }
   }
