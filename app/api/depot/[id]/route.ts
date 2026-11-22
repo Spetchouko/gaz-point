@@ -18,6 +18,16 @@ type DepotPatchBody = {
   longitude?: unknown
   brands?: unknown
   formats?: unknown
+  deliveryEnabled?: unknown
+  deliveryFee?: unknown
+  exchangeEnabled?: unknown
+  exchangeFee?: unknown
+  exchangeBrands?: unknown
+  exchangeFormats?: unknown
+  gasSaleEnabled?: unknown
+  gasSaleFee?: unknown
+  gasSaleBrands?: unknown
+  gasSaleFormats?: unknown
 }
 
 function cleanText(value: unknown, max: number): string | null | undefined {
@@ -36,6 +46,25 @@ function cleanCoordinate(value: unknown): string | null | undefined {
     return undefined
   }
   return String(numeric)
+}
+
+function parseRequiredFee(value: unknown): number | null | undefined {
+  if (value === undefined) return undefined
+  const numeric = typeof value === "number" ? value : Number(value)
+  if (!Number.isInteger(numeric) || numeric < 0 || numeric > 10_000_000) {
+    return null
+  }
+  return numeric
+}
+
+function parseOptionalFeeStrict(value: unknown): number | null | "invalid" | undefined {
+  if (value === undefined) return undefined
+  if (value === null || value === "") return null
+  const numeric = typeof value === "number" ? value : Number(value)
+  if (!Number.isInteger(numeric) || numeric < 0 || numeric > 10_000_000) {
+    return "invalid"
+  }
+  return numeric
 }
 
 export async function PATCH(
@@ -126,6 +155,64 @@ export async function PATCH(
         { error: "Les coordonnées GPS sont invalides" },
         { status: 400 }
       )
+    }
+
+    if (typeof body.deliveryEnabled === "boolean") updates.deliveryEnabled = body.deliveryEnabled
+    if (typeof body.exchangeEnabled === "boolean") updates.exchangeEnabled = body.exchangeEnabled
+    if (typeof body.gasSaleEnabled === "boolean") updates.gasSaleEnabled = body.gasSaleEnabled
+
+    const deliveryFee = parseRequiredFee(body.deliveryFee)
+    if (body.deliveryFee !== undefined && deliveryFee === null) {
+      return NextResponse.json({ error: "Les frais de livraison sont invalides" }, { status: 400 })
+    }
+    if (deliveryFee !== undefined) updates.deliveryFee = deliveryFee
+
+    const exchangeFee = parseOptionalFeeStrict(body.exchangeFee)
+    if (exchangeFee === "invalid") {
+      return NextResponse.json({ error: "Le prix du service d'échange est invalide" }, { status: 400 })
+    }
+    if (exchangeFee !== undefined) updates.exchangeFee = exchangeFee
+
+    const gasSaleFee = parseOptionalFeeStrict(body.gasSaleFee)
+    if (gasSaleFee === "invalid") {
+      return NextResponse.json({ error: "Le prix du service de vente de gaz est invalide" }, { status: 400 })
+    }
+    if (gasSaleFee !== undefined) updates.gasSaleFee = gasSaleFee
+
+    if (body.exchangeBrands !== undefined) {
+      updates.exchangeBrands = cleanCatalogValues(body.exchangeBrands, MAX_VENDOR_BRANDS).filter(
+        (brand) => brand.length <= 50
+      )
+    }
+    if (body.exchangeFormats !== undefined) {
+      updates.exchangeFormats = cleanCatalogValues(body.exchangeFormats, MAX_VENDOR_FORMATS).filter(
+        (format) => format.length <= 30
+      )
+    }
+    if (body.gasSaleBrands !== undefined) {
+      updates.gasSaleBrands = cleanCatalogValues(body.gasSaleBrands, MAX_VENDOR_BRANDS).filter(
+        (brand) => brand.length <= 50
+      )
+    }
+    if (body.gasSaleFormats !== undefined) {
+      updates.gasSaleFormats = cleanCatalogValues(body.gasSaleFormats, MAX_VENDOR_FORMATS).filter(
+        (format) => format.length <= 30
+      )
+    }
+
+    const finalDeliveryEnabled = updates.deliveryEnabled ?? undefined
+    const finalExchangeEnabled = updates.exchangeEnabled ?? undefined
+    const finalGasSaleEnabled = updates.gasSaleEnabled ?? undefined
+    if (finalDeliveryEnabled === false) updates.deliveryFee = 0
+    if (finalExchangeEnabled === false) {
+      updates.exchangeFee = null
+      if (body.exchangeBrands === undefined) updates.exchangeBrands = []
+      if (body.exchangeFormats === undefined) updates.exchangeFormats = []
+    }
+    if (finalGasSaleEnabled === false) {
+      updates.gasSaleFee = null
+      if (body.gasSaleBrands === undefined) updates.gasSaleBrands = []
+      if (body.gasSaleFormats === undefined) updates.gasSaleFormats = []
     }
 
     const [updated] = await db

@@ -18,11 +18,8 @@ import { Card } from "@/components/ui/card"
 import { GasBrandAutocomplete } from "@/app/_components/gas-brand-autocomplete"
 import { Input } from "@/components/ui/input"
 import { ResultatRechercheCard } from "@/app/_components/cards/resultat-recherche-card"
-import {
-  ReservationModal,
-  type ReservationResult,
-} from "@/app/_components/reservation-modal"
-import { formats } from "@/app/_components/donnees-demo"
+import DisponibiliteModal from "@/app/_components/disponibilite-modal"
+import { bottleFormats } from "@/lib/gaz"
 import { useSafeSession } from "@/lib/auth-session"
 import { trackEvent } from "@/lib/analytics"
 import {
@@ -33,8 +30,15 @@ import {
   type SearchResultItem,
 } from "@/lib/search-service"
 import { RESULTS_PATH } from "@/lib/auth-routing"
-
-import { createClientReservation } from "@/lib/client-reservation"
+import {
+  CLOSED_OVERLAY,
+  closeOverlay,
+  openDetails,
+  openReservation,
+  setOverlayStep,
+  setReservationQuantity,
+  type DisponibiliteOverlayState,
+} from "@/lib/disponibilite-overlay"
 
 type ViewState =
   | "loading"
@@ -100,7 +104,7 @@ function SearchForm({
     setGeoState("requesting")
     try {
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation!.getCurrentPosition(resolve, reject, {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
           enableHighAccuracy: true,
           timeout: 10000,
           maximumAge: 0,
@@ -174,10 +178,10 @@ function SearchForm({
               id="recherche-format"
               value={format}
               onChange={(event) => setFormat(event.target.value)}
-              className="mt-1.5 h-12 w-full appearance-none rounded-xl border border-input bg-background px-3 pr-12 text-sm text-foreground outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="mt-1.5 h-12 w-full appearance-none rounded-xl border border-input bg-background px-3 pr-10 text-sm text-foreground appearance-none pr-10 select-none outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               <option value="">Tous les formats</option>
-              {formats.map((item) => {
+              {bottleFormats.map((item) => {
                 const badge =
                   item === "12,5 kg"
                     ? " ★ Le plus recherché"
@@ -193,7 +197,6 @@ function SearchForm({
             </select>
             <ChevronDown
               className="pointer-events-none absolute right-3 bottom-3.5 size-4 text-muted-foreground"
-              aria-hidden
             />
           </div>
         </div>
@@ -222,7 +225,7 @@ function SearchForm({
             <Button
               type="button"
               variant="outline"
-              className="h-12 shrink-0 gap-2"
+              className="h-12 shrink-0 gap-2 cursor-pointer"
               disabled={geoState === "requesting"}
               onClick={handleGeolocate}
             >
@@ -233,7 +236,7 @@ function SearchForm({
                 </>
               ) : (
                 <>
-                  <LocateFixed className="size-4" aria-hidden />
+                  <LocateFixed className="size-4" />
                   Utiliser ma position
                 </>
               )}
@@ -255,11 +258,11 @@ function SearchForm({
 
         <Button
           type="submit"
-          className="h-12 w-full rounded-xl border border-input bg-primary px-4 text-base font-medium text-primary-foreground transition-colors hover:bg-primary-strong focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-12 w-full rounded-xl border border-input bg-primary px-4 text-base font-medium text-primary-foreground transition-colors hover:bg-primary-strong focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-ring/50 disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={isSubmitting}
         >
-          <Search className="mr-2 size-4" aria-hidden />
-          {isSubmitting ? "Recherche…" : "Rechercher le gaz"}
+          <Search className="size-4 mr-2" />
+          {isSubmitting ? "Recherche…" : "Trouver du gaz"}
         </Button>
       </form>
     </Card>
@@ -299,9 +302,8 @@ export function ResultatsRecherche() {
   const [fetchState, setFetchState] = useState<ViewState>("loading")
   const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined)
   const [settledRequestKey, setSettledRequestKey] = useState<string | null>(null)
-  const [reservationPoint, setReservationPoint] =
-    useState<SearchResultItem | null>(null)
   const [attempt, setAttempt] = useState(0)
+  const [overlay, setOverlay] = useState<DisponibiliteOverlayState>(CLOSED_OVERLAY)
   const [, startTransition] = useTransition()
 
   const requestKey = useMemo(
@@ -325,13 +327,11 @@ export function ResultatsRecherche() {
       .search(criteria)
       .then((response) => {
         if (cancelled) return
-        // Enrichir avec distance côté client si nécessaire
         const resultsWithDistance = response.results.map((item) => {
           if (item.distanceKm != null) return item
           return item
         })
         setResults(resultsWithDistance)
-        // 200 OK avec un tableau vide → état vide, jamais une erreur technique
         setFetchState(resultsWithDistance.length > 0 ? "results" : "empty")
         setSettledRequestKey(requestKey)
         trackEvent({
@@ -342,14 +342,8 @@ export function ResultatsRecherche() {
       })
       .catch((error) => {
         if (cancelled) return
-        // Classer l'erreur par code SearchError
         if (error instanceof SearchError) {
           const { code, status } = error
-          // NETWORK_ERROR → message connexion Internet (justifié)
-          // AUTH_REQUIRED → redirection vers connexion (déjà géré par la garde serveur, mais on l'affiche ici si on y arrive)
-          // SERVER_ERROR → erreur serveur, réessayer plus tard
-          // SEARCH_FAILED → échec de la recherche, réessayer
-          // INVALID_RESPONSE → réponse malformée, message contractuel
           if (code === "NETWORK_ERROR") {
             setFetchState("error")
             setErrorMessage("Impossible de joindre le serveur. Vérifiez votre connexion Internet, puis réessayez.")
@@ -367,7 +361,6 @@ export function ResultatsRecherche() {
             setErrorMessage(error.message ?? "Une erreur inattendue est survenue.")
           }
         } else {
-          // Erreur non SearchError (ex: DOMException abort) → réseau
           setFetchState("error")
           setErrorMessage("Impossible de joindre le serveur. Vérifiez votre connexion Internet, puis réessayez.")
         }
@@ -394,6 +387,8 @@ export function ResultatsRecherche() {
       })
       setFetchState("loading")
       setErrorMessage(undefined)
+      // Une nouvelle recherche referme la fenêtre et invalide la sélection.
+      setOverlay(closeOverlay())
 
       const targetPath = RESULTS_PATH
       const nextUrl = searchService.buildResultsUrl(nextCriteria, targetPath)
@@ -409,26 +404,32 @@ export function ResultatsRecherche() {
     [criteria, router]
   )
 
-  const openReservationModal = (point: SearchResultItem) => {
-    setReservationPoint(point)
-  }
+  // Une seule fenêtre superposée : l'état partagé porte la disponibilité
+  // sélectionnée et l'étape affichée pour toutes les cartes.
+  const selectedItem = overlay.disponibiliteId
+    ? results.find((point) => point.disponibiliteId === overlay.disponibiliteId) ?? null
+    : null
 
-  const handleReserve = useCallback(
-    async (disponibiliteId: string): Promise<ReservationResult> => {
-      if (!reservationPoint) {
-        throw new Error("Aucun point sélectionné")
-      }
+  const handleOpenDetails = useCallback((point: SearchResultItem) => {
+    setOverlay((current) => openDetails(current, point.disponibiliteId))
+  }, [])
 
-      return createClientReservation({
-        disponibiliteId,
-        brand: reservationPoint.brand,
-        format: reservationPoint.format,
-        quantity: 1,
-        amountType: "reservation",
-      })
+  const handleOpenReservation = useCallback((point: SearchResultItem) => {
+    setOverlay((current) =>
+      openReservation(current, point.disponibiliteId, point.quantity)
+    )
+  }, [])
+
+  const handleOverlayStepChange = useCallback(
+    (step: DisponibiliteOverlayState["step"]) => {
+      setOverlay((current) => setOverlayStep(current, step))
     },
-    [reservationPoint]
+    []
   )
+
+  const handleOverlayClose = useCallback(() => {
+    setOverlay(closeOverlay())
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -515,31 +516,12 @@ export function ResultatsRecherche() {
           </div>
         )}
 
-        {state === "auth" && (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-card px-4 py-12 text-center shadow-sm">
-            <LogIn className="size-10 text-primary" aria-hidden />
-            <p className="mt-4 text-base font-semibold text-foreground">
-              Connectez-vous pour consulter vos résultats
-            </p>
-            <p className="mt-1 max-w-md text-sm text-muted-foreground">
-              La recherche de disponibilités est réservée aux clients GazPoints.
-            </p>
-            <Button
-              nativeButton={false}
-              render={<Link href="/connexion" />}
-              className="mt-6 h-11 w-full rounded-xl sm:w-auto"
-            >
-              Se connecter
-            </Button>
-          </div>
-        )}
-
         {state === "results" && (
           <>
             <h1 className="font-heading text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
               Vos résultats de recherche
             </h1>
-            <div className="resultats-grid grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4 lg:gap-4">
+            <div className="resultats-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4 md:gap-4 lg:gap-4 xl:gap-4">
               {results.map((point) => (
                 <ResultatRechercheCard
                   key={point.id}
@@ -547,19 +529,12 @@ export function ResultatsRecherche() {
                   name={point.name}
                   district={point.district}
                   address={point.address}
-                  phone={point.phone}
-                  displayPhone={point.phone}
                   brand={point.brand}
                   format={point.format}
                   status={point.status}
                   disponibiliteId={point.disponibiliteId}
-                  hasDelivery={point.hasDelivery}
-                  hasExchange={point.hasExchange}
-                  hasGasSale={point.hasGasSale}
-                  deliveryFee={point.deliveryFee}
-                  distanceKm={point.distanceKm}
-                  onReserver={() => openReservationModal(point)}
-                  className="h-full"
+                  onVoirDisponibilite={() => handleOpenDetails(point)}
+                  onReserver={() => handleOpenReservation(point)}
                 />
               ))}
             </div>
@@ -567,12 +542,19 @@ export function ResultatsRecherche() {
         )}
       </section>
 
-      {reservationPoint && (
-        <ReservationModal
-          open
-          onClose={() => setReservationPoint(null)}
-          point={reservationPoint}
-          onConfirm={handleReserve}
+      {selectedItem && (
+        <DisponibiliteModal
+          key={selectedItem.disponibiliteId}
+          item={selectedItem}
+          step={overlay.step}
+          quantity={overlay.quantity}
+          onStepChange={handleOverlayStepChange}
+          onQuantityChange={(quantity) =>
+            setOverlay((current) =>
+              setReservationQuantity(current, quantity, selectedItem.quantity)
+            )
+          }
+          onClose={handleOverlayClose}
         />
       )}
     </div>

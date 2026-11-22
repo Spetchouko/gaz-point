@@ -1,19 +1,13 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { MapPin, Navigation, Phone, Truck, RotateCcw, Package } from "lucide-react"
+import { MapPin } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
-import { availabilityLabel, availabilityBadgeClass } from "@/lib/gaz"
-import { formatDistanceKm } from "@/lib/distance"
+import { availabilityBadgeClass } from "@/lib/gaz"
 import type { AvailabilityStatus } from "@/db/schema"
 
 export type ResultatRechercheCardProps = {
@@ -21,19 +15,12 @@ export type ResultatRechercheCardProps = {
   name: string
   district: string
   address: string
-  phone: string | null
   brand: string | null
   format: string | null
   status: AvailabilityStatus | null | string
   disponibiliteId: string
-  hasDelivery: boolean
-  hasExchange: boolean
-  hasGasSale: boolean
-  deliveryFee: number | null
-  displayPhone: string | null
   onReserver?: () => void
   onVoirDisponibilite?: () => void
-  distanceKm?: number | null
   className?: string
 }
 
@@ -42,185 +29,126 @@ export function ResultatRechercheCard({
   name,
   district,
   address,
-  phone,
   brand,
   format,
   status,
   disponibiliteId,
-  hasDelivery,
-  hasExchange,
-  hasGasSale,
-  deliveryFee,
-  displayPhone,
   onReserver,
   onVoirDisponibilite,
-  distanceKm,
   className,
 }: ResultatRechercheCardProps) {
   const router = useRouter()
-  const statusKey = status as AvailabilityStatus
-  const isDisponible = status === "disponible"
 
-  const phoneHref = displayPhone
-    ? `tel:${displayPhone.replace(/[^\d+]/g, "")}`
-    : null
-  const mapsDestination = [name, district, address].filter(Boolean).join(", ")
-  const mapsHref = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mapsDestination)}`
+  // Seuls deux libellés sont autorisés sur la carte : la donnée vendeur
+  // "disponible" donne "Disponible", tout le reste reste "À confirmer".
+  const statusKey: AvailabilityStatus =
+    status === "disponible" ? "disponible" : "a_confirmer"
+  const statusLabel = statusKey === "disponible" ? "Disponible" : "À confirmer"
 
-  const localisationPertinente = district
-    ? `${district} — ${address}`
-    : address
-      ? address.split(',')[0]
-      : ""
+  const localisation = [district, address]
+    .filter((part) => Boolean(part && part.trim()))
+    .join(" — ")
 
   const handleCardClick = () => {
     if (onVoirDisponibilite) {
       onVoirDisponibilite()
     } else {
+      // Comportement historique sur la page d'accueil, sans fenêtre superposée.
       router.push(`/disponibilite/${disponibiliteId}`)
     }
   }
 
-  const handleReserverClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
+  const handleReserverClick = (event: React.MouseEvent) => {
+    event.stopPropagation()
     if (onReserver) {
       onReserver()
+    } else {
+      router.push(`/disponibilite/${disponibiliteId}`)
+    }
+  }
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault()
+      handleCardClick()
     }
   }
 
   return (
     <Card
       key={id}
+      role="button"
+      tabIndex={0}
+      aria-label={`Voir la disponibilité de ${name}`}
       className={cn(
-        "border border-border rounded-xl bg-card shadow-sm hover:shadow-md transition-all duration-200 group cursor-pointer",
+        "border border-border rounded-xl bg-card shadow-sm hover:shadow-md transition-all duration-200 group cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         className,
       )}
       onClick={handleCardClick}
+      onKeyDown={handleKeyDown}
     >
-      <CardHeader className="flex flex-wrap items-start justify-between gap-2.5 pb-2.5">
-        <div className="flex items-center gap-1.5 flex-1 min-w-0">
-          <CardTitle className="flex items-center gap-1.5 text-sm font-semibold tracking-tight text-foreground">
+      <CardContent className="flex flex-col gap-2.5 p-4">
+        {/* LIGNE 1 — nom du dépôt à gauche, statut à droite */}
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          <p className="min-w-0 truncate text-sm font-semibold text-foreground">
             {name}
-          </CardTitle>
-          <span className="absolute -top-1 -right-2 text-xs opacity-20 capitalize">
-            {id.substring(0, 2).toUpperCase()}
-          </span>
-          <CardDescription className="mt-0.5 flex items-center gap-0.5 text-xs text-muted-foreground">
-            <MapPin className="size-2.5 shrink-0" aria-hidden />
-            {localisationPertinente}
-          </CardDescription>
-          {distanceKm != null && (
-            <CardDescription className="mt-0.5 flex items-center gap-0.5 text-xs text-primary font-medium">
-              <MapPin className="size-2.5 shrink-0" aria-hidden />
-              {formatDistanceKm(distanceKm)}
-            </CardDescription>
-          )}
+          </p>
+          <Badge
+            variant="outline"
+            className={cn(
+              "shrink-0 whitespace-nowrap",
+              availabilityBadgeClass[statusKey],
+            )}
+          >
+            {statusLabel}
+          </Badge>
         </div>
 
-        <Badge
-          variant="outline"
-          className={cn(
-            "mt-0.5 shrink-0 whitespace-nowrap",
-            availabilityBadgeClass[statusKey],
-          )}
-        >
-          {availabilityLabel[statusKey]}
-        </Badge>
-
-        {(hasDelivery || hasExchange || hasGasSale) && (
-          <div className="mt-1 flex items-center gap-2">
-            {hasGasSale && (
-              <Badge variant="secondary" className="text-xs">
-                <Package className="size-3 mr-1" /> Gaz chargé
-              </Badge>
-            )}
-            {hasDelivery && (
-              <Badge variant="secondary" className="text-xs">
-                <Truck className="size-3 mr-1" /> Livraison
-              </Badge>
-            )}
-            {hasExchange && (
-              <Badge variant="secondary" className="text-xs">
-                <RotateCcw className="size-3 mr-1" /> Échange
-              </Badge>
-            )}
-            {hasDelivery && deliveryFee !== null && (
-              <span className="text-xs text-muted-foreground">
-                {deliveryFee} FCFA
-              </span>
-            )}
+        {/* LIGNE 2 — marque à gauche, grammage à droite, uniquement si renseignés */}
+        {(brand || format) && (
+          <div className="flex min-w-0 items-center justify-between gap-2 text-xs">
+            <span className="min-w-0 truncate font-medium text-foreground">
+              {brand ?? ""}
+            </span>
+            <span className="shrink-0 text-right text-muted-foreground">
+              {format ?? ""}
+            </span>
           </div>
         )}
-      </CardHeader>
 
-      <CardContent className="pt-2">
-        <div className="grid gap-1.5 sm:grid-cols-2 text-xs">
-          {brand && (
-            <div>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                Marque
-              </p>
-              <p className="font-medium text-foreground">{brand}</p>
-            </div>
-          )}
-          {format && (
-            <div>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                Format
-              </p>
-              <p className="font-medium text-foreground">{format}</p>
-            </div>
-          )}
+        {/* LIGNE 3 — localisation avec icône de position */}
+        <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+          <MapPin className="size-3.5 shrink-0" aria-hidden />
+          <span className="min-w-0 truncate">
+            {localisation || "Localisation non renseignée"}
+          </span>
+        </div>
 
-          {displayPhone && (
-            <div className="mt-2 flex items-start gap-1 text-xs text-muted-foreground">
-              <a href={phoneHref ?? "#"} className="flex items-center gap-1 hover:text-primary">
-                <Phone className="size-2.5 shrink-0" aria-hidden />
-                {displayPhone}
-              </a>
-            </div>
-          )}
+        <Separator className="my-0.5" />
 
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {phoneHref && (
-              <Button
-                nativeButton={false}
-                render={<a href={phoneHref} />}
-                variant="outline"
-                size="sm"
-                className="h-9 w-full gap-1.5 rounded-lg px-2 text-xs"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Phone className="size-3.5 shrink-0" aria-hidden />
-                Appeler
-              </Button>
-            )}
-            <Button
-              nativeButton={false}
-              render={
-                <a href={mapsHref} target="_blank" rel="noopener noreferrer" />
-              }
-              variant="outline"
-              size="sm"
-              className="h-9 w-full gap-1.5 rounded-lg px-2 text-xs"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Navigation className="size-3.5 shrink-0" aria-hidden />
-              Itinéraire
-            </Button>
-          </div>
-
-          {onReserver && isDisponible ? (
-            <Button
-              variant="default"
-              size="sm"
-              onClick={handleReserverClick}
-              className="w-full gap-2 rounded-sm py-1.5 text-sm font-medium transition-colors flex items-center justify-center"
-            >
-              <MapPin className="size-3 mr-1.5" />
-              Réserver
-            </Button>
-          ) : null}
+        {/* Deux boutons horizontaux, de largeur égale, contenus dans la carte */}
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-10 w-full min-w-0 px-2 text-center text-xs leading-tight"
+            onClick={(event) => {
+              event.stopPropagation()
+              handleCardClick()
+            }}
+          >
+            Voir disponibilité
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            className="h-10 w-full min-w-0 px-2 text-center text-xs leading-tight"
+            onClick={handleReserverClick}
+          >
+            Réserver
+          </Button>
         </div>
       </CardContent>
     </Card>

@@ -1,8 +1,7 @@
 import { requestJson } from "@/lib/client-request"
-import { validatePaymentCheckoutUrl } from "@/lib/payment-checkout"
 
 export type ClientReservationResult = {
-  status: "pending"
+  status: "confirmed"
   code: string
   expiresAt: string
   amount: number
@@ -12,8 +11,6 @@ export type ClientReservationResult = {
   pointName: string
   pointDistrict: string
   reservedAt: string
-  checkoutUrl: string
-  paymentReference?: string
 }
 
 type CreateReservationInput = {
@@ -36,10 +33,6 @@ type CreateReservationResponse = {
     pointDistrict?: unknown
     reservedAt?: unknown
   }
-  payment?: {
-    checkoutUrl?: unknown
-    reference?: unknown
-  }
 }
 
 function readText(value: unknown, fallback = ""): string {
@@ -52,9 +45,9 @@ function readNumber(value: unknown, fallback = 0): number {
 }
 
 /**
- * Crée une réservation et retourne les informations nécessaires à la modale.
- * La réponse doit contenir une URL de checkout HTTPS valide. Une URL absente
- * ou invalide est une erreur visible, jamais une fausse confirmation.
+ * Crée une réservation et retourne les informations affichées dans la fenêtre
+ * de confirmation. Le code et le montant doivent provenir du serveur : une
+ * réponse incomplète est une erreur visible, jamais une fausse confirmation.
  */
 export async function createClientReservation(
   input: CreateReservationInput
@@ -79,23 +72,24 @@ export async function createClientReservation(
     throw new Error("La réservation n’a pas pu être créée.")
   }
 
-  const checkoutUrl = validatePaymentCheckoutUrl(data.payment?.checkoutUrl)
+  const code = readText(reservation.code).trim()
+  const amount = readNumber(reservation.amount)
+  const quantity = readNumber(reservation.quantity, input.quantity ?? 1)
+
+  if (!code || amount <= 0 || quantity < 1) {
+    throw new Error("La réservation n’a pas pu être confirmée.")
+  }
 
   return {
-    status: "pending",
-    code: readText(reservation.code),
+    status: "confirmed",
+    code,
     expiresAt: readText(reservation.expiresAt),
-    amount: readNumber(reservation.amount),
+    amount,
     brand: readText(reservation.brand),
     format: readText(reservation.format),
-    quantity: readNumber(reservation.quantity, 1),
+    quantity,
     pointName: readText(reservation.pointName),
     pointDistrict: readText(reservation.pointDistrict),
     reservedAt: readText(reservation.reservedAt),
-    checkoutUrl,
-    paymentReference:
-      typeof data.payment?.reference === "string"
-        ? data.payment.reference
-        : undefined,
   }
 }

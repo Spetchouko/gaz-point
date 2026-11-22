@@ -47,9 +47,13 @@ type DepotFormState = {
   deliveryEnabled: boolean
   deliveryFee: string
   exchangeEnabled: boolean
+  exchangeFee: string
   exchangeBrands: string[]
   exchangeFormats: string[]
   gasSaleEnabled: boolean
+  gasSaleFee: string
+  gasSaleBrands: string[]
+  gasSaleFormats: string[]
 }
 
 // Étapes du formulaire multiétapes
@@ -71,9 +75,13 @@ function initialFormState(depot: VendorDepotDto | null, onboarding: VendorOnboar
     deliveryEnabled: depot?.deliveryEnabled ?? false,
     deliveryFee: depot?.deliveryFee?.toString() ?? "",
     exchangeEnabled: depot?.exchangeEnabled ?? false,
+    exchangeFee: depot?.exchangeFee != null ? depot.exchangeFee.toString() : "",
     exchangeBrands: depot?.exchangeBrands ?? [],
     exchangeFormats: depot?.exchangeFormats ?? [],
     gasSaleEnabled: depot?.gasSaleEnabled ?? false,
+    gasSaleFee: depot?.gasSaleFee != null ? depot.gasSaleFee.toString() : "",
+    gasSaleBrands: depot?.gasSaleBrands ?? [],
+    gasSaleFormats: depot?.gasSaleFormats ?? [],
   }
 }
 
@@ -139,6 +147,12 @@ export function VendorDepotManager({
         }
         if (form.deliveryEnabled && isNaN(Number(form.deliveryFee))) {
           return "Les frais de livraison doivent être un nombre valide."
+        }
+        if (form.exchangeEnabled && form.exchangeFee.trim() && (!Number.isInteger(Number(form.exchangeFee)) || Number(form.exchangeFee) < 0)) {
+          return "Le prix du service d'échange doit être un nombre entier valide."
+        }
+        if (form.gasSaleEnabled && form.gasSaleFee.trim() && (!Number.isInteger(Number(form.gasSaleFee)) || Number(form.gasSaleFee) < 0)) {
+          return "Le prix du service de vente de gaz doit être un nombre entier valide."
         }
         return null
       case 4:
@@ -227,9 +241,17 @@ export function VendorDepotManager({
           ? Number(form.deliveryFee)
           : 0,
         exchangeEnabled: form.exchangeEnabled,
+        exchangeFee: form.exchangeEnabled && form.exchangeFee.trim()
+          ? Number(form.exchangeFee)
+          : null,
         exchangeBrands: form.exchangeEnabled ? form.exchangeBrands : [],
         exchangeFormats: form.exchangeEnabled ? form.exchangeFormats : [],
         gasSaleEnabled: form.gasSaleEnabled,
+        gasSaleFee: form.gasSaleEnabled && form.gasSaleFee.trim()
+          ? Number(form.gasSaleFee)
+          : null,
+        gasSaleBrands: form.gasSaleEnabled ? form.gasSaleBrands : [],
+        gasSaleFormats: form.gasSaleEnabled ? form.gasSaleFormats : [],
       }
 
       const response = await fetch(
@@ -539,7 +561,7 @@ export function VendorDepotManager({
                     <div>
                       <p className="font-medium text-foreground">Échange de bouteilles</p>
                       <p className="text-xs text-muted-foreground">
-                        Reprise et échange de bouteilles vides contre pleines
+                        Permet au client qui ne trouve pas sa marque habituelle de bouteille de gaz chargée de choisir une autre marque de bouteille chargée proposée par le dépôt.
                       </p>
                     </div>
                   </div>
@@ -552,7 +574,24 @@ export function VendorDepotManager({
                   />
                 </div>
                 {form.exchangeEnabled && (
-                  <div className="mt-4 pt-4 border-t border-border/50">
+                  <div className="mt-4 pt-4 border-t border-border/50 space-y-4">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="depot-exchange-fee">Prix du service d&apos;échange (FCFA)</Label>
+                        <Input
+                          id="depot-exchange-fee"
+                          type="number"
+                          min={0}
+                          value={form.exchangeFee}
+                          onChange={(e) =>
+                            setForm((prev) => ({ ...prev, exchangeFee: e.target.value }))
+                          }
+                          placeholder="Ex: 500"
+                          disabled={saving}
+                          className="h-11"
+                        />
+                      </div>
+                    </div>
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                       Marques et formats acceptés pour l'échange
                     </p>
@@ -590,9 +629,9 @@ export function VendorDepotManager({
                       <Plus className="size-5" aria-hidden />
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">Vente de gaz</p>
+                      <p className="font-medium text-foreground">Vente de gaz / Achat complet d&apos;une bouteille</p>
                       <p className="text-xs text-muted-foreground">
-                        Vente directe de bouteilles de gaz chargées
+                        Permet au client d&apos;acheter une bouteille de gaz déjà chargée lorsqu&apos;il ne possède pas de bouteille ou ne dispose pas de bouteille à échanger.
                       </p>
                     </div>
                   </div>
@@ -604,6 +643,52 @@ export function VendorDepotManager({
                     disabled={saving}
                   />
                 </div>
+                {form.gasSaleEnabled && (
+                  <div className="mt-4 pt-4 border-t border-border/50 space-y-4">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="depot-gas-sale-fee">Prix du service (FCFA)</Label>
+                        <Input
+                          id="depot-gas-sale-fee"
+                          type="number"
+                          min={0}
+                          value={form.gasSaleFee}
+                          onChange={(e) =>
+                            setForm((prev) => ({ ...prev, gasSaleFee: e.target.value }))
+                          }
+                          placeholder="Ex: 5000"
+                          disabled={saving}
+                          className="h-11"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                      Marques et formats commercialisés
+                    </p>
+                    <div className="grid gap-5 lg:grid-cols-2">
+                      <BrandListInput
+                        values={form.gasSaleBrands}
+                        onChange={(values) =>
+                          setForm((prev) => ({ ...prev, gasSaleBrands: values }))
+                        }
+                        disabled={saving}
+                        label="Marques vendues"
+                        hint="Marques de gaz que vous commercialisez."
+                        options={form.brands.length > 0 ? form.brands : undefined}
+                      />
+                      <FormatListInput
+                        values={form.gasSaleFormats}
+                        onChange={(values) =>
+                          setForm((prev) => ({ ...prev, gasSaleFormats: values }))
+                        }
+                        disabled={saving}
+                        label="Formats vendus"
+                        hint="Formats de bouteilles de gaz."
+                        options={form.formats.length > 0 ? form.formats : undefined}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </VendorSectionCard>
@@ -727,6 +812,22 @@ export function VendorDepotManager({
                   <span className="text-sm text-muted-foreground">Frais de livraison</span>
                   <span className="text-sm font-medium text-foreground">
                     {form.deliveryFee} FCFA
+                  </span>
+                </div>
+              )}
+              {form.exchangeEnabled && form.exchangeFee.trim() && (
+                <div className="flex items-center justify-between py-2 border-t border-border/50">
+                  <span className="text-sm text-muted-foreground">Prix du service d&apos;échange</span>
+                  <span className="text-sm font-medium text-foreground">
+                    {form.exchangeFee} FCFA
+                  </span>
+                </div>
+              )}
+              {form.gasSaleEnabled && form.gasSaleFee.trim() && (
+                <div className="flex items-center justify-between py-2 border-t border-border/50">
+                  <span className="text-sm text-muted-foreground">Prix du service (achat complet)</span>
+                  <span className="text-sm font-medium text-foreground">
+                    {form.gasSaleFee} FCFA
                   </span>
                 </div>
               )}

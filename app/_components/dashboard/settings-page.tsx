@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Palette, Save, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { Bell, Palette, Save, CheckCircle2, AlertCircle, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useTheme } from "@/app/_components/theme-provider";
 
@@ -126,7 +125,7 @@ export function DashboardSettingsPage({ title = "Paramètres" }: { title?: strin
         {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-          <p className="text-muted-foreground">Gérez vos préférences de notifications et d'affichage.</p>
+          <p className="text-muted-foreground">Gérez vos préférences de notifications et d&apos;affichage.</p>
         </div>
 
         {/* Notifications Card */}
@@ -174,7 +173,7 @@ export function DashboardSettingsPage({ title = "Paramètres" }: { title?: strin
               <Palette className="size-5 text-primary" />
               Affichage
             </CardTitle>
-            <CardDescription>Personnalisez l'apparence de l'interface.</CardDescription>
+            <CardDescription>Personnalisez l&apos;apparence de l&apos;interface.</CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="space-y-2 max-w-sm">

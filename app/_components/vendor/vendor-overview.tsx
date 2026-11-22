@@ -8,11 +8,9 @@ import {
   Package,
   Plus,
   Store,
-  TrendingUp,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { formatDateTime } from "@/lib/gaz"
-import type { VendorOverviewData } from "@/lib/vendor-dashboard"
+import type { VendorDepotDto, VendorOverviewData } from "@/lib/vendor-dashboard"
 import {
   VendorEmptyState,
   VendorPageHeader,
@@ -27,6 +25,68 @@ const RESERVATION_LABELS: Record<string, string> = {
   terminee: "Terminée",
   cancelled: "Annulée",
   expired: "Expirée",
+}
+
+// Helper to format numbers with non-breaking space for thousands
+function formatNumber(num: number): string {
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")
+}
+
+// NEW: Component showing summary of a single depot
+function DepotSummaryCard({ depot }: { depot: VendorDepotDto }) {
+  return (
+    <div className="p-4 border rounded-lg bg-primary/5 text-primary/80 mb-3">
+      <h4 className="font-semibold text-foreground truncate">{depot.name}</h4>
+      <p className="text-xs text-primary/80 mb-1">{depot.district}</p>
+      <div className="flex items-center gap-2 text-xs">
+        <Store className="size-3" aria-hidden />
+        {depot.isActive ? "Dispo" : "Indisponible"}
+      </div>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="mt-2 w-full text-left"
+        render={<Link href="/dashboard/depot">Voir les détails</Link>}
+      />
+    </div>
+  )
+}
+
+// NEW: Brief card for listing multiple depots
+function DepotBriefCard({ depot }: { depot: VendorDepotDto }) {
+  return (
+    <div
+      key={depot.id}
+      className="p-3 rounded-lg border border-border bg-card hover:bg-primary/5 hover:text-primary/80 transition-colors cursor-pointer"
+      onMouseEnter={(e) => {
+        const el = e.currentTarget as HTMLElement
+        el.style.transform = "translateY(-2px)"
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget as HTMLElement
+        el.style.transform = ""
+      }}
+    >
+      <div className="flex items-center gap-2">
+        <Store className="size-3 text-primary" aria-hidden />
+        <span className="font-medium text-foreground truncate">{depot.name}</span>
+      </div>
+      <p className="text-xs text-muted-foreground line-clamp-1">{depot.district}</p>
+      {depot.phone && (
+        <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+          📞 {depot.phone}
+        </p>
+      )}
+      <Button
+        size="icon"
+        variant="ghost"
+        className="p-1 rounded-lg mt-1"
+        title="Gérer"
+      >
+        <ArrowRight className="size-3.5" aria-hidden />
+      </Button>
+    </div>
+  )
 }
 
 export function VendorOverview({
@@ -104,44 +164,142 @@ export function VendorOverview({
             label: "Points de vente",
             value: stats.depotCount,
             icon: Store,
+            href: "/dashboard/depot",
           },
           {
             label: "Disponibilités actives",
             value: stats.activeAvailabilityCount,
             icon: Package,
+            href: "/dashboard/depot/disponibilites",
           },
           {
             label: "Réservations reçues",
             value: stats.reservationCount,
             icon: Calendar,
+            href: "/dashboard/depot/reservations",
           },
         ].map((stat) => {
           const Icon = stat.icon
           return (
-            <div
+            <Link
               key={stat.label}
-              className="flex items-center justify-between rounded-lg border border-border bg-card p-4 shadow-sm"
+              href={stat.href}
+              className="group relative flex items-center justify-between overflow-hidden rounded-lg border border-border bg-card p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:border-primary/40 active:translate-y-0 active:shadow-sm active:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
+              onMouseEnter={(e) => {
+                const link = e.currentTarget as HTMLElement
+                link.style.transform = "translateY(-2px) scale(1.02)"
+              }}
+              onMouseLeave={(e) => {
+                const link = e.currentTarget as HTMLElement
+                link.style.transform = ""
+              }}
             >
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 origin-left scale-x-0 bg-primary/[0.08] transition-transform duration-300 ease-out group-hover:scale-x-100 group-active:scale-x-100"
+              />
+              <div className="relative z-10 min-w-0">
+                <p className="text-xs font-medium text-muted-foreground transition-colors duration-300 group-hover:text-foreground/80 group-active:text-foreground/80">
                   {stat.label}
                 </p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
-                  {stat.value}
+                  {formatNumber(stat.value)}
                 </p>
               </div>
-              <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <span className="relative z-10 flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-all duration-300 hover:bg-primary/20 hover:text-primary-foreground hover:scale-105 group-active:bg-primary group-active:text-primary-foreground group-active:scale-105">
                 <Icon className="size-4" aria-hidden />
               </span>
-            </div>
+            </Link>
           )
         })}
       </div>
 
+      {/* Section: Mes points de vente */}
+      <div className="grid gap-4">
+        <VendorSectionCard
+          title="Mes points de vente"
+          description="Vos dépôts associés à votre compte vendeur"
+          className="lg:col-span-1"
+          contentClassName="p-4"
+        >
+          {stats.depotCount > 0 ? (
+            // Show summary of main depot + brief list of others
+            <>
+              <DepotSummaryCard depot={depot} />
+
+              <div className="mt-3">
+                <p className="text-xs font-medium text-primary">
+                  Vos autres dépôts :
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {/* We only have access to 'depot' (main), show count info */}
+                  <div className="p-2 rounded-lg border border-primary/20 bg-primary/5 text-primary/80 text-center">
+                    {stats.depotCount - 1} autres dépots
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            // No depot yet - show "Add depot" button
+            <div className="text-center py-8">
+              <Button
+                size="lg"
+                className="w-full"
+                render={
+                  <Link href="/dashboard/depot">
+                    Créer mon premier point de vente
+                  </Link>
+                }
+              />
+            </div>
+          )}
+
+          {/* Count info at the bottom */}
+          <p className="mt-2 text-xs text-primary/80">
+            Total : {stats.depotCount} dépôt{stats.depotCount !== 1 ? "s" : ""}
+          </p>
+        </VendorSectionCard>
+      </div>
+
+      {/* Indicateurs résumés */}
+      <VendorSectionCard
+        title="Résumé activité"
+        description="Vue rapide de l'activité de vos dépôts"
+        className="lg:col-span-1 my-4"
+        contentClassName="p-4"
+      >
+        <div className="space-y-3">
+          <div className="flex items-start justify-between">
+            <span className="text-xs font-medium text-muted-foreground">
+              Dépôts actifs
+            </span>
+            <span className="text-2xl font-semibold tabular-nums text-foreground">
+              {stats.depotCount}
+            </span>
+          </div>
+          <div className="flex items-start justify-between">
+            <span className="text-xs font-medium text-muted-foreground">
+              Disponibilités actives
+            </span>
+            <span className="text-2xl font-semibold tabular-nums text-foreground">
+              {formatNumber(stats.activeAvailabilityCount)}
+            </span>
+          </div>
+          <div className="flex items-start justify-between">
+            <span className="text-xs font-medium text-muted-foreground">
+              Réservations reçues
+            </span>
+            <span className="text-2xl font-semibold tabular-nums text-foreground">
+              {formatNumber(stats.reservationCount)}
+            </span>
+          </div>
+        </div>
+      </VendorSectionCard>
+
       {!hasAnyData && (
         <VendorSectionCard
           title="Bienvenue chez GazPoints"
-          description="Votre espace vendeur est prêt. Commencez par créer votre point de vente."
+          description="Votre espace vendeur est prêt. Commencez par créer votre point devente."
         >
           <VendorEmptyState
             icon={Store}
@@ -167,104 +325,6 @@ export function VendorOverview({
           />
         </VendorSectionCard>
       )}
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        <VendorSectionCard
-          title="Accès rapides"
-          description="Les rubriques les plus utilisées"
-          className="lg:col-span-1"
-          contentClassName="p-2"
-        >
-          <div className="divide-y divide-border/70">
-            {quickActions.map((action) => {
-              const Icon = action.icon
-              return (
-                <Link
-                  key={action.href}
-                  href={action.href}
-                  className="group flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-muted/60"
-                >
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary">
-                    <Icon className="size-4" aria-hidden />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium text-foreground">
-                      {action.label}
-                    </span>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {action.description}
-                    </span>
-                  </span>
-                  <ArrowRight
-                    className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
-                    aria-hidden
-                  />
-                </Link>
-              )
-            })}
-          </div>
-        </VendorSectionCard>
-
-        <VendorSectionCard
-          title="Dernières activités"
-          description="Réservations et disponibilités récentes"
-          className="lg:col-span-2"
-          contentClassName="p-0"
-        >
-          {activities.length === 0 ? (
-            <VendorEmptyState
-              icon={TrendingUp}
-              title="Aucune activité"
-              description="Vos dernières réservations et mises à jour apparaîtront ici."
-            />
-          ) : (
-            <ul className="divide-y divide-border/70">
-              {activities.map((activity) => (
-                <li
-                  key={activity.id}
-                  className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/40"
-                >
-                  <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    {activity.type === "reservation" ? (
-                      <Calendar className="size-4" aria-hidden />
-                    ) : (
-                      <Package className="size-4" aria-hidden />
-                    )}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {activity.title}
-                      </p>
-                      {activity.status && (
-                        <VendorStatusBadge
-                          status={activity.status}
-                          label={
-                            activity.type === "reservation"
-                              ? RESERVATION_LABELS[activity.status] ?? activity.status
-                              : activity.status === "disponible"
-                                ? "Disponible"
-                                : "Indisponible"
-                          }
-                        />
-                      )}
-                    </div>
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {activity.detail}
-                    </p>
-                  </div>
-                  <time
-                    dateTime={activity.at}
-                    className="shrink-0 text-xs text-muted-foreground"
-                  >
-                    {formatDateTime(activity.at)}
-                  </time>
-                </li>
-              ))}
-            </ul>
-          )}
-        </VendorSectionCard>
-      </div>
     </div>
   )
 }

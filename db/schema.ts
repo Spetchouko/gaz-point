@@ -118,9 +118,13 @@ export const pointDeVente = pgTable(
     deliveryEnabled: boolean("delivery_enabled").default(false).notNull(),
     deliveryFee: integer("delivery_fee").default(0).notNull(), // FCFA
     exchangeEnabled: boolean("exchange_enabled").default(false).notNull(),
+    exchangeFee: integer("exchange_fee"), // FCFA, null si non renseigné
     exchangeBrands: text("exchange_brands").array().default([]), // Marques acceptées pour l'échange
     exchangeFormats: text("exchange_formats").array().default([]), // Grammages acceptés pour l'échange
     gasSaleEnabled: boolean("gas_sale_enabled").default(false).notNull(),
+    gasSaleFee: integer("gas_sale_fee"), // FCFA, null si non renseigné
+    gasSaleBrands: text("gas_sale_brands").array().default([]), // Marques vendues (bouteille chargée)
+    gasSaleFormats: text("gas_sale_formats").array().default([]), // Formats vendus (bouteille chargée)
     vendorId: text("vendor_id").references(() => user.id, { onDelete: "set null" }),
     isActive: boolean("is_active").default(true).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),

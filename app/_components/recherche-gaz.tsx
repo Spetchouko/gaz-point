@@ -106,7 +106,8 @@ export function RechercheGaz({
   const [userLng, setUserLng] = useState<number | null>(null)
 
   const handleReserve = async (
-    disponibiliteId: string
+    disponibiliteId: string,
+    quantity: number
   ): Promise<ReservationResult> => {
     if (!reservationPoint) {
       throw new Error("Aucun point sélectionné")
@@ -116,7 +117,7 @@ export function RechercheGaz({
       disponibiliteId,
       brand: reservationPoint.brand,
       format: reservationPoint.format,
-      quantity: 1,
+      quantity,
       amountType: "reservation",
     })
   }
@@ -410,17 +411,10 @@ export function RechercheGaz({
                 name={point.name}
                 district={point.district}
                 address={point.address}
-                phone={point.phone}
                 brand={point.brand}
                 format={point.format}
                 status={point.status}
                 disponibiliteId={point.disponibiliteId}
-                hasDelivery={point.hasDelivery}
-                hasExchange={point.hasExchange}
-                hasGasSale={point.hasGasSale}
-                deliveryFee={point.deliveryFee}
-                displayPhone={point.phone}
-                distanceKm={point.distanceKm}
                 onReserver={() => openReservationModal(point)}
               />
             ))}
@@ -455,7 +449,7 @@ export function RechercheGaz({
         <ReservationModal
           open={!!reservationPoint}
           onClose={closeReservationModal}
-          point={reservationPoint}
+          point={{ ...reservationPoint, maxQuantity: reservationPoint.quantity }}
           onConfirm={handleReserve}
         />
       )}

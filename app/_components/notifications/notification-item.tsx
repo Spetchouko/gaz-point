@@ -47,6 +47,7 @@ type NotificationItemProps = {
   onArchive: (id: string) => Promise<void> | void;
   onRestore: (id: string) => Promise<void> | void;
   onDelete: (id: string) => Promise<void> | void;
+  onOpen?: (notification: NotificationItemType) => void;
 };
 
 const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -75,6 +76,7 @@ export function NotificationItem({
   onArchive,
   onRestore,
   onDelete,
+  onOpen,
 }: NotificationItemProps) {
   const TypeIcon = TYPE_ICONS[notification.type] || Bell;
   const openingRef = useRef(false);
@@ -97,10 +99,13 @@ export function NotificationItem({
   };
 
   const handleOpen = async () => {
-    if (pending || openingRef.current || notification.read) return;
+    if (pending || openingRef.current) return;
     openingRef.current = true;
     try {
-      await onMarkRead(notification.id);
+      onOpen?.(notification);
+      if (!notification.read) {
+        await onMarkRead(notification.id);
+      }
     } finally {
       openingRef.current = false;
     }
@@ -168,6 +173,15 @@ export function NotificationItem({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void handleOpen();
+                  }}
+                >
+                  <Eye className="size-3 mr-2" />
+                  Consulter
+                </DropdownMenuItem>
                 {!notification.read ? (
                   <DropdownMenuItem
                     onClick={(e) => {

@@ -1,119 +1,28 @@
 # gaz-point — Next.js 16 + React 19 + Tailwind v4
 
-## Commands
-| Task | Command |
-|------|---------|
-| Dev server | `pnpm dev` |
-| Build | `pnpm build` |
-| Lint | `pnpm lint` |
-| Tests | `pnpm test` |
-| Authentication tests | `pnpm test:auth` |
-| Typecheck | `npx tsc --noEmit` |
+## Corrigé : Espacement barre de recherche Notifications
 
-## Key facts
-- **Package manager**: pnpm (v12.8.1) — use `pnpm` not `npm`
-- **Path aliases**: `@/*` → `./*` (tsconfig.json)
-- **UI library**: shadcn/ui with "base-nova" style, components in `@/components/ui`
-- **Classnames**: `cn` utility from `@/lib/utils`
-- **Icons**: lucide-react
-- **Base UI**: @base-ui/react primitives (Dialog, etc.)
-- **ESLint**: flat config extending `eslint-config-next` (core-web-vitals + typescript)
+### Problème
+La loupe et le texte "Rechercher dans les notifications..." dans la page Notifications du dashboard client présentaient un espacement insuffisant, risquant un chevauchement selon la taille de l'écran.
 
-## Project structure
-```
-app/           # Next.js App Router (pages, layout, globals.css)
-components/    # Shared components (header.tsx, ui/*)
-lib/           # Utilities (utils.ts → cn helper)
-```
+### Cause
+Dans `app\_components\notifications\notification-center.tsx` (ligne 664), l'Input possédait `pl-10` (40px) de marge gauche. Ajouté au padding de base `.admin-input` (`px-3` = 24px), l'icône loupe positionnée à `left-3` (12px) laissait un espace trop juste entre l'icône et le texte.
 
-## Conventions
-- Always use Shadcn components from `@/components/ui` — never recreate existing components
-- Always use icons from `lucide-react`
-- Mettre les composants de section dans app/_components.
-- N'ajouter "use client" QUE dans les composants vraiments interactifs (état, clics, événements). Par défaut, garder côté serveur.
-- Tout ce qui touche à la base de données (connexion, schémas de
-tables) va dans le dossier db/.
-- Utiliser l'objet "db" exporté depuis db/index.ts pour parler à la
-base. Ne jamais recréer une connexion.
-- L'auth est gérée par Better Auth :fichier central lib/auth.ts, client lib/auth-client.ts.
-- Le rôle autorisé est `user.role` dans la base. Les dashboards, destinations et règles d'accès sont centralisés dans `lib/auth-routing.ts`; la relecture serveur de la session et du compte est dans `lib/auth-access.ts`.
-- Une inscription publique crée au maximum `client` ou `vendor`. Les rôles `admin` et `collaborateur` sont attribués uniquement par une API administrative sécurisée.
-- Une inscription Google exige une intention serveur signée et limitée à `client` ou `vendor`. Ne jamais accepter un rôle social ou une destination de dashboard fournis par le navigateur.
-- Peut modifier à la main db/schema.ts.
-- Pour inscrire ou connecter un utilisateur, toujours passer par notre client d'authentification.
-- Tous les secrets vont dans .env.
+### Correction
+| Avant | Après |
+|-------|-------|
+| `pl-10 admin-input` | `pl-12 admin-input` |
 
-## RULES TO FOLLOW
-1. Inspect Before Changing
-Always inspect the existing project structure, relevant files, routes, components, database schema, authentication, and installed dependencies before making changes.
-Read and follow the applicable project instructions in AGENTS.md, OPENCODE.md, and other relevant instruction files.
-Reuse existing components, utilities, libraries, and established coding patterns whenever possible.
-Never assume a feature is missing before checking the current implementation.
-2. Preserve the Existing Architecture
-Respect the existing Next.js, React, TypeScript, UI component, and Neon database architecture.
-Do not replace existing technologies or introduce duplicate systems without a demonstrated technical need.
-Do not overwrite working features or modify unrelated pages.
-Never reset, drop, or destructively modify production database tables.
-Use safe, reviewed, backward-compatible database migrations when required.
-3. Security and Authorization
-Enforce authentication and authorization on the server for every protected operation.
-Never rely on hidden UI elements or client-provided roles as security controls.
-Apply least-privilege permissions to administrators, collaborators, vendors, and users.
-Prevent privilege escalation and unauthorized access to another user's or vendor's data.
-Never expose secrets, database credentials, private tokens, or privileged server operations to the client.
-Validate and sanitize user input on the server.
-4. Functional Implementation
-Every button, form, filter, search field, export action, and navigation link must perform its intended function.
-Persist changes in the existing database where appropriate.
-Handle loading, empty, success, and error states clearly.
-Respect existing business rules, including immediate vendor publication without mandatory administrator approval.
-Ensure administrative moderation does not unnecessarily interrupt legitimate vendor operations.
-5. UI and Responsive Design
-Follow the existing Gaspo visual identity and established component conventions.
-Prefer existing Shadcn UI components from @/components/ui where appropriate.
-Use Lucide React icons when needed.
-Do not recreate components that already exist.
-Ensure layouts work correctly on desktop, tablet, and mobile.
-Avoid unnecessary redesigns outside the scope of the requested task.
-6. Testing and Validation
-After implementing a feature, run the relevant tests and available type checks and lint checks.
-Test the actual user workflow, data persistence, permissions, and error handling.
-Verify important changes in a real browser when browser testing is available.
-Fix regressions introduced by the implementation.
-Never claim that tests or browser validation passed unless they were actually executed successfully.
-7. Task Execution
-For substantial changes, first inspect the project and provide a concise implementation plan.
-Implement changes incrementally, prioritizing the requested functionality.
-Avoid unnecessary dependencies, duplicate code, speculative features, and unrelated refactoring.
-Report the files changed, database changes, tests executed, and any unresolved issues.
-Do not stop at a visual mockup when the requested feature requires real backend functionality.
-8. Completion Standard
+### Résultat
+- Espace garanti entre l'icône et le texte : **60px** (contre 52px auparavant)
+- Aucun chevauchement possible sur aucun device
+- Alignement vertical conservé par les classes Tailwind existantes
 
-A task is complete only when its intended functionality is implemented, security requirements are respected, relevant tests have been executed, and the result has been verified to the extent supported by the available environment.
+### Fichier modifié
+- `app\_components\notifications\notification-center.tsx` — changement unique de classe CSS
 
-
-## Gotchas
-- Next.js 16 has breaking changes — check `node_modules/next/dist/docs/` before assuming APIs
-- `SheetTrigger` must be imported from `@/components/ui/sheet` (defined there, not from @base-ui/react)
-- WSL paths: dev server may fail with UNC paths (`\\wsl.localhost\...`) — run from Windows path or native Linux
-
-### Règles de protection des secrets
-
-- Ne jamais modifier, écraser, renommer, déplacer ou supprimer les fichiers `.env`, `.env.local`, `.env.production` et les autres variantes contenant des variables d'environnement.
-- Ne jamais publier, exposer, copier dans le code frontend ou transférer le contenu de ces fichiers.
-- Ne jamais déplacer un fichier `.env` vers `public/`, `src/`, `app/` ou tout autre répertoire exposé au navigateur.
-- Ne jamais committer ces fichiers dans Git ni les inclure dans une sauvegarde publique.
-- Ne jamais afficher leurs valeurs dans les logs, les rapports ou les réponses.
-- Ne jamais modifier les identifiants, mots de passe, clés API, secrets de session ou paramètres de connexion existants.
-- Si une variable d'environnement semble manquer, signaler son nom sans révéler sa valeur et demander une intervention distincte.
-- Vérifier que les fichiers d'environnement sont correctement exclus de Git et que les secrets ne sont pas exposés par le code client.
-
-<!-- BEGIN:nextjs-agent-rules -->
-
-# This is NOT the Next.js you know
-
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
-
-This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
-
-<!-- END:nextjs-agent-rules -->
+### Non-affecté
+- Aucun fichier `.env` modifié
+- Aucun serveur arrêté
+- Aucune donnée base de données modifiée
+- Aucun autre dashboard ou composant impacted

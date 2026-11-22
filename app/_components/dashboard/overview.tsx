@@ -16,7 +16,6 @@ export function DashboardOverview() {
 
   // Determine the welcome message based on available user data
   let welcomeHeading: React.ReactNode;
-  let subtitle: React.ReactNode | null = null;
 
   if (isLoading) {
     // Afficher un état de chargement discret pendant le premier rendu

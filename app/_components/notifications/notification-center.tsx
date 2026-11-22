@@ -19,8 +19,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { NotificationItem } from "./notification-item";
+import Link from "next/link";
 import { dispatchNotificationsUpdated } from "@/lib/use-notification-unread-count";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -76,6 +85,13 @@ export function NotificationCenter() {
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkMode, setBulkMode] = useState(false);
+  const [detailNotification, setDetailNotification] = useState<Notification | null>(null);
+
+  useEffect(() => {
+    if (!detailNotification) return;
+    const updated = notifications.find((n) => n.id === detailNotification.id);
+    if (updated) setDetailNotification(updated);
+  }, [notifications, detailNotification?.id]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -661,7 +677,7 @@ export function NotificationCenter() {
                 setPage(1);
                 setSelectedIds([]);
               }}
-              className="pl-10 admin-input"
+              className="pl-12 admin-input"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -726,6 +742,7 @@ export function NotificationCenter() {
                 onArchive={handleArchive}
                 onRestore={handleRestore}
                 onDelete={handleDelete}
+                onOpen={(item) => setDetailNotification(item)}
               />
             ))}
           </div>
@@ -756,6 +773,65 @@ export function NotificationCenter() {
           </div>
         )}
       </div>
+
+      <Dialog
+        open={!!detailNotification}
+        onOpenChange={(open) => !open && setDetailNotification(null)}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{detailNotification?.title || "Notification"}</DialogTitle>
+            <DialogDescription>
+              {detailNotification
+                ? `Reçue le ${new Date(detailNotification.createdAt).toLocaleString("fr-FR")}`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          {detailNotification && (
+            <div className="space-y-3 text-sm">
+              <p className="whitespace-pre-wrap text-foreground">
+                {detailNotification.message}
+              </p>
+              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                <span>Type: {detailNotification.type}</span>
+                <span>•</span>
+                <span>{detailNotification.read ? "Lue" : "Non lue"}</span>
+                {detailNotification.archived ? <span>• Archivée</span> : null}
+              </div>
+              {detailNotification.link ? (
+                <Link
+                  href={detailNotification.link}
+                  className="inline-flex text-sm font-medium text-green-700 hover:underline"
+                  onClick={() => setDetailNotification(null)}
+                >
+                  Accéder à l&apos;élément lié →
+                </Link>
+              ) : null}
+            </div>
+          )}
+          <DialogFooter>
+            {detailNotification && !detailNotification.read ? (
+              <Button
+                variant="outline"
+                onClick={() => void handleMarkRead(detailNotification.id)}
+              >
+                Marquer comme lue
+              </Button>
+            ) : null}
+            {detailNotification?.read ? (
+              <Button
+                variant="outline"
+                onClick={() => void handleMarkUnread(detailNotification.id)}
+              >
+                Marquer comme non lue
+              </Button>
+            ) : null}
+            <Button variant="outline" onClick={() => setDetailNotification(null)}>
+              Fermer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -26,6 +26,24 @@ function cleanCoordinate(value: unknown): string | null | undefined {
   return String(numeric)
 }
 
+function parseRequiredFee(value: unknown, fallback = 0): number | null {
+  if (value === undefined || value === null || value === "") return fallback
+  const numeric = typeof value === "number" ? value : Number(value)
+  if (!Number.isInteger(numeric) || numeric < 0 || numeric > 10_000_000) {
+    return null
+  }
+  return numeric
+}
+
+function parseOptionalFee(value: unknown): number | null | "invalid" {
+  if (value === undefined || value === null || value === "") return null
+  const numeric = typeof value === "number" ? value : Number(value)
+  if (!Number.isInteger(numeric) || numeric < 0 || numeric > 10_000_000) {
+    return "invalid"
+  }
+  return numeric
+}
+
 export async function POST(req: NextRequest) {
   try {
     const auth = await getProUser()
@@ -46,6 +64,16 @@ export async function POST(req: NextRequest) {
       longitude?: unknown
       brands?: string[]
       formats?: string[]
+      deliveryEnabled?: unknown
+      deliveryFee?: unknown
+      exchangeEnabled?: unknown
+      exchangeFee?: unknown
+      exchangeBrands?: unknown
+      exchangeFormats?: unknown
+      gasSaleEnabled?: unknown
+      gasSaleFee?: unknown
+      gasSaleBrands?: unknown
+      gasSaleFormats?: unknown
     } | null
 
     if (!body) {
@@ -96,6 +124,36 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const deliveryEnabled = typeof body.deliveryEnabled === "boolean" ? body.deliveryEnabled : false
+    const exchangeEnabled = typeof body.exchangeEnabled === "boolean" ? body.exchangeEnabled : false
+    const gasSaleEnabled = typeof body.gasSaleEnabled === "boolean" ? body.gasSaleEnabled : false
+
+    const deliveryFee = parseRequiredFee(body.deliveryFee, 0)
+    if (deliveryFee === null) {
+      return NextResponse.json({ error: "Les frais de livraison sont invalides" }, { status: 400 })
+    }
+    const exchangeFee = parseOptionalFee(body.exchangeFee)
+    if (exchangeFee === "invalid") {
+      return NextResponse.json({ error: "Le prix du service d'échange est invalide" }, { status: 400 })
+    }
+    const gasSaleFee = parseOptionalFee(body.gasSaleFee)
+    if (gasSaleFee === "invalid") {
+      return NextResponse.json({ error: "Le prix du service de vente de gaz est invalide" }, { status: 400 })
+    }
+
+    const exchangeBrands = cleanCatalogValues(body.exchangeBrands, MAX_VENDOR_BRANDS).filter(
+      (brand) => brand.length <= 50
+    )
+    const exchangeFormats = cleanCatalogValues(body.exchangeFormats, MAX_VENDOR_FORMATS).filter(
+      (format) => format.length <= 30
+    )
+    const gasSaleBrands = cleanCatalogValues(body.gasSaleBrands, MAX_VENDOR_BRANDS).filter(
+      (brand) => brand.length <= 50
+    )
+    const gasSaleFormats = cleanCatalogValues(body.gasSaleFormats, MAX_VENDOR_FORMATS).filter(
+      (format) => format.length <= 30
+    )
+
     const [existing] = await db
       .select({ id: pointDeVente.id })
       .from(pointDeVente)
@@ -111,8 +169,6 @@ export async function POST(req: NextRequest) {
     const pointId = randomUUID()
     const now = new Date()
 
-    // Neon exécute ce lot dans une transaction. Le dépôt et la clôture du
-    // brouillon d'onboarding sont donc enregistrés ensemble.
     await db.batch([
       db.insert(pointDeVente).values({
         id: pointId,
@@ -124,6 +180,16 @@ export async function POST(req: NextRequest) {
         longitude,
         brands,
         formats,
+        deliveryEnabled,
+        deliveryFee: deliveryEnabled ? deliveryFee : 0,
+        exchangeEnabled,
+        exchangeFee: exchangeEnabled ? exchangeFee : null,
+        exchangeBrands: exchangeEnabled ? exchangeBrands : [],
+        exchangeFormats: exchangeEnabled ? exchangeFormats : [],
+        gasSaleEnabled,
+        gasSaleFee: gasSaleEnabled ? gasSaleFee : null,
+        gasSaleBrands: gasSaleEnabled ? gasSaleBrands : [],
+        gasSaleFormats: gasSaleEnabled ? gasSaleFormats : [],
         vendorId: user.id,
         isActive: true,
         createdAt: now,

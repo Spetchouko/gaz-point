@@ -1,10 +1,26 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { DashboardClientLayout } from "@/app/_components/dashboard/client-layout";
 import { DashboardShell } from "@/app/_components/dashboard/dashboard-shell";
 import { useRouter, usePathname } from "next/navigation";
 import { useDashboardSession, useAutoRefreshSession } from "@/lib/auth-session";
 import { isUnauthenticatedRequest, requestJson } from "@/lib/client-request";
+
+function VendorRouteRedirect({ to }: { to: string }) {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace(to);
+  }, [router, to]);
+
+  return (
+    <DashboardShell role="vendor" status="loading">
+      <div className="flex min-h-[40vh] items-center justify-center text-sm text-muted-foreground">
+        Redirection…
+      </div>
+    </DashboardShell>
+  );
+}
 
 export default function DashboardClientLayoutWrapper({
   children,
@@ -15,6 +31,7 @@ export default function DashboardClientLayoutWrapper({
     useDashboardSession();
   const router = useRouter();
   const pathname = usePathname();
+  const redirectingToLoginRef = useRef(false);
 
   // Rafraîchir automatiquement la session au focus de la fenêtre
   // pour détecter les changements faits dans d'autres onglets
@@ -25,6 +42,11 @@ export default function DashboardClientLayoutWrapper({
   // qu'après une confirmation serveur explicite (HTTP 401).
   useEffect(() => {
     if (isLoading) return;
+    if (isAuthenticated) {
+      redirectingToLoginRef.current = false;
+      return;
+    }
+    if (redirectingToLoginRef.current) return;
 
     const controller = new AbortController();
     let cancelled = false;
@@ -41,6 +63,8 @@ export default function DashboardClientLayoutWrapper({
         );
       } catch (error) {
         if (cancelled || !isUnauthenticatedRequest(error)) return;
+        if (redirectingToLoginRef.current) return;
+        redirectingToLoginRef.current = true;
         const currentPath =
           typeof window !== "undefined"
             ? `${window.location.pathname}${window.location.search}`
@@ -71,11 +95,14 @@ export default function DashboardClientLayoutWrapper({
     return <>{children}</>;
   }
 
+  const isVendorUser = user?.role === "vendor";
+
   const usesVendorShell =
     pathname === "/dashboard/depot" ||
     pathname.startsWith("/dashboard/depot/") ||
     pathname === "/dashboard/reservations/vendor" ||
-    pathname === "/dashboard/reservations/verify";
+    pathname === "/dashboard/reservations/verify" ||
+    (isVendorUser && pathname === "/dashboard/avis");
 
   if (usesVendorShell) {
     return (
@@ -83,6 +110,23 @@ export default function DashboardClientLayoutWrapper({
         {children}
       </DashboardShell>
     );
+  }
+
+  // Redirige un vendeur connecté vers ses propres pages quand il atterrit
+  // sur une route générique partagée avec les clients.
+  if (isVendorUser) {
+    const vendorRedirects: Record<string, string> = {
+      "/dashboard/notifications": "/dashboard/vendeur/notifications",
+      "/dashboard/historique": "/dashboard/vendeur/historique",
+      "/dashboard/parametres": "/dashboard/vendeur/parametres",
+      "/dashboard/profil": "/dashboard/vendeur/profil",
+      "/dashboard/reservations": "/dashboard/depot/reservations",
+      "/dashboard/recherches": "/dashboard/vendeur/resultats-recherche",
+    };
+    const redirectTo = vendorRedirects[pathname];
+    if (redirectTo) {
+      return <VendorRouteRedirect to={redirectTo} />;
+    }
   }
 
   // Toujours afficher le contenu : pas de retour null pendant le loading,

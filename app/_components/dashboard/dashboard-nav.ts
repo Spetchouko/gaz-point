@@ -97,6 +97,16 @@ export const VENDOR_NAV_ITEMS: DashboardNavItem[] = [
     icon: Truck,
   },
   {
+    href: "/dashboard/vendeur/historique",
+    label: "Historique",
+    icon: History,
+  },
+  {
+    href: "/dashboard/vendeur/notifications",
+    label: "Notifications",
+    icon: Bell,
+  },
+  {
     href: "/dashboard/avis",
     label: "Donner mon avis",
     icon: MessageSquare,
@@ -105,6 +115,11 @@ export const VENDOR_NAV_ITEMS: DashboardNavItem[] = [
     href: "/dashboard/vendeur/profil",
     label: "Mon profil",
     icon: User,
+  },
+  {
+    href: "/dashboard/vendeur/parametres",
+    label: "Paramètres",
+    icon: Settings,
   },
 ]
 

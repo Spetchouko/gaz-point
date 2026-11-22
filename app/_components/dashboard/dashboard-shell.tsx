@@ -58,7 +58,9 @@ export function DashboardShell({
   const navItems = getDashboardNavItems(role);
   const { unreadCount } = useNotificationUnreadCount(isAuthenticated);
   const buttonDisabled = status === "loading";
-  const notificationsHref = "/dashboard/notifications";
+  const notificationsHref = isVendor
+    ? "/dashboard/vendeur/notifications"
+    : "/dashboard/notifications";
 
   const primaryAction = isVendor
     ? {

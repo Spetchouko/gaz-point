@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
-import { reservation, disponibilite, pointDeVente, paymentTransaction } from "@/db/schema"
+import { reservation, disponibilite, pointDeVente } from "@/db/schema"
 import { eq, and, sql } from "drizzle-orm"
 import { randomUUID } from "node:crypto"
 import { getCurrentUser } from "@/lib/session"
@@ -8,18 +8,18 @@ import {
   AD_ATTRIBUTION_COOKIE,
   recordConversionFromRequest,
 } from "@/lib/publicite-attribution"
-import { initiatePayment } from "@/lib/geniuspay"
 import {
   RESERVATION_CODE_LENGTH,
   randomReservationCodeSuffix,
 } from "@/lib/reservation-code"
-import { optionalEnv } from "@/lib/env"
-import { validatePaymentCheckoutUrl } from "@/lib/payment-checkout"
+import {
+  buildNotificationLink,
+  createNotification,
+} from "@/lib/notifications"
+import { calculateReservationAmount } from "@/lib/reservation-amount"
 
-const DEFAULT_RESERVATION_AMOUNT = 1000 // FCFA
 const RESERVATION_EXPIRY_MINUTES = 1440 // 24 heures
 const MAX_RESERVATION_QUANTITY = 20
-const RESERVATION_PAYMENT_CODE_LENGTH = RESERVATION_CODE_LENGTH
 
 /**
  * Génère le préfixe lisible GP + DDMMYY + 2 premières lettres du dépôt.
@@ -42,7 +42,7 @@ function buildBaseReservationCode(depotName: string): string {
 }
 
 async function ensureUniqueCode(baseCode: string): Promise<string> {
-  const suffixLength = RESERVATION_PAYMENT_CODE_LENGTH - baseCode.length
+  const suffixLength = RESERVATION_CODE_LENGTH - baseCode.length
   let attempts = 0
   while (attempts < 20) {
     const code = `${baseCode}${randomReservationCodeSuffix(suffixLength)}`
@@ -108,6 +108,13 @@ export async function POST(req: NextRequest) {
       )
     }
     const quantity = rawQuantity
+    const amount = calculateReservationAmount(quantity)
+    if (amount === null) {
+      return NextResponse.json(
+        { error: "Impossible de calculer le montant à régler au dépôt" },
+        { status: 400 }
+      )
+    }
 
     const dispoColumns = {
       id: disponibilite.id,
@@ -293,9 +300,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Insertion de la réservation en statut "pending" : elle ne devient
-    // confirmée qu'après réception d'une confirmation de paiement valide
-    // (webhook GeniusPay). Un simple retour de page ne vaut pas preuve de paiement.
+    // La réservation est enregistrée et confirmée immédiatement : le règlement
+    // se fait au dépôt, aucun paiement en ligne n'est initié.
     try {
       await db.insert(reservation).values({
         id: reservationId,
@@ -309,9 +315,9 @@ export async function POST(req: NextRequest) {
         format,
         quantity,
         reservationCode,
-        amount: DEFAULT_RESERVATION_AMOUNT,
+        amount,
         amountType,
-        status: "pending",
+        status: "confirmed",
         expiresAt,
         reservedAt: new Date(),
       })
@@ -329,126 +335,37 @@ export async function POST(req: NextRequest) {
       throw insertError
     }
 
-    const cancelPendingReservation = async () => {
-      await db
-        .update(reservation)
-        .set({ status: "cancelled", cancelledAt: new Date(), updatedAt: new Date() })
-        .where(eq(reservation.id, reservationId))
-      await db
-        .update(disponibilite)
-        .set({
-          reservedQuantity: sql`GREATEST(0, ${disponibilite.reservedQuantity} - ${quantity})`,
-          updatedAt: new Date(),
-        })
-        .where(eq(disponibilite.id, targetDisponibiliteId))
-    }
-
-    // Enregistrement de la transaction de paiement en attente
-    const paymentId = randomUUID()
-    const siteUrl = optionalEnv("NEXT_PUBLIC_SITE_URL") ?? req.nextUrl.origin
-    const successUrl = `${siteUrl}/paiement/retour?reservation=${encodeURIComponent(reservationId)}`
-    const errorUrl = `${siteUrl}/paiement/retour?reservation=${encodeURIComponent(reservationId)}&status=error`
-    const paymentMetadata = {
-      type: "reservation",
-      reservation_id: reservationId,
-      vendor_id: point.vendorId,
-      user_id: currentUser.id,
-      amount: String(DEFAULT_RESERVATION_AMOUNT),
-      currency: "XAF",
-    }
-
-    // Initiation du paiement GeniusPay (1 000 FCFA fixes)
-    let paymentResult: Awaited<ReturnType<typeof initiatePayment>>
-    try {
-      paymentResult = await initiatePayment({
-        amount: DEFAULT_RESERVATION_AMOUNT,
-        currency: "XAF",
-        description: `Réservation gaz ${brand} ${format} - ${point.name}`,
-        customer: {
-          name: currentUser.name,
-          email: currentUser.email ?? "",
-          phone: currentUser.phoneNumber ?? undefined,
-          country: "CM",
-        },
-        successUrl,
-        errorUrl,
-        metadata: paymentMetadata,
-      })
-    } catch (paymentError) {
-      console.error("[reservation/create] GeniusPay exception:", paymentError)
-      await cancelPendingReservation()
-      return NextResponse.json(
-        { error: "Échec de l'initialisation du paiement" },
-        { status: 500 }
-      )
-    }
-
-    const paymentData = paymentResult.data
-    if (
-      !paymentResult.success ||
-      !paymentData ||
-      !paymentData.reference ||
-      Number(paymentData.amount) !== DEFAULT_RESERVATION_AMOUNT ||
-      paymentData.currency !== "XAF"
-    ) {
-      console.error("[reservation/create] GeniusPay error:", paymentResult.error)
-      await cancelPendingReservation()
-      return NextResponse.json(
-        {
-          error: paymentResult.error?.message ?? "Échec de l'initialisation du paiement",
-        },
-        { status: 500 }
-      )
-    }
-
-    let checkoutUrl: string
-    try {
-      checkoutUrl = validatePaymentCheckoutUrl(paymentData.checkout_url)
-    } catch (checkoutError) {
-      console.error("[reservation/create] checkout URL invalide:", checkoutError)
-      await cancelPendingReservation()
-      return NextResponse.json(
-        { error: "Échec de l'initialisation du paiement" },
-        { status: 500 }
-      )
-    }
-
-    // Stockage de la transaction de paiement
-    try {
-      await db.insert(paymentTransaction).values({
-        id: paymentId,
-        vendorId: point.vendorId,
-        geniuspayReference: paymentData.reference,
-        geniuspayId: paymentData.id,
-        amount: paymentData.amount,
-        currency: paymentData.currency,
-        status: paymentData.status,
-        checkoutUrl,
-        successUrl,
-        errorUrl,
-        metadata: JSON.stringify(paymentMetadata),
-        environment: paymentData.environment,
-        initiatedAt: new Date(),
-      })
-    } catch (transactionError) {
-      console.error("[reservation/create] transaction insert failed:", transactionError)
-      await cancelPendingReservation()
-      throw transactionError
-    }
-
     // Attribution publicitaire : réservation faite dans les 30 jours après un clic.
     if (req.cookies.get(AD_ATTRIBUTION_COOKIE)) {
       await recordConversionFromRequest(req, "reservation", { userId: currentUser.id })
     }
+
+    // Le mécanisme de notification existant est déclenché dès l'enregistrement,
+    // puisque la confirmation ne dépend plus d'un paiement en ligne.
+    await createNotification({
+      userId: currentUser.id,
+      type: "reservation",
+      title: "Réservation enregistrée",
+      message: `Votre réservation ${reservationCode} est enregistrée. Montant à payer au dépôt : ${amount} FCFA.`,
+      link: buildNotificationLink("reservation", reservationId, "client-reservations"),
+    })
+
+    await createNotification({
+      userId: point.vendorId,
+      type: "reservation",
+      title: "Nouvelle réservation",
+      message: `Réservation ${reservationCode} — ${quantity} bouteille${quantity > 1 ? "s" : ""} — montant à régler au dépôt : ${amount} FCFA.`,
+      link: buildNotificationLink("reservation", reservationId, "vendor-reservations"),
+    })
 
     return NextResponse.json({
       ok: true,
       reservation: {
         id: reservationId,
         code: reservationCode,
-        status: "pending",
+        status: "confirmed",
         expiresAt: expiresAt.toISOString(),
-        amount: DEFAULT_RESERVATION_AMOUNT,
+        amount,
         amountType,
         brand,
         format,
@@ -456,10 +373,6 @@ export async function POST(req: NextRequest) {
         pointName: point.name,
         pointDistrict: point.district ?? "",
         reservedAt: new Date().toISOString(),
-      },
-      payment: {
-        checkoutUrl,
-        reference: paymentData.reference,
       },
     })
   } catch (err) {

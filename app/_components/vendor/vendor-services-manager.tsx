@@ -35,9 +35,13 @@ export function VendorServicesManager({ depot }: { depot: VendorDepotDto | null 
   const [deliveryEnabled, setDeliveryEnabled] = useState(depot?.deliveryEnabled ?? false)
   const [deliveryFee, setDeliveryFee] = useState(String(depot?.deliveryFee ?? 0))
   const [exchangeEnabled, setExchangeEnabled] = useState(depot?.exchangeEnabled ?? false)
+  const [exchangeFee, setExchangeFee] = useState(depot?.exchangeFee != null ? String(depot.exchangeFee) : "")
   const [gasSaleEnabled, setGasSaleEnabled] = useState(depot?.gasSaleEnabled ?? false)
+  const [gasSaleFee, setGasSaleFee] = useState(depot?.gasSaleFee != null ? String(depot.gasSaleFee) : "")
   const [exchangeBrands, setExchangeBrands] = useState<string[]>(depot?.exchangeBrands ?? [])
   const [exchangeFormats, setExchangeFormats] = useState<string[]>(depot?.exchangeFormats ?? [])
+  const [gasSaleBrands, setGasSaleBrands] = useState<string[]>(depot?.gasSaleBrands ?? [])
+  const [gasSaleFormats, setGasSaleFormats] = useState<string[]>(depot?.gasSaleFormats ?? [])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -49,9 +53,13 @@ export function VendorServicesManager({ depot }: { depot: VendorDepotDto | null 
     setDeliveryEnabled(depot?.deliveryEnabled ?? false)
     setDeliveryFee(String(depot?.deliveryFee ?? 0))
     setExchangeEnabled(depot?.exchangeEnabled ?? false)
+    setExchangeFee(depot?.exchangeFee != null ? String(depot.exchangeFee) : "")
     setGasSaleEnabled(depot?.gasSaleEnabled ?? false)
+    setGasSaleFee(depot?.gasSaleFee != null ? String(depot.gasSaleFee) : "")
     setExchangeBrands(depot?.exchangeBrands ?? [])
     setExchangeFormats(depot?.exchangeFormats ?? [])
+    setGasSaleBrands(depot?.gasSaleBrands ?? [])
+    setGasSaleFormats(depot?.gasSaleFormats ?? [])
   }
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -64,8 +72,14 @@ export function VendorServicesManager({ depot }: { depot: VendorDepotDto | null 
       setError("Les frais de livraison doivent être un montant entier positif.")
       return
     }
-    if (exchangeEnabled && (exchangeBrands.length === 0 || exchangeFormats.length === 0)) {
-      setError("Sélectionnez au moins une marque et un grammage acceptés pour l'échange.")
+    const parsedExchangeFee = exchangeFee.trim() === "" ? null : Number(exchangeFee)
+    if (exchangeEnabled && parsedExchangeFee !== null && (!Number.isInteger(parsedExchangeFee) || parsedExchangeFee < 0)) {
+      setError("Le prix du service d'échange doit être un nombre entier valide.")
+      return
+    }
+    const parsedGasSaleFee = gasSaleFee.trim() === "" ? null : Number(gasSaleFee)
+    if (gasSaleEnabled && parsedGasSaleFee !== null && (!Number.isInteger(parsedGasSaleFee) || parsedGasSaleFee < 0)) {
+      setError("Le prix du service de vente de gaz doit être un nombre entier valide.")
       return
     }
 
@@ -79,9 +93,13 @@ export function VendorServicesManager({ depot }: { depot: VendorDepotDto | null 
             deliveryEnabled,
             deliveryFee: fee,
             exchangeEnabled,
+            exchangeFee: exchangeEnabled ? parsedExchangeFee : null,
             gasSaleEnabled,
+            gasSaleFee: gasSaleEnabled ? parsedGasSaleFee : null,
             exchangeBrands,
             exchangeFormats,
+            gasSaleBrands,
+            gasSaleFormats,
           }),
         })
         const payload = (await response.json().catch(() => null)) as {
@@ -214,10 +232,10 @@ export function VendorServicesManager({ depot }: { depot: VendorDepotDto | null 
                 </span>
                 <div>
                   <p className="text-sm font-medium text-foreground">
-                    Activer l’échange
+                    Activer l&apos;échange
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Acceptez les bouteilles vides contre des pleines.
+                    Permet au client qui ne trouve pas sa marque habituelle de bouteille de gaz chargée de choisir une autre marque de bouteille chargée proposée par le dépôt.
                   </p>
                 </div>
               </div>
@@ -229,49 +247,100 @@ export function VendorServicesManager({ depot }: { depot: VendorDepotDto | null 
               />
             </div>
             {exchangeEnabled && (
-              <div className="grid gap-5 xl:grid-cols-2">
-                <BrandListInput
-                  values={exchangeBrands}
-                  onChange={setExchangeBrands}
-                  disabled={saving}
-                  min={1}
-                  label="Marques acceptées"
-                />
-                <FormatListInput
-                  values={exchangeFormats}
-                  onChange={setExchangeFormats}
-                  disabled={saving}
-                  label="Grammages acceptés"
-                />
+              <div className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-[220px_1fr] sm:items-center">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="exchange-fee">Prix du service d&apos;échange (FCFA)</Label>
+                    <Input
+                      id="exchange-fee"
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={exchangeFee}
+                      onChange={(event) => setExchangeFee(event.target.value)}
+                      disabled={saving}
+                      placeholder="Ex: 500"
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-5 xl:grid-cols-2">
+                  <BrandListInput
+                    values={exchangeBrands}
+                    onChange={setExchangeBrands}
+                    disabled={saving}
+                    label="Marques acceptées"
+                  />
+                  <FormatListInput
+                    values={exchangeFormats}
+                    onChange={setExchangeFormats}
+                    disabled={saving}
+                    label="Grammages acceptés"
+                  />
+                </div>
               </div>
             )}
           </div>
         </VendorSectionCard>
 
         <VendorSectionCard
-          title="Vente de gaz"
-          description="Vendez des bouteilles déjà chargées."
+          title="Vente de gaz / Achat complet d'une bouteille"
+          description="Permet au client d'acheter une bouteille de gaz déjà chargée lorsqu'il ne possède pas de bouteille ou ne dispose pas de bouteille à échanger."
         >
-          <div className="flex items-center justify-between gap-4 rounded-lg border border-border px-3 py-3">
-            <div className="flex items-center gap-3">
-              <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Package className="size-4" aria-hidden />
-              </span>
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  Activer la vente de bouteilles avec gaz
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Les bouteilles pleines sont prêtes à l’emploi.
-                </p>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-border px-3 py-3">
+              <div className="flex items-center gap-3">
+                <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Package className="size-4" aria-hidden />
+                </span>
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Activer la vente de bouteilles avec gaz
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Vente de bouteilles déjà chargées, sans bouteille à échanger.
+                  </p>
+                </div>
               </div>
+              <Switch
+                checked={gasSaleEnabled}
+                onCheckedChange={setGasSaleEnabled}
+                disabled={saving}
+                aria-label="Activer la vente de gaz"
+              />
             </div>
-            <Switch
-              checked={gasSaleEnabled}
-              onCheckedChange={setGasSaleEnabled}
-              disabled={saving}
-              aria-label="Activer la vente de gaz"
-            />
+            {gasSaleEnabled && (
+              <div className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-[220px_1fr] sm:items-center">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="gas-sale-fee">Prix du service (FCFA)</Label>
+                    <Input
+                      id="gas-sale-fee"
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={gasSaleFee}
+                      onChange={(event) => setGasSaleFee(event.target.value)}
+                      disabled={saving}
+                      placeholder="Ex: 5000"
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-5 xl:grid-cols-2">
+                  <BrandListInput
+                    values={gasSaleBrands}
+                    onChange={setGasSaleBrands}
+                    disabled={saving}
+                    label="Marques vendues"
+                  />
+                  <FormatListInput
+                    values={gasSaleFormats}
+                    onChange={setGasSaleFormats}
+                    disabled={saving}
+                    label="Formats vendus"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </VendorSectionCard>
 
