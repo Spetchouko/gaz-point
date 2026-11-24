@@ -31,6 +31,7 @@ import {
   VendorSectionCard,
   VendorStatusBadge,
 } from "@/app/_components/vendor/vendor-ui"
+import { requestJson } from "@/lib/client-request"
 import { cn } from "@/lib/utils"
 import type {
   VendorDepotDto,
@@ -254,7 +255,7 @@ export function VendorDepotManager({
         gasSaleFormats: form.gasSaleEnabled ? form.gasSaleFormats : [],
       }
 
-      const response = await fetch(
+      await requestJson(
         depotId ? `/api/depot/${depotId}` : "/api/depot/create",
         {
           method: depotId ? "PATCH" : "POST",
@@ -262,14 +263,6 @@ export function VendorDepotManager({
           body: JSON.stringify(body),
         }
       )
-      const payload = (await response.json().catch(() => null)) as {
-        point?: unknown
-        error?: string
-      } | null
-
-      if (!response.ok) {
-        throw new Error(payload?.error ?? "Impossible d'enregistrer le dépôt")
-      }
 
       setSuccess(depotId ? "Dépôt mis à jour avec succès." : "Dépôt créé avec succès.")
       toast.success(depotId ? "Dépôt mis à jour" : "Dépôt créé avec succès")
@@ -278,7 +271,7 @@ export function VendorDepotManager({
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Une erreur est survenue lors de l'enregistrement."
+          : "Impossible d'enregistrer le dépôt. Réessayez."
       )
     } finally {
       setSaving(false)
@@ -593,7 +586,7 @@ export function VendorDepotManager({
                       </div>
                     </div>
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                      Marques et formats acceptés pour l'échange
+                      Marques et formats acceptés pour l&apos;échange
                     </p>
                     <div className="grid gap-5 lg:grid-cols-2">
                       <BrandListInput

@@ -8,6 +8,10 @@ import {
   MAX_VENDOR_FORMATS,
   cleanCatalogValues,
 } from "@/lib/vendor-catalog"
+import {
+  filterSupportedDepotFields,
+  getDepotRowById,
+} from "@/lib/vendor-depot-compat"
 
 type DepotPatchBody = {
   name?: unknown
@@ -87,11 +91,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Requête invalide" }, { status: 400 })
     }
 
-    const [point] = await db
-      .select({ id: pointDeVente.id, vendorId: pointDeVente.vendorId })
-      .from(pointDeVente)
-      .where(eq(pointDeVente.id, id))
-      .limit(1)
+    const point = await getDepotRowById(id)
 
     if (!point || point.vendorId !== user.id) {
       return NextResponse.json({ error: "Dépôt introuvable" }, { status: 404 })
@@ -104,7 +104,11 @@ export async function PATCH(
     const latitude = cleanCoordinate(body.latitude)
     const longitude = cleanCoordinate(body.longitude)
 
-    const updates: Partial<typeof pointDeVente.$inferInsert> = {
+    // On construit d'abord un jeu de champs élargi : le schéma Drizzle ne
+    // contient pas les colonnes GPS, mais l'API les accepte pour rester
+    // compatible si elles sont migrées plus tard. filterSupportedDepotFields
+    // retire les champs absents de Neon avant l'écriture.
+    const updates: Record<string, unknown> = {
       updatedAt: new Date(),
     }
 
@@ -165,7 +169,7 @@ export async function PATCH(
     if (body.deliveryFee !== undefined && deliveryFee === null) {
       return NextResponse.json({ error: "Les frais de livraison sont invalides" }, { status: 400 })
     }
-    if (deliveryFee !== undefined) updates.deliveryFee = deliveryFee
+    if (deliveryFee != null) updates.deliveryFee = deliveryFee
 
     const exchangeFee = parseOptionalFeeStrict(body.exchangeFee)
     if (exchangeFee === "invalid") {
@@ -215,12 +219,15 @@ export async function PATCH(
       if (body.gasSaleFormats === undefined) updates.gasSaleFormats = []
     }
 
-    const [updated] = await db
+    // Certaines colonnes du schéma Drizzle ne sont pas migrées dans Neon :
+    // on n'écrit que celles qui existent réellement, puis on relit la ligne.
+    const safeUpdates = await filterSupportedDepotFields(updates)
+    await db
       .update(pointDeVente)
-      .set(updates)
+      .set(safeUpdates as Partial<typeof pointDeVente.$inferInsert>)
       .where(eq(pointDeVente.id, id))
-      .returning()
 
+    const updated = await getDepotRowById(id)
     return NextResponse.json({ point: updated })
   } catch (err) {
     console.error("[depot/patch] error:", err)

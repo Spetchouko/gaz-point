@@ -1,0 +1,190 @@
+$ next build
+▲ Next.js 16.3.7 (Turbopack)
+- Environments: .env
+✓ Running next.config.ts took 40ms
+- Experiments (use with caution):
+  · serverActions
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.2s
+  Skipping validation of types
+  Finished TypeScript config validation in 9ms ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/124) ...
+  Generating static pages using 7 workers (31/124) 
+  Generating static pages using 7 workers (62/124) 
+  Generating static pages using 7 workers (93/124) 
+✓ Generating static pages using 7 workers (124/124) in 1938ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ○ /a-propos
+├ ƒ /api/admin/abonnements
+├ ƒ /api/admin/abonnements/[id]
+├ ƒ /api/admin/analytics
+├ ƒ /api/admin/avis
+├ ƒ /api/admin/avis/[id]
+├ ƒ /api/admin/collaborateurs
+├ ƒ /api/admin/collaborateurs/[id]
+├ ƒ /api/admin/collaborateurs/[id]/reset-password
+├ ƒ /api/admin/dashboard
+├ ƒ /api/admin/disponibilites
+├ ƒ /api/admin/disponibilites/[id]/status
+├ ƒ /api/admin/overview
+├ ƒ /api/admin/points-de-vente
+├ ƒ /api/admin/points-de-vente/[id]
+├ ƒ /api/admin/points-de-vente/[id]/toggle
+├ ƒ /api/admin/publicite
+├ ƒ /api/admin/publicite/[id]
+├ ƒ /api/admin/reservations
+├ ƒ /api/admin/reservations/[id]/status
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/admin/users/[id]/toggle
+├ ƒ /api/admin/vendors/approvals
+├ ƒ /api/admin/vendors/approve
+├ ƒ /api/admin/vendors/reject
+├ ƒ /api/ads/event
+├ ƒ /api/analytics
+├ ƒ /api/auth/[...all]
+├ ƒ /api/auth/email-otp/send-verification
+├ ƒ /api/auth/email-otp/test-email
+├ ƒ /api/auth/email-otp/verify-email
+├ ƒ /api/auth/email-otp/verify-link
+├ ƒ /api/auth/password-reset/reset
+├ ƒ /api/auth/password-reset/send
+├ ƒ /api/auth/providers
+├ ƒ /api/auth/role-redirect
+├ ƒ /api/auth/social-signup-intent
+├ ƒ /api/auth/test-db
+├ ƒ /api/auth/test-dns
+├ ƒ /api/auth/test-fetch
+├ ƒ /api/auth/test-fetch2
+├ ƒ /api/auth/test-neon-detail
+├ ƒ /api/auth/test-neon-fetch
+├ ƒ /api/auth/test-pool
+├ ƒ /api/avis
+├ ƒ /api/avis/[id]
+├ ƒ /api/avis/public
+├ ƒ /api/contact
+├ ƒ /api/depot/[id]
+├ ƒ /api/depot/[id]/services
+├ ƒ /api/depot/create
+├ ƒ /api/depot/mine
+├ ƒ /api/disponibilite/[id]
+├ ƒ /api/disponibilite/[id]/status
+├ ƒ /api/disponibilite/mine
+├ ƒ /api/historique/reservations
+├ ƒ /api/historique/searches
+├ ƒ /api/marketing/schedule
+├ ƒ /api/notifications
+├ ƒ /api/notifications/[id]
+├ ƒ /api/notifications/bulk
+├ ƒ /api/notifications/export
+├ ƒ /api/payment/initiate
+├ ƒ /api/payment/verify/[reference]
+├ ƒ /api/payment/webhook
+├ ƒ /api/recherche
+├ ƒ /api/reservation/[id]
+├ ƒ /api/reservation/cancel
+├ ƒ /api/reservation/collect
+├ ƒ /api/reservation/create
+├ ƒ /api/reservation/my
+├ ƒ /api/reservation/scan
+├ ƒ /api/reservation/vendor
+├ ƒ /api/reservation/verify
+├ ƒ /api/traffic
+├ ƒ /api/user/account
+├ ƒ /api/user/avatar
+├ ƒ /api/user/me
+├ ƒ /api/user/password
+├ ƒ /api/user/permissions
+├ ƒ /api/user/preferences
+├ ƒ /api/user/profile
+├ ƒ /api/vendor/onboarding
+├ ƒ /api/vendor/signup
+├ ƒ /api/vendor/subscription
+├ ○ /apple-icon.png
+├ ○ /cgu
+├ ○ /cgv
+├ ○ /connexion
+├ ○ /connexion-admin
+├ ○ /contact
+├ ƒ /dashboard
+├ ○ /dashboard/admin
+├ ○ /dashboard/admin/abonnements
+├ ○ /dashboard/admin/analytics
+├ ○ /dashboard/admin/avis
+├ ○ /dashboard/admin/collaborateurs
+├ ○ /dashboard/admin/disponibilites
+├ ○ /dashboard/admin/historique
+├ ○ /dashboard/admin/notifications
+├ ○ /dashboard/admin/parametres
+├ ○ /dashboard/admin/points-de-vente
+├ ƒ /dashboard/admin/points-de-vente/[id]
+├ ○ /dashboard/admin/profil
+├ ○ /dashboard/admin/publicite
+├ ○ /dashboard/admin/reservations
+├ ○ /dashboard/admin/resultats-recherche
+├ ○ /dashboard/admin/utilisateurs
+├ ○ /dashboard/admin/utilisateurs/administrateurs
+├ ○ /dashboard/admin/utilisateurs/clients
+├ ○ /dashboard/admin/utilisateurs/collaborateurs
+├ ○ /dashboard/admin/utilisateurs/tous
+├ ○ /dashboard/admin/utilisateurs/vendeurs
+├ ○ /dashboard/admin/vendeurs
+├ ƒ /dashboard/avis
+├ ƒ /dashboard/client
+├ ○ /dashboard/collaborateur
+├ ○ /dashboard/collaborateur/resultats-recherche
+├ ƒ /dashboard/depot
+├ ƒ /dashboard/depot/disponibilites
+├ ƒ /dashboard/depot/reservations
+├ ƒ /dashboard/depot/services
+├ ○ /dashboard/historique
+├ ○ /dashboard/notifications
+├ ○ /dashboard/parametres
+├ ○ /dashboard/profil
+├ ○ /dashboard/recherches
+├ ○ /dashboard/reservations
+├ ƒ /dashboard/vendeur
+├ ƒ /dashboard/vendeur/historique
+├ ƒ /dashboard/vendeur/notifications
+├ ƒ /dashboard/vendeur/parametres
+├ ƒ /dashboard/vendeur/profil
+├ ƒ /dashboard/vendeur/resultats-recherche
+├ ○ /devenir-vendeur
+├ ƒ /disponibilite/[id]
+├ ○ /icon.png
+├ ○ /icon0.svg
+├ ○ /icon1.png
+├ ○ /inscription
+├ ○ /inscription/usager
+├ ○ /inscription/vendeur
+├ ○ /inscription/vendeur/configuration
+├ ○ /manifest.json
+├ ○ /mentions-legales
+├ ○ /mot-de-passe-demander
+├ ○ /mot-de-passe-oublie
+├ ○ /mot-de-passe-temporaire
+├ ○ /opengraph-image
+├ ○ /paiement/abonnement
+├ ○ /paiement/echec
+├ ○ /paiement/retour
+├ ○ /paiement/succes
+├ ○ /politique-confidentialite
+├ ○ /politique-cookies
+├ ƒ /resultats-recherche
+├ ○ /robots.txt
+├ ○ /services
+├ ○ /sitemap.xml
+└ ○ /validation-email
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

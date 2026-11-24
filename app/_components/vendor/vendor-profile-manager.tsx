@@ -24,6 +24,7 @@ import {
   VendorPageHeader,
   VendorSectionCard,
 } from "@/app/_components/vendor/vendor-ui"
+import { requestJson } from "@/lib/client-request"
 import { formatDateTime } from "@/lib/gaz"
 import { optimizeImageFile } from "@/lib/image-utils"
 import type { VendorProfileDto } from "@/lib/vendor-dashboard"
@@ -66,11 +67,14 @@ export function VendorProfileManager({
   const [savingPassword, setSavingPassword] = useState(false)
   const [error, setError] = useState<ActionError | null>(null)
 
-  const readError = async (response: Response, fallback: string) => {
-    const payload = (await response.json().catch(() => null)) as {
-      error?: string
-    } | null
-    if (!response.ok) throw new Error(payload?.error ?? fallback)
+  // Le profil serveur reprend le dessus après un refresh, sans écraser une
+  // saisie en cours dans un autre onglet.
+  const [syncedProfile, setSyncedProfile] = useState(profile)
+  if (syncedProfile !== profile) {
+    setSyncedProfile(profile)
+    setName(profile.name ?? "")
+    setPhone(profile.phoneNumber ?? "")
+    setImage(profile.image)
   }
 
   const handleProfileSubmit = (event: React.FormEvent) => {
@@ -96,7 +100,7 @@ export function VendorProfileManager({
     void (async () => {
       setSavingProfile(true)
       try {
-        const response = await fetch("/api/user/profile", {
+        await requestJson("/api/user/profile", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -104,7 +108,6 @@ export function VendorProfileManager({
             phone: phone.trim() || null,
           }),
         })
-        await readError(response, "Impossible de mettre à jour le profil")
         toast.success("Profil mis à jour")
         router.refresh()
       } catch (saveError) {
@@ -133,12 +136,11 @@ export function VendorProfileManager({
         const optimized = await optimizeImageFile(file)
         if (!optimized.ok) throw new Error(optimized.error)
 
-        const response = await fetch("/api/user/avatar", {
+        await requestJson("/api/user/avatar", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ image: optimized.dataUrl }),
         })
-        await readError(response, "Impossible de mettre à jour la photo")
         setImage(optimized.dataUrl)
         toast.success("Photo de profil mise à jour")
         router.refresh()
@@ -161,12 +163,11 @@ export function VendorProfileManager({
       setUploadingAvatar(true)
       setError(null)
       try {
-        const response = await fetch("/api/user/avatar", {
+        await requestJson("/api/user/avatar", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ remove: true }),
         })
-        await readError(response, "Impossible de supprimer la photo")
         setImage(null)
         toast.success("Photo de profil supprimée")
         router.refresh()
@@ -208,7 +209,7 @@ export function VendorProfileManager({
     void (async () => {
       setSavingPassword(true)
       try {
-        const response = await fetch("/api/user/password", {
+        await requestJson("/api/user/password", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -216,7 +217,6 @@ export function VendorProfileManager({
             newPassword,
           }),
         })
-        await readError(response, "Impossible de changer le mot de passe")
         setCurrentPassword("")
         setNewPassword("")
         setConfirmPassword("")

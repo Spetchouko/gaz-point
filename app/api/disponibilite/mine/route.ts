@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 import { NextRequest, NextResponse } from "next/server"
-import { and, desc, eq, inArray } from "drizzle-orm"
+import { and, count, desc, eq, inArray } from "drizzle-orm"
 import { db } from "@/db"
 import {
   brand,
@@ -12,7 +12,7 @@ import {
 import { getProUser } from "@/lib/session"
 import { normalizeCatalogValue } from "@/lib/vendor-catalog"
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const auth = await getProUser()
     if (!auth) {
@@ -23,6 +23,19 @@ export async function GET() {
       return NextResponse.json({ error: "Accès réservé aux vendeurs" }, { status: 403 })
     }
 
+    const { searchParams } = new URL(req.url)
+    const page = Math.max(
+      1,
+      Number.parseInt(searchParams.get("page") ?? "1", 10) || 1
+    )
+    const pageSize = Math.min(
+      200,
+      Math.max(
+        1,
+        Number.parseInt(searchParams.get("pageSize") ?? "100", 10) || 100
+      )
+    )
+
     const points = await db
       .select({ id: pointDeVente.id })
       .from(pointDeVente)
@@ -30,16 +43,58 @@ export async function GET() {
 
     const pointIds = points.map((point) => point.id)
     if (pointIds.length === 0) {
-      return NextResponse.json({ disponibilites: [] })
+      return NextResponse.json({
+        disponibilites: [],
+        pagination: { total: 0, page, pageSize, totalPages: 0 },
+      })
     }
 
+    const [totalResult] = await db
+      .select({ count: count() })
+      .from(disponibilite)
+      .where(inArray(disponibilite.pointId, pointIds))
+
+    const total = Number(totalResult?.count ?? 0)
+
     const disponibilites = await db
-      .select()
+      .select({
+        id: disponibilite.id,
+        pointId: disponibilite.pointId,
+        vendorId: disponibilite.vendorId,
+        status: disponibilite.status,
+        note: disponibilite.note,
+        quantity: disponibilite.quantity,
+        reservedQuantity: disponibilite.reservedQuantity,
+        price: disponibilite.price,
+        format: disponibilite.format,
+        brand: disponibilite.brand,
+        weightKg: disponibilite.weightKg,
+        expiresAt: disponibilite.expiresAt,
+        phone: disponibilite.phone,
+        reportedBy: disponibilite.reportedBy,
+        reportedByName: disponibilite.reportedByName,
+        source: disponibilite.source,
+        delivery: disponibilite.delivery,
+        exchange: disponibilite.exchange,
+        gasSale: disponibilite.gasSale,
+        createdAt: disponibilite.createdAt,
+        updatedAt: disponibilite.updatedAt,
+      })
       .from(disponibilite)
       .where(inArray(disponibilite.pointId, pointIds))
       .orderBy(desc(disponibilite.createdAt))
+      .limit(pageSize)
+      .offset((page - 1) * pageSize)
 
-    return NextResponse.json({ disponibilites })
+    return NextResponse.json({
+      disponibilites,
+      pagination: {
+        total,
+        page,
+        pageSize,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    })
   } catch (err) {
     console.error("[disponibilite/mine] error:", err)
     return NextResponse.json(

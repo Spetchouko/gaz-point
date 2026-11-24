@@ -14,6 +14,8 @@ import {
   Package,
   Search,
   User,
+  BarChart3,
+  LayoutDashboard,
 } from "lucide-react";
 import type { DashboardUser } from "@/lib/auth-session";
 import { authClient } from "@/lib/auth-client";
@@ -24,8 +26,13 @@ import { DashboardQuickActions } from "@/app/_components/dashboard/dashboard-qui
 import {
   getDashboardHomeHref,
   getDashboardNavItems,
+  getDashboardNavGroups,
   getDashboardProfileHref,
+  getDashboardNotificationsHref,
+  getPrimaryAction,
+  getSecondaryAction,
   type DashboardShellRole,
+  type DashboardNavGroup,
 } from "@/app/_components/dashboard/dashboard-nav";
 import { cn } from "@/lib/utils";
 import { useNotificationUnreadCount } from "@/lib/use-notification-unread-count";
@@ -35,6 +42,11 @@ type DashboardShellProps = {
   role?: DashboardShellRole;
   session?: DashboardUser | null;
   status?: "loading" | "authenticated" | "unauthenticated";
+  // For admin/collaborateur grouped navigation
+  navGroups?: DashboardNavGroup[];
+  permissions?: Set<string>;
+  // Custom header actions for admin (e.g., Utilisateurs, Vendeurs buttons)
+  headerActions?: React.ReactNode;
 };
 
 export function DashboardShell({
@@ -42,6 +54,9 @@ export function DashboardShell({
   role = "client",
   session: sessionProp,
   status: statusProp,
+  navGroups,
+  permissions = new Set<string>(),
+  headerActions,
 }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -52,47 +67,28 @@ export function DashboardShell({
   const user = sessionProp ?? undefined;
   const status = statusProp;
   const isAuthenticated = Boolean(user);
-  const isVendor = role === "vendor";
   const dashboardHomeHref = getDashboardHomeHref(role);
   const profileHref = getDashboardProfileHref(role);
+  const notificationsHref = getDashboardNotificationsHref(role);
   const navItems = getDashboardNavItems(role);
   const { unreadCount } = useNotificationUnreadCount(isAuthenticated);
   const buttonDisabled = status === "loading";
-  const notificationsHref = isVendor
-    ? "/dashboard/vendeur/notifications"
-    : "/dashboard/notifications";
 
-  const primaryAction = isVendor
-    ? {
-        label: "Disponibilités",
-        href: "/dashboard/depot/disponibilites",
-        icon: Package,
-        ariaLabel: "Voir mes disponibilités",
-      }
-    : {
-        label: "Recherche",
-        href: "/resultats-recherche",
-        icon: Search,
-        ariaLabel: "Nouvelle recherche",
-      };
+  // Le shell vendeur desserve des routes dynamiques dont le rendu RSC peut être
+  // annulé par le navigateur (survol/refresh/navigation). Désactiver le prefetch
+  // uniquement pour ce rôle évite ces rendus spéculatifs sans modifier le
+  // comportement des dashboards client/admin/collaborateur.
+  const linkPrefetch = role === "vendor" ? false : undefined;
 
-  const secondaryAction = isVendor
-    ? {
-        label: "Réservations",
-        href: "/dashboard/depot/reservations",
-        icon: Calendar,
-        ariaLabel: "Voir mes réservations",
-      }
-    : {
-        label: "Réservations",
-        href: "/dashboard/reservations",
-        icon: Calendar,
-        ariaLabel: "Mes réservations",
-      };
+  const primaryAction = getPrimaryAction(role);
+  const secondaryAction = getSecondaryAction(role);
 
-  // Un seul élément de navigation est actif : le plus spécifique. Sans cela,
-  // `/dashboard/depot/disponibilites` activerait aussi « Mes points de vente ».
-  const activeHref = navItems
+  // Determine active href for both flat and grouped navigation
+  const allNavItems = navGroups
+    ? navGroups.flatMap((group) => group.items)
+    : navItems;
+
+  const activeHref = allNavItems
     .filter((item) =>
       item.href === "/dashboard/recherches"
         ? pathname === item.href || pathname === "/resultats-recherche"
@@ -115,7 +111,19 @@ export function DashboardShell({
   const getUserAvatar = () => user?.image ?? null;
 
   const PrimaryActionIcon = primaryAction.icon;
-  const SecondaryActionIcon = secondaryAction.icon;
+  const SecondaryActionIcon = secondaryAction?.icon ?? null;
+
+  // Filter nav groups based on permissions
+  const filteredNavGroups = navGroups
+    ? navGroups
+        .map((group) => ({
+          ...group,
+          items: group.items.filter(
+            (item) => !item.requiredPermission || permissions.has(item.requiredPermission)
+          ),
+        }))
+        .filter((group) => group.items.length > 0)
+    : [];
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -138,6 +146,7 @@ export function DashboardShell({
         >
           <Link
             href={dashboardHomeHref}
+            prefetch={linkPrefetch}
             className="flex items-center gap-2 font-bold text-lg"
             onClick={() => setSidebarOpen(false)}
           >
@@ -170,28 +179,66 @@ export function DashboardShell({
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto p-2" aria-label="Navigation principale">
-          {navItems.map((item) => {
-            const active = isActive(item.href);
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setSidebarOpen(false)}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  sidebarCollapsed && "justify-center px-2"
-                )}
-              >
-                <Icon className={cn("size-4 shrink-0", sidebarCollapsed && "mx-auto")} aria-hidden />
-                {!sidebarCollapsed && <span>{item.label}</span>}
-              </Link>
-            );
-          })}
+          {filteredNavGroups.length > 0 ? (
+            // Grouped navigation for admin/collaborateur
+            filteredNavGroups.map((group) => (
+              <div key={group.groupLabel} className="space-y-0.5">
+                <p className="px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  {group.groupLabel}
+                </p>
+                <div className="space-y-0.5">
+                  {group.items.map((item) => {
+                    const active = isActive(item.href);
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.key}
+                        href={item.href}
+                        prefetch={linkPrefetch}
+                        onClick={() => setSidebarOpen(false)}
+                        aria-current={active ? "page" : undefined}
+                        className={cn(
+                          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                          active
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                          sidebarCollapsed && "justify-center px-2"
+                        )}
+                      >
+                        <Icon className={cn("size-4 shrink-0", sidebarCollapsed && "mx-auto")} aria-hidden />
+                        {!sidebarCollapsed && <span>{item.label}</span>}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
+          ) : (
+            // Flat navigation for client/vendor
+            navItems.map((item) => {
+              const active = isActive(item.href);
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  prefetch={linkPrefetch}
+                  onClick={() => setSidebarOpen(false)}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                    active
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    sidebarCollapsed && "justify-center px-2"
+                  )}
+                >
+                  <Icon className={cn("size-4 shrink-0", sidebarCollapsed && "mx-auto")} aria-hidden />
+                  {!sidebarCollapsed && <span>{item.label}</span>}
+                </Link>
+              );
+            })
+          )}
         </nav>
 
         <div className={cn("space-y-2 border-t border-border p-3", sidebarCollapsed && "px-1")}>
@@ -295,6 +342,7 @@ export function DashboardShell({
         <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-border bg-card/80 px-4 backdrop-blur-md sm:px-6 lg:hidden">
           <Link
             href={dashboardHomeHref}
+            prefetch={linkPrefetch}
             className="flex items-center gap-2 font-bold text-lg"
             onClick={() => setSidebarOpen(false)}
           >
@@ -327,6 +375,7 @@ export function DashboardShell({
         <header className="hidden lg:sticky lg:top-0 lg:z-10 lg:flex lg:h-14 lg:items-center lg:justify-between lg:border-b lg:border-border lg:bg-card/80 lg:px-8 lg:backdrop-blur-md">
           <Link
             href={dashboardHomeHref}
+            prefetch={linkPrefetch}
             className="flex items-center gap-2"
             onClick={() => setSidebarOpen(false)}
           >
@@ -355,16 +404,19 @@ export function DashboardShell({
               <PrimaryActionIcon className="size-4" />
               {primaryAction.label}
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push(secondaryAction.href)}
-              className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-              aria-label={secondaryAction.ariaLabel}
-            >
-              <SecondaryActionIcon className="size-4" />
-              {secondaryAction.label}
-            </Button>
+            {secondaryAction && SecondaryActionIcon && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push(secondaryAction.href)}
+                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                aria-label={secondaryAction.ariaLabel}
+              >
+                <SecondaryActionIcon className="size-4" />
+                {secondaryAction.label}
+              </Button>
+            )}
+            {headerActions}
           </div>
           <div className="flex items-center gap-4">
             <DashboardQuickActions />

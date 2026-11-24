@@ -110,7 +110,19 @@ export function AuthGateModal() {
         password,
       })
       if (signInError) {
-        setError(signInError.message || "Identifiants incorrects.")
+        // Diagnostic logging sans données sensibles
+        console.log("[AUTH CLIENT] Modal sign-in error", {
+          hasMessage: !!signInError.message,
+          message: signInError.message,
+          code: (signInError as { code?: string }).code,
+          status: (signInError as { status?: number }).status,
+        })
+
+        const errorMessage = signInError.message ?? 
+          (signInError as { code?: string }).code === "EMAIL_NOT_VERIFIED"
+            ? "Veuillez vérifier votre adresse email avant de vous connecter."
+            : "Identifiants incorrects."
+        setError(errorMessage)
         setLoading(false)
         return
       }

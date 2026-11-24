@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   AlertCircle,
   ArrowRight,
@@ -46,7 +47,7 @@ function DepotSummaryCard({ depot }: { depot: VendorDepotDto }) {
         size="sm"
         variant="ghost"
         className="mt-2 w-full text-left"
-        render={<Link href="/dashboard/depot">Voir les détails</Link>}
+        render={<Link prefetch={false} href="/dashboard/depot">Voir les détails</Link>}
       />
     </div>
   )
@@ -96,7 +97,11 @@ export function VendorOverview({
   data: VendorOverviewData
   error?: string | null
 }) {
-  const { depot, stats, activities, hasAnyData } = data
+  const { depot, stats, activities, hasAnyData, loadErrors } = data
+  const router = useRouter()
+  const errorMessages = [error, ...(loadErrors ?? [])].filter(
+    (message): message is string => Boolean(message)
+  )
 
   const quickActions = [
     {
@@ -121,21 +126,32 @@ export function VendorOverview({
 
   return (
     <div className="space-y-4">
-      {error && (
-        <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 shadow-sm">
+      {errorMessages.length > 0 && (
+        <div
+          className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 shadow-sm"
+          role="alert"
+        >
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 size-5 shrink-0 text-destructive" aria-hidden />
             <div className="min-w-0 flex-1">
               <h2 className="text-sm font-semibold text-destructive">
-                Erreur lors du chargement du dashboard
+                Certaines données n&apos;ont pas pu être chargées
               </h2>
-              <p className="mt-0.5 text-sm text-destructive/80">{error}</p>
+              <ul className="mt-1 space-y-0.5 text-sm text-destructive/80">
+                {errorMessages.map((message, index) => (
+                  <li key={`${message}-${index}`}>{message}</li>
+                ))}
+              </ul>
             </div>
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Certaines fonctionnalités peuvent être indisponibles. Réessayez en
-            actualisant la page.
-          </p>
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              Les données affichées peuvent être incomplètes.
+            </p>
+            <Button size="sm" variant="outline" onClick={() => router.refresh()}>
+              Réessayer
+            </Button>
+          </div>
         </div>
       )}
       <VendorPageHeader
@@ -149,7 +165,7 @@ export function VendorOverview({
           <Button
             size="sm"
             render={
-              <Link href="/dashboard/depot/disponibilites">
+              <Link prefetch={false} href="/dashboard/depot/disponibilites">
                 <Plus className="size-4" aria-hidden />
                 Ajouter une disponibilité
               </Link>
@@ -182,6 +198,7 @@ export function VendorOverview({
           const Icon = stat.icon
           return (
             <Link
+              prefetch={false}
               key={stat.label}
               href={stat.href}
               className="group relative flex items-center justify-between overflow-hidden rounded-lg border border-border bg-card p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:border-primary/40 active:translate-y-0 active:shadow-sm active:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
@@ -222,7 +239,7 @@ export function VendorOverview({
           className="lg:col-span-1"
           contentClassName="p-4"
         >
-          {stats.depotCount > 0 ? (
+          {stats.depotCount > 0 && depot ? (
             // Show summary of main depot + brief list of others
             <>
               <DepotSummaryCard depot={depot} />
@@ -246,7 +263,7 @@ export function VendorOverview({
                 size="lg"
                 className="w-full"
                 render={
-                  <Link href="/dashboard/depot">
+                  <Link prefetch={false} href="/dashboard/depot">
                     Créer mon premier point de vente
                   </Link>
                 }
@@ -309,13 +326,13 @@ export function VendorOverview({
               <>
                 <Button
                   size="sm"
-                  render={<Link href="/dashboard/depot">Créer mon dépôt</Link>}
+                  render={<Link prefetch={false} href="/dashboard/depot">Créer mon dépôt</Link>}
                 />
                 <Button
                   size="sm"
                   variant="outline"
                   render={
-                    <Link href="/dashboard/depot/disponibilites">
+                    <Link prefetch={false} href="/dashboard/depot/disponibilites">
                       Voir mes disponibilités
                     </Link>
                   }

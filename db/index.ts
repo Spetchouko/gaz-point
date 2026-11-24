@@ -1,15 +1,19 @@
-import { neon } from "@neondatabase/serverless"
-import { drizzle } from "drizzle-orm/neon-http"
+import { Pool } from "pg"
+import { drizzle } from "drizzle-orm/node-postgres"
 import { requiredEnv } from "@/lib/env"
 
 /**
- * Le client Neon serverless (`@neondatabase/serverless`) accepte directement
- * une chaîne de connexion PostgreSQL standard (`postgres://...` ou `postgresql://...`).
- * Pas besoin de la convertir en URL HTTP.
+ * Utilise le driver PostgreSQL standard (pg) avec connexion TCP.
+ * Cela contourne les problèmes de fetch HTTP (Turbopack) et WebSocket (Neon Pool)
+ * qui sont bloqués dans l'environnement WSL/Next.js.
+ * 
+ * Le driver pg utilise le protocole PostgreSQL natif sur TCP qui passe
+ * correctement dans cet environnement.
  */
 function createDatabase() {
   const url = requiredEnv("DATABASE_URL")
-  return drizzle({ client: neon(url) })
+  const pool = new Pool({ connectionString: url, max: 10, ssl: { rejectUnauthorized: false } })
+  return drizzle({ client: pool })
 }
 
 type Database = ReturnType<typeof createDatabase>

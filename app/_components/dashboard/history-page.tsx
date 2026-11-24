@@ -186,7 +186,7 @@ export function DashboardHistoryPage({ role }: { role: Role }) {
       if (!q) return true;
       return [it.reference, it.title, it.subtitle, it.type, statusLabel(it.status)]
         .join(" ")
-        .toLower()
+        .toLowerCase()
         .includes(q);
     });
   }, [items, query, statusFilter]);

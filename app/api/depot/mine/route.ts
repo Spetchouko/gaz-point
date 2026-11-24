@@ -1,8 +1,6 @@
-import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/db"
-import { pointDeVente } from "@/db/schema"
-import { eq } from "drizzle-orm"
+import { NextResponse } from "next/server"
 import { getProUser } from "@/lib/session"
+import { getDepotRowsByVendorId } from "@/lib/vendor-depot-compat"
 
 export async function GET() {
   try {
@@ -15,13 +13,8 @@ export async function GET() {
       return NextResponse.json({ error: "Accès réservé aux vendeurs" }, { status: 403 })
     }
 
-    const [point] = await db
-      .select()
-      .from(pointDeVente)
-      .where(eq(pointDeVente.vendorId, user.id))
-      .limit(1)
-
-    return NextResponse.json({ point })
+    const points = await getDepotRowsByVendorId(user.id)
+    return NextResponse.json({ point: points[0] ?? null })
   } catch (err) {
     console.error("[depot/mine] error:", err)
     return NextResponse.json(

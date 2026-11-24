@@ -25,6 +25,7 @@ import {
     isAuthRole,
     normalizePublicSignupRole,
 } from "@/lib/auth-routing";
+import { withTransientRetry } from "@/lib/transient-retry";
 
 const DEV_BASE_URL = "http://localhost:3000";
 
@@ -292,15 +293,21 @@ export const auth = betterAuth({
                 before: async (session: Record<string, unknown>) => {
                     const userId = String(session.userId ?? "")
                     if (!userId) return true
-                    const [row] = await db
-                        .select({
-                            isActive: schema.user.isActive,
-                            emailVerified: schema.user.emailVerified,
-                            role: schema.user.role,
-                        })
-                        .from(schema.user)
-                        .where(eq(schema.user.id, userId))
-                        .limit(1)
+                    // Wrapper la requête DB dans withTransientRetry pour absorber
+                    // les coupures réseau transitoires (Neon / WSL) qui sinon
+                    // feraient échouer la création de session avec une erreur générique.
+                    const row = await withTransientRetry(async () => {
+                        const [result] = await db
+                            .select({
+                                isActive: schema.user.isActive,
+                                emailVerified: schema.user.emailVerified,
+                                role: schema.user.role,
+                            })
+                            .from(schema.user)
+                            .where(eq(schema.user.id, userId))
+                            .limit(1)
+                        return result
+                    })
                     if (!row || row.isActive === false) {
                         throw new Error("Ce compte a été désactivé. Contactez le support.")
                     }

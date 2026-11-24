@@ -13,9 +13,9 @@ export default async function VendorDashboardPage() {
   try {
     data = await getVendorOverview(user.id)
   } catch (err) {
-    error = err instanceof Error ? err.message : "Erreur inconnue lors du chargement du dashboard"
-    console.error("[vendor-dashboard] Erreur lors du chargement de l'aperçu vendeur:", error)
-    // Valeurs par défaut sûres pour éviter que le dashboard ne reste bloqué
+    console.error("[vendor-dashboard] Erreur lors du chargement de l'aperçu vendeur:", err)
+    // Le détail reste dans les logs serveur ; l'utilisateur voit un message clair.
+    error = "Impossible de charger votre tableau de bord pour le moment."
     data = {
       depot: null,
       stats: {
@@ -25,6 +25,7 @@ export default async function VendorDashboardPage() {
       },
       activities: [],
       hasAnyData: false,
+      loadErrors: [error],
     }
   }
 

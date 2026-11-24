@@ -84,11 +84,9 @@ export async function GET(
       pointDeliveryEnabled: pointDeVente.deliveryEnabled,
       pointDeliveryFee: pointDeVente.deliveryFee,
       pointExchangeEnabled: pointDeVente.exchangeEnabled,
-      pointExchangeFee: pointDeVente.exchangeFee,
       pointGasSaleEnabled: pointDeVente.gasSaleEnabled,
-      pointGasSaleFee: pointDeVente.gasSaleFee,
       pointIsActive: pointDeVente.isActive,
-      // Colonnes GPS non migrées dans Neon (migration 0011 non appliquée) :
+      // Colonnes non migrées dans Neon (frais d'échange/vente et GPS) :
       // elles ne sont pas sélectionnées pour ne pas faire échouer la requête.
     })
     .from(disponibilite)
@@ -153,9 +151,11 @@ export async function GET(
       deliveryEnabled: dispo.pointDeliveryEnabled,
       deliveryFee: dispo.pointDeliveryFee,
       exchangeEnabled: dispo.pointExchangeEnabled,
-      exchangeFee: dispo.pointExchangeFee,
+      // Ces colonnes n'existent pas dans la base déployée : on renvoie une
+      // valeur neutre plutôt qu'une requête vouée à l'échec.
+      exchangeFee: null,
       gasSaleEnabled: dispo.pointGasSaleEnabled,
-      gasSaleFee: dispo.pointGasSaleFee,
+      gasSaleFee: null,
       isActive: dispo.pointIsActive,
       // Pas de coordonnées GPS tant que la migration 0011 n'est pas appliquée.
       latitude: null,

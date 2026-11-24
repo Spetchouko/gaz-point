@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
-import { ThemeProvider } from "@/app/_components/theme-provider";
+import { useRouter } from "next/navigation";
 import { DashboardAdminLayout } from "@/app/_components/dashboard/admin-layout-new";
 import { useDashboardSession, useAutoRefreshSession } from "@/lib/auth-session";
-import { cn } from "@/lib/utils";
+import type { DashboardUser } from "@/lib/auth-session";
 
 export default function DashboardAdminLayoutWrapper({
   children,
@@ -13,9 +13,10 @@ export default function DashboardAdminLayoutWrapper({
   const { status, user, isAuthenticated, isLoading } =
     useDashboardSession();
   const [permissions, setPermissions] = useState<Set<string>>(new Set());
+  const router = useRouter();
 
   // Rafraîchir automatiquement la session au focus de la fenêtre
-  useAutoRefreshSession()
+  useAutoRefreshSession();
 
   // Charger les permissions réelles depuis l'API protégée (collaborateur a des
   // permissions assignées, admin a tous les modules).
@@ -50,17 +51,35 @@ export default function DashboardAdminLayoutWrapper({
       return;
     }
     if (!isAuthenticated || !user) {
-      window.location.href = "/connexion-admin";
+      router.push("/connexion-admin");
       return;
     }
-  }, [isLoading, isAuthenticated, user]);
+  }, [isLoading, isAuthenticated, user, router]);
+
+  const sessionUser: DashboardUser | undefined = user
+    ? {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image ?? null,
+        role: user.role ?? null,
+        emailVerified: user.emailVerified,
+        isActive: user.isActive ?? null,
+        phoneNumber: user.phoneNumber ?? null,
+        createdAt: user.createdAt ?? null,
+        lastLoginAt: user.lastLoginAt ?? null,
+        mustChangePassword: user.mustChangePassword ?? null,
+      }
+    : undefined;
 
   // Toujours afficher le contenu : pas de retour null pendant le loading.
   return (
-    <ThemeProvider>
-      <DashboardAdminLayout session={user} status={status} permissions={permissions}>
-        {children}
-      </DashboardAdminLayout>
-    </ThemeProvider>
+    <DashboardAdminLayout
+      permissions={permissions}
+      session={sessionUser}
+      status={status}
+    >
+      {children}
+    </DashboardAdminLayout>
   );
 }

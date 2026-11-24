@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { MessageSquare, Pencil, Send, Star, Trash2 } from "lucide-react"
+import { Pencil, Send, Star, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -17,13 +17,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {
-  VendorEmptyState,
   VendorErrorState,
   VendorNotice,
   VendorPageHeader,
   VendorSectionCard,
   VendorStatusBadge,
 } from "@/app/_components/vendor/vendor-ui"
+import { requestJson } from "@/lib/client-request"
 import { formatDate } from "@/lib/gaz"
 import {
   AVIS_RATING_MAX,
@@ -60,6 +60,17 @@ export function VendorReviewManager({
   const [deleting, setDeleting] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [lastAction, setLastAction] = useState<"submit" | "delete">("submit")
+
+  // Le serveur reste la source de vérité après un router.refresh() (modération
+  // dans un autre onglet, suppression, etc.) sans écraser une saisie en cours.
+  const [syncedReview, setSyncedReview] = useState(initialReview)
+  if (syncedReview !== initialReview && !editing) {
+    setSyncedReview(initialReview)
+    setReview(initialReview)
+    setRating(initialReview?.rating ?? 0)
+    setQuote(initialReview?.quote ?? "")
+  }
 
   const editable =
     review?.status === "pending" || review?.status === "rejected"
@@ -93,9 +104,11 @@ export function VendorReviewManager({
 
     void (async () => {
       setSaving(true)
+      setLastAction("submit")
       try {
         const isUpdate = editing && Boolean(review)
-        const response = await fetch(
+        // requestJson applique un délai d'attente et remonte le message du serveur.
+        const payload = await requestJson<{ avis?: AvisMine }>(
           isUpdate ? `/api/avis/${review!.id}` : "/api/avis",
           {
             method: isUpdate ? "PATCH" : "POST",
@@ -103,14 +116,6 @@ export function VendorReviewManager({
             body: JSON.stringify({ rating, quote: quote.trim() }),
           }
         )
-        const payload = (await response.json().catch(() => null)) as {
-          error?: string
-          avis?: AvisMine
-        } | null
-        if (!response.ok) {
-          if (payload?.avis) setReview(payload.avis)
-          throw new Error(payload?.error ?? "Impossible d'enregistrer votre avis")
-        }
         if (!payload?.avis) {
           throw new Error("Réponse inattendue du serveur")
         }
@@ -139,16 +144,9 @@ export function VendorReviewManager({
     void (async () => {
       setDeleting(true)
       setError(null)
+      setLastAction("delete")
       try {
-        const response = await fetch(`/api/avis/${review.id}`, {
-          method: "DELETE",
-        })
-        const payload = (await response.json().catch(() => null)) as {
-          error?: string
-        } | null
-        if (!response.ok) {
-          throw new Error(payload?.error ?? "Impossible de supprimer votre avis")
-        }
+        await requestJson(`/api/avis/${review.id}`, { method: "DELETE" })
         setReview(null)
         setRating(0)
         setQuote("")
@@ -181,9 +179,11 @@ export function VendorReviewManager({
       {error && (
         <VendorErrorState
           message={error}
-          onRetry={() =>
-            review && editing ? formRef.current?.requestSubmit() : undefined
-          }
+          onRetry={() => {
+            setError(null)
+            if (lastAction === "delete" && review) setDeleteOpen(true)
+            else formRef.current?.requestSubmit()
+          }}
         />
       )}
 
@@ -318,16 +318,6 @@ export function VendorReviewManager({
               </Button>
             </div>
           </form>
-        </VendorSectionCard>
-      )}
-
-      {!review && !showForm && (
-        <VendorSectionCard title="Mon avis">
-          <VendorEmptyState
-            icon={MessageSquare}
-            title="Aucun avis soumis"
-            description="Partagez votre expérience avec la communauté GazPoints."
-          />
         </VendorSectionCard>
       )}
 

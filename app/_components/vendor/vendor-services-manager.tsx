@@ -26,6 +26,7 @@ import {
   VendorPageHeader,
   VendorSectionCard,
 } from "@/app/_components/vendor/vendor-ui"
+import { requestJson } from "@/lib/client-request"
 import { formatPrice } from "@/lib/gaz"
 import type { VendorDepotDto } from "@/lib/vendor-dashboard"
 
@@ -86,7 +87,7 @@ export function VendorServicesManager({ depot }: { depot: VendorDepotDto | null 
     void (async () => {
       setSaving(true)
       try {
-        const response = await fetch(`/api/depot/${depot.id}/services`, {
+        await requestJson(`/api/depot/${depot.id}/services`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -102,19 +103,13 @@ export function VendorServicesManager({ depot }: { depot: VendorDepotDto | null 
             gasSaleFormats,
           }),
         })
-        const payload = (await response.json().catch(() => null)) as {
-          error?: string
-        } | null
-        if (!response.ok) {
-          throw new Error(payload?.error ?? "Impossible d'enregistrer les services")
-        }
         toast.success("Services mis à jour")
         router.refresh()
       } catch (saveError) {
         setError(
           saveError instanceof Error
             ? saveError.message
-            : "Une erreur est survenue lors de l'enregistrement."
+            : "Impossible d'enregistrer les services. Réessayez."
         )
       } finally {
         setSaving(false)
@@ -137,7 +132,7 @@ export function VendorServicesManager({ depot }: { depot: VendorDepotDto | null 
             actions={
               <Button
                 size="sm"
-                render={<Link href="/dashboard/depot">Créer mon dépôt</Link>}
+                render={<Link prefetch={false} href="/dashboard/depot">Créer mon dépôt</Link>}
               />
             }
           />
@@ -155,7 +150,7 @@ export function VendorServicesManager({ depot }: { depot: VendorDepotDto | null 
           <Button
             variant="outline"
             size="sm"
-            render={<Link href="/dashboard/depot">Modifier le dépôt</Link>}
+            render={<Link prefetch={false} href="/dashboard/depot">Modifier le dépôt</Link>}
           />
         }
       />

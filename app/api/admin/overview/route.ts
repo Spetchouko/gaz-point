@@ -53,86 +53,89 @@ export async function GET(req: NextRequest) {
       lt(disponibilite.createdAt, rangeTo)
     )
 
-    // Comptes utilisateurs (totaux globaux)
-    const [totalUsers] = await db.select({ count: count() }).from(user)
-    const [totalClients] = await db
-      .select({ count: count() })
-      .from(user)
-      .where(eq(user.role, "client"))
-    const [totalVendors] = await db
-      .select({ count: count() })
-      .from(user)
-      .where(eq(user.role, "vendor"))
-    const [totalAdmins] = await db
-      .select({ count: count() })
-      .from(user)
-      .where(eq(user.role, "admin"))
-    const [totalCollaborateurs] = await db
-      .select({ count: count() })
-      .from(user)
-      .where(eq(user.role, "collaborateur"))
-    const [activeUsers] = await db
-      .select({ count: count() })
-      .from(user)
-      .where(eq(user.isActive, true))
-
-    // Nouveaux inscrits dans la période
-    const [newUsersPeriod] = await db.select({ count: count() }).from(user).where(whereUsers)
-    const [newVendorsPeriod] = await db
-      .select({ count: count() })
-      .from(user)
-      .where(and(eq(user.role, "vendor"), whereUsers))
-    const [newCollaborateursPeriod] = await db
-      .select({ count: count() })
-      .from(user)
-      .where(and(eq(user.role, "collaborateur"), whereUsers))
-
-    // Points de vente
-    const [totalPoints] = await db.select({ count: count() }).from(pointDeVente)
-    const [activePoints] = await db
-      .select({ count: count() })
-      .from(pointDeVente)
-      .where(eq(pointDeVente.isActive, true))
-    const [pointsCreatedPeriod] = await db
-      .select({ count: count() })
-      .from(pointDeVente)
-      .where(wherePoints)
-
-    // Disponibilités
-    const [totalDispos] = await db.select({ count: count() }).from(disponibilite)
-    const [activeDispos] = await db
-      .select({ count: count() })
-      .from(disponibilite)
-      .where(eq(disponibilite.status, "disponible"))
-    const [disposPublishedPeriod] = await db
-      .select({ count: count() })
-      .from(disponibilite)
-      .where(whereDispos)
-
-    // Réservations
-    const [totalReservations] = await db
-      .select({ count: count() })
-      .from(reservation)
-    const [pendingReservations] = await db
-      .select({ count: count() })
-      .from(reservation)
-      .where(eq(reservation.status, "pending"))
-    const [confirmedReservations] = await db
-      .select({ count: count() })
-      .from(reservation)
-      .where(eq(reservation.status, "confirmed"))
-    const [collectedReservations] = await db
-      .select({ count: count() })
-      .from(reservation)
-      .where(eq(reservation.status, "collected"))
-    const [cancelledReservations] = await db
-      .select({ count: count() })
-      .from(reservation)
-      .where(eq(reservation.status, "cancelled"))
-    const [monthReservations] = await db
-      .select({ count: count() })
-      .from(reservation)
-      .where(whereReservations)
+    // Comptes utilisateurs (totaux globaux) — parallélisés pour réduire les
+    // allers-retours Neon (17 requêtes COUNT lancées en une seule ronde).
+    const [
+      totalUsers,
+      totalClients,
+      totalVendors,
+      totalAdmins,
+      totalCollaborateurs,
+      activeUsers,
+      newUsersPeriod,
+      newVendorsPeriod,
+      newCollaborateursPeriod,
+      totalPoints,
+      activePoints,
+      pointsCreatedPeriod,
+      totalDispos,
+      activeDispos,
+      disposPublishedPeriod,
+      totalReservations,
+      pendingReservations,
+      confirmedReservations,
+      collectedReservations,
+      cancelledReservations,
+      monthReservations,
+    ] = await Promise.all([
+      db.select({ count: count() }).from(user),
+      db.select({ count: count() }).from(user).where(eq(user.role, "client")),
+      db.select({ count: count() }).from(user).where(eq(user.role, "vendor")),
+      db.select({ count: count() }).from(user).where(eq(user.role, "admin")),
+      db
+        .select({ count: count() })
+        .from(user)
+        .where(eq(user.role, "collaborateur")),
+      db.select({ count: count() }).from(user).where(eq(user.isActive, true)),
+      db.select({ count: count() }).from(user).where(whereUsers),
+      db
+        .select({ count: count() })
+        .from(user)
+        .where(and(eq(user.role, "vendor"), whereUsers)),
+      db
+        .select({ count: count() })
+        .from(user)
+        .where(and(eq(user.role, "collaborateur"), whereUsers)),
+      db.select({ count: count() }).from(pointDeVente),
+      db
+        .select({ count: count() })
+        .from(pointDeVente)
+        .where(eq(pointDeVente.isActive, true)),
+      db
+        .select({ count: count() })
+        .from(pointDeVente)
+        .where(wherePoints),
+      db.select({ count: count() }).from(disponibilite),
+      db
+        .select({ count: count() })
+        .from(disponibilite)
+        .where(eq(disponibilite.status, "disponible")),
+      db
+        .select({ count: count() })
+        .from(disponibilite)
+        .where(whereDispos),
+      db.select({ count: count() }).from(reservation),
+      db
+        .select({ count: count() })
+        .from(reservation)
+        .where(eq(reservation.status, "pending")),
+      db
+        .select({ count: count() })
+        .from(reservation)
+        .where(eq(reservation.status, "confirmed")),
+      db
+        .select({ count: count() })
+        .from(reservation)
+        .where(eq(reservation.status, "collected")),
+      db
+        .select({ count: count() })
+        .from(reservation)
+        .where(eq(reservation.status, "cancelled")),
+      db
+        .select({ count: count() })
+        .from(reservation)
+        .where(whereReservations),
+    ])
 
     // Réservations par jour dans la période (pour graphique)
     const reservationsByDayRows = await db

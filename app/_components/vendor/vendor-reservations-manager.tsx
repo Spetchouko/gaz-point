@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
@@ -38,6 +38,7 @@ import {
   VendorSectionCard,
   VendorStatusBadge,
 } from "@/app/_components/vendor/vendor-ui"
+import { requestJson } from "@/lib/client-request"
 import { formatDateTime, formatPrice } from "@/lib/gaz"
 import type { VendorReservationDto } from "@/lib/vendor-dashboard"
 
@@ -83,6 +84,7 @@ export function VendorReservationsManager({
   depotName: string | null
 }) {
   const router = useRouter()
+  const verifyFormRef = useRef<HTMLFormElement | null>(null)
   const [items, setItems] = useState(initialReservations)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -155,21 +157,13 @@ export function VendorReservationsManager({
     }
   }
 
-  const readError = async (response: Response, fallback: string) => {
-    const payload = (await response.json().catch(() => null)) as {
-      error?: string
-    } | null
-    if (!response.ok) throw new Error(payload?.error ?? fallback)
-  }
-
   const updateStatus = (reservation: VendorReservationDto, action: string) => {
     void runAction(async () => {
-      const response = await fetch("/api/reservation/vendor", {
+      await requestJson("/api/reservation/vendor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, reservationId: reservation.id }),
       })
-      await readError(response, "Impossible de mettre à jour la réservation")
       const nextStatus =
         action === "confirm"
           ? "confirmed"
@@ -188,12 +182,11 @@ export function VendorReservationsManager({
 
   const collectByCode = async (reservationCode: string, reservationId?: string) => {
     await runAction(async () => {
-      const response = await fetch("/api/reservation/collect", {
+      await requestJson("/api/reservation/collect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: reservationCode }),
       })
-      await readError(response, "Impossible de confirmer le retrait")
       if (reservationId) {
         setItems((current) =>
           current.map((item) =>
@@ -217,24 +210,30 @@ export function VendorReservationsManager({
     event.preventDefault()
     const normalized = code.trim().toUpperCase()
     if (normalized.length !== 10) {
-      setError({ message: "Le code doit contenir exactement 10 caractères.", retry: () => setVerifyOpen(true) })
+      setError({
+        message: "Le code doit contenir exactement 10 caractères.",
+        retry: () => {
+          setError(null)
+          setVerifyOpen(true)
+          verifyFormRef.current?.requestSubmit()
+        },
+      })
       return
     }
     void (async () => {
       setVerifying(true)
       setError(null)
       try {
-        const response = await fetch("/api/reservation/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: normalized }),
-        })
-        const payload = (await response.json().catch(() => null)) as {
-          error?: string
-          reservation?: VerifiedReservation
-        } | null
-        if (!response.ok || !payload?.reservation) {
-          throw new Error(payload?.error ?? "Réservation introuvable")
+        const payload = await requestJson<{ reservation?: VerifiedReservation }>(
+          "/api/reservation/verify",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: normalized }),
+          }
+        )
+        if (!payload?.reservation) {
+          throw new Error("Réservation introuvable")
         }
         setVerified(payload.reservation)
       } catch (verifyError) {
@@ -243,7 +242,11 @@ export function VendorReservationsManager({
             verifyError instanceof Error
               ? verifyError.message
               : "Impossible de vérifier ce code.",
-          retry: () => setVerifyOpen(true),
+          retry: () => {
+            setError(null)
+            setVerifyOpen(true)
+            verifyFormRef.current?.requestSubmit()
+          },
         })
       } finally {
         setVerifying(false)
@@ -265,7 +268,7 @@ export function VendorReservationsManager({
             <Button
               variant="outline"
               size="sm"
-              render={<Link href="/dashboard/vendeur">Retour</Link>}
+              render={<Link prefetch={false} href="/dashboard/vendeur">Retour</Link>}
             />
             <Button size="sm" onClick={() => setVerifyOpen(true)}>
               <ScanLine className="size-4" aria-hidden />
@@ -454,15 +457,16 @@ export function VendorReservationsManager({
           <DialogHeader>
             <DialogTitle>Vérifier une réservation</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleVerify} className="space-y-3">
+          <form ref={verifyFormRef} onSubmit={handleVerify} className="space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="reservation-code">Code de réservation</Label>
               <Input
                 id="reservation-code"
                 value={code}
-                onChange={(event) =>
+                onChange={(event) => {
                   setCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10))
-                }
+                  setError(null)
+                }}
                 placeholder="GP0101ABCD"
                 maxLength={10}
                 className="font-mono tracking-widest"

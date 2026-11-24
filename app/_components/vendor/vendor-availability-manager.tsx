@@ -31,6 +31,7 @@ import {
   VendorSectionCard,
   VendorStatusBadge,
 } from "@/app/_components/vendor/vendor-ui"
+import { requestJson } from "@/lib/client-request"
 import { formatDateTime, formatPrice } from "@/lib/gaz"
 import type {
   VendorAvailabilityDto,
@@ -85,8 +86,14 @@ export function VendorAvailabilityManager({
     setItems(initialAvailabilities)
   }
 
-  if (!brand && depot?.brands[0]) setBrand(depot.brands[0])
-  if (!format && depot?.formats[0]) setFormat(depot.formats[0])
+  // Le dépôt peut changer après un refresh (marques/formats édités) : on
+  // remplace uniquement une sélection devenue invalide, pas une saisie en cours.
+  const [syncedDepot, setSyncedDepot] = useState(depot)
+  if (syncedDepot !== depot) {
+    setSyncedDepot(depot)
+    if (!depot?.brands.includes(brand)) setBrand(depot?.brands[0] ?? "")
+    if (!depot?.formats.includes(format)) setFormat(depot?.formats[0] ?? "")
+  }
 
   const runAction = async (
     action: () => Promise<void>,
@@ -106,13 +113,6 @@ export function VendorAvailabilityManager({
       setError({ message, retry: () => void runAction(action, successMessage) })
       return false
     }
-  }
-
-  const readErrorMessage = async (response: Response, fallback: string) => {
-    const payload = (await response.json().catch(() => null)) as {
-      error?: string
-    } | null
-    if (!response.ok) throw new Error(payload?.error ?? fallback)
   }
 
   const handleAdd = (event: React.FormEvent) => {
@@ -146,20 +146,24 @@ export function VendorAvailabilityManager({
 
     void (async () => {
       setSavingAdd(true)
-      const ok = await runAction(async () => {
-        const response = await fetch("/api/disponibilite/mine", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        })
-        await readErrorMessage(response, "Impossible d'enregistrer la disponibilité")
-      }, "Disponibilité enregistrée")
-      if (ok) {
-        setQuantity("1")
-        setPrice("")
-        setNote("")
+      try {
+        const ok = await runAction(async () => {
+          await requestJson("/api/disponibilite/mine", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          })
+        }, "Disponibilité enregistrée")
+        if (ok) {
+          setQuantity("1")
+          setPrice("")
+          setNote("")
+        }
+      } finally {
+        // Sans ce finally, une requête en échec laissait le bouton bloqué sur
+        // « Enregistrement… » (requestJson garantit un délai d'attente).
+        setSavingAdd(false)
       }
-      setSavingAdd(false)
     })()
   }
 
@@ -194,7 +198,7 @@ export function VendorAvailabilityManager({
 
     void (async () => {
       const ok = await runAction(async () => {
-        const response = await fetch(`/api/disponibilite/${editing.id}`, {
+        await requestJson(`/api/disponibilite/${editing.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -208,7 +212,6 @@ export function VendorAvailabilityManager({
             format: editFormat || null,
           }),
         })
-        await readErrorMessage(response, "Impossible de modifier la disponibilité")
       }, "Disponibilité mise à jour")
       if (ok) setEditing(null)
     })()
@@ -217,13 +220,15 @@ export function VendorAvailabilityManager({
   const toggleStatus = async (item: VendorAvailabilityDto) => {
     const nextStatus = item.effectiveStatus === "disponible" ? "indisponible" : "disponible"
     setBusyIds((current) => new Set(current).add(item.id))
+    // On annule uniquement la modification locale de cette ligne, pas les
+    // changements réussis depuis le dernier rendu serveur.
+    const previousItems = items
     const ok = await runAction(async () => {
-      const response = await fetch(`/api/disponibilite/${item.id}/status`, {
+      await requestJson(`/api/disponibilite/${item.id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: nextStatus }),
       })
-      await readErrorMessage(response, "Impossible de changer le statut")
       setItems((current) =>
         current.map((entry) =>
           entry.id === item.id
@@ -237,7 +242,7 @@ export function VendorAvailabilityManager({
       )
     }, nextStatus === "disponible" ? "Disponibilité publiée" : "Disponibilité masquée")
     if (!ok) {
-      setItems(initialAvailabilities)
+      setItems(previousItems)
     }
     setBusyIds((current) => {
       const next = new Set(current)
@@ -259,7 +264,7 @@ export function VendorAvailabilityManager({
           <Button
             variant="outline"
             size="sm"
-            render={<Link href="/dashboard/depot">Gérer mon dépôt</Link>}
+            render={<Link prefetch={false} href="/dashboard/depot">Gérer mon dépôt</Link>}
           />
         }
       />
@@ -277,7 +282,7 @@ export function VendorAvailabilityManager({
             actions={
               <Button
                 size="sm"
-                render={<Link href="/dashboard/depot">Créer mon dépôt</Link>}
+                render={<Link prefetch={false} href="/dashboard/depot">Créer mon dépôt</Link>}
               />
             }
           />

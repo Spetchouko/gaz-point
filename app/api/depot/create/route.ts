@@ -9,6 +9,10 @@ import {
   MAX_VENDOR_FORMATS,
   cleanCatalogValues,
 } from "@/lib/vendor-catalog"
+import {
+  filterSupportedDepotFields,
+  getDepotRowById,
+} from "@/lib/vendor-depot-compat"
 
 function cleanText(value: unknown, max: number): string | null {
   if (typeof value !== "string") return null
@@ -169,33 +173,40 @@ export async function POST(req: NextRequest) {
     const pointId = randomUUID()
     const now = new Date()
 
-    await db.batch([
-      db.insert(pointDeVente).values({
-        id: pointId,
-        name,
-        district,
-        address,
-        phone,
-        latitude,
-        longitude,
-        brands,
-        formats,
-        deliveryEnabled,
-        deliveryFee: deliveryEnabled ? deliveryFee : 0,
-        exchangeEnabled,
-        exchangeFee: exchangeEnabled ? exchangeFee : null,
-        exchangeBrands: exchangeEnabled ? exchangeBrands : [],
-        exchangeFormats: exchangeEnabled ? exchangeFormats : [],
-        gasSaleEnabled,
-        gasSaleFee: gasSaleEnabled ? gasSaleFee : null,
-        gasSaleBrands: gasSaleEnabled ? gasSaleBrands : [],
-        gasSaleFormats: gasSaleEnabled ? gasSaleFormats : [],
-        vendorId: user.id,
-        isActive: true,
-        createdAt: now,
-        updatedAt: now,
-      }),
-      db
+    const depotValues = await filterSupportedDepotFields({
+      id: pointId,
+      name,
+      district,
+      address,
+      phone,
+      latitude,
+      longitude,
+      brands,
+      formats,
+      deliveryEnabled,
+      deliveryFee: deliveryEnabled ? deliveryFee : 0,
+      exchangeEnabled,
+      exchangeFee: exchangeEnabled ? exchangeFee : null,
+      exchangeBrands: exchangeEnabled ? exchangeBrands : [],
+      exchangeFormats: exchangeEnabled ? exchangeFormats : [],
+      gasSaleEnabled,
+      gasSaleFee: gasSaleEnabled ? gasSaleFee : null,
+      gasSaleBrands: gasSaleEnabled ? gasSaleBrands : [],
+      gasSaleFormats: gasSaleEnabled ? gasSaleFormats : [],
+      vendorId: user.id,
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+    })
+
+    // Le driver node-postgres n'expose pas db.batch() (contrairement au driver
+    // Neon HTTP). La transaction garantit la même atomicité : soit le dépôt et
+    // l'onboarding sont enregistrés, soit aucun des deux.
+    await db.transaction(async (tx) => {
+      await tx
+        .insert(pointDeVente)
+        .values(depotValues as typeof pointDeVente.$inferInsert)
+      await tx
         .update(vendorOnboarding)
         .set({
           status: "completed",
@@ -207,14 +218,10 @@ export async function POST(req: NextRequest) {
           brands,
           updatedAt: now,
         })
-        .where(eq(vendorOnboarding.userId, user.id)),
-    ])
+        .where(eq(vendorOnboarding.userId, user.id))
+    })
 
-    const [point] = await db
-      .select()
-      .from(pointDeVente)
-      .where(eq(pointDeVente.id, pointId))
-      .limit(1)
+    const point = await getDepotRowById(pointId)
 
     return NextResponse.json({ point }, { status: 201 })
   } catch (err) {

@@ -335,52 +335,83 @@ export async function GET(req: Request) {
     // ============================================================
     // ÉVOLUTION DES INSCRIPTIONS (graphique C)
     // ============================================================
+    // Regroupé par jour en 3 requêtes groupées (au lieu de evolutionDays × 3
+    // requêtes séparées) pour réduire drastiquement les allers-retours Neon.
 
     const evolutionDays = Math.min(daysDiff, 30)
-    const evolutionData = await Promise.all(
-      Array.from({ length: evolutionDays }, async (_, i) => {
-        const d = new Date(rangeFrom.getTime() + i * 86_400_000)
-        const dayEnd = new Date(d.getTime() + 86_400_000)
-        const [clients, vendors, verified] = await Promise.all([
-          db
-            .select({ count: count() })
-            .from(user)
-            .where(
-              and(
-                eq(user.role, "client"),
-                gte(user.createdAt, d),
-                lt(user.createdAt, dayEnd)
-              )
-            ),
-          db
-            .select({ count: count() })
-            .from(user)
-            .where(
-              and(
-                eq(user.role, "vendor"),
-                gte(user.createdAt, d),
-                lt(user.createdAt, dayEnd)
-              )
-            ),
-          db
-            .select({ count: count() })
-            .from(user)
-            .where(
-              and(
-                eq(user.emailVerified, true),
-                gte(user.createdAt, d),
-                lt(user.createdAt, dayEnd)
-              )
-            ),
-        ])
-        return {
-          date: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
-          clients: Number(clients[0]?.count ?? 0),
-          vendors: Number(vendors[0]?.count ?? 0),
-          verified: Number(verified[0]?.count ?? 0),
-        }
-      })
-    )
+    const evolutionMap: Record<string, { clients: number; vendors: number; verified: number }> = {}
+    for (let i = 0; i < evolutionDays; i++) {
+      const d = new Date(rangeFrom.getTime() + i * 86_400_000)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+      evolutionMap[key] = { clients: 0, vendors: 0, verified: 0 }
+    }
+
+    const [clientRows, vendorRows, verifiedRows] = await Promise.all([
+      db
+        .select({
+          day: sql<string>`DATE(${user.createdAt})`,
+          count: count(),
+        })
+        .from(user)
+        .where(
+          and(
+            eq(user.role, "client"),
+            gte(user.createdAt, rangeFrom),
+            lt(user.createdAt, rangeTo)
+          )
+        )
+        .groupBy(sql`DATE(${user.createdAt})`),
+      db
+        .select({
+          day: sql<string>`DATE(${user.createdAt})`,
+          count: count(),
+        })
+        .from(user)
+        .where(
+          and(
+            eq(user.role, "vendor"),
+            gte(user.createdAt, rangeFrom),
+            lt(user.createdAt, rangeTo)
+          )
+        )
+        .groupBy(sql`DATE(${user.createdAt})`),
+      db
+        .select({
+          day: sql<string>`DATE(${user.createdAt})`,
+          count: count(),
+        })
+        .from(user)
+        .where(
+          and(
+            eq(user.emailVerified, true),
+            gte(user.createdAt, rangeFrom),
+            lt(user.createdAt, rangeTo)
+          )
+        )
+        .groupBy(sql`DATE(${user.createdAt})`),
+    ])
+
+    for (const row of clientRows) {
+      const entry = evolutionMap[String(row.day)]
+      if (entry) entry.clients = Number(row.count)
+    }
+    for (const row of vendorRows) {
+      const entry = evolutionMap[String(row.day)]
+      if (entry) entry.vendors = Number(row.count)
+    }
+    for (const row of verifiedRows) {
+      const entry = evolutionMap[String(row.day)]
+      if (entry) entry.verified = Number(row.count)
+    }
+
+    const evolutionData = Object.entries(evolutionMap)
+      .map(([date, counts]) => ({
+        date,
+        clients: counts.clients,
+        vendors: counts.vendors,
+        verified: counts.verified,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date))
 
     // ============================================================
     // PAGES LES PLUS VISITÉES (graphique D)
@@ -497,33 +528,67 @@ export async function GET(req: Request) {
     // ============================================================
     // ACTIVITÉ VENDEURS (graphique H)
     // ============================================================
+    // Regroupé par jour en 2 requêtes groupées (au lieu de sellerEvolutionDays
+    // × 2 requêtes séparées) pour réduire les allers-retours Neon.
 
     const activeSellersResult = await db
       .select({ count: count() })
       .from(user)
       .where(and(eq(user.role, "vendor"), eq(user.isActive, true)))
 
-    const sellerEvolutionData = await Promise.all(
-      Array.from({ length: Math.min(daysDiff, 30) }, async (_, i) => {
-        const d = new Date(rangeFrom.getTime() + i * 86_400_000)
-        const dayEnd = new Date(d.getTime() + 86_400_000)
-        const [points, dispos] = await Promise.all([
-          db
-            .select({ count: count() })
-            .from(pointDeVente)
-            .where(and(gte(pointDeVente.createdAt, d), lt(pointDeVente.createdAt, dayEnd))),
-          db
-            .select({ count: count() })
-            .from(disponibilite)
-            .where(and(gte(disponibilite.createdAt, d), lt(disponibilite.createdAt, dayEnd))),
-        ])
-        return {
-          date: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
-          points: Number(points[0]?.count ?? 0),
-          dispos: Number(dispos[0]?.count ?? 0),
-        }
-      })
-    )
+    const sellerEvolutionDays = Math.min(daysDiff, 30)
+    const sellerMap: Record<string, { points: number; dispos: number }> = {}
+    for (let i = 0; i < sellerEvolutionDays; i++) {
+      const d = new Date(rangeFrom.getTime() + i * 86_400_000)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+      sellerMap[key] = { points: 0, dispos: 0 }
+    }
+
+    const [pointRows, disposRows] = await Promise.all([
+      db
+        .select({
+          day: sql<string>`DATE(${pointDeVente.createdAt})`,
+          count: count(),
+        })
+        .from(pointDeVente)
+        .where(
+          and(
+            gte(pointDeVente.createdAt, rangeFrom),
+            lt(pointDeVente.createdAt, rangeTo)
+          )
+        )
+        .groupBy(sql`DATE(${pointDeVente.createdAt})`),
+      db
+        .select({
+          day: sql<string>`DATE(${disponibilite.createdAt})`,
+          count: count(),
+        })
+        .from(disponibilite)
+        .where(
+          and(
+            gte(disponibilite.createdAt, rangeFrom),
+            lt(disponibilite.createdAt, rangeTo)
+          )
+        )
+        .groupBy(sql`DATE(${disponibilite.createdAt})`),
+    ])
+
+    for (const row of pointRows) {
+      const entry = sellerMap[String(row.day)]
+      if (entry) entry.points = Number(row.count)
+    }
+    for (const row of disposRows) {
+      const entry = sellerMap[String(row.day)]
+      if (entry) entry.dispos = Number(row.count)
+    }
+
+    const sellerEvolutionData = Object.entries(sellerMap)
+      .map(([date, counts]) => ({
+        date,
+        points: counts.points,
+        dispos: counts.dispos,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date))
 
     return NextResponse.json({
       period: { from: rangeFrom.toISOString(), to: rangeTo.toISOString() },

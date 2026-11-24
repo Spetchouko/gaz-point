@@ -8,6 +8,10 @@ import {
   MAX_VENDOR_FORMATS,
   cleanCatalogValues,
 } from "@/lib/vendor-catalog"
+import {
+  filterSupportedDepotFields,
+  getDepotRowById,
+} from "@/lib/vendor-depot-compat"
 
 type ServicesPatchBody = {
   deliveryEnabled?: unknown
@@ -61,11 +65,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Requête invalide" }, { status: 400 })
     }
 
-    const [point] = await db
-      .select()
-      .from(pointDeVente)
-      .where(eq(pointDeVente.id, id))
-      .limit(1)
+    const point = await getDepotRowById(id)
 
     if (!point || point.vendorId !== user.id) {
       return NextResponse.json({ error: "Dépôt introuvable" }, { status: 404 })
@@ -126,24 +126,25 @@ export async function PATCH(
         )
       : point.gasSaleFormats ?? []
 
-    const [updated] = await db
+    const safeUpdates = await filterSupportedDepotFields({
+      deliveryEnabled,
+      exchangeEnabled,
+      gasSaleEnabled,
+      deliveryFee: deliveryEnabled ? deliveryFee : 0,
+      exchangeFee: exchangeEnabled ? exchangeFee : null,
+      gasSaleFee: gasSaleEnabled ? gasSaleFee : null,
+      exchangeBrands: exchangeEnabled ? exchangeBrands : [],
+      exchangeFormats: exchangeEnabled ? exchangeFormats : [],
+      gasSaleBrands: gasSaleEnabled ? gasSaleBrands : [],
+      gasSaleFormats: gasSaleEnabled ? gasSaleFormats : [],
+      updatedAt: new Date(),
+    })
+    await db
       .update(pointDeVente)
-      .set({
-        deliveryEnabled,
-        exchangeEnabled,
-        gasSaleEnabled,
-        deliveryFee: deliveryEnabled ? deliveryFee : 0,
-        exchangeFee: exchangeEnabled ? exchangeFee : null,
-        gasSaleFee: gasSaleEnabled ? gasSaleFee : null,
-        exchangeBrands: exchangeEnabled ? exchangeBrands : [],
-        exchangeFormats: exchangeEnabled ? exchangeFormats : [],
-        gasSaleBrands: gasSaleEnabled ? gasSaleBrands : [],
-        gasSaleFormats: gasSaleEnabled ? gasSaleFormats : [],
-        updatedAt: new Date(),
-      })
+      .set(safeUpdates)
       .where(eq(pointDeVente.id, id))
-      .returning()
 
+    const updated = await getDepotRowById(id)
     return NextResponse.json({ point: updated })
   } catch (err) {
     console.error("[depot/services] error:", err)

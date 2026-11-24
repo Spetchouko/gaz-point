@@ -76,10 +76,22 @@ function LoginAdminPageContent() {
       })
 
       if (signInError) {
-        const errorMessage = signInError.message ?? "Identifiants incorrects."
-        if (errorMessage.toLowerCase().includes("email") || errorMessage.toLowerCase().includes("user")) {
+        // Diagnostic logging sans données sensibles
+        console.log("[AUTH CLIENT] Admin sign-in error", {
+          hasMessage: !!signInError.message,
+          message: signInError.message,
+          code: (signInError as { code?: string }).code,
+          status: (signInError as { status?: number }).status,
+        })
+
+        const errorMessage = signInError.message ?? 
+          (signInError as { code?: string }).code === "EMAIL_NOT_VERIFIED"
+            ? "Veuillez vérifier votre adresse email avant de vous connecter."
+            : "Identifiants incorrects."
+        
+        if (errorMessage.toLowerCase().includes("email") || errorMessage.toLowerCase().includes("user") || errorMessage.toLowerCase().includes("vérif")) {
           setFieldErrors({ email: errorMessage })
-        } else if (errorMessage.toLowerCase().includes("password")) {
+        } else if (errorMessage.toLowerCase().includes("password") || errorMessage.toLowerCase().includes("identifiant") || errorMessage.toLowerCase().includes("incorrect")) {
           setFieldErrors({ password: errorMessage })
         } else {
           setError(errorMessage)

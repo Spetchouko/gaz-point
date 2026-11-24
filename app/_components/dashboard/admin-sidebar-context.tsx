@@ -13,7 +13,6 @@ const AdminSidebarContext = createContext<AdminSidebarContextType | null>(null);
 interface AdminSidebarProviderProps {
   children: ReactNode;
   defaultOpen?: boolean;
-  // For controlled mode - when sidebar state is managed externally
   sidebarOpen?: boolean;
   setSidebarOpen?: (open: boolean) => void;
   toggleSidebar?: () => void;
@@ -27,10 +26,10 @@ export function AdminSidebarProvider({
   toggleSidebar,
 }: AdminSidebarProviderProps) {
   const isControlled = sidebarOpen !== undefined && setSidebarOpen !== undefined;
-  
+
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
   const internalToggle = useCallback(() => setInternalOpen((prev) => !prev), []);
-  
+
   const open = isControlled ? sidebarOpen : internalOpen;
   const setOpen = isControlled ? setSidebarOpen : setInternalOpen;
   const toggle = isControlled ? toggleSidebar ?? internalToggle : internalToggle;

@@ -8,8 +8,10 @@ import {
   user,
   vendorOnboarding,
 } from "@/db/schema"
-import { toAvisMine } from "@/lib/avis-server"
 import type { AvisMine } from "@/lib/avis-shared"
+import { errorMessage } from "@/lib/errors"
+import { effectiveStatus } from "@/lib/gaz"
+import { getDepotRowsByVendorId } from "@/lib/vendor-depot-compat"
 
 export type UserRole = "client" | "vendor" | "admin" | "collaborateur"
 export type AvailabilityStatus = "disponible" | "a_confirmer" | "indisponible"
@@ -40,6 +42,15 @@ export type VendorDepotDto = {
 }
 
 // Keep existing VendorOverviewData type (backward compatible)
+export type VendorActivityDto = {
+  id: string
+  type: "reservation" | "availability"
+  title: string
+  detail: string
+  at: Date
+  status: string
+}
+
 export type VendorOverviewData = {
   depot: VendorDepotDto | null
   stats: {
@@ -47,8 +58,24 @@ export type VendorOverviewData = {
     activeAvailabilityCount: number
     reservationCount: number
   }
-  activities: any[] // VendorActivityDto[]
+  activities: VendorActivityDto[]
   hasAnyData: boolean
+  /** Erreurs de chargement rencontrées : affichées à l'utilisateur, jamais masquées. */
+  loadErrors: string[]
+}
+
+// Type du données d'onboarding vendeur (retourné par getVendorOnboarding)
+export type VendorOnboardingDto = {
+  id: string
+  pointName: string
+  district: string
+  address: string
+  phone: string | null
+  brands: string[]
+  inventory: unknown[]
+  status: string
+  pointDeVenteId: string | null
+  createdAt: Date
 }
 
 // NEW: Type for single availability
@@ -74,25 +101,30 @@ export type VendorAvailabilityDto = {
 // Get vendor onboarding data by vendorId
 export async function getVendorOnboarding(
   vendorId: string
-): Promise<{ id: string; pointName: string; district: string; address: string; phone: string | null; brands: string[]; inventory: any[]; status: string; pointDeVenteId: string | null; createdAt: string } | null> {
-  const [row] = await db
-    .select({
-      id: vendorOnboarding.id,
-      pointName: vendorOnboarding.pointName,
-      district: vendorOnboarding.district,
-      address: vendorOnboarding.address,
-      phone: vendorOnboarding.phone,
-      brands: vendorOnboarding.brands,
-      inventory: vendorOnboarding.inventory,
-      status: vendorOnboarding.status,
-      pointDeVenteId: vendorOnboarding.pointDeVenteId,
-      createdAt: vendorOnboarding.createdAt,
-    })
-    .from(vendorOnboarding)
-    .where(eq(vendorOnboarding.userId, vendorId))
-    .limit(1)
+): Promise<VendorOnboardingDto | null> {
+  try {
+    const [row] = await db
+      .select({
+        id: vendorOnboarding.id,
+        pointName: vendorOnboarding.pointName,
+        district: vendorOnboarding.district,
+        address: vendorOnboarding.address,
+        phone: vendorOnboarding.phone,
+        brands: vendorOnboarding.brands,
+        inventory: vendorOnboarding.inventory,
+        status: vendorOnboarding.status,
+        pointDeVenteId: vendorOnboarding.pointDeVenteId,
+        createdAt: vendorOnboarding.createdAt,
+      })
+      .from(vendorOnboarding)
+      .where(eq(vendorOnboarding.userId, vendorId))
+      .limit(1)
 
-  return row ? (row as any) : null
+    return row ? (row as VendorOnboardingDto) : null
+  } catch (err) {
+    console.error("[vendor-dashboard] getVendorOnboarding failed:", errorMessage(err))
+    throw err
+  }
 }
 
 // Get availabilities for a vendor
@@ -116,38 +148,52 @@ export async function getVendorAvailabilities(
   createdAt: string
   updatedAt: string
 }[]> {
-  const rows = await db
-    .select({
-      id: disponibilite.id,
-      pointId: disponibilite.pointId,
-      pointName: pointDeVente.name,
-      brand: disponibilite.brand,
-      format: disponibilite.format,
-      status: disponibilite.status,
-      effectiveStatus:
-        // Simulate effectiveStatus logic: expired or not disponible => indisponible
-        `${disponibilite.status} ${disponibilite.expiresAt}`.length > 0
-          ? `${disponibilite.status}`
-          : "disponible",
-      quantity: disponibilite.quantity,
-      reservedQuantity: disponibilite.reservedQuantity,
-      availableQuantity:
-        disponibilite.quantity != null
-          ? Math.max(0, disponibilite.quantity - disponibilite.reservedQuantity)
-          : null,
-      price: disponibilite.price,
-      note: disponibilite.note,
-      phone: disponibilite.phone,
-      expiresAt: disponibilite.expiresAt ? disponibilite.expiresAt.toISOString() : null,
-      createdAt: disponibilite.createdAt.toISOString(),
-      updatedAt: disponibilite.updatedAt.toISOString(),
-    })
-    .from(disponibilite)
-    .innerJoin(pointDeVente, eq(disponibilite.pointId, pointDeVente.id))
-    .where(eq(pointDeVente.vendorId, vendorId))
-    .orderBy(desc(disponibilite.createdAt))
+  try {
+    const rows = await db
+      .select({
+        id: disponibilite.id,
+        pointId: disponibilite.pointId,
+        pointName: pointDeVente.name,
+        brand: disponibilite.brand,
+        format: disponibilite.format,
+        status: disponibilite.status,
+        quantity: disponibilite.quantity,
+        reservedQuantity: disponibilite.reservedQuantity,
+        price: disponibilite.price,
+        note: disponibilite.note,
+        phone: disponibilite.phone,
+        expiresAt: disponibilite.expiresAt,
+        createdAt: disponibilite.createdAt,
+        updatedAt: disponibilite.updatedAt,
+      })
+      .from(disponibilite)
+      .innerJoin(pointDeVente, eq(disponibilite.pointId, pointDeVente.id))
+      .where(eq(pointDeVente.vendorId, vendorId))
+      .orderBy(desc(disponibilite.createdAt))
 
-  return rows
+    // Le driver pg peut renvoyer les timestamps sous forme de chaînes : on ne
+    // suppose jamais qu'ils exposent `.toISOString()`.
+    return rows.map((row) => {
+      const expiresAt = iso(row.expiresAt as Date | string | null)
+      const expired = expiresAt != null && new Date(expiresAt).getTime() < Date.now()
+      const computedStatus = expired
+        ? "indisponible"
+        : effectiveStatus(row.status, row.updatedAt as Date | string)
+
+      return {
+        ...row,
+        effectiveStatus: computedStatus,
+        availableQuantity:
+          row.quantity != null ? Math.max(0, row.quantity - row.reservedQuantity) : null,
+        expiresAt,
+        createdAt: isoRequired(row.createdAt as Date | string),
+        updatedAt: isoRequired(row.updatedAt as Date | string),
+      }
+    })
+  } catch (err) {
+    console.error("[vendor-dashboard] getVendorAvailabilities failed:", errorMessage(err))
+    throw err
+  }
 }
 
 // iso helper
@@ -164,90 +210,44 @@ function isoRequired(value: Date | string): string {
 export async function getVendorDepot(
   vendorId: string
 ): Promise<VendorDepotDto | null> {
-  const [row] = await db
-    .select({
-      id: pointDeVente.id,
-      name: pointDeVente.name,
-      district: pointDeVente.district,
-      address: pointDeVente.address,
-      phone: pointDeVente.phone,
-      brands: pointDeVente.brands,
-      formats: pointDeVente.formats,
-      deliveryEnabled: pointDeVente.deliveryEnabled,
-      deliveryFee: pointDeVente.deliveryFee,
-      exchangeEnabled: pointDeVente.exchangeEnabled,
-      exchangeFee: pointDeVente.exchangeFee,
-      exchangeBrands: pointDeVente.exchangeBrands,
-      exchangeFormats: pointDeVente.exchangeFormats,
-      gasSaleEnabled: pointDeVente.gasSaleEnabled,
-      gasSaleFee: pointDeVente.gasSaleFee,
-      gasSaleBrands: pointDeVente.gasSaleBrands,
-      gasSaleFormats: pointDeVente.gasSaleFormats,
-      isActive: pointDeVente.isActive,
-      createdAt: pointDeVente.createdAt,
-      updatedAt: pointDeVente.updatedAt,
-    })
-    .from(pointDeVente)
-    .where(eq(pointDeVente.vendorId, vendorId))
-    .limit(1)
-
-  return row ? (row as VendorDepotDto) : null
+  try {
+    const rows = await getDepotRowsByVendorId(vendorId)
+    return rows[0] ?? null
+  } catch (err) {
+    console.error("[vendor-dashboard] getVendorDepot failed:", errorMessage(err))
+    throw err
+  }
 }
 
 // Get all depots for a vendor
 export async function getVendorDepots(
   vendorId: string
 ): Promise<VendorDepotDto[]> {
-  const rows = await db
-    .select({
-      id: pointDeVente.id,
-      name: pointDeVente.name,
-      district: pointDeVente.district,
-      address: pointDeVente.address,
-      phone: pointDeVente.phone,
-      brands: pointDeVente.brands,
-      formats: pointDeVente.formats,
-      deliveryEnabled: pointDeVente.deliveryEnabled,
-      deliveryFee: pointDeVente.deliveryFee,
-      exchangeEnabled: pointDeVente.exchangeEnabled,
-      exchangeFee: pointDeVente.exchangeFee,
-      exchangeBrands: pointDeVente.exchangeBrands,
-      exchangeFormats: pointDeVente.exchangeFormats,
-      gasSaleEnabled: pointDeVente.gasSaleEnabled,
-      gasSaleFee: pointDeVente.gasSaleFee,
-      gasSaleBrands: pointDeVente.gasSaleBrands,
-      gasSaleFormats: pointDeVente.gasSaleFormats,
-      isActive: pointDeVente.isActive,
-      createdAt: pointDeVente.createdAt,
-      updatedAt: pointDeVente.updatedAt,
-    })
-    .from(pointDeVente)
-    .where(eq(pointDeVente.vendorId, vendorId))
-    .orderBy(desc(pointDeVente.createdAt))
-
-  return rows
+  try {
+    return await getDepotRowsByVendorId(vendorId)
+  } catch (err) {
+    console.error("[vendor-dashboard] getVendorDepots failed:", errorMessage(err))
+    throw err
+  }
 }
 
 // Get vendor overview (backward compatible)
 export async function getVendorOverview(
   vendorId: string
 ): Promise<VendorOverviewData> {
-  // Récupérer le dépôt principal (s'il existe)
-  let depot: VendorDepotDto | null = null
-  try {
-    const [mainDepot] = await getVendorDepots(vendorId)
-    depot = mainDepot ?? null
-  } catch (err) {
-    console.error("[vendor-dashboard] getVendorDepot failed:", err)
-  }
-
-  // Récupérer TOUS les depots du vendeur (nouvelle fonctionnalité)
+  // Récupérer TOUS les depots du vendeur en une seule requête. Le résultat est
+  // réutilisé pour le dépôt principal (premier élément) et le décompte, afin
+  // d'éviter un appel en double vers Neon.
   let allDepots: VendorDepotDto[] = []
+  const loadErrors: string[] = []
   try {
     allDepots = await getVendorDepots(vendorId)
   } catch (err) {
-    console.error("[vendor-dashboard] getVendorDepots failed:", err)
+    console.error("[vendor-dashboard] getVendorDepots failed:", errorMessage(err))
+    loadErrors.push("Impossible de charger vos points de vente.")
   }
+
+  const depot: VendorDepotDto | null = allDepots[0] ?? null
 
   // Compter les disponibilités actives au total
   let activeAvailabilityCount = 0
@@ -264,7 +264,8 @@ export async function getVendorOverview(
       )
     activeAvailabilityCount = activeCountResult[0]?.value ?? 0
   } catch (err) {
-    console.error("[vendor-dashboard] active availability count failed:", err)
+    console.error("[vendor-dashboard] active availability count failed:", errorMessage(err))
+    loadErrors.push("Le nombre de disponibilités actives est momentanément indisponible.")
   }
 
   // Compter les réservations totales
@@ -276,13 +277,24 @@ export async function getVendorOverview(
       .where(eq(reservation.vendorId, vendorId))
     reservationCount = reservationCountResult[0]?.value ?? 0
   } catch (err) {
-    console.error("[vendor-dashboard] reservation count failed:", err)
+    console.error("[vendor-dashboard] reservation count failed:", errorMessage(err))
+    loadErrors.push("Le nombre de réservations est momentanément indisponible.")
   }
 
   // Activities: last 5 activities (reservations + availabilities)
-  let activities: any[] = []
+  // Déclarés en dehors du bloc try pour rester accessibles au calcul de
+  // `hasAnyData` dans le retour (sinon ReferenceError à la compilation/exécution).
+  let activities: VendorActivityDto[] = []
+  let reservations: {
+    reservation: typeof reservation.$inferSelect
+    pointName: string | null
+  }[] = []
+  let availabilities: {
+    availability: typeof disponibilite.$inferSelect
+    pointName: string | null
+  }[] = []
   try {
-    const reservations = await db
+    reservations = await db
       .select({
         reservation,
         pointName: pointDeVente.name,
@@ -293,7 +305,7 @@ export async function getVendorOverview(
       .orderBy(desc(reservation.reservedAt))
       .limit(5)
 
-    const availabilities = await db
+    availabilities = await db
       .select({
         availability: disponibilite,
         pointName: pointDeVente.name,
@@ -322,20 +334,30 @@ export async function getVendorOverview(
         at: row.reservation.reservedAt,
         status: row.reservation.status,
       })),
-      // Add availabilities
-      ...availabilities.slice(0, 5).map((row) => ({
-        id: `availability-${row.availability.id}`,
-        type: "availability" as const,
-        title: `${row.availability.brand ?? "Marque"} ${row.availability.format ?? ""}`.trim(),
-        detail: `${row.pointName ?? "Dépôt"} · ${row.availability.effectiveStatus === "disponible" ? "Disponible" : "Indisponible"}`,
-        at: row.availability.updatedAt,
-        status: row.availability.effectiveStatus,
-      })),
+      // Add availabilities : le statut effectif est calculé en JS, comme dans
+      // getVendorAvailabilities, pour ne pas dépendre d'une colonne SQL.
+      ...availabilities.slice(0, 5).map((row) => {
+        const expiresAt = row.availability.expiresAt
+        const expired = expiresAt != null && new Date(expiresAt).getTime() < Date.now()
+        const status = expired
+          ? "indisponible"
+          : effectiveStatus(row.availability.status, row.availability.updatedAt)
+
+        return {
+          id: `availability-${row.availability.id}`,
+          type: "availability" as const,
+          title: `${row.availability.brand ?? "Marque"} ${row.availability.format ?? ""}`.trim(),
+          detail: `${row.pointName ?? "Dépôt"} · ${status === "disponible" ? "Disponible" : "Indisponible"}`,
+          at: row.availability.updatedAt,
+          status,
+        }
+      }),
     ]
       .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
       .slice(0, 5)
   } catch (err) {
-    console.error("[vendor-dashboard] activities fetch failed:", err)
+    console.error("[vendor-dashboard] activities fetch failed:", errorMessage(err))
+    loadErrors.push("L'activité récente n'a pas pu être chargée.")
   }
 
   return {
@@ -348,6 +370,7 @@ export async function getVendorOverview(
     activities,
     hasAnyData:
       Boolean(depot) || availabilities.length > 0 || reservations.length > 0,
+    loadErrors,
   }
 }
 
@@ -359,40 +382,54 @@ export async function getVendorDepotsSummary(
   totalDepots: number
   activeDepots: number
 }> {
-  const depots = await getVendorDepots(vendorId)
+  try {
+    const depots = await getVendorDepots(vendorId)
 
-  const totalDepots = depots.length
-  const activeDepots = depots.filter((d) => d.isActive).length
+    const totalDepots = depots.length
+    const activeDepots = depots.filter((d) => d.isActive).length
 
-  return {
-    depots,
-    totalDepots,
-    activeDepots,
+    return {
+      depots,
+      totalDepots,
+      activeDepots,
+    }
+  } catch (err) {
+    console.error("[vendor-dashboard] getVendorDepotsSummary failed:", errorMessage(err))
+    throw err
   }
 }
 
 // Get vendor review (for avis page)
-export async function getVendorReview(
-  vendorId: string
-): Promise<{ id: string; rating: number | null; status: string; createdAt: string } | null> {
-  const [row] = await db
-    .select({
-      id: avis.id,
-      rating: avis.rating,
-      status: avis.status,
-      createdAt: avis.createdAt,
-    })
-    .from(avis)
-    .where(eq(avis.userId, vendorId))
-    .orderBy(desc(avis.createdAt))
-    .limit(1)
+export async function getVendorReview(vendorId: string): Promise<AvisMine | null> {
+  try {
+    const [row] = await db
+      .select({
+        id: avis.id,
+        rating: avis.rating,
+        quote: avis.quote,
+        status: avis.status,
+        createdAt: avis.createdAt,
+        updatedAt: avis.updatedAt,
+      })
+      .from(avis)
+      .where(eq(avis.userId, vendorId))
+      .orderBy(desc(avis.createdAt))
+      .limit(1)
 
-  return row ? {
-    id: row.id,
-    rating: row.rating,
-    status: row.status,
-    createdAt: row.createdAt,
-  } : null
+    return row
+      ? {
+          id: row.id,
+          rating: row.rating,
+          quote: row.quote,
+          status: row.status as AvisMine["status"],
+          createdAt: isoRequired(row.createdAt as Date | string),
+          updatedAt: isoRequired(row.updatedAt as Date | string),
+        }
+      : null
+  } catch (err) {
+    console.error("[vendor-dashboard] getVendorReview failed:", errorMessage(err))
+    throw err
+  }
 }
 
 export type VendorReservationDto = {
@@ -430,93 +467,113 @@ export async function getVendorReservations(
   vendorId: string,
   limit = 200
 ): Promise<VendorReservationDto[]> {
-  const [points, rows] = await Promise.all([
-    db
-      .select({ id: pointDeVente.id })
-      .from(pointDeVente)
-      .where(eq(pointDeVente.vendorId, vendorId)),
-    db
-      .select({
-        reservation,
-        pointName: pointDeVente.name,
-      })
-      .from(reservation)
-      .leftJoin(pointDeVente, eq(reservation.pointId, pointDeVente.id))
-      .where(eq(reservation.vendorId, vendorId))
-      .orderBy(desc(reservation.reservedAt))
-      .limit(limit),
-  ])
+  try {
+    const [points, rows] = await Promise.all([
+      db
+        .select({ id: pointDeVente.id })
+        .from(pointDeVente)
+        .where(eq(pointDeVente.vendorId, vendorId)),
+      db
+        .select({
+          reservation,
+          pointName: pointDeVente.name,
+        })
+        .from(reservation)
+        .leftJoin(pointDeVente, eq(reservation.pointId, pointDeVente.id))
+        .where(eq(reservation.vendorId, vendorId))
+        .orderBy(desc(reservation.reservedAt))
+        .limit(limit),
+    ])
 
-  const ownedPointIds = new Set(points.map((point) => point.id))
-  return rows
-    .filter((row) => ownedPointIds.has(row.reservation.pointId))
-    .map(({ reservation: row, pointName }) => ({
-      id: row.id,
-      reservationCode: row.reservationCode,
-      clientName: row.clientName,
-      clientPhone: row.clientPhone,
-      pointId: row.pointId,
-      pointName,
-      brand: row.brand,
-      format: row.format,
-      quantity: row.quantity,
-      amount: row.amount,
-      amountType: row.amountType,
-      status: row.status,
-      reservedAt: isoRequired(row.reservedAt),
-      expiresAt: iso(row.expiresAt),
-      collectedAt: iso(row.collectedAt),
-      cancelledAt: iso(row.cancelledAt),
-    }))
+    const ownedPointIds = new Set(points.map((point) => point.id))
+    return rows
+      .filter((row) => ownedPointIds.has(row.reservation.pointId))
+      .map(({ reservation: row, pointName }) => ({
+        id: row.id,
+        reservationCode: row.reservationCode,
+        clientName: row.clientName,
+        clientPhone: row.clientPhone,
+        pointId: row.pointId,
+        pointName,
+        brand: row.brand,
+        format: row.format,
+        quantity: row.quantity,
+        amount: row.amount,
+        amountType: row.amountType,
+        status: row.status,
+        reservedAt: isoRequired(row.reservedAt),
+        expiresAt: iso(row.expiresAt),
+        collectedAt: iso(row.collectedAt),
+        cancelledAt: iso(row.cancelledAt),
+      }))
+  } catch (err) {
+    console.error("[vendor-dashboard] getVendorReservations failed:", errorMessage(err))
+    throw err
+  }
 }
 
 export async function getVendorProfile(vendorId: string): Promise<VendorProfileDto | null> {
-  const [row] = await db
-    .select({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      phoneNumber: user.phoneNumber,
-      image: user.image,
-      role: user.role,
-      emailVerified: user.emailVerified,
-      lastLoginAt: user.lastLoginAt,
-      createdAt: user.createdAt,
-    })
-    .from(user)
-    .where(eq(user.id, vendorId))
-    .limit(1)
+  try {
+    const [row] = await db
+      .select({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        image: user.image,
+        role: user.role,
+        emailVerified: user.emailVerified,
+        lastLoginAt: user.lastLoginAt,
+        createdAt: user.createdAt,
+      })
+      .from(user)
+      .where(eq(user.id, vendorId))
+      .limit(1)
 
-  if (!row) return null
+    if (!row) return null
 
-  return {
-    ...row,
-    lastLoginAt: iso(row.lastLoginAt),
-    createdAt: iso(row.createdAt),
+    return {
+      ...row,
+      lastLoginAt: iso(row.lastLoginAt),
+      createdAt: iso(row.createdAt),
+    }
+  } catch (err) {
+    console.error("[vendor-dashboard] getVendorProfile failed:", errorMessage(err))
+    throw err
   }
 }
 
 export async function getVendorPointIds(vendorId: string): Promise<string[]> {
-  const rows = await db
-    .select({ id: pointDeVente.id })
-    .from(pointDeVente)
-    .where(eq(pointDeVente.vendorId, vendorId))
-  return rows.map((row) => row.id)
+  try {
+    const rows = await db
+      .select({ id: pointDeVente.id })
+      .from(pointDeVente)
+      .where(eq(pointDeVente.vendorId, vendorId))
+    return rows.map((row) => row.id)
+  } catch (err) {
+    console.error("[vendor-dashboard] getVendorPointIds failed:", errorMessage(err))
+    throw err
+  }
 }
 
 export async function reservationBelongsToVendor(
   reservationId: string,
   vendorId: string
 ): Promise<boolean> {
-  const pointIds = await getVendorPointIds(vendorId)
-  const conditions = [eq(reservation.id, reservationId), eq(reservation.vendorId, vendorId)]
-  if (pointIds.length > 0) {
-    conditions.push(inArray(reservation.pointId, pointIds))
+  try {
+    const pointIds = await getVendorPointIds(vendorId)
+    const conditions = [eq(reservation.id, reservationId), eq(reservation.vendorId, vendorId)]
+    if (pointIds.length > 0) {
+      conditions.push(inArray(reservation.pointId, pointIds))
+    }
+    const [row] = await db
+      .select({ id: reservation.id })
+      .from(reservation)
+      .where(and(...conditions))
+      .limit(1)
+    return Boolean(row)
+  } catch (err) {
+    console.error("[vendor-dashboard] reservationBelongsToVendor failed:", errorMessage(err))
+    throw err
   }
-  const [row] = await db
-    .select({ id: reservation.id })
-    .from(reservation)
-    .where(and(...conditions))
-    .limit(1)
-  return Boolean(row)
 }
