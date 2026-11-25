@@ -584,7 +584,14 @@ export default function AdminUsersPage() {
                 <Button type="button" variant="outline" onClick={() => setEditDialog(false)}>
                   Annuler
                 </Button>
-                <Button type="submit" disabled={form.formState.isSubmitting || saving.has(editUser!.id)}>
+                <Button
+                  type="submit"
+                  disabled={
+                    form.formState.isSubmitting ||
+                    !editUser ||
+                    saving.has(editUser.id)
+                  }
+                >
                   {form.formState.isSubmitting ? <Loader2 className="size-4 mr-2 animate-spin" /> : null}
                   Enregistrer
                 </Button>
@@ -619,9 +626,13 @@ export default function AdminUsersPage() {
               type="button"
               variant="destructive"
               onClick={handleDelete}
-              disabled={saving.has(deleteUser!.id)}
+              disabled={
+                !deleteUser || saving.has(deleteUser.id)
+              }
             >
-              {saving.has(deleteUser!.id) ? <Loader2 className="size-4 mr-2 animate-spin" /> : null}
+              {deleteUser && saving.has(deleteUser.id) ? (
+                <Loader2 className="size-4 mr-2 animate-spin" />
+              ) : null}
               Supprimer
             </Button>
           </DialogFooter>

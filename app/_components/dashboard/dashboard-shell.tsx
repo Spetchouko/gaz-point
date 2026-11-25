@@ -394,27 +394,31 @@ export function DashboardShell({
             </span>
           </Link>
           <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push(primaryAction.href)}
-              className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-              aria-label={primaryAction.ariaLabel}
-            >
-              <PrimaryActionIcon className="size-4" />
-              {primaryAction.label}
-            </Button>
-            {secondaryAction && SecondaryActionIcon && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push(secondaryAction.href)}
-                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-                aria-label={secondaryAction.ariaLabel}
-              >
-                <SecondaryActionIcon className="size-4" />
-                {secondaryAction.label}
-              </Button>
+            {role !== "admin" && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => router.push(primaryAction.href)}
+                  className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                  aria-label={primaryAction.ariaLabel}
+                >
+                  <PrimaryActionIcon className="size-4" />
+                  {primaryAction.label}
+                </Button>
+                {secondaryAction && SecondaryActionIcon && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => router.push(secondaryAction.href)}
+                    className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                    aria-label={secondaryAction.ariaLabel}
+                  >
+                    <SecondaryActionIcon className="size-4" />
+                    {secondaryAction.label}
+                  </Button>
+                )}
+              </>
             )}
             {headerActions}
           </div>

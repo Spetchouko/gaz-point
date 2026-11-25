@@ -32,6 +32,36 @@ interface AdminTableProps<T> {
   className?: string;
 }
 
+// Composant stable (déclaré hors du rendu) : éviter de recréer le type de ligne
+// à chaque changement d'état, ce qui démonterait toutes les lignes du tableau.
+function ClickableRow({
+  children,
+  onActivate,
+  ...props
+}: React.HTMLAttributes<HTMLTableRowElement> & { onActivate: () => void }) {
+  return (
+    <TableRow
+      {...props}
+      role="button"
+      tabIndex={0}
+      className={cn("admin-table__tbody-tr", props.className)}
+      onClick={(event) => {
+        if (!(event.target as HTMLElement).closest("button,a,input,select,label")) {
+          onActivate();
+        }
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onActivate();
+        }
+      }}
+    >
+      {children}
+    </TableRow>
+  );
+}
+
 export function AdminTable<T>({
   columns,
   data,
@@ -44,22 +74,6 @@ export function AdminTable<T>({
   stickyHeader = false,
   className,
 }: AdminTableProps<T>) {
-  const Row = onRowClick
-    ? ({ children, ...props }: React.HTMLAttributes<HTMLTableRowElement>) => (
-        <TableRow
-          {...props}
-          className={cn("admin-table__tbody-tr", props.className)}
-          onClick={(e) => {
-            if (!(e.target as HTMLElement).closest("button,a,input,select,label")) {
-              (props as any).onClick?.(e);
-            }
-          }}
-        >
-          {children}
-        </TableRow>
-      )
-    : TableRow;
-
   return (
     <div className={cn("admin-table", className)}>
       {caption && <TableCaption className="px-4 py-3 text-sm font-medium text-foreground">{caption}</TableCaption>}
@@ -85,19 +99,35 @@ export function AdminTable<T>({
                 </TableCell>
               </TableRow>
             ) : (
-              data.map((item, index) => (
-                <Row
-                  key={keyExtractor(item)}
-                  className={cn(rowClassName ? (typeof rowClassName === "function" ? rowClassName(item, index) : rowClassName) : "", onRowClick && "cursor-pointer")}
-                  onClick={onRowClick ? () => onRowClick(item) : undefined}
-                >
-                  {columns.map((col) => (
-                    <TableCell key={col.key} className={cn("admin-table__td", col.className)}>
-                      {col.render(item, index)}
-                    </TableCell>
-                  ))}
-                </Row>
-              ))
+              data.map((item, index) => {
+                const rowClass = cn(
+                  rowClassName
+                    ? typeof rowClassName === "function"
+                      ? rowClassName(item, index)
+                      : rowClassName
+                    : "",
+                  onRowClick && "cursor-pointer"
+                );
+                const cells = columns.map((col) => (
+                  <TableCell key={col.key} className={cn("admin-table__td", col.className)}>
+                    {col.render(item, index)}
+                  </TableCell>
+                ));
+
+                return onRowClick ? (
+                  <ClickableRow
+                    key={keyExtractor(item)}
+                    className={rowClass}
+                    onActivate={() => onRowClick(item)}
+                  >
+                    {cells}
+                  </ClickableRow>
+                ) : (
+                  <TableRow key={keyExtractor(item)} className={rowClass}>
+                    {cells}
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>

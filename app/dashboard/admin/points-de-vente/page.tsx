@@ -355,9 +355,10 @@ export default function AdminPointsDeVentePage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               placeholder="Rechercher par nom, district, adresse..."
+              aria-label="Rechercher un point de vente"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 admin-input"
+              className="pl-12 admin-input"
             />
           </div>
           <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -456,7 +457,8 @@ export default function AdminPointsDeVentePage() {
                         <input
                           type="checkbox"
                           checked={form.getValues("brands").includes(b)}
-                          onCheckedChange={(checked) => {
+                          onChange={(event) => {
+                            const checked = event.target.checked;
                             const current = form.getValues("brands");
                             form.setValue("brands", checked
                               ? [...current, b]
@@ -478,7 +480,8 @@ export default function AdminPointsDeVentePage() {
                         <input
                           type="checkbox"
                           checked={form.getValues("formats").includes(f)}
-                          onCheckedChange={(checked) => {
+                          onChange={(event) => {
+                            const checked = event.target.checked;
                             const current = form.getValues("formats");
                             form.setValue("formats", checked
                               ? [...current, f]
@@ -589,7 +592,7 @@ export default function AdminPointsDeVentePage() {
                 <Button type="button" variant="outline" onClick={() => setEditDialog(false)}>
                   Annuler
                 </Button>
-                <Button type="submit" disabled={form.formState.isSubmitting || saving.has(editItem!.id)}>
+                <Button type="submit" disabled={form.formState.isSubmitting || !editItem || saving.has(editItem.id)}>
                   {form.formState.isSubmitting ? <Loader2 className="size-4 mr-2 animate-spin" /> : null}
                   Enregistrer
                 </Button>

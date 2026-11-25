@@ -605,7 +605,8 @@ export default function PointDeVenteDetailPage({ params }: { params: Promise<{ i
                         <input
                           type="checkbox"
                           checked={form.getValues("brands").includes(b)}
-                          onCheckedChange={(checked) => {
+                          onChange={(event) => {
+                            const checked = event.target.checked;
                             const current = form.getValues("brands")
                             form.setValue("brands", checked
                               ? [...current, b]
@@ -627,7 +628,8 @@ export default function PointDeVenteDetailPage({ params }: { params: Promise<{ i
                         <input
                           type="checkbox"
                           checked={form.getValues("formats").includes(f)}
-                          onCheckedChange={(checked) => {
+                          onChange={(event) => {
+                            const checked = event.target.checked;
                             const current = form.getValues("formats")
                             form.setValue("formats", checked
                               ? [...current, f]

@@ -4,6 +4,7 @@ import * as React from "react"
 import {
   FormProvider,
   useForm as useFormOrig,
+  useFormContext,
   type UseFormReturn,
 } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -34,14 +35,19 @@ export function Form<T extends zod.ZodTypeAny = any>({
   onSubmit,
   children,
 }: FormProps<T>) {
-  const methods = React.useMemo<UseFormReturn<zod.infer<T>>>(
-    () =>
-      useFormOrig<zod.infer<T>>({
-        defaultValues,
-        resolver: schema ? zodResolver(schema) : undefined,
-      }),
-    [schema, defaultValues]
-  )
+  const methods = useFormOrig<zod.infer<T>>({
+    defaultValues,
+    resolver: schema ? zodResolver(schema) : undefined,
+  })
+
+  // Respecte les règles des Hooks : useForm est appelé au top-level.
+  // On synchronise defaultValues lorsqu'elles changent via useEffect,
+  // jamais dans un useMemo ni de manière conditionnelle.
+  React.useEffect(() => {
+    if (defaultValues) {
+      methods.reset(defaultValues, { keepDirtyValues: false })
+    }
+  }, [defaultValues, methods])
 
   const handleSubmit = React.useCallback(
     async (data: any) => {

@@ -50,10 +50,18 @@ export async function GET(req: Request) {
     let paymentsMap: Record<string, typeof paymentTransaction.$inferSelect[]> = {}
 
     if (vendorIds.length > 0) {
-      const subscriptions = await db
-        .select()
-        .from(vendorSubscription)
-        .where(inArray(vendorSubscription.vendorId, vendorIds))
+      // La table vendor_subscription peut ne pas exister encore dans toutes les
+      // bases de données (migration en attente). On gère l'erreur de manière
+      // gracieuse pour ne pas faire planter toute la page d'abonnements.
+      let subscriptions: typeof vendorSubscription.$inferSelect[] = []
+      try {
+        subscriptions = await db
+          .select()
+          .from(vendorSubscription)
+          .where(inArray(vendorSubscription.vendorId, vendorIds))
+      } catch (err) {
+        console.error("[admin/abonnements] vendor_subscription table missing:", err)
+      }
 
       subscriptionsMap = subscriptions.reduce((acc, sub) => {
         acc[sub.vendorId] = sub

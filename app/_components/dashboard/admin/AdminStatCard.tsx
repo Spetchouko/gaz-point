@@ -72,7 +72,7 @@ export function AdminStatCard({
                 {label && <p className="text-xs text-muted-foreground truncate mt-1">{label}</p>}
                 {trend && (
                   <p className={cn("admin-stat-card__trend", trend.up ? "admin-stat-card__trend-up" : "admin-stat-card__trend-down")}>
-                    {trend.up ? "▲" : "▼"} {trend.value.toLocaleString()} {trend.label}
+                    {trend.up ? "▲" : "▼"} {trend.value?.toLocaleString() ?? "0"} {trend.label}
                   </p>
                 )}
                 {badge && (
@@ -108,7 +108,7 @@ export function AdminStatCard({
               {label && <p className="text-xs text-muted-foreground truncate mt-1">{label}</p>}
               {trend && (
                 <p className={cn("admin-stat-card__trend", trend.up ? "admin-stat-card__trend-up" : "admin-stat-card__trend-down")}>
-                  {trend.up ? "▲" : "▼"} {trend.value.toLocaleString()} {trend.label}
+                  {trend.up ? "▲" : "▼"} {trend.value?.toLocaleString() ?? "0"} {trend.label}
                 </p>
               )}
               {badge && (

@@ -1,25 +1,45 @@
 "use client";
-import { useEffect, useState } from "react";
+
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { DashboardAdminLayout } from "@/app/_components/dashboard/admin-layout-new";
-import { useDashboardSession, useAutoRefreshSession } from "@/lib/auth-session";
+
+import { DashboardShell } from "@/app/_components/dashboard/dashboard-shell";
+import { ADMIN_NAV_GROUPS } from "@/app/_components/dashboard/dashboard-nav";
+import {
+  DASHBOARD_PERMISSION_KEYS,
+  useDashboardSession,
+} from "@/lib/auth-session";
 import type { DashboardUser } from "@/lib/auth-session";
+
+function AdminHeaderActions() {
+  return (
+    <span className="hidden whitespace-nowrap text-xs font-medium uppercase tracking-wider text-muted-foreground/70 xl:inline">
+      Espace Administrateur
+    </span>
+  );
+}
 
 export default function DashboardAdminLayoutWrapper({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { status, user, isAuthenticated, isLoading } =
-    useDashboardSession();
-  const [permissions, setPermissions] = useState<Set<string>>(new Set());
+  const { status, user, isAuthenticated, isLoading } = useDashboardSession();
+  const [apiPermissions, setApiPermissions] = useState<Set<string>>(
+    () => new Set<string>()
+  );
   const router = useRouter();
 
-  // Rafraîchir automatiquement la session au focus de la fenêtre
-  useAutoRefreshSession();
-
   // Charger les permissions réelles depuis l'API protégée (collaborateur a des
-  // permissions assignées, admin a tous les modules).
+  // permissions assignées, admin a tous les modules). Les permissions admin sont
+  // dérivées du rôle pour éviter un sidebar vide pendant l'aller-retour vers l'API.
+  const permissions = useMemo(() => {
+    if (user?.role !== "admin") {
+      return apiPermissions;
+    }
+    return new Set<string>([...DASHBOARD_PERMISSION_KEYS, ...apiPermissions]);
+  }, [apiPermissions, user?.role]);
+
   useEffect(() => {
     let cancelled = false;
     async function loadPermissions() {
@@ -30,11 +50,13 @@ export default function DashboardAdminLayoutWrapper({
         });
         if (!cancelled && res.ok) {
           const data = await res.json();
-          setPermissions(new Set(Array.isArray(data.permissions) ? data.permissions : []));
+          setApiPermissions(new Set(Array.isArray(data.permissions) ? data.permissions : []));
+        } else if (!cancelled) {
+          console.error(`[admin] permissions: HTTP ${res.status}`);
         }
-      } catch {
-        // En cas d'erreur, l'ensemble vide est utilisé et les modules
-        // restent masqués pour le collaborateur.
+      } catch (error) {
+        // Modules masqués en secours, mais l'erreur reste visible en console.
+        console.error("[admin] permissions:", error);
       }
     }
     loadPermissions();
@@ -45,7 +67,7 @@ export default function DashboardAdminLayoutWrapper({
 
   // Si la session est définitivement invalide (expiration en cours de navigation),
   // rediriger vers la connexion admin. Pendant le chargement, on affiche le contenu
-  // pour éviter le clignotement : le middleware a déjà protégé la route côté serveur.
+  // pour éviter le clignotement : le proxy a déjà protégé la route côté serveur.
   useEffect(() => {
     if (isLoading) {
       return;
@@ -72,14 +94,16 @@ export default function DashboardAdminLayoutWrapper({
       }
     : undefined;
 
-  // Toujours afficher le contenu : pas de retour null pendant le loading.
   return (
-    <DashboardAdminLayout
-      permissions={permissions}
+    <DashboardShell
+      role="admin"
       session={sessionUser}
       status={status}
+      navGroups={ADMIN_NAV_GROUPS}
+      permissions={permissions}
+      headerActions={<AdminHeaderActions />}
     >
       {children}
-    </DashboardAdminLayout>
+    </DashboardShell>
   );
 }

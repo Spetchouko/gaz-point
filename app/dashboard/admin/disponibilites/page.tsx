@@ -251,9 +251,10 @@ export default function AdminDisponibilitesPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               placeholder="Rechercher par marque, format, dépôt..."
+              aria-label="Rechercher une disponibilité"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 admin-input"
+              className="pl-12 admin-input"
             />
           </div>
           <Select value={filterStatus} onValueChange={setFilterStatus}>
