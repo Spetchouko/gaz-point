@@ -9,7 +9,11 @@ import {
   validatePubliciteTitle,
   validatePubliciteDescription,
   validatePubliciteImage,
+  validatePubliciteDuration,
+  validatePublicitePriority,
+  validatePubliciteDisplayOrder,
 } from "@/lib/publicite-config"
+import { invalidatePubliciteCache } from "@/lib/publicite"
 
 /**
  * PATCH /api/admin/publicite/[id]
@@ -51,6 +55,9 @@ export async function PATCH(
       status?: string
       startAt?: string | null
       endAt?: string | null
+      duration?: number | null
+      priority?: number | null
+      displayOrder?: number | null
     } | null
 
     if (body.title !== undefined) {
@@ -81,6 +88,21 @@ export async function PATCH(
       )
     }
 
+    const durationError = validatePubliciteDuration(body.duration)
+    if (durationError) {
+      return NextResponse.json({ error: durationError }, { status: 400 })
+    }
+
+    const priorityError = validatePublicitePriority(body.priority)
+    if (priorityError) {
+      return NextResponse.json({ error: priorityError }, { status: 400 })
+    }
+
+    const displayOrderError = validatePubliciteDisplayOrder(body.displayOrder)
+    if (displayOrderError) {
+      return NextResponse.json({ error: displayOrderError }, { status: 400 })
+    }
+
     const slot = body.slot !== undefined && isPubliciteSlot(body.slot) ? body.slot : existing.slot
 
     const updates: Record<string, unknown> = {}
@@ -98,9 +120,15 @@ export async function PATCH(
     }
     if (body.startAt !== undefined) updates.startAt = body.startAt ? new Date(body.startAt) : null
     if (body.endAt !== undefined) updates.endAt = body.endAt ? new Date(body.endAt) : null
+    if (body.duration !== undefined) updates.duration = body.duration
+    if (body.priority !== undefined) updates.priority = body.priority
+    if (body.displayOrder !== undefined) updates.displayOrder = body.displayOrder
     updates.updatedAt = new Date()
 
     await db.update(publicite).set(updates).where(eq(publicite.id, id))
+
+    // Invalider le cache publicités
+    await invalidatePubliciteCache()
 
     // Traçabilité
     try {
@@ -169,6 +197,9 @@ export async function DELETE(
     }
 
     await db.delete(publicite).where(eq(publicite.id, id))
+
+    // Invalider le cache publicités
+    await invalidatePubliciteCache()
 
     // Traçabilité
     try {

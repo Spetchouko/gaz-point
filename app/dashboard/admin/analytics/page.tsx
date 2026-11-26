@@ -129,6 +129,7 @@ export default function AdminAnalyticsPage() {
         const res = await fetch(`/api/admin/analytics?period=${period}`, {
           headers: { Accept: "application/json" },
           cache: "no-store",
+          credentials: "include",
         });
         if (!res.ok) throw new Error("Impossible de charger les analytics");
         const json = await res.json();
@@ -178,13 +179,19 @@ export default function AdminAnalyticsPage() {
           <>
             <Select value={period} onValueChange={(value) => setPeriod(value ?? "30")}>
               <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder={period + " jours"} />
+                <SelectValue placeholder={
+                  period === "today" ? "Aujourd'hui"
+                  : period === "365" ? "12 mois"
+                  : period === "custom" ? "Personnalisée"
+                  : period + " jours"
+                } />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">1 jour</SelectItem>
+                <SelectItem value="today">Aujourd'hui</SelectItem>
                 <SelectItem value="7">7 jours</SelectItem>
                 <SelectItem value="30">30 jours</SelectItem>
-                <SelectItem value="90">90 jours</SelectItem>
+                <SelectItem value="365">12 mois</SelectItem>
+                <SelectItem value="custom">Période personnalisée</SelectItem>
               </SelectContent>
             </Select>
             <Link href="/dashboard/admin">

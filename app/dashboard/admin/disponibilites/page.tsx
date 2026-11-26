@@ -75,6 +75,7 @@ export default function AdminDisponibilitesPage() {
         const res = await fetch(`/api/admin/disponibilites?${params.toString()}`, {
           headers: { Accept: "application/json" },
           cache: "no-store",
+          credentials: "include",
         });
         if (!res.ok) throw new Error("Impossible de charger les disponibilités");
         const data = await res.json();
@@ -98,6 +99,7 @@ export default function AdminDisponibilitesPage() {
       const res = await fetch(`/api/admin/disponibilites/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ status }),
       });
       if (!res.ok) throw new Error("Échec de la modification");

@@ -5,7 +5,7 @@ import {
   reservation,
   pointDeVente,
   disponibilite,
-  collaborateurPermission,
+  trafficEvent,
 } from "@/db/schema"
 import { count, eq, and, gte, lt, desc, sql } from "drizzle-orm"
 import { requireModuleApi } from "@/lib/session"
@@ -137,6 +137,27 @@ export async function GET(req: NextRequest) {
         .where(whereReservations),
     ])
 
+    // Visiteurs uniques (événements de trafic réels)
+    const uniqueVisitorsResult = await db
+      .select({
+        count: sql<number>`COUNT(DISTINCT COALESCE(${trafficEvent.sessionId}, ${trafficEvent.userId}))`,
+      })
+      .from(trafficEvent)
+      .where(and(eq(trafficEvent.eventType, "signin")))
+    const uniqueVisitors = Number(uniqueVisitorsResult[0]?.count ?? 0)
+
+    // Revenu réel : réservations confirmées et collectées (paiements encaissés)
+    // On exclut les statuts pending, cancelled et tout autre statut non encaissé
+    const confirmedRevenueResult = await db
+      .select({
+        total: sql<number>`COALESCE(SUM(${reservation.amount}), 0)`,
+      })
+      .from(reservation)
+      .where(
+        sql`${reservation.status} IN ('confirmed', 'collected')`
+      )
+    const confirmedRevenue = Number(confirmedRevenueResult[0]?.total ?? 0)
+
     // Réservations par jour dans la période (pour graphique)
     const reservationsByDayRows = await db
       .select({
@@ -188,6 +209,12 @@ export async function GET(req: NextRequest) {
         collected: Number(collectedReservations.count),
         cancelled: Number(cancelledReservations.count),
         month: Number(monthReservations.count),
+      },
+      visitors: {
+        unique: uniqueVisitors,
+      },
+      revenue: {
+        confirmed: confirmedRevenue,
       },
       period: {
         from: rangeFrom.toISOString(),

@@ -8,7 +8,7 @@ import { Solution } from "@/app/_components/solution"
 import { Storytelling } from "@/app/_components/storytelling"
 import { Temoignages } from "@/app/_components/temoignages"
 import { PubliciteCarousel, type PubliciteBannerData } from "@/app/_components/publicite-banner"
-import { getPublicitesForSlot } from "@/lib/publicite"
+import { getCachedPublicitesForBothSlots } from "@/lib/publicite"
 import { getApprovedAvis, type AvisPublic } from "@/lib/avis"
 import { errorMessage } from "@/lib/errors"
 import { WebPageJsonLd } from "@/app/_components/json-ld"
@@ -46,35 +46,27 @@ export default async function Home() {
   // Les bannières sont décoratives : une panne du marketing ne doit jamais
   // bloquer la landing. En cas d'erreur, elles sont simplement masquées.
   // Deux emplacements : sous la bannière d'accueil (home_hero) et au-dessus
-  // de « Trouver mon Gaz » (home_search).
-  const results = await Promise.allSettled([
-    getPublicitesForSlot("home_hero"),
-    getPublicitesForSlot("home_search"),
+  // de « Trouver mon Gaz » (home_search). Requête groupée + cache partagé.
+  const [publicitesResult, avisResult] = await Promise.allSettled([
+    getCachedPublicitesForBothSlots(),
     getApprovedAvis(),
   ])
   let heroPublicites: PubliciteBannerData[] = []
   let searchPublicites: PubliciteBannerData[] = []
   let avis: AvisPublic[] = []
-  if (results[0].status === "fulfilled") {
-    heroPublicites = results[0].value
+  if (publicitesResult.status === "fulfilled") {
+    heroPublicites = publicitesResult.value.home_hero
+    searchPublicites = publicitesResult.value.home_search
   } else {
     console.warn(
-      "Impossible de charger les publicités home_hero:",
-      errorMessage(results[0].reason)
+      "Impossible de charger les publicités (groupées):",
+      errorMessage(publicitesResult.reason)
     )
   }
-  if (results[1].status === "fulfilled") {
-    searchPublicites = results[1].value
+  if (avisResult.status === "fulfilled") {
+    avis = avisResult.value
   } else {
-    console.warn(
-      "Impossible de charger les publicités home_search:",
-      errorMessage(results[1].reason)
-    )
-  }
-  if (results[2].status === "fulfilled") {
-    avis = results[2].value
-  } else {
-    console.warn("Impossible de charger les avis :", errorMessage(results[2].reason))
+    console.warn("Impossible de charger les avis :", errorMessage(avisResult.reason))
   }
 
   return (

@@ -52,7 +52,7 @@ export async function GET(req: Request) {
       rangeFrom = startOfDayLocal(new Date(fromRaw))
       rangeTo = endOfDayLocal(new Date(toRaw))
     } else {
-      const days = period === "today" ? 1 : period === "7" ? 7 : period === "90" ? 90 : 30
+      const days = period === "today" ? 1 : period === "7" ? 7 : period === "365" ? 365 : period === "90" ? 90 : 30
       rangeFrom = startOfDayLocal(new Date(now.getTime() - (days - 1) * 86_400_000))
       rangeTo = new Date(now.getTime() + 1000)
     }

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx __tests__/auth-routing-tests.ts && tsx __tests__/client-dashboard-tests.ts && tsx __tests__/csv-export-tests.ts && tsx __tests__/publicite-analytics-tests.ts && tsx __tests__/search-results-url-tests.ts && tsx __tests__/gas-brands-tests.ts && tsx __tests__/avis-tests.ts && tsx __tests__/disponibilite-overlay-tests.ts",
+    "test": "tsx __tests__/auth-routing-tests.ts && tsx __tests__/client-dashboard-tests.ts && tsx __tests__/csv-export-tests.ts && tsx __tests__/publicite-analytics-tests.ts && tsx __tests__/search-results-url-tests.ts && tsx __tests__/gas-brands-tests.ts && tsx __tests__/avis-tests.ts && tsx __tests__/disponibilite-overlay-tests.ts && tsx __tests__/publicite-rotation-tests.ts",
     "test:auth": "tsx __tests__/auth-routing-tests.ts",
     "test:client-dashboard": "tsx __tests__/client-dashboard-tests.ts",
     "test:brands": "tsx __tests__/gas-brands-tests.ts",

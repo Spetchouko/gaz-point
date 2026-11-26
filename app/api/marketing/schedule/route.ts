@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
 import { publicite } from "@/db/schema"
 import { and, eq, lte, lt, isNotNull } from "drizzle-orm"
+import { invalidatePubliciteCache } from "@/lib/publicite"
 
 /**
  * Tâche planifiée : active les campagnes programmées arrivées à échéance et
@@ -55,6 +56,11 @@ export async function GET(req: NextRequest) {
         )
         .returning({ id: publicite.id }),
     ])
+
+    // Invalider le cache publicités si des changements ont eu lieu
+    if (activated.length > 0 || expired.length > 0) {
+      await invalidatePubliciteCache()
+    }
 
     return NextResponse.json({
       ok: true,

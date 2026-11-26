@@ -133,6 +133,7 @@ export default function AdminUsersPage() {
         const res = await fetch(`/api/admin/users?${params.toString()}`, {
           headers: { Accept: "application/json" },
           cache: "no-store",
+          credentials: "include",
         })
         if (!res.ok) throw new Error("Impossible de charger les utilisateurs")
         const data = await res.json()
@@ -160,6 +161,7 @@ export default function AdminUsersPage() {
       const res = await fetch(`/api/admin/users/${id}/toggle`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ isActive: newActive }),
       })
       if (!res.ok) {
@@ -188,6 +190,7 @@ export default function AdminUsersPage() {
       const res = await fetch(`/api/admin/users/${editUser.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           name: values.name,
           email: values.email,
@@ -232,6 +235,7 @@ export default function AdminUsersPage() {
     try {
       const res = await fetch(`/api/admin/users/${deleteUser.id}`, {
         method: "DELETE",
+        credentials: "include",
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || "Échec de la suppression")

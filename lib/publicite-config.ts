@@ -111,6 +111,20 @@ export const PUBLICITE_ACCEPTED_MIME: readonly string[] = [
 
 export const PUBLICITE_ACCEPT_ATTRIBUTE = PUBLICITE_ACCEPTED_MIME.join(",")
 
+/* --------------------- Rotation & Priorité (nouvelles) --------------------- */
+
+export const PUBLICITE_DURATION_MIN = 5
+export const PUBLICITE_DURATION_MAX = 30
+export const PUBLICITE_DURATION_DEFAULT = 8
+
+export const PUBLICITE_PRIORITY_MIN = 0
+export const PUBLICITE_PRIORITY_MAX = 100
+
+export const PUBLICITE_DISPLAY_ORDER_MIN = 0
+export const PUBLICITE_DISPLAY_ORDER_MAX = 1000
+
+export const PUBLICITE_SLOT_VALUES_ORDER = ["home_hero", "home_search"] as const
+
 export function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes < 0) return "0 o"
   if (bytes < 1024) return `${Math.round(bytes)} o`
@@ -144,6 +158,33 @@ export function validatePubliciteDescription(raw: string): string | null {
   const description = raw.trim()
   if (description.length > PUBLICITE_DESCRIPTION_MAX) {
     return `La description ne doit pas dépasser ${PUBLICITE_DESCRIPTION_MAX} caractères (${description.length} actuellement).`
+  }
+  return null
+}
+
+export function validatePubliciteDuration(raw: number | null | undefined): string | null {
+  if (raw === null || raw === undefined) return null
+  if (!Number.isInteger(raw)) return "La durée doit être un nombre entier."
+  if (raw < PUBLICITE_DURATION_MIN || raw > PUBLICITE_DURATION_MAX) {
+    return `La durée doit être comprise entre ${PUBLICITE_DURATION_MIN} et ${PUBLICITE_DURATION_MAX} secondes (${raw} actuellement).`
+  }
+  return null
+}
+
+export function validatePublicitePriority(raw: number | null | undefined): string | null {
+  if (raw === null || raw === undefined) return null
+  if (!Number.isInteger(raw)) return "La priorité doit être un nombre entier."
+  if (raw < PUBLICITE_PRIORITY_MIN || raw > PUBLICITE_PRIORITY_MAX) {
+    return `La priorité doit être comprise entre ${PUBLICITE_PRIORITY_MIN} et ${PUBLICITE_PRIORITY_MAX} (${raw} actuellement).`
+  }
+  return null
+}
+
+export function validatePubliciteDisplayOrder(raw: number | null | undefined): string | null {
+  if (raw === null || raw === undefined) return null
+  if (!Number.isInteger(raw)) return "L'ordre d'affichage doit être un nombre entier."
+  if (raw < PUBLICITE_DISPLAY_ORDER_MIN || raw > PUBLICITE_DISPLAY_ORDER_MAX) {
+    return `L'ordre d'affichage doit être compris entre ${PUBLICITE_DISPLAY_ORDER_MIN} et ${PUBLICITE_DISPLAY_ORDER_MAX} (${raw} actuellement).`
   }
   return null
 }

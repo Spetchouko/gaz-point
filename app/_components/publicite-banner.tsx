@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import { ArrowRight } from "lucide-react"
+import { useEffect, useRef, useState, useCallback } from "react"
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
   IMPRESSION_MIN_VISIBLE_MS,
@@ -23,7 +23,14 @@ export type PubliciteBannerData = {
   startAt: Date | string | null
   endAt: Date | string | null
   status: string
+  duration: number | null
+  priority: number
+  displayOrder: number
 }
+
+const DEFAULT_DURATION = 8000 // 8 secondes par défaut
+const MIN_DURATION = 5000
+const MAX_DURATION = 30000
 
 /**
  * Pubs éligibles : statut actif ET diffusion en cours (période [startAt, endAt]).
@@ -44,6 +51,17 @@ function getEligiblePublicites(ads: PubliciteBannerData[]): PubliciteBannerData[
 }
 
 /**
+ * Précharge une image (data-URL ou URL) pour éviter le clignotement au changement.
+ */
+function preloadImage(src: string): Promise<void> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = img.onerror = () => resolve()
+    img.src = src
+  })
+}
+
+/**
  * Carte unique d'une publicité.
  * Rendu partagé entre la landing page et les aperçus du dashboard Marketing :
  * image compacte à gauche, titre + texte court + bouton d'action à droite.
@@ -54,14 +72,17 @@ export function PubliciteBannerCard({
   interactive = true,
   animate = true,
   className,
+  onImageError,
 }: {
   ad: PubliciteBannerData
   interactive?: boolean
   animate?: boolean
   className?: string
+  onImageError?: () => void
 }) {
   const cardRef = useRef<HTMLElement | null>(null)
   const impressionCounted = useRef(false)
+  const [imageError, setImageError] = useState(false)
 
   // Impression : comptée seulement si la bannière est réellement visible
   // (≥ 50 % de la surface pendant ≥ 1 s), une seule fois par publicité.
@@ -110,6 +131,11 @@ export function PubliciteBannerCard({
     if (interactive) sendClickEvent(ad.id)
   }
 
+  const handleImgError = () => {
+    setImageError(true)
+    onImageError?.()
+  }
+
   return (
     <article
       ref={cardRef}
@@ -120,7 +146,7 @@ export function PubliciteBannerCard({
       )}
     >
       {/* Zone image (gauche) */}
-      {ad.image && (
+      {ad.image && !imageError && (
         <div
           className={cn(
             "relative h-44 w-full shrink-0 overflow-hidden border-b border-border bg-muted md:h-full md:w-[38%] md:border-b-0 md:border-r border-border",
@@ -134,6 +160,7 @@ export function PubliciteBannerCard({
             alt=""
             loading="lazy"
             className="h-full w-full object-cover"
+            onError={handleImgError}
           />
         </div>
       )}
@@ -234,12 +261,14 @@ function PreviewBar({ label, subtle = false }: { label: string; subtle?: boolean
 }
 
 /**
- * Bannière publicitaire GazPoints.
- * - Format : 800 × 200 px sur ordinateur, empilée et responsive sur mobile.
- * - Données : réutilise le système marketing existant (slots home_hero /
- *   home_search).
- * - Tolérance : sans pub éligible → masquée ; champs manquants gérés
- *   (image / URL / description absentes).
+ * Bannière publicitaire GazPoints — Carousel rotatif animé.
+ * - Entrée depuis la droite, sortie à gauche (CSS keyframes).
+ * - Durée par publicité : champ `duration` (ms) ou défaut 8 s, borné 5–30 s.
+ * - Pause au survol (desktop), navigation Précédent/Suivant, indicateurs.
+ * - Respecte `prefers-reduced-motion` : pas d'animation, changement instantané.
+ * - Gestion images cassées (fallback invisible), préchargement de la suivante.
+ * - Nettoyage des timers au démontage, zéro fetch Neon au changement de slide.
+ * - Masquage propre si aucune publicité éligible.
  */
 export function PubliciteCarousel({
   publicites,
@@ -249,22 +278,127 @@ export function PubliciteCarousel({
   className?: string
 }) {
   const [index, setIndex] = useState(0)
+  const [isHovered, setIsHovered] = useState(false)
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const nextPreloadRef = useRef<Promise<void> | null>(null)
+  const adsRef = useRef<PubliciteBannerData[]>([])
+  const eligibleAdsRef = useRef<PubliciteBannerData[]>([])
 
   const ads = Array.isArray(publicites) ? publicites : []
-  const eligibleAds = getEligiblePublicites(ads)
 
-  // Défilement automatique (7 s), boucle continue.
+  // Mettre à jour les refs quand les props changent
   useEffect(() => {
-    if (eligibleAds.length <= 1) return
-    const id = setInterval(() => {
-      setIndex((i) => (i + 1) % eligibleAds.length)
-    }, 7000)
-    return () => clearInterval(id)
-  }, [eligibleAds.length])
+    adsRef.current = ads
+    eligibleAdsRef.current = getEligiblePublicites(ads)
+  }, [ads])
+
+  // Détecter prefers-reduced-motion côté client
+  useEffect(() => {
+    setMounted(true)
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
+    setPrefersReducedMotion(mediaQuery.matches)
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches)
+    mediaQuery.addEventListener("change", handler)
+    return () => mediaQuery.removeEventListener("change", handler)
+  }, [])
+
+  // Précharger l'image de la publicité suivante
+  const preloadNext = useCallback(() => {
+    const eligible = eligibleAdsRef.current
+    if (eligible.length <= 1) return
+    const nextIdx = (index + 1) % eligible.length
+    const nextAd = eligible[nextIdx]
+    if (nextAd.image) {
+      nextPreloadRef.current = preloadImage(nextAd.image)
+    }
+  }, [index])
+
+  // Avancer au slide suivant
+  const goNext = useCallback(() => {
+    const eligible = eligibleAdsRef.current
+    if (eligible.length <= 1) return
+    setIndex((i) => (i + 1) % eligible.length)
+  }, [])
+
+  // Reculer au slide précédent
+  const goPrev = useCallback(() => {
+    const eligible = eligibleAdsRef.current
+    if (eligible.length <= 1) return
+    setIndex((i) => (i - 1 + eligible.length) % eligible.length)
+  }, [])
+
+  // Aller à un index précis (via indicateurs)
+  const goTo = useCallback((i: number) => {
+    const eligible = eligibleAdsRef.current
+    if (i < 0 || i >= eligible.length) return
+    setIndex(i)
+  }, [])
+
+  // Démarrer/redémarrer le timer de rotation
+  const startTimer = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    const eligible = eligibleAdsRef.current
+    if (eligible.length <= 1) return
+    if (isHovered) return
+    if (prefersReducedMotion) return
+
+    const currentAd = eligible[index]
+    const durationMs = Math.min(
+      MAX_DURATION,
+      Math.max(MIN_DURATION, currentAd.duration ?? DEFAULT_DURATION)
+    )
+
+    timerRef.current = setTimeout(() => {
+      goNext()
+    }, durationMs)
+  }, [index, isHovered, prefersReducedMotion, goNext])
+
+  // Arrêter le timer
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+  }, [])
+
+  // Gestion du cycle : timer + préchargement
+  useEffect(() => {
+    const eligible = eligibleAdsRef.current
+    if (eligible.length === 0) return
+
+    startTimer()
+    preloadNext()
+
+    return () => {
+      stopTimer()
+      if (nextPreloadRef.current) {
+        // On ne peut pas annuler une Promise, mais on ignore le résultat
+        nextPreloadRef.current = null
+      }
+    }
+  }, [index, eligibleAdsRef.current.length, isHovered, prefersReducedMotion, startTimer, stopTimer, preloadNext])
+
+  // Pause au survol (desktop uniquement)
+  const handleMouseEnter = () => {
+    if (typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches) {
+      setIsHovered(true)
+      stopTimer()
+    }
+  }
+
+  const handleMouseLeave = () => {
+    setIsHovered(false)
+    startTimer()
+  }
 
   // Sans publicité active dans sa période de diffusion : bannière masquée.
-  if (eligibleAds.length === 0) return null
+  if (!mounted) return null // Éviter le flash SSR
+  if (eligibleAdsRef.current.length === 0) return null
 
+  const eligibleAds = eligibleAdsRef.current
   const currentIndex = Math.min(index, Math.max(eligibleAds.length - 1, 0))
   const current = eligibleAds[currentIndex]
 
@@ -272,29 +406,104 @@ export function PubliciteCarousel({
     <section
       aria-label="Bannière publicitaire GazPoints"
       className={cn("mx-auto w-full max-w-[800px] px-4", className)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
-      <PubliciteBannerCard key={current.id} ad={current} />
-
-      {/* Indicateurs de slide */}
-      {eligibleAds.length > 1 && (
-        <div className="mt-4 flex items-center justify-center gap-2">
-          {eligibleAds.map((ad, i) => (
-            <button
-              key={ad.id}
-              type="button"
-              aria-label={`Publicité ${i + 1} sur ${eligibleAds.length}`}
-              aria-current={i === currentIndex ? "true" : undefined}
-              onClick={() => setIndex(i)}
-              className={cn(
-                "h-2 rounded-full transition-all",
-                i === currentIndex
-                  ? "w-5 bg-primary"
-                  : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60"
-              )}
-            />
-          ))}
+      <div
+        className="relative"
+        role="region"
+        aria-roledescription="carousel"
+        aria-label="Publicités GazPoints"
+      >
+        {/* Carte courante avec animation de transition */}
+        <div
+          className={cn(
+            "overflow-hidden",
+            prefersReducedMotion ? "transition-none" : "transition-transform duration-500 ease-out"
+          )}
+        >
+          <PubliciteBannerCard
+            key={current.id}
+            ad={current}
+            animate={!prefersReducedMotion}
+            onImageError={() => {}}
+          />
         </div>
-      )}
+
+        {/* Navigation Précédent / Suivant (masquée sur mobile si 1 seule pub) */}
+        {eligibleAds.length > 1 && (
+          <>
+            <button
+              type="button"
+              aria-label="Publicité précédente"
+              onClick={() => { goPrev(); startTimer(); }}
+              className={cn(
+                "absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 md:-translate-x-4",
+                "rounded-full bg-background/80 p-2 text-muted-foreground",
+                "hover:bg-background hover:text-foreground transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                "opacity-0 hover:opacity-100 focus-visible:opacity-100 transition-opacity",
+                "motion-reduce:opacity-100"
+              )}
+            >
+              <ChevronLeft className="size-5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              aria-label="Publicité suivante"
+              onClick={() => { goNext(); startTimer(); }}
+              className={cn(
+                "absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 md:translate-x-4",
+                "rounded-full bg-background/80 p-2 text-muted-foreground",
+                "hover:bg-background hover:text-foreground transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                "opacity-0 hover:opacity-100 focus-visible:opacity-100 transition-opacity",
+                "motion-reduce:opacity-100"
+              )}
+            >
+              <ChevronRight className="size-5" aria-hidden="true" />
+            </button>
+          </>
+        )}
+
+        {/* Indicateurs de slide (dots) */}
+        {eligibleAds.length > 1 && (
+          <div
+            className="mt-4 flex items-center justify-center gap-1.5"
+            role="tablist"
+            aria-label="Sélectionner une publicité"
+          >
+            {eligibleAds.map((ad, i) => (
+              <button
+                key={ad.id}
+                type="button"
+                role="tab"
+                aria-label={`Publicité ${i + 1} sur ${eligibleAds.length}`}
+                aria-selected={i === currentIndex}
+                aria-controls={`publicite-panel-${ad.id}`}
+                onClick={() => { goTo(i); startTimer(); }}
+                className={cn(
+                  "h-2 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                  i === currentIndex
+                    ? "w-6 bg-primary"
+                    : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60"
+                )}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Live region pour annonce du changement (accessibilité) */}
+        <div
+          id={`publicite-panel-${current.id}`}
+          role="tabpanel"
+          aria-labelledby={`publicite-tab-${current.id}`}
+          className="sr-only"
+          aria-live="polite"
+        >
+          {current.title}
+        </div>
+      </div>
     </section>
   )
 }

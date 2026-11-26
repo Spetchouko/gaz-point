@@ -332,16 +332,22 @@ export const publicite = pgTable(
     phone: text("phone"),
     linkUrl: text("link_url"), // destination au clic
     slot: text("slot").notNull().default("home_hero"), // 'home_hero' | 'apropos'
-    status: text("status").notNull().default("active"), // 'active' | 'inactive'
+    status: text("status").notNull().default("active"), // 'active' | 'inactive' | 'draft' | 'scheduled' | 'expired' | 'suspended'
     startAt: timestamp("start_at"),
     endAt: timestamp("end_at"),
+    duration: integer("duration"), // durée d'affichage en secondes (5–30, défaut 8)
+    priority: integer("priority").default(0), // priorité de diffusion (plus haut = plus souvent)
+    displayOrder: integer("display_order").default(0), // ordre de diffusion manuel
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
       .$onUpdate(() => /* @__PURE */ new Date())
       .notNull(),
   },
-  (table) => [index("publicite_slot_status_idx").on(table.slot, table.status)]
+  (table) => [
+    index("publicite_slot_status_idx").on(table.slot, table.status),
+    index("publicite_slot_order_idx").on(table.slot, table.displayOrder, table.priority),
+  ]
 )
 
 export const publiciteEvent = pgTable(

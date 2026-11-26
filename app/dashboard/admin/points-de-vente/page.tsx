@@ -109,6 +109,7 @@ export default function AdminPointsDeVentePage() {
       const res = await fetch(`/api/admin/points-de-vente?${params.toString()}`, {
         headers: { Accept: "application/json" },
         cache: "no-store",
+        credentials: "include",
       });
       if (!res.ok) throw new Error("Impossible de charger les points de vente");
       const data = await res.json();
@@ -134,6 +135,7 @@ export default function AdminPointsDeVentePage() {
       const res = await fetch(`/api/admin/points-de-vente/${editItem.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           name: values.name,
           district: values.district,
@@ -172,6 +174,7 @@ export default function AdminPointsDeVentePage() {
       const res = await fetch(`/api/admin/points-de-vente/${id}/toggle`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ isActive: !isActive }),
       });
       if (!res.ok) throw new Error("Échec de la modification");

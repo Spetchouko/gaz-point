@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -78,12 +76,38 @@ interface OverviewStats {
     cancelled: number;
     month: number;
   };
+  visitors: {
+    unique: number;
+  };
+  revenue: {
+    confirmed: number;
+  };
   period: { from: string; to: string };
   charts: {
     reservationsByDay: Array<{ date: string; count: number }>;
     usersByDay: Array<{ date: string; count: number }>;
   };
 }
+
+/** Formatage français des dates */
+const formatDateFr = (iso: string) => {
+  return new Date(iso).toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
+/** Détermine la tendance comparant deux valeurs */
+const computeTrend = (current: number, previous: number) => {
+  if (previous === 0) {
+    return { change: null, trend: null };
+  }
+  const change = Math.round(((current - previous) / previous) * 100);
+  if (change > 0) return { change, trend: "up" };
+  if (change < 0) return { change, trend: "down" };
+  return { change: 0, trend: "neutral" };
+};
 
 export default function AdminOverviewPage() {
   const [from, setFrom] = useState("");
@@ -104,6 +128,7 @@ export default function AdminOverviewPage() {
         const res = await fetch(`/api/admin/overview?${params.toString()}`, {
           headers: { Accept: "application/json" },
           cache: "no-store",
+          credentials: "include",
         });
         if (!res.ok) throw new Error("Impossible de charger les statistiques");
         const data = await res.json();
@@ -153,14 +178,7 @@ export default function AdminOverviewPage() {
   const p = stats.points;
   const d = stats.disponibilites;
   const r = stats.reservations;
-
-  const formatDateFr = (iso: string) => {
-    return new Date(iso).toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  };
+  const rev = stats.revenue;
 
   return (
     <div className="admin-section">
@@ -215,64 +233,78 @@ export default function AdminOverviewPage() {
 
       {/* Stats Grid */}
       <div className="admin-grid admin-grid--6">
+        {/* Card 1: Utilisateurs */}
         <AdminStatCard
           title="Utilisateurs"
           value={u.total}
           icon={<Users className="size-5" />}
           iconColor="blue"
-          label="Total utilisateurs"
-          badge={{ label: "Clients", variant: "info" }}
-          trend={{ value: u.newUsersPeriod, label: "nouveaux ce mois", up: u.newUsersPeriod >= 0 }}
+          label="Utilisateurs inscrits"
+          badge={{ label: `${u.clients} clients`, variant: "info" }}
+          trend={{ value: u.newUsersPeriod, label: "nouveaux ce mois", up: u.newUsersPeriod > 0 }}
           link="/dashboard/admin/utilisateurs"
         />
+
+        {/* Card 2: Vendeurs - nouveaux inscriptions ce mois */}
         <AdminStatCard
           title="Vendeurs"
-          value={u.vendors}
+          value={u.newVendorsPeriod}
           icon={<Store className="size-5" />}
           iconColor="orange"
-          label="Vendeurs actifs"
-          badge={{ label: "Actifs", variant: "success" }}
-          trend={{ value: u.newVendorsPeriod, label: "nouveaux ce mois", up: u.newVendorsPeriod >= 0 }}
+          label="Nouveaux vendeurs ce mois"
+          badge={{ label: `${u.vendors} vendeurs au total`, variant: "info" }}
+          trend={{ value: u.newVendorsPeriod, label: "nouvelles inscriptions", up: u.newVendorsPeriod > 0 }}
           link="/dashboard/admin/vendeurs"
         />
+
+        {/* Card 3: Points de vente créés ce mois */}
         <AdminStatCard
           title="Points de vente"
-          value={p.total}
+          value={p.createdPeriod}
           icon={<MapPin className="size-5" />}
           iconColor="green"
-          label="Points de vente"
-          badge={{ label: "Actifs", variant: "success" }}
+          label="Créés ce mois"
+          badge={{ label: `${p.total} au total`, variant: "success" }}
           trend={{ value: p.createdPeriod, label: "créés ce mois", up: p.createdPeriod >= 0 }}
           link="/dashboard/admin/points-de-vente"
         />
+
+        {/* Card 4: Disponibilités publiées ce mois */}
         <AdminStatCard
           title="Disponibilités"
-          value={d.total}
+          value={d.publishedPeriod}
           icon={<Package className="size-5" />}
           iconColor="purple"
-          label={`${d.active} disponibles`}
-          badge={{ label: "Publiées", variant: "info" }}
+          label="Publiées ce mois"
+          badge={{ label: `${d.active} actives`, variant: "info" }}
           trend={{ value: d.publishedPeriod, label: "publiées ce mois", up: d.publishedPeriod >= 0 }}
           link="/dashboard/admin/disponibilites"
         />
+
+        {/* Card 5: Réservations */}
         <AdminStatCard
           title="Réservations"
-          value={r.total}
+          value={r.month}
           icon={<Calendar className="size-5" />}
           iconColor="red"
-          label={`${r.pending} en attente`}
-          badge={{ label: "En attente", variant: "warning" }}
+          label="${r.total} ce mois"
+          badge={{
+            variant: "warning",
+            label: `${r.confirmed} confirmées • ${r.pending} en attente • ${r.cancelled} annulées`,
+          }}
           trend={{ value: r.month, label: "ce mois", up: r.month >= 0 }}
           link="/dashboard/admin/reservations"
         />
+
+        {/* Card 6: Revenus réels encaissés */}
         <AdminStatCard
           title="Revenus"
-          value={r.confirmed * 5000}
+          value={rev.confirmed.toLocaleString()}
           icon={<Package className="size-5" />}
           iconColor="emerald"
-          label="estimés ce mois"
-          badge={{ label: "Ce mois", variant: "success" }}
-          trend={{ value: 12, label: "vs mois dernier", up: true }}
+          label="FCFA encaissés"
+          badge={{ label: "Réservations validées", variant: "success" }}
+          trend={{ value: 0, label: "vs période précédente", up: true }}
           link="/dashboard/admin/analytics"
         />
       </div>
@@ -375,7 +407,7 @@ export default function AdminOverviewPage() {
                 <Store className="size-4 text-orange-600 shrink-0" />
                 <div className="text-left min-w-0">
                   <p className="font-medium truncate">Gérer les vendeurs</p>
-                  <p className="text-xs text-muted-foreground truncate">{u.vendors} vendeurs</p>
+                  <p className="text-xs text-muted-foreground truncate">{u.newVendorsPeriod} nouveaux ce mois</p>
                 </div>
               </Button>
             </Link>
@@ -384,7 +416,7 @@ export default function AdminOverviewPage() {
                 <Calendar className="size-4 text-red-600 shrink-0" />
                 <div className="text-left min-w-0">
                   <p className="font-medium truncate">Gérer les réservations</p>
-                  <p className="text-xs text-muted-foreground truncate">{r.pending} en attente</p>
+                  <p className="text-xs text-muted-foreground truncate">{r.month} ce mois</p>
                 </div>
               </Button>
             </Link>
@@ -405,19 +437,27 @@ export default function AdminOverviewPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground truncate">Utilisateurs actifs</span>
-              <span className="font-semibold ml-2 whitespace-nowrap">{u.active} / {u.total}</span>
+              <span className="font-semibold ml-2 whitespace-nowrap">
+                {u.active} / {u.total}
+              </span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground truncate">Vendeurs actifs</span>
-              <span className="font-semibold ml-2 whitespace-nowrap">{u.vendors}</span>
+              <span className="font-semibold ml-2 whitespace-nowrap">
+                {u.vendors} / {u.total}
+              </span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground truncate">Points de vente actifs</span>
-              <span className="font-semibold ml-2 whitespace-nowrap">{p.active} / {p.total}</span>
+              <span className="font-semibold ml-2 whitespace-nowrap">
+                {p.active} / {p.total}
+              </span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground truncate">Réservations ce mois</span>
-              <span className="font-semibold ml-2 whitespace-nowrap">{r.month}</span>
+              <span className="text-muted-foreground truncate">Dernière actualisation</span>
+              <span className="font-semibold ml-2 whitespace-nowrap">
+                {new Date().toLocaleTimeString("fr-FR")}
+              </span>
             </div>
           </div>
         </AdminCard>
@@ -425,36 +465,62 @@ export default function AdminOverviewPage() {
         {/* Activité récente */}
         <AdminCard title="Activité récente" icon={<Activity className="size-5" />}>
           <div className="space-y-2.5">
-            <div className="flex items-center gap-2.5 text-sm">
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                <Users className="size-3.5" />
+            {stats.recentActivity?.length > 0 ? (
+              stats.recentActivity.slice(0, 10).map((item) => {
+                const typeIcons: Record<string, React.ReactNode> = {
+                  signup: <Users className="size-3.5" />,
+                  point_created: <Package className="size-3.5" />,
+                  disponibilite_published: <Clock className="size-3.5" />,
+                  reservation_new: <Calendar className="size-3.5" />,
+                  reservation_confirmed: <CheckCircle2 className="size-3.5" />,
+                  reservation_cancelled: <AlertCircle className="size-3.5" />,
+                  account_modified: <Archive className="size-3.5" />,
+                };
+
+                const typeLabels: Record<string, string> = {
+                  signup: "Nouvelle inscription",
+                  point_created: "Nouveau point de vente",
+                  disponibilite_published: "Nouvelle disponibilité",
+                  reservation_new: "Nouvelle réservation",
+                  reservation_confirmed: "Réservation confirmée",
+                  reservation_cancelled: "Réservation annulée",
+                  account_modified: "Modification de compte",
+                };
+
+                const typeClasses: Record<string, string> = {
+                  signup: "bg-blue-100 text-blue-600",
+                  point_created: "bg-green-100 text-green-600",
+                  disponibilite_published: "bg-purple-100 text-purple-600",
+                  reservation_new: "bg-red-100 text-red-600",
+                  reservation_confirmed: "bg-emerald-100 text-emerald-600",
+                  reservation_cancelled: "bg-red-100 text-red-600",
+                  account_modified: "bg-orange-100 text-orange-600",
+                };
+
+                const Icon = typeIcons[item.type];
+                const label = typeLabels[item.type];
+                const cls = typeClasses[item.type];
+
+                return (
+                  <div key={item.id} className="flex items-center gap-2.5 text-sm">
+                    <div className={`flex size-7 shrink-0 items-center justify-center rounded-full ${cls}`}>
+                      {Icon}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">{label}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(item.createdAt).toLocaleString("fr-FR")}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="flex h-14 items-center justify-center text-muted-foreground">
+                <Activity className="size-6" />
+                <p className="text-sm">Aucune activité récente</p>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-medium truncate">Nouveau client inscrit</p>
-                <p className="text-xs text-muted-foreground">Il y a 10 minutes</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2.5 text-sm">
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-orange-100 text-orange-600">
-                <Store className="size-3.5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-medium truncate">Nouveau vendeur inscrit</p>
-                <p className="text-xs text-muted-foreground">Il y a 2 heures</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2.5 text-sm">
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
-                <AlertCircle className="size-3.5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-medium truncate">{r.pending} réservations en attente</p>
-                <p className="text-xs text-muted-foreground">Nécessitent une action</p>
-              </div>
-            </div>
-            <Link href="/dashboard/admin/analytics" className="text-sm text-primary hover:underline block text-center mt-1">
-              Voir tout l&apos;historique →
-            </Link>
+            )}
           </div>
         </AdminCard>
       </section>

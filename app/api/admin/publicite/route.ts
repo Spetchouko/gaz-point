@@ -9,8 +9,12 @@ import {
   validatePubliciteTitle,
   validatePubliciteDescription,
   validatePubliciteImage,
+  validatePubliciteDuration,
+  validatePublicitePriority,
+  validatePubliciteDisplayOrder,
   isPubliciteSlot,
 } from "@/lib/publicite-config"
+import { invalidatePubliciteCache } from "@/lib/publicite"
 
 export type PubliciteItem = {
   id: string
@@ -132,6 +136,9 @@ export async function POST(req: NextRequest) {
       status?: string
       startAt?: string | null
       endAt?: string | null
+      duration?: number | null
+      priority?: number | null
+      displayOrder?: number | null
     } | null
 
     if (!body?.title) {
@@ -164,6 +171,21 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const durationError = validatePubliciteDuration(body.duration)
+    if (durationError) {
+      return NextResponse.json({ error: durationError }, { status: 400 })
+    }
+
+    const priorityError = validatePublicitePriority(body.priority)
+    if (priorityError) {
+      return NextResponse.json({ error: priorityError }, { status: 400 })
+    }
+
+    const displayOrderError = validatePubliciteDisplayOrder(body.displayOrder)
+    if (displayOrderError) {
+      return NextResponse.json({ error: displayOrderError }, { status: 400 })
+    }
+
     const slot = body.slot && isPubliciteSlot(body.slot) ? body.slot : "home_hero"
 
     // Déduire le statut effectif si non fourni
@@ -194,9 +216,15 @@ export async function POST(req: NextRequest) {
       status,
       startAt: body.startAt ? new Date(body.startAt) : null,
       endAt: body.endAt ? new Date(body.endAt) : null,
+      duration: body.duration ?? null,
+      priority: body.priority ?? 0,
+      displayOrder: body.displayOrder ?? 0,
       createdAt: new Date(),
       updatedAt: new Date(),
     })
+
+    // Invalider le cache publicités
+    await invalidatePubliciteCache()
 
     // Traçabilité
     try {

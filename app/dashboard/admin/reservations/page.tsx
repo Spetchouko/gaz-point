@@ -87,6 +87,7 @@ export default function AdminReservationsPage() {
         const res = await fetch(`/api/admin/reservations?${params.toString()}`, {
           headers: { Accept: "application/json" },
           cache: "no-store",
+          credentials: "include",
         })
         if (!res.ok) throw new Error("Impossible de charger les réservations")
         const data = await res.json()
@@ -112,6 +113,7 @@ export default function AdminReservationsPage() {
       const res = await fetch(`/api/admin/reservations/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ status }),
       })
       if (!res.ok) throw new Error("Échec de la modification")
