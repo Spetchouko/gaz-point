@@ -30,6 +30,16 @@ export type PubliciteItem = {
   status: string
   startAt: string | null
   endAt: string | null
+  duration: number | null
+  priority: number
+  displayOrder: number
+  mode: "composed" | "full_banner"
+  textAlign: "left" | "center" | "right" | null
+  textColor: string | null
+  backgroundOverlay: string | null
+  imageFit: "cover" | "contain" | null
+  titlePosition: string | null
+  descriptionPosition: string | null
   createdAt: string
   updatedAt: string
 }
@@ -89,6 +99,16 @@ export async function GET(req: NextRequest) {
         status: publicite.status,
         startAt: publicite.startAt,
         endAt: publicite.endAt,
+        duration: publicite.duration,
+        priority: publicite.priority,
+        displayOrder: publicite.displayOrder,
+        mode: publicite.mode,
+        textAlign: publicite.textAlign,
+        textColor: publicite.textColor,
+        backgroundOverlay: publicite.backgroundOverlay,
+        imageFit: publicite.imageFit,
+        titlePosition: publicite.titlePosition,
+        descriptionPosition: publicite.descriptionPosition,
         createdAt: publicite.createdAt,
         updatedAt: publicite.updatedAt,
       })
@@ -139,15 +159,36 @@ export async function POST(req: NextRequest) {
       duration?: number | null
       priority?: number | null
       displayOrder?: number | null
+      mode?: "composed" | "full_banner"
+      // Champs pour mode "composed"
+      textAlign?: "left" | "center" | "right"
+      textColor?: string
+      backgroundOverlay?: string
+      imageFit?: "cover" | "contain"
+      titlePosition?: string
+      descriptionPosition?: string
+      // Pour mode "full_banner" : campaignName au lieu de title
+      campaignName?: string
     } | null
 
-    if (!body?.title) {
-      return NextResponse.json({ error: "Le titre est requis" }, { status: 400 })
-    }
+    const mode = body.mode === "full_banner" ? "full_banner" : "composed"
 
-    const titleError = validatePubliciteTitle(body.title)
-    if (titleError) {
-      return NextResponse.json({ error: titleError }, { status: 400 })
+    // Validation selon le mode
+    if (mode === "full_banner") {
+      if (!body?.campaignName) {
+        return NextResponse.json({ error: "Le nom de la campagne est requis" }, { status: 400 })
+      }
+      if (body.campaignName.length > 60) {
+        return NextResponse.json({ error: "Le nom de la campagne ne doit pas dépasser 60 caractères" }, { status: 400 })
+      }
+    } else {
+      if (!body?.title) {
+        return NextResponse.json({ error: "Le titre est requis" }, { status: 400 })
+      }
+      const titleError = validatePubliciteTitle(body.title)
+      if (titleError) {
+        return NextResponse.json({ error: titleError }, { status: 400 })
+      }
     }
 
     if (body.description !== undefined) {
@@ -186,6 +227,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: displayOrderError }, { status: 400 })
     }
 
+    // Validation champs mode composed
+    if (mode === "composed") {
+      if (body.textAlign && !["left", "center", "right"].includes(body.textAlign)) {
+        return NextResponse.json({ error: "Alignement de texte invalide" }, { status: 400 })
+      }
+      if (body.imageFit && !["cover", "contain"].includes(body.imageFit)) {
+        return NextResponse.json({ error: "Ajustement d'image invalide" }, { status: 400 })
+      }
+    }
+
     const slot = body.slot && isPubliciteSlot(body.slot) ? body.slot : "home_hero"
 
     // Déduire le statut effectif si non fourni
@@ -202,15 +253,16 @@ export async function POST(req: NextRequest) {
 
     const id = crypto.randomUUID()
 
-    await db.insert(publicite).values({
+    // Préparer les données selon le mode
+    const insertData: Record<string, unknown> = {
       id,
-      title: body.title,
-      description: body.description ?? null,
+      title: mode === "full_banner" ? body.campaignName : body.title,
+      description: mode === "composed" ? (body.description ?? null) : null,
       image: body.image ?? null,
-      price: body.price ?? null,
-      priceLabel: body.priceLabel ?? null,
-      location: body.location ?? null,
-      phone: body.phone ?? null,
+      price: null,
+      priceLabel: null,
+      location: null,
+      phone: null,
       linkUrl: body.linkUrl ?? null,
       slot,
       status,
@@ -219,9 +271,19 @@ export async function POST(req: NextRequest) {
       duration: body.duration ?? null,
       priority: body.priority ?? 0,
       displayOrder: body.displayOrder ?? 0,
+      mode,
+      // Champs mode composed
+      textAlign: mode === "composed" ? (body.textAlign ?? "left") : null,
+      textColor: mode === "composed" ? (body.textColor ?? "#FFFFFF") : null,
+      backgroundOverlay: mode === "composed" ? (body.backgroundOverlay ?? "rgba(0,0,0,0.3)") : null,
+      imageFit: mode === "composed" ? (body.imageFit ?? "cover") : null,
+      titlePosition: mode === "composed" ? (body.titlePosition ?? "top-left") : null,
+      descriptionPosition: mode === "composed" ? (body.descriptionPosition ?? "bottom-left") : null,
       createdAt: new Date(),
       updatedAt: new Date(),
-    })
+    }
+
+    await db.insert(publicite).values(insertData)
 
     // Invalider le cache publicités
     await invalidatePubliciteCache()

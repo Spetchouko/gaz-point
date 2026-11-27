@@ -16,25 +16,29 @@ export interface GeniusPayConfig {
   apiSecret: string
   webhookSecret: string
   environment: GeniusPayEnvironment
+  baseUrl: string
 }
 
 function getConfig(): GeniusPayConfig {
+  // Use the env var names from .env file
   const environment = (optionalEnv("GENIUSPAY_ENV") as GeniusPayEnvironment) ?? "sandbox"
   
-  if (environment === "live") {
-    return {
-      apiKey: requiredEnv("GENIUSPAY_API_KEY"),
-      apiSecret: requiredEnv("GENIUSPAY_API_SECRET"),
-      webhookSecret: requiredEnv("GENIUSPAY_WEBHOOK_SECRET"),
-      environment: "live",
-    }
+  // Map the French env var names to standard ones
+  const apiKey = optionalEnv("Clé_publique_API_Key") ?? optionalEnv("GENIUSPAY_API_KEY")
+  const apiSecret = optionalEnv("Clé_secrète_API_Secret") ?? optionalEnv("GENIUSPAY_API_SECRET")
+  const webhookSecret = optionalEnv("GENIUSPAY_WEBHOOK_SECRET") ?? "default_webhook_secret"
+  const baseUrl = optionalEnv("Point_d'entrée_API") ?? GENIUSPAY_BASE_URL
+  
+  if (!apiKey || !apiSecret) {
+    throw new Error("GeniusPay API credentials not configured. Set Clé_publique_API_Key and Clé_secrète_API_Secret in .env")
   }
   
   return {
-    apiKey: requiredEnv("GENIUSPAY_API_KEY"),
-    apiSecret: requiredEnv("GENIUSPAY_API_SECRET"),
-    webhookSecret: requiredEnv("GENIUSPAY_WEBHOOK_SECRET"),
-    environment: "sandbox",
+    apiKey,
+    apiSecret,
+    webhookSecret,
+    environment,
+    baseUrl,
   }
 }
 
@@ -137,7 +141,7 @@ export interface ListPaymentsResponse {
 export async function initiatePayment(request: InitiatePaymentRequest): Promise<InitiatePaymentResponse> {
   const config = getConfig()
   
-  const response = await fetch(`${GENIUSPAY_BASE_URL}/payments`, {
+  const response = await fetch(`${config.baseUrl}/payments`, {
     method: "POST",
     headers: {
       "X-API-Key": config.apiKey,
@@ -175,7 +179,7 @@ export async function initiatePayment(request: InitiatePaymentRequest): Promise<
 export async function getPayment(reference: string): Promise<GetPaymentResponse> {
   const config = getConfig()
   
-  const response = await fetch(`${GENIUSPAY_BASE_URL}/payments/${reference}`, {
+  const response = await fetch(`${config.baseUrl}/payments/${reference}`, {
     method: "GET",
     headers: {
       "X-API-Key": config.apiKey,
@@ -218,7 +222,7 @@ export async function listPayments(params?: {
   if (params?.search) searchParams.set("search", params.search)
   if (params?.per_page) searchParams.set("per_page", String(params.per_page))
   
-  const response = await fetch(`${GENIUSPAY_BASE_URL}/payments?${searchParams.toString()}`, {
+  const response = await fetch(`${config.baseUrl}/payments?${searchParams.toString()}`, {
     method: "GET",
     headers: {
       "X-API-Key": config.apiKey,
@@ -246,7 +250,7 @@ export async function listPayments(params?: {
 export async function getAccount() {
   const config = getConfig()
   
-  const response = await fetch(`${GENIUSPAY_BASE_URL}/account`, {
+  const response = await fetch(`${config.baseUrl}/account`, {
     method: "GET",
     headers: {
       "X-API-Key": config.apiKey,
@@ -264,7 +268,7 @@ export async function getAccount() {
 export async function getBalance() {
   const config = getConfig()
   
-  const response = await fetch(`${GENIUSPAY_BASE_URL}/account/balance`, {
+  const response = await fetch(`${config.baseUrl}/account/balance`, {
     method: "GET",
     headers: {
       "X-API-Key": config.apiKey,
@@ -283,8 +287,8 @@ export async function getPawaPayProviders(country?: string) {
   const config = getConfig()
   
   const url = country
-    ? `${GENIUSPAY_BASE_URL}/pawapay/providers?country=${country}`
-    : `${GENIUSPAY_BASE_URL}/pawapay/providers`
+    ? `${config.baseUrl}/pawapay/providers?country=${country}`
+    : `${config.baseUrl}/pawapay/providers`
   
   const response = await fetch(url, {
     method: "GET",

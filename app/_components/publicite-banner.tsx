@@ -10,6 +10,11 @@ import {
   sendImpressionEvent,
 } from "@/lib/ads-client"
 
+/**
+ * Type de publicité : 'composed' (image + texte superposé) | 'full_banner' (bannière pré-conçue complète)
+ */
+export type PubliciteMode = "composed" | "full_banner"
+
 export type PubliciteBannerData = {
   id: string
   title: string
@@ -26,16 +31,22 @@ export type PubliciteBannerData = {
   duration: number | null
   priority: number
   displayOrder: number
+  mode: PubliciteMode
+  // Champs pour mode "composed"
+  textAlign?: "left" | "center" | "right"
+  textColor?: string
+  backgroundOverlay?: string
+  imageFit?: "cover" | "contain"
+  titlePosition?: "top-left" | "top-center" | "top-right" | "center-left" | "center" | "center-right" | "bottom-left" | "bottom-center" | "bottom-right"
+  descriptionPosition?: "top-left" | "top-center" | "top-right" | "center-left" | "center" | "center-right" | "bottom-left" | "bottom-center" | "bottom-right"
 }
 
-const DEFAULT_DURATION = 8000 // 8 secondes par défaut
+const DEFAULT_DURATION = 8000
 const MIN_DURATION = 5000
 const MAX_DURATION = 30000
 
 /**
  * Pubs éligibles : statut actif ET diffusion en cours (période [startAt, endAt]).
- * Même règle que la version précédente — on respecte le statut et les dates
- * de diffusion du système marketing existant.
  */
 function getEligiblePublicites(ads: PubliciteBannerData[]): PubliciteBannerData[] {
   const now = new Date()
@@ -62,10 +73,27 @@ function preloadImage(src: string): Promise<void> {
 }
 
 /**
- * Carte unique d'une publicité.
- * Rendu partagé entre la landing page et les aperçus du dashboard Marketing :
- * image compacte à gauche, titre + texte court + bouton d'action à droite.
- * `interactive={false}` fige le bouton (aperçu non cliquable).
+ * Calcule les classes CSS de position pour le titre/description selon la position choisie.
+ */
+function getPositionClasses(position: string): string {
+  const positions: Record<string, string> = {
+    "top-left": "top-4 left-4",
+    "top-center": "top-4 left-1/2 -translate-x-1/2",
+    "top-right": "top-4 right-4",
+    "center-left": "top-1/2 -translate-y-1/2 left-4",
+    "center": "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
+    "center-right": "top-1/2 -translate-y-1/2 right-4",
+    "bottom-left": "bottom-4 left-4",
+    "bottom-center": "bottom-4 left-1/2 -translate-x-1/2",
+    "bottom-right": "bottom-4 right-4",
+  }
+  return positions[position] ?? "top-4 left-4"
+}
+
+/**
+ * Carte unique d'une publicité - supporte deux modes :
+ * - 'full_banner' : bannière pré-conçue (image = bannière complète, pas de texte superposé)
+ * - 'composed' : image de fond + titre/description superposés avec positionnement
  */
 export function PubliciteBannerCard({
   ad,
@@ -85,7 +113,6 @@ export function PubliciteBannerCard({
   const [imageError, setImageError] = useState(false)
 
   // Impression : comptée seulement si la bannière est réellement visible
-  // (≥ 50 % de la surface pendant ≥ 1 s), une seule fois par publicité.
   useEffect(() => {
     if (!interactive) return
     if (typeof IntersectionObserver === "undefined") return
@@ -136,6 +163,14 @@ export function PubliciteBannerCard({
     onImageError?.()
   }
 
+  const isFullBanner = ad.mode === "full_banner"
+  const imageFit = ad.imageFit ?? "cover"
+  const textColor = ad.textColor ?? "#FFFFFF"
+  const backgroundOverlay = ad.backgroundOverlay ?? "rgba(0,0,0,0.3)"
+  const textAlign = ad.textAlign ?? "left"
+  const titlePosition = ad.titlePosition ?? "top-left"
+  const descriptionPosition = ad.descriptionPosition ?? "bottom-left"
+
   return (
     <article
       ref={cardRef}
@@ -145,75 +180,118 @@ export function PubliciteBannerCard({
         className
       )}
     >
-      {/* Zone image (gauche) */}
-      {ad.image && !imageError && (
-        <div
-          className={cn(
-            "relative h-44 w-full shrink-0 overflow-hidden border-b border-border bg-muted md:h-full md:w-[38%] md:border-b-0 md:border-r border-border",
-            animate &&
-              "animate-in slide-in-from-right-8 fade-in duration-500 ease-out motion-reduce:animate-none"
+      {isFullBanner ? (
+        // MODE 1 : BANNIÈRE PRÉ-CONÇUE - Image = bannière complète (pleine largeur)
+        <div className="w-full md:w-full">
+          {ad.image && !imageError && (
+            <div className="relative w-full h-[200px] overflow-hidden rounded-2xl">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={ad.image}
+                alt={ad.title || "Bannière publicitaire"}
+                loading="lazy"
+                className={`h-full w-full object-${imageFit}`}
+                onError={handleImgError}
+              />
+            </div>
           )}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={ad.image}
-            alt=""
-            loading="lazy"
-            className="h-full w-full object-cover"
-            onError={handleImgError}
-          />
         </div>
+      ) : (
+        // MODE 2 : PUBLICITÉ COMPOSÉE - Image de fond + texte superposé
+        <>
+          {/* Zone image (pleine largeur, hauteur fixe) */}
+          {ad.image && !imageError && (
+            <div
+              className={cn(
+                "relative w-full h-[200px] overflow-hidden rounded-t-2xl md:rounded-t-none md:rounded-l-2xl md:h-full md:w-[50%]",
+                animate &&
+                  "animate-in slide-in-from-right-8 fade-in duration-500 ease-out motion-reduce:animate-none"
+              )}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={ad.image}
+                alt=""
+                loading="lazy"
+                className={`h-full w-full object-${imageFit}`}
+                onError={handleImgError}
+              />
+              {/* Overlay derrière le texte */}
+              <div
+                className="absolute inset-0"
+                style={{ background: backgroundOverlay }}
+              />
+            </div>
+          )}
+
+          {/* Zone contenu superposé (mode composed) ou à côté (mode full_banner fallback) */}
+          <div
+            className={cn(
+              isFullBanner
+                ? "flex flex-1 flex-col justify-center gap-1.5 p-4 sm:p-5 md:gap-2"
+                : "absolute inset-0 flex items-start justify-start p-6 md:p-8"
+            )}
+          >
+            {ad.title && (
+              <div
+                className={cn(
+                  "w-full max-w-[80%]",
+                  getPositionClasses(titlePosition)
+                )}
+                style={{ textAlign, color: textColor }}
+              >
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight drop-shadow-lg">
+                  {ad.title}
+                </h2>
+              </div>
+            )}
+
+            {ad.description && (
+              <div
+                className={cn(
+                  "w-full max-w-[80%] mt-2",
+                  getPositionClasses(descriptionPosition)
+                )}
+                style={{ textAlign, color: textColor }}
+              >
+                <p className="text-base sm:text-lg md:text-xl leading-relaxed drop-shadow-md">
+                  {ad.description}
+                </p>
+              </div>
+            )}
+
+            {!isFullBanner && ad.linkUrl && interactive && (
+              <a
+                href={ad.linkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleClick}
+                className="mt-4 inline-flex w-fit items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 drop-shadow-lg"
+              >
+                En savoir plus
+                <ArrowRight className="size-4" />
+              </a>
+            )}
+          </div>
+        </>
       )}
 
-      {/* Zone contenu (droite) : titre + texte court + bouton d'action */}
-      <div className="flex flex-1 flex-col justify-center gap-1.5 p-4 sm:p-5 md:gap-2">
-        <h2 className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
-          {ad.title || "GazPoints"}
-        </h2>
-
-        {(ad.price !== null || ad.priceLabel) && (
-          <span className="w-fit rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
-            {ad.priceLabel ??
-              (ad.price !== null
-                ? `${new Intl.NumberFormat("fr-FR").format(ad.price)} FCFA`
-                : "")}
-          </span>
-        )}
-
-        {ad.description && (
-          <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
-            {ad.description}
-          </p>
-        )}
-
-        {ad.linkUrl &&
-          (interactive ? (
-            <a
-              href={ad.linkUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={handleClick}
-              className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              En savoir plus
-              <ArrowRight className="size-4" />
-            </a>
-          ) : (
-            <span className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-sm font-semibold text-primary-foreground">
-              En savoir plus
-              <ArrowRight className="size-4" />
-            </span>
-          ))}
-      </div>
+      {isFullBanner && ad.linkUrl && interactive && (
+        <a
+          href={ad.linkUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={handleClick}
+          className="absolute inset-0"
+          aria-label={ad.title || "Bannière publicitaire"}
+        />
+      )}
     </article>
   )
 }
 
 /**
  * Aperçu contextuel d'une publicité à un emplacement donné.
- * Reproduit le positionnement réel sur la landing : un repère gris figure la
- * section voisine (au-dessus pour « sous la bannière », en dessous pour
- * « au-dessus de Trouver mon Gaz »).
  */
 export function PublicitePreview({
   ad,
@@ -262,13 +340,6 @@ function PreviewBar({ label, subtle = false }: { label: string; subtle?: boolean
 
 /**
  * Bannière publicitaire GazPoints — Carousel rotatif animé.
- * - Entrée depuis la droite, sortie à gauche (CSS keyframes).
- * - Durée par publicité : champ `duration` (ms) ou défaut 8 s, borné 5–30 s.
- * - Pause au survol (desktop), navigation Précédent/Suivant, indicateurs.
- * - Respecte `prefers-reduced-motion` : pas d'animation, changement instantané.
- * - Gestion images cassées (fallback invisible), préchargement de la suivante.
- * - Nettoyage des timers au démontage, zéro fetch Neon au changement de slide.
- * - Masquage propre si aucune publicité éligible.
  */
 export function PubliciteCarousel({
   publicites,
@@ -289,13 +360,11 @@ export function PubliciteCarousel({
 
   const ads = Array.isArray(publicites) ? publicites : []
 
-  // Mettre à jour les refs quand les props changent
   useEffect(() => {
     adsRef.current = ads
     eligibleAdsRef.current = getEligiblePublicites(ads)
   }, [ads])
 
-  // Détecter prefers-reduced-motion côté client
   useEffect(() => {
     setMounted(true)
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
@@ -305,7 +374,6 @@ export function PubliciteCarousel({
     return () => mediaQuery.removeEventListener("change", handler)
   }, [])
 
-  // Précharger l'image de la publicité suivante
   const preloadNext = useCallback(() => {
     const eligible = eligibleAdsRef.current
     if (eligible.length <= 1) return
@@ -316,28 +384,24 @@ export function PubliciteCarousel({
     }
   }, [index])
 
-  // Avancer au slide suivant
   const goNext = useCallback(() => {
     const eligible = eligibleAdsRef.current
     if (eligible.length <= 1) return
     setIndex((i) => (i + 1) % eligible.length)
   }, [])
 
-  // Reculer au slide précédent
   const goPrev = useCallback(() => {
     const eligible = eligibleAdsRef.current
     if (eligible.length <= 1) return
     setIndex((i) => (i - 1 + eligible.length) % eligible.length)
   }, [])
 
-  // Aller à un index précis (via indicateurs)
   const goTo = useCallback((i: number) => {
     const eligible = eligibleAdsRef.current
     if (i < 0 || i >= eligible.length) return
     setIndex(i)
   }, [])
 
-  // Démarrer/redémarrer le timer de rotation
   const startTimer = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
     const eligible = eligibleAdsRef.current
@@ -356,7 +420,6 @@ export function PubliciteCarousel({
     }, durationMs)
   }, [index, isHovered, prefersReducedMotion, goNext])
 
-  // Arrêter le timer
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current)
@@ -364,7 +427,6 @@ export function PubliciteCarousel({
     }
   }, [])
 
-  // Gestion du cycle : timer + préchargement
   useEffect(() => {
     const eligible = eligibleAdsRef.current
     if (eligible.length === 0) return
@@ -375,13 +437,11 @@ export function PubliciteCarousel({
     return () => {
       stopTimer()
       if (nextPreloadRef.current) {
-        // On ne peut pas annuler une Promise, mais on ignore le résultat
         nextPreloadRef.current = null
       }
     }
   }, [index, eligibleAdsRef.current.length, isHovered, prefersReducedMotion, startTimer, stopTimer, preloadNext])
 
-  // Pause au survol (desktop uniquement)
   const handleMouseEnter = () => {
     if (typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches) {
       setIsHovered(true)
@@ -394,8 +454,7 @@ export function PubliciteCarousel({
     startTimer()
   }
 
-  // Sans publicité active dans sa période de diffusion : bannière masquée.
-  if (!mounted) return null // Éviter le flash SSR
+  if (!mounted) return null
   if (eligibleAdsRef.current.length === 0) return null
 
   const eligibleAds = eligibleAdsRef.current
@@ -415,7 +474,6 @@ export function PubliciteCarousel({
         aria-roledescription="carousel"
         aria-label="Publicités GazPoints"
       >
-        {/* Carte courante avec animation de transition */}
         <div
           className={cn(
             "overflow-hidden",
@@ -430,7 +488,6 @@ export function PubliciteCarousel({
           />
         </div>
 
-        {/* Navigation Précédent / Suivant (masquée sur mobile si 1 seule pub) */}
         {eligibleAds.length > 1 && (
           <>
             <button
@@ -466,7 +523,6 @@ export function PubliciteCarousel({
           </>
         )}
 
-        {/* Indicateurs de slide (dots) */}
         {eligibleAds.length > 1 && (
           <div
             className="mt-4 flex items-center justify-center gap-1.5"
@@ -493,7 +549,6 @@ export function PubliciteCarousel({
           </div>
         )}
 
-        {/* Live region pour annonce du changement (accessibilité) */}
         <div
           id={`publicite-panel-${current.id}`}
           role="tabpanel"

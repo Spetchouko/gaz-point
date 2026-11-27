@@ -27,6 +27,21 @@ import {
 } from "@/lib/auth-routing";
 import { withTransientRetry } from "@/lib/transient-retry";
 
+/**
+ * Wrapper avec timeout pour chaque tentative de requête DB.
+ */
+async function withTimeoutPerAttempt<T>(
+  operation: () => Promise<T>,
+  ms: number
+): Promise<T> {
+  return Promise.race([
+    operation(),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`Timeout après ${ms}ms`)), ms)
+    ),
+  ])
+}
+
 const DEV_BASE_URL = "http://localhost:3000";
 
 function resolveBaseURL(): string {
@@ -293,28 +308,33 @@ export const auth = betterAuth({
                 before: async (session: Record<string, unknown>) => {
                     const userId = String(session.userId ?? "")
                     if (!userId) return true
-                    // Wrapper la requête DB dans withTransientRetry pour absorber
+                    // Wrapper la requête DB dans withTransientRetry + timeout pour absorber
                     // les coupures réseau transitoires (Neon / WSL) qui sinon
                     // feraient échouer la création de session avec une erreur générique.
-                    const row = await withTransientRetry(async () => {
-                        const [result] = await db
+                    const row = await withTransientRetry(async () =>
+                      withTimeoutPerAttempt(
+                        () =>
+                          db
                             .select({
-                                isActive: schema.user.isActive,
-                                emailVerified: schema.user.emailVerified,
-                                role: schema.user.role,
+                              isActive: schema.user.isActive,
+                              emailVerified: schema.user.emailVerified,
+                              role: schema.user.role,
                             })
                             .from(schema.user)
                             .where(eq(schema.user.id, userId))
-                            .limit(1)
-                        return result
-                    })
-                    if (!row || row.isActive === false) {
+                            .limit(1),
+                        10000
+                      ),
+                      { attempts: 3, delayMs: 250 }
+                    )
+                    const result = row?.[0]
+                    if (!result || result.isActive === false) {
                         throw new Error("Ce compte a été désactivé. Contactez le support.")
                     }
-                    if (row.emailVerified === false) {
+                    if (result.emailVerified === false) {
                         throw new Error("Veuillez vérifier votre adresse email avant de vous connecter. Un code de vérification vous a été envoyé.")
                     }
-                    if (!isAuthRole(row.role)) {
+                    if (!isAuthRole(result.role)) {
                         throw new Error("Ce compte ne possède aucun rôle valide. Contactez le support.")
                     }
                     return true

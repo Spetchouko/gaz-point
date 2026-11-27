@@ -7,6 +7,7 @@ import {
   type AvisStatus,
 } from "@/lib/avis-shared"
 import { errorMessage } from "@/lib/errors"
+import { withTransientRetry } from "@/lib/transient-retry"
 
 export {
   AVIS_RATING_MAX,
@@ -33,11 +34,20 @@ export {
  */
 export async function getApprovedAvis(): Promise<AvisPublic[]> {
   try {
-    const rows = await db
-      .select()
-      .from(avis)
-      .where(eq(avis.status, "approved"))
-      .orderBy(desc(avis.createdAt))
+    const rows = await withTransientRetry(async () => {
+      const result = await db
+        .select()
+        .from(avis)
+        .where(eq(avis.status, "approved"))
+        .orderBy(desc(avis.createdAt))
+      return result
+    })
+
+    // Handle case where db returns null (connection issue)
+    if (!rows || !Array.isArray(rows)) {
+      console.warn("[avis] Query returned null/undefined, returning empty array")
+      return []
+    }
 
     return rows.map((row) => ({
       id: row.id,

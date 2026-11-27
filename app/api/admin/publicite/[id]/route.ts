@@ -33,7 +33,12 @@ export async function PATCH(
     const { id } = await params
 
     const [existing] = await db
-      .select({ id: publicite.id, title: publicite.title, status: publicite.status })
+      .select({
+        id: publicite.id,
+        title: publicite.title,
+        status: publicite.status,
+        mode: publicite.mode,
+      })
       .from(publicite)
       .where(eq(publicite.id, id))
       .limit(1)
@@ -58,12 +63,36 @@ export async function PATCH(
       duration?: number | null
       priority?: number | null
       displayOrder?: number | null
+      // Champs pour mode "composed"
+      textAlign?: "left" | "center" | "right"
+      textColor?: string
+      backgroundOverlay?: string
+      imageFit?: "cover" | "contain"
+      titlePosition?: string
+      descriptionPosition?: string
+      // Pour mode "full_banner" : campaignName au lieu de title
+      campaignName?: string
     } | null
 
-    if (body.title !== undefined) {
-      const titleError = validatePubliciteTitle(body.title)
-      if (titleError) {
-        return NextResponse.json({ error: titleError }, { status: 400 })
+    const existingMode = (existing as any).mode === "full_banner" ? "full_banner" : "composed"
+    const mode = body.mode === "full_banner" ? "full_banner" : existingMode
+
+    // Validation selon le mode
+    if (mode === "full_banner") {
+      if (body.campaignName !== undefined) {
+        if (!body.campaignName) {
+          return NextResponse.json({ error: "Le nom de la campagne est requis" }, { status: 400 })
+        }
+        if (body.campaignName.length > 60) {
+          return NextResponse.json({ error: "Le nom de la campagne ne doit pas dépasser 60 caractères" }, { status: 400 })
+        }
+      }
+    } else {
+      if (body.title !== undefined) {
+        const titleError = validatePubliciteTitle(body.title)
+        if (titleError) {
+          return NextResponse.json({ error: titleError }, { status: 400 })
+        }
       }
     }
 
@@ -103,10 +132,21 @@ export async function PATCH(
       return NextResponse.json({ error: displayOrderError }, { status: 400 })
     }
 
+    // Validation champs mode composed
+    if (body.mode === "composed" || existingMode === "composed") {
+      if (body.textAlign && !["left", "center", "right"].includes(body.textAlign)) {
+        return NextResponse.json({ error: "Alignement de texte invalide" }, { status: 400 })
+      }
+      if (body.imageFit && !["cover", "contain"].includes(body.imageFit)) {
+        return NextResponse.json({ error: "Ajustement d'image invalide" }, { status: 400 })
+      }
+    }
+
     const slot = body.slot !== undefined && isPubliciteSlot(body.slot) ? body.slot : existing.slot
 
     const updates: Record<string, unknown> = {}
-    if (body.title !== undefined) updates.title = body.title
+    if (mode === "full_banner" && body.campaignName !== undefined) updates.title = body.campaignName
+    if (mode === "composed" && body.title !== undefined) updates.title = body.title
     if (body.description !== undefined) updates.description = body.description
     if (body.image !== undefined) updates.image = body.image
     if (body.price !== undefined) updates.price = body.price
@@ -123,6 +163,14 @@ export async function PATCH(
     if (body.duration !== undefined) updates.duration = body.duration
     if (body.priority !== undefined) updates.priority = body.priority
     if (body.displayOrder !== undefined) updates.displayOrder = body.displayOrder
+    if (body.mode !== undefined) updates.mode = body.mode
+    // Champs mode composed
+    if (body.textAlign !== undefined) updates.textAlign = body.textAlign
+    if (body.textColor !== undefined) updates.textColor = body.textColor
+    if (body.backgroundOverlay !== undefined) updates.backgroundOverlay = body.backgroundOverlay
+    if (body.imageFit !== undefined) updates.imageFit = body.imageFit
+    if (body.titlePosition !== undefined) updates.titlePosition = body.titlePosition
+    if (body.descriptionPosition !== undefined) updates.descriptionPosition = body.descriptionPosition
     updates.updatedAt = new Date()
 
     await db.update(publicite).set(updates).where(eq(publicite.id, id))

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { AdminPageHeader } from "@/app/_components/dashboard/admin";
 import { PubliciteForm } from "../../PubliciteForm";
+import { toast } from "sonner";
 
 interface PubliciteItem {
   id: string;
@@ -44,6 +45,7 @@ export default function AdminPubliciteModifierPage() {
   const [publicite, setPublicite] = useState<PubliciteItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,6 +55,7 @@ export default function AdminPubliciteModifierPage() {
         const res = await fetch(`/api/admin/publicite/${id}`, {
           headers: { Accept: "application/json" },
           cache: "no-store",
+          credentials: "include",
         });
         if (!res.ok) throw new Error("Impossible de charger l'annonce");
         const data = await res.json();
@@ -73,30 +76,34 @@ export default function AdminPubliciteModifierPage() {
   }, [id]);
 
   const handleEditSubmit = async (values: any) => {
+    setIsSubmitting(true);
     try {
       const res = await fetch(`/api/admin/publicite/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: values.title,
-          description: values.description ?? null,
-          image: values.image ?? null,
-          linkUrl: values.linkUrl ?? null,
-          slot: values.slot,
-          status: values.status,
-          startAt: values.startAt ?? null,
-          endAt: values.endAt ?? null,
-          duration: values.duration ?? null,
-          priority: values.priority ?? null,
-          displayOrder: values.displayOrder ?? null,
-        }),
+        body: JSON.stringify(values),
+        credentials: "include",
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Échec de la modification");
-      router.push("/dashboard/admin/publicite");
-      router.refresh();
+
+      toast.success("Publicité modifiée avec succès !", {
+        description: "Vos modifications ont bien été enregistrées.",
+        icon: <CheckCircle className="size-5 text-green-600" />,
+      });
+
+      setTimeout(() => {
+        router.push("/dashboard/admin/publicite");
+        router.refresh();
+      }, 1500);
     } catch (err) {
-      throw err;
+      const message = err instanceof Error ? err.message : "Erreur lors de la modification";
+      toast.error(message, {
+        icon: <AlertCircle className="size-5 text-red-600" />,
+        description: "Veuillez vérifier les informations et réessayer.",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -177,6 +184,7 @@ export default function AdminPubliciteModifierPage() {
             isEditing={true}
             onSubmit={handleEditSubmit}
             onCancel={handleCancel}
+            isSubmitting={isSubmitting}
           />
         </CardContent>
       </Card>

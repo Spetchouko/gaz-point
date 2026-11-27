@@ -11,6 +11,7 @@ import {
   getRoleDashboardPath,
   isAuthRole,
 } from "@/lib/auth-routing"
+import { checkVendorAccess, getVendorAccessRedirect, VendorAccessStatus } from "@/lib/vendor-access"
 import { withTransientRetry } from "@/lib/transient-retry"
 
 /**
@@ -53,43 +54,69 @@ export type SessionUser = {
   lastLoginAt?: Date | null
 }
 
+/**
+ * Wrapper avec timeout pour éviter les blocages infinis sur Neon/WSL
+ * Applique le timeout à CHAQUE tentative, pas au total des retentatives.
+ */
+async function withTimeoutPerAttempt<T>(
+  operation: () => Promise<T>,
+  ms: number
+): Promise<T> {
+  return Promise.race([
+    operation(),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`Timeout après ${ms}ms`)), ms)
+    ),
+  ])
+}
+
 export async function getCurrentUser(): Promise<SessionUser | null> {
   try {
     // Une erreur réseau transitoire (Neon en HTTP) ne doit pas être confondue
     // avec une session absente : elle provoquerait une redirection vers
     // /connexion pour un utilisateur pourtant connecté.
+    // Timeout de 10s par tentative, 3 tentatives max = ~30s pire cas
     const session = await withTransientRetry(async () =>
-      auth.api.getSession({ headers: await getHeaders() })
+      withTimeoutPerAttempt(
+        async () => auth.api.getSession({ headers: await getHeaders() }),
+        10000
+      ),
+      { attempts: 3, delayMs: 250 }
     )
     const userId = session?.user?.id
     if (!userId) return null
 
-    const [account] = await withTransientRetry(() =>
-      db
-        .select({
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          emailVerified: user.emailVerified,
-          image: user.image,
-          role: user.role,
-          phoneNumber: user.phoneNumber,
-          phoneVerified: user.phoneVerified,
-          phoneNumberVerified: user.phoneNumberVerified,
-          isActive: user.isActive,
-          mustChangePassword: user.mustChangePassword,
-          approvalStatus: user.approvalStatus,
-          approvalRequestedAt: user.approvalRequestedAt,
-          approvalProcessedAt: user.approvalProcessedAt,
-          approvalProcessedBy: user.approvalProcessedBy,
-          rejectionReason: user.rejectionReason,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
-          lastLoginAt: user.lastLoginAt,
-        })
-        .from(user)
-        .where(eq(user.id, userId))
-        .limit(1)
+    const [account] = await withTransientRetry(async () =>
+      withTimeoutPerAttempt(
+        async () =>
+          db
+            .select({
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              emailVerified: user.emailVerified,
+              image: user.image,
+              role: user.role,
+              phoneNumber: user.phoneNumber,
+              phoneVerified: user.phoneVerified,
+              phoneNumberVerified: user.phoneNumberVerified,
+              isActive: user.isActive,
+              mustChangePassword: user.mustChangePassword,
+              approvalStatus: user.approvalStatus,
+              approvalRequestedAt: user.approvalRequestedAt,
+              approvalProcessedAt: user.approvalProcessedAt,
+              approvalProcessedBy: user.approvalProcessedBy,
+              rejectionReason: user.rejectionReason,
+              createdAt: user.createdAt,
+              updatedAt: user.updatedAt,
+              lastLoginAt: user.lastLoginAt,
+            })
+            .from(user)
+            .where(eq(user.id, userId))
+            .limit(1),
+        10000
+      ),
+      { attempts: 3, delayMs: 250 }
     )
 
     const access = evaluateAccountAccess(account)
@@ -99,7 +126,8 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
       ...account,
       role: access.role,
     }
-  } catch {
+  } catch (err) {
+    console.error("[session] getCurrentUser error:", err)
     return null
   }
 }
@@ -169,6 +197,14 @@ export async function requireVendor() {
         : "/connexion"
     )
   }
+
+  // Vérification abonnement obligatoire pour les vendeurs
+  const access = await checkVendorAccess(user.id)
+  if (access.status !== "allowed") {
+    const redirect = await getRedirect()
+    redirect(access.redirectTo ?? getVendorAccessRedirect(access.status))
+  }
+
   return user
 }
 

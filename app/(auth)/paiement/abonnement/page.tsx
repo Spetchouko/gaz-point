@@ -17,6 +17,8 @@ import {
   Shield,
   AlertCircle,
   CheckCircle2,
+  ArrowRight,
+  Clock,
 } from "lucide-react"
 import { Spinner, PageLoading, ButtonSpinner } from "@/app/_components/spinner"
 import Link from "next/link"
@@ -28,17 +30,58 @@ const PAYMENT_CURRENCY = "FCFA"
 function PaiementAbonnementPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [redirecting, setRedirecting] = useState(false)
+  const [subscriptionStatus, setSubscriptionStatus] = useState<{
+    isActive: boolean
+    status: string
+    currentPeriodEnd: string | null
+  } | null>(null)
 
   const vendorEmail = searchParams.get("email") ?? ""
   const redirectFrom = searchParams.get("redirect") ?? "/dashboard/vendeur"
 
   useEffect(() => {
-    // Auto-initiate payment on page load
-    initiatePayment()
+    // D'abord vérifier le statut d'abonnement avant d'initier un paiement
+    checkSubscription()
   }, [])
+
+  const checkSubscription = async () => {
+    try {
+      const response = await fetch("/api/vendor/subscription", {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setSubscriptionStatus({
+          isActive: data.isActive === true,
+          status: data.status ?? "none",
+          currentPeriodEnd: data.currentPeriodEnd ?? null,
+        })
+
+        // Si abonnement déjà actif, rediriger vers le dashboard
+        if (data.isActive === true) {
+          router.push("/dashboard/vendeur")
+          router.refresh()
+          return
+        }
+
+        // Si paiement en attente, rediriger vers page de succès pour polling
+        if (data.status === "pending" || data.status === "processing") {
+          router.push("/paiement/succes")
+          router.refresh()
+          return
+        }
+      }
+    } catch (err) {
+      console.error("[PaiementAbonnement] Check subscription error:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const initiatePayment = async () => {
     setLoading(true)
@@ -175,6 +218,36 @@ function PaiementAbonnementPageContent() {
                 </p>
               </div>
             </div>
+
+            {/* Subscription Status Info */}
+            {subscriptionStatus && (
+              <div className="space-y-2">
+                {subscriptionStatus.status === "past_due" && (
+                  <div className="rounded-lg bg-warning/10 border border-warning/20 p-3 text-sm text-warning flex items-center gap-2">
+                    <AlertCircle className="size-4 shrink-0" />
+                    <span>Abonnement en retard - Renouvellement requis</span>
+                  </div>
+                )}
+                {subscriptionStatus.status === "expired" && (
+                  <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive flex items-center gap-2">
+                    <AlertCircle className="size-4 shrink-0" />
+                    <span>Abonnement expiré - Renouvellement requis</span>
+                  </div>
+                )}
+                {subscriptionStatus.status === "cancelled" && (
+                  <div className="rounded-lg bg-muted/50 border p-3 text-sm text-muted-foreground flex items-center gap-2">
+                    <AlertCircle className="size-4 shrink-0" />
+                    <span>Abonnement annulé - Nouvelle souscription nécessaire</span>
+                  </div>
+                )}
+                {subscriptionStatus.status === "pending" && (
+                  <div className="rounded-lg bg-warning/10 border border-warning/20 p-3 text-sm text-warning flex items-center gap-2">
+                    <Clock className="size-4 shrink-0" />
+                    <span>Paiement en cours de traitement...</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {error && (
               <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive flex items-center gap-2">

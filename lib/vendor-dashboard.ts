@@ -12,6 +12,7 @@ import type { AvisMine } from "@/lib/avis-shared"
 import { errorMessage } from "@/lib/errors"
 import { effectiveStatus } from "@/lib/gaz"
 import { getDepotRowsByVendorId } from "@/lib/vendor-depot-compat"
+import { withTransientRetry } from "@/lib/transient-retry"
 
 export type UserRole = "client" | "vendor" | "admin" | "collaborateur"
 export type AvailabilityStatus = "disponible" | "a_confirmer" | "indisponible"
@@ -149,27 +150,35 @@ export async function getVendorAvailabilities(
   updatedAt: string
 }[]> {
   try {
-    const rows = await db
-      .select({
-        id: disponibilite.id,
-        pointId: disponibilite.pointId,
-        pointName: pointDeVente.name,
-        brand: disponibilite.brand,
-        format: disponibilite.format,
-        status: disponibilite.status,
-        quantity: disponibilite.quantity,
-        reservedQuantity: disponibilite.reservedQuantity,
-        price: disponibilite.price,
-        note: disponibilite.note,
-        phone: disponibilite.phone,
-        expiresAt: disponibilite.expiresAt,
-        createdAt: disponibilite.createdAt,
-        updatedAt: disponibilite.updatedAt,
-      })
-      .from(disponibilite)
-      .innerJoin(pointDeVente, eq(disponibilite.pointId, pointDeVente.id))
-      .where(eq(pointDeVente.vendorId, vendorId))
-      .orderBy(desc(disponibilite.createdAt))
+    const rows = await withTransientRetry(async () => {
+      return await db
+        .select({
+          id: disponibilite.id,
+          pointId: disponibilite.pointId,
+          pointName: pointDeVente.name,
+          brand: disponibilite.brand,
+          format: disponibilite.format,
+          status: disponibilite.status,
+          quantity: disponibilite.quantity,
+          reservedQuantity: disponibilite.reservedQuantity,
+          price: disponibilite.price,
+          note: disponibilite.note,
+          phone: disponibilite.phone,
+          expiresAt: disponibilite.expiresAt,
+          createdAt: disponibilite.createdAt,
+          updatedAt: disponibilite.updatedAt,
+        })
+        .from(disponibilite)
+        .innerJoin(pointDeVente, eq(disponibilite.pointId, pointDeVente.id))
+        .where(eq(pointDeVente.vendorId, vendorId))
+        .orderBy(desc(disponibilite.createdAt))
+    })
+
+    // Handle case where db returns null (connection issue)
+    if (!rows || !Array.isArray(rows)) {
+      console.warn("[vendor-dashboard] Query returned null/undefined, returning empty array")
+      return []
+    }
 
     // Le driver pg peut renvoyer les timestamps sous forme de chaînes : on ne
     // suppose jamais qu'ils exposent `.toISOString()`.
@@ -545,10 +554,18 @@ export async function getVendorProfile(vendorId: string): Promise<VendorProfileD
 
 export async function getVendorPointIds(vendorId: string): Promise<string[]> {
   try {
-    const rows = await db
-      .select({ id: pointDeVente.id })
-      .from(pointDeVente)
-      .where(eq(pointDeVente.vendorId, vendorId))
+    const rows = await withTransientRetry(async () => {
+      return await db
+        .select({ id: pointDeVente.id })
+        .from(pointDeVente)
+        .where(eq(pointDeVente.vendorId, vendorId))
+    })
+
+    if (!rows || !Array.isArray(rows)) {
+      console.warn("[vendor-dashboard] getVendorPointIds returned null/undefined")
+      return []
+    }
+
     return rows.map((row) => row.id)
   } catch (err) {
     console.error("[vendor-dashboard] getVendorPointIds failed:", errorMessage(err))

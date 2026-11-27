@@ -7,6 +7,7 @@ import {
   isStaffRole,
   type AccountAccessStatus,
 } from "@/lib/auth-routing"
+import { checkVendorAccess, getVendorAccessRedirect, VendorAccessStatus } from "@/lib/vendor-access"
 
 export const dynamic = "force-dynamic"
 
@@ -91,6 +92,28 @@ export async function POST(req: NextRequest) {
     return clearRegisterRoleCookie(staffOnlyResponse())
   }
 
+  // Vérification abonnement pour les vendeurs
+  if (access.role === "vendor") {
+    const vendorAccess = await checkVendorAccess(access.account!.id)
+    if (vendorAccess.status !== "allowed") {
+      const response = NextResponse.json(
+        {
+          ok: false,
+          error: {
+            code: vendorAccess.status,
+            message: vendorAccess.message,
+            redirectTo: vendorAccess.redirectTo,
+          },
+        },
+        {
+          status: 403,
+          headers: { "Cache-Control": "no-store" },
+        }
+      )
+      return clearRegisterRoleCookie(response)
+    }
+  }
+
   const response = NextResponse.json(
     { ok: true, role: access.role, redirectTo: access.redirectTo },
     { headers: { "Cache-Control": "no-store" } }
@@ -108,6 +131,16 @@ export async function GET(req: NextRequest) {
     access.role &&
     (audience === "standard" || isStaffRole(access.role))
   ) {
+    // Vérification abonnement pour les vendeurs
+    if (access.role === "vendor") {
+      const vendorAccess = await checkVendorAccess(access.account!.id)
+      if (vendorAccess.status !== "allowed") {
+        const redirectUrl = new URL(vendorAccess.redirectTo ?? getVendorAccessRedirect(vendorAccess.status), req.url)
+        const response = NextResponse.redirect(redirectUrl)
+        return clearRegisterRoleCookie(response)
+      }
+    }
+
     const response = NextResponse.redirect(new URL(access.redirectTo, req.url))
     return clearRegisterRoleCookie(response)
   }

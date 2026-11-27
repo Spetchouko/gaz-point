@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useCallback, useEffect, useState } from "react"
+import { Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { ArrowRight, CheckCircle2, Clock, RefreshCw, Shield } from "lucide-react"
@@ -23,16 +23,29 @@ type PaymentDetails = {
   method?: string
 }
 
+// Attendre max 60 secondes (12 x 5s) pour la confirmation webhook
+const MAX_POLL_ATTEMPTS = 12
+const POLL_INTERVAL_MS = 5000
+
 function PaiementSuccesPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [status, setStatus] = useState<PaymentStatus>("verifying")
   const [message, setMessage] = useState("")
   const [details, setDetails] = useState<PaymentDetails>({})
+  const [pollAttempt, setPollAttempt] = useState(0)
+  const pollTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   const reference = searchParams.get("reference")?.trim() ?? ""
 
-  const verifyPayment = useCallback(async () => {
+  const clearPollTimer = useCallback(() => {
+    if (pollTimerRef.current) {
+      clearTimeout(pollTimerRef.current)
+      pollTimerRef.current = null
+    }
+  }, [])
+
+  const verifyPayment = useCallback(async (isPolling = false) => {
     if (!reference) {
       setStatus("error")
       setMessage(
@@ -41,8 +54,10 @@ function PaiementSuccesPageContent() {
       return
     }
 
-    setStatus("verifying")
-    setMessage("Vérification du paiement en cours...")
+    if (!isPolling) {
+      setStatus("verifying")
+      setMessage("Vérification du paiement en cours...")
+    }
 
     try {
       const data = await requestJson<{
@@ -50,6 +65,11 @@ function PaiementSuccesPageContent() {
         status?: string
         amount?: number
         paymentMethod?: string
+        subscription?: {
+          status?: string
+          isActive?: boolean
+          currentPeriodEnd?: string | null
+        }
       }>(`/api/payment/verify/${encodeURIComponent(reference)}`, {
         headers: { Accept: "application/json" },
         cache: "no-store",
@@ -61,20 +81,38 @@ function PaiementSuccesPageContent() {
         method: data.paymentMethod,
       })
 
-      if (data.status === "completed") {
+      const subActive = data.subscription?.isActive === true
+
+      if (data.status === "completed" || subActive) {
+        clearPollTimer()
         setStatus("success")
         setMessage("Paiement confirmé. Votre abonnement est activé.")
       } else if (data.status === "pending" || data.status === "processing") {
-        setStatus("pending")
+        if (!isPolling) {
+          setStatus("pending")
+        }
         setMessage(
-          "Le paiement est en cours de traitement. L’activation sera automatique après sa confirmation."
+          "Le paiement est en cours de traitement. L'activation sera automatique après sa confirmation."
         )
+
+        // Polling automatique pour attendre la confirmation webhook
+        if (pollAttempt < MAX_POLL_ATTEMPTS) {
+          pollTimerRef.current = setTimeout(() => {
+            setPollAttempt((prev) => prev + 1)
+            verifyPayment(true)
+          }, POLL_INTERVAL_MS)
+        } else {
+          // Arrêter le polling après max tentatives, laisser l'utilisateur vérifier manuellement
+          clearPollTimer()
+        }
       } else {
+        clearPollTimer()
         setStatus("error")
-        setMessage(`Le paiement n’a pas abouti. Statut : ${data.status ?? "inconnu"}.`)
+        setMessage(`Le paiement n'a pas abouti. Statut : ${data.status ?? "inconnu"}.`)
       }
     } catch (err) {
       console.error("[PaiementSucces] Verification error:", err)
+      clearPollTimer()
       setStatus("error")
       setMessage(
         err instanceof Error
@@ -82,22 +120,38 @@ function PaiementSuccesPageContent() {
           : "Erreur lors de la vérification du paiement."
       )
     }
-  }, [reference])
+  }, [reference, pollAttempt])
 
+  // Nettoyer le timer au démontage
+  useEffect(() => {
+    return () => clearPollTimer()
+  }, [clearPollTimer])
+
+  // Démarrer la vérification initiale
   useEffect(() => {
     void verifyPayment()
   }, [verifyPayment])
 
+  // Polling basé sur le compteur
+  useEffect(() => {
+    if (pollAttempt > 0 && (status === "pending" || status === "verifying")) {
+      verifyPayment(true)
+    }
+  }, [pollAttempt, status, verifyPayment])
+
   const handleGoToDashboard = () => {
+    clearPollTimer()
     router.push("/dashboard/vendeur")
     router.refresh()
   }
 
   const handleRetry = () => {
+    setPollAttempt(0)
     void verifyPayment()
   }
 
   const handleBackToPayment = () => {
+    clearPollTimer()
     router.push("/paiement/abonnement")
   }
 

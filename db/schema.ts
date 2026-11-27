@@ -338,6 +338,14 @@ export const publicite = pgTable(
     duration: integer("duration"), // durée d'affichage en secondes (5–30, défaut 8)
     priority: integer("priority").default(0), // priorité de diffusion (plus haut = plus souvent)
     displayOrder: integer("display_order").default(0), // ordre de diffusion manuel
+    mode: text("mode").notNull().default("composed"), // 'composed' (image + texte) | 'full_banner' (bannière pré-conçue)
+    // Champs pour mode "composed" (publicité personnalisée)
+    textAlign: text("text_align").default("left"), // 'left' | 'center' | 'right'
+    textColor: text("text_color").default("#FFFFFF"),
+    backgroundOverlay: text("background_overlay").default("rgba(0,0,0,0.3)"), // overlay derrière le texte
+    imageFit: text("image_fit").default("cover"), // 'cover' | 'contain'
+    titlePosition: text("title_position").default("top-left"), // 'top-left' | 'top-center' | 'top-right' | 'center-left' | 'center' | 'center-right' | 'bottom-left' | 'bottom-center' | 'bottom-right'
+    descriptionPosition: text("description_position").default("bottom-left"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -347,6 +355,7 @@ export const publicite = pgTable(
   (table) => [
     index("publicite_slot_status_idx").on(table.slot, table.status),
     index("publicite_slot_order_idx").on(table.slot, table.displayOrder, table.priority),
+    index("publicite_mode_idx").on(table.mode),
   ]
 )
 

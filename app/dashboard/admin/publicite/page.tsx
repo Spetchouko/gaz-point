@@ -18,6 +18,8 @@ import {
   Clock2,
   Plus,
   Loader2,
+  X,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +35,15 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/app/_components/dashboard/admin";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface PubliciteItem {
   id: string;
@@ -85,6 +96,58 @@ function SkeletonRow() {
   );
 }
 
+interface ConfirmDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  description: string;
+  confirmLabel: string;
+  confirmVariant: "destructive" | "default" | "outline";
+  onConfirm: () => void;
+  isLoading: boolean;
+}
+
+function ConfirmDialog({
+  open,
+  onOpenChange,
+  title,
+  description,
+  confirmLabel,
+  confirmVariant,
+  onConfirm,
+  isLoading,
+}: ConfirmDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            {confirmVariant === "destructive" && <AlertCircle className="size-5 text-destructive" />}
+            {confirmVariant !== "destructive" && <Check className="size-5 text-primary" />}
+            {title}
+          </DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+            Annuler
+          </Button>
+          <Button variant={confirmVariant} onClick={onConfirm} disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="size-4 animate-spin mr-2" />
+                Traitement...
+              </>
+            ) : (
+              confirmLabel
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function AdminPublicitePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -93,6 +156,14 @@ export default function AdminPublicitePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState<Set<string>>(new Set());
+
+  // États pour les modales de confirmation
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<PubliciteItem | null>(null);
+  const [dialogAction, setDialogAction] = useState<"delete" | "status" | "suspend" | null>(null);
+  const [dialogLoading, setDialogLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -109,6 +180,7 @@ export default function AdminPublicitePage() {
         const res = await fetch(`/api/admin/publicite?${params.toString()}`, {
           headers: { Accept: "application/json" },
           cache: "no-store",
+          credentials: "include",
         });
         if (!res.ok) throw new Error("Impossible de charger les annonces");
         const data = await res.json();
@@ -128,6 +200,70 @@ export default function AdminPublicitePage() {
     };
   }, [searchQuery, filterStatus, filterSlot]);
 
+  const openDialog = (action: "delete" | "status" | "suspend", item: PubliciteItem) => {
+    setSelectedItem(item);
+    setDialogAction(action);
+    if (action === "delete") setDeleteDialogOpen(true);
+    else if (action === "status") setStatusDialogOpen(true);
+    else if (action === "suspend") setSuspendDialogOpen(true);
+  };
+
+  const closeAllDialogs = () => {
+    setDeleteDialogOpen(false);
+    setStatusDialogOpen(false);
+    setSuspendDialogOpen(false);
+    setSelectedItem(null);
+    setDialogAction(null);
+    setDialogLoading(false);
+  };
+
+  const executeAction = async () => {
+    if (!selectedItem || !dialogAction) return;
+    setDialogLoading(true);
+    try {
+      if (dialogAction === "delete") {
+        const res = await fetch(`/api/admin/publicite/${selectedItem.id}`, {
+          method: "DELETE",
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("Échec de la suppression");
+        setPublicites((prev) => prev.filter((p) => p.id !== selectedItem.id));
+        toast.success("Annonce supprimée");
+      } else if (dialogAction === "status") {
+        const newStatus = selectedItem.status === "active" ? "draft" : "active";
+        const res = await fetch(`/api/admin/publicite/${selectedItem.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("Échec de la modification");
+        setPublicites((prev) =>
+          prev.map((p) => (p.id === selectedItem.id ? { ...p, status: newStatus } : p))
+        );
+        toast.success(newStatus === "active" ? "Annonce activée" : "Annonce désactivée");
+      } else if (dialogAction === "suspend") {
+        const newStatus = selectedItem.status === "suspended" ? "active" : "suspended";
+        const res = await fetch(`/api/admin/publicite/${selectedItem.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("Échec de la modification");
+        setPublicites((prev) =>
+          prev.map((p) => (p.id === selectedItem.id ? { ...p, status: newStatus } : p))
+        );
+        toast.success(newStatus === "active" ? "Diffusion reprise" : "Diffusion suspendue");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur lors de l'opération");
+    } finally {
+      setDialogLoading(false);
+      closeAllDialogs();
+    }
+  };
+
   const toggleStatus = async (id: string, status: string) => {
     setSaving((prev) => new Set([...prev, id]));
     try {
@@ -135,6 +271,7 @@ export default function AdminPublicitePage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
+        credentials: "include",
       });
       if (!res.ok) throw new Error("Échec de la modification");
       setPublicites((prev) =>
@@ -158,11 +295,11 @@ export default function AdminPublicitePage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Supprimer cette annonce ?")) return;
     setSaving((prev) => new Set([...prev, id]));
     try {
       const res = await fetch(`/api/admin/publicite/${id}`, {
         method: "DELETE",
+        credentials: "include",
       });
       if (!res.ok) throw new Error("Échec de la suppression");
       setPublicites((prev) => prev.filter((p) => p.id !== id));
@@ -206,8 +343,45 @@ export default function AdminPublicitePage() {
     return img.startsWith("data:") || img.startsWith("http") ? img : null;
   };
 
-  // Toujours rendre la structure de page complète (layout stable)
-  // Afficher les skeletons pendant le chargement initial
+  // Contenu des modales
+  const getDialogConfig = () => {
+    if (!selectedItem) return { title: "", description: "", confirmLabel: "", confirmVariant: "default" as const };
+    
+    switch (dialogAction) {
+      case "delete":
+        return {
+          title: "Supprimer cette publicité ?",
+          description: `Êtes-vous sûr de vouloir supprimer « ${selectedItem.title} » ? Cette action est irréversible.`,
+          confirmLabel: "Oui, supprimer",
+          confirmVariant: "destructive" as const,
+        };
+      case "status":
+        const isActive = selectedItem.status === "active";
+        return {
+          title: isActive ? "Désactiver cette publicité ?" : "Activer cette publicité ?",
+          description: isActive
+            ? `L'annonce « ${selectedItem.title} » ne sera plus diffusée sur le site.`
+            : `L'annonce « ${selectedItem.title} » sera diffusée selon ses dates de programmation.`,
+          confirmLabel: isActive ? "Oui, désactiver" : "Oui, activer",
+          confirmVariant: isActive ? "destructive" : "default",
+        };
+      case "suspend":
+        const isSuspended = selectedItem.status === "suspended";
+        return {
+          title: isSuspended ? "Reprendre la diffusion ?" : "Suspendre la diffusion ?",
+          description: isSuspended
+            ? `La diffusion de « ${selectedItem.title} » reprendra immédiatement.`
+            : `La diffusion de « ${selectedItem.title} » sera mise en pause.`,
+          confirmLabel: isSuspended ? "Oui, reprendre" : "Oui, suspendre",
+          confirmVariant: isSuspended ? "default" : "destructive",
+        };
+      default:
+        return { title: "", description: "", confirmLabel: "", confirmVariant: "default" as const };
+    }
+  };
+
+  const dialogConfig = getDialogConfig();
+
   return (
     <div className="space-y-6">
       <AdminPageHeader
@@ -298,7 +472,6 @@ export default function AdminPublicitePage() {
               </thead>
               <tbody>
                 {loading ? (
-                  // Afficher 5 lignes squelette pendant le chargement
                   Array.from({ length: 5 }).map((_, i) => (
                     <SkeletonRow key={i} />
                   ))
@@ -342,15 +515,17 @@ export default function AdminPublicitePage() {
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          {/* Bouton Suspendre/Reprendre avec modal */}
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => toggleSuspend(p.id, p.status)}
-                            disabled={saving.has(p.id) || p.status === "draft" || p.status === "expired"}
+                            onClick={() => openDialog("suspend", p)}
+                            disabled={saving.has(p.id) || p.status === "draft" || p.status === "expired" || dialogLoading}
                             title={p.status === "suspended" ? "Reprendre la diffusion" : "Suspendre la diffusion"}
                           >
                             {p.status === "suspended" ? <Play className="size-4" /> : <Pause className="size-4" />}
                           </Button>
+                          {/* Lien vers page de modification */}
                           <Link href={`/dashboard/admin/publicite/${p.id}/modifier`}>
                             <Button
                               variant="outline"
@@ -360,11 +535,12 @@ export default function AdminPublicitePage() {
                               <Edit2 className="size-4" />
                             </Button>
                           </Link>
+                          {/* Bouton Supprimer avec modal */}
                           <Button
                             variant="destructive"
                             size="sm"
-                            onClick={() => handleDelete(p.id)}
-                            disabled={saving.has(p.id)}
+                            onClick={() => openDialog("delete", p)}
+                            disabled={saving.has(p.id) || dialogLoading}
                           >
                             <Trash2 className="size-4" />
                           </Button>
@@ -378,6 +554,40 @@ export default function AdminPublicitePage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Modales de confirmation */}
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title={dialogConfig.title}
+        description={dialogConfig.description}
+        confirmLabel={dialogConfig.confirmLabel}
+        confirmVariant={dialogConfig.confirmVariant}
+        onConfirm={executeAction}
+        isLoading={dialogLoading}
+      />
+
+      <ConfirmDialog
+        open={statusDialogOpen}
+        onOpenChange={setStatusDialogOpen}
+        title={dialogConfig.title}
+        description={dialogConfig.description}
+        confirmLabel={dialogConfig.confirmLabel}
+        confirmVariant={dialogConfig.confirmVariant}
+        onConfirm={executeAction}
+        isLoading={dialogLoading}
+      />
+
+      <ConfirmDialog
+        open={suspendDialogOpen}
+        onOpenChange={setSuspendDialogOpen}
+        title={dialogConfig.title}
+        description={dialogConfig.description}
+        confirmLabel={dialogConfig.confirmLabel}
+        confirmVariant={dialogConfig.confirmVariant}
+        onConfirm={executeAction}
+        isLoading={dialogLoading}
+      />
     </div>
   );
 }
