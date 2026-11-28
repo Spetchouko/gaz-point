@@ -18,6 +18,7 @@ export default async function VendorDashboardPage() {
     error = "Impossible de charger votre tableau de bord pour le moment."
     data = {
       depot: null,
+      allDepots: null,
       stats: {
         depotCount: 0,
         activeAvailabilityCount: 0,

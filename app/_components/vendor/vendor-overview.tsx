@@ -6,10 +6,13 @@ import {
   AlertCircle,
   ArrowRight,
   Calendar,
+  ChevronRight,
+  MapPin,
   Package,
   Plus,
-  Store,
+  Power,
   Settings,
+  Store,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { VendorDepotDto, VendorOverviewData } from "@/lib/vendor-dashboard"
@@ -19,6 +22,7 @@ import {
   VendorSectionCard,
   VendorStatusBadge,
 } from "@/app/_components/vendor/vendor-ui"
+import { cn } from "@/lib/utils"
 
 const RESERVATION_LABELS: Record<string, string> = {
   pending: "En attente",
@@ -34,59 +38,93 @@ function formatNumber(num: number): string {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")
 }
 
-// NEW: Component showing summary of a single depot
-function DepotSummaryCard({ depot }: { depot: VendorDepotDto }) {
-  return (
-    <div className="p-4 border rounded-lg bg-primary/5 text-primary/80 mb-3">
-      <h4 className="font-semibold text-foreground truncate">{depot.name}</h4>
-      <p className="text-xs text-primary/80 mb-1">{depot.district}</p>
-      <div className="flex items-center gap-2 text-xs">
-        <Store className="size-3" aria-hidden />
-        {depot.isActive ? "Dispo" : "Indisponible"}
-      </div>
-      <Button
-        size="sm"
-        variant="ghost"
-        className="mt-2 w-full text-left"
-        render={<Link prefetch={false} href="/dashboard/depot">Voir les détails</Link>}
-      />
-    </div>
-  )
-}
-
-// NEW: Brief card for listing multiple depots
-function DepotBriefCard({ depot }: { depot: VendorDepotDto }) {
+// NEW: Depot card for grid display in overview
+function DepotGridCard({
+  depot,
+  isMain,
+}: {
+  depot: VendorDepotDto
+  isMain?: boolean
+}) {
   return (
     <div
       key={depot.id}
-      className="p-3 rounded-lg border border-border bg-card hover:bg-primary/5 hover:text-primary/80 transition-colors cursor-pointer"
-      onMouseEnter={(e) => {
-        const el = e.currentTarget as HTMLElement
-        el.style.transform = "translateY(-2px)"
-      }}
-      onMouseLeave={(e) => {
-        const el = e.currentTarget as HTMLElement
-        el.style.transform = ""
-      }}
-    >
-      <div className="flex items-center gap-2">
-        <Store className="size-3 text-primary" aria-hidden />
-        <span className="font-medium text-foreground truncate">{depot.name}</span>
-      </div>
-      <p className="text-xs text-muted-foreground line-clamp-1">{depot.district}</p>
-      {depot.phone && (
-        <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-          📞 {depot.phone}
-        </p>
+      className={cn(
+        "p-3 rounded-lg border bg-card transition-all duration-200 hover:shadow-md",
+        isMain ? "border-primary/30 bg-primary/5 ring-1 ring-primary/20" : "border-border hover:border-primary/30",
+        !depot.isActive && "opacity-60 border-destructive/30 bg-destructive/5"
       )}
-      <Button
-        size="icon"
-        variant="ghost"
-        className="p-1 rounded-lg mt-1"
-        title="Gérer"
-      >
-        <ArrowRight className="size-3.5" aria-hidden />
-      </Button>
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div
+            className={cn(
+              "flex size-8 shrink-0 items-center justify-center rounded-lg",
+              depot.isActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+            )}
+          >
+            <Store className="size-4" aria-hidden />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <h4 className="font-semibold text-foreground truncate">{depot.name}</h4>
+              {isMain && (
+                <span className="rounded-full bg-primary/10 text-primary text-[10px] font-medium px-1.5 py-0.5">
+                  Principal
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+              <MapPin className="size-3" aria-hidden />
+              {depot.district}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <span className={cn("flex items-center gap-1 text-[10px] font-medium", depot.isActive ? "text-success" : "text-destructive")}>
+            <Power className="size-2.5" aria-hidden />
+            {depot.isActive ? "Actif" : "Inactif"}
+          </span>
+        </div>
+      </div>
+      <div className="mt-2 space-y-1.5 text-xs">
+        <p className="text-muted-foreground line-clamp-1">{depot.address}</p>
+        {depot.phone && (
+          <p className="text-muted-foreground flex items-center gap-1">
+            📞 {depot.phone}
+          </p>
+        )}
+        <div className="flex flex-wrap gap-1">
+          {depot.brands.slice(0, 3).map((brand) => (
+            <span
+              key={brand}
+              className="rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-medium"
+            >
+              {brand}
+            </span>
+          ))}
+          {depot.brands.length > 3 && (
+            <span className="rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-[10px]">
+              +{depot.brands.length - 3}
+            </span>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {depot.formats.slice(0, 3).map((format) => (
+            <span
+              key={format}
+              className="rounded-full bg-secondary/10 text-secondary px-2 py-0.5 text-[10px] font-medium"
+            >
+              {format}
+            </span>
+          ))}
+          {depot.formats.length > 3 && (
+            <span className="rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-[10px]">
+              +{depot.formats.length - 3}
+            </span>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
@@ -246,21 +284,25 @@ export function VendorOverview({
           className="lg:col-span-1"
           contentClassName="p-4"
         >
-          {stats.depotCount > 0 && depot ? (
-            // Show summary of main depot + brief list of others
+          {stats.depotCount > 0 && data.allDepots && data.allDepots.length > 0 ? (
             <>
-              <DepotSummaryCard depot={depot} />
-
-              <div className="mt-3">
-                <p className="text-xs font-medium text-primary">
-                  Vos autres dépôts :
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {data.allDepots.map((d, idx) => (
+                  <DepotGridCard key={d.id} depot={d} isMain={idx === 0} />
+                ))}
+              </div>
+              <div className="mt-3 flex items-center justify-between">
+                <p className="text-xs text-primary/80">
+                  Total : {stats.depotCount} dépôt{stats.depotCount !== 1 ? "s" : ""}
                 </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {/* We only have access to 'depot' (main), show count info */}
-                  <div className="p-2 rounded-lg border border-primary/20 bg-primary/5 text-primary/80 text-center">
-                    {stats.depotCount - 1} autres dépots
-                  </div>
-                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  render={<Link prefetch={false} href="/dashboard/depot/points">
+                    <ChevronRight className="size-3.5 mr-1" aria-hidden />
+                    Gérer tous les dépôts
+                  </Link>}
+                />
               </div>
             </>
           ) : (
@@ -269,19 +311,13 @@ export function VendorOverview({
               <Button
                 size="lg"
                 className="w-full"
-                render={
-                  <Link prefetch={false} href="/dashboard/depot">
-                    Créer mon premier point de vente
-                  </Link>
-                }
+                render={<Link prefetch={false} href="/dashboard/depot/points">
+                  <Plus className="size-4 mr-2" aria-hidden />
+                  Créer mon premier point de vente
+                </Link>}
               />
             </div>
           )}
-
-          {/* Count info at the bottom */}
-          <p className="mt-2 text-xs text-primary/80">
-            Total : {stats.depotCount} dépôt{stats.depotCount !== 1 ? "s" : ""}
-          </p>
         </VendorSectionCard>
       </div>
 

@@ -158,17 +158,7 @@ export async function POST(req: NextRequest) {
       (format) => format.length <= 30
     )
 
-    const [existing] = await db
-      .select({ id: pointDeVente.id })
-      .from(pointDeVente)
-      .where(eq(pointDeVente.vendorId, user.id))
-      .limit(1)
-    if (existing) {
-      return NextResponse.json(
-        { error: "Un dépôt est déjà créé pour ce compte" },
-        { status: 400 }
-      )
-    }
+    // Allow multiple depots per vendor - no limit check
 
     const pointId = randomUUID()
     const now = new Date()

@@ -14,11 +14,12 @@ export async function GET() {
     }
 
     const points = await getDepotRowsByVendorId(user.id)
-    return NextResponse.json({ point: points[0] ?? null })
+    // Return all depots for the vendor
+    return NextResponse.json({ points })
   } catch (err) {
     console.error("[depot/mine] error:", err)
     return NextResponse.json(
-      { error: "Erreur lors de la récupération du dépôt" },
+      { error: "Erreur lors de la récupération des dépôts" },
       { status: 500 }
     )
   }

@@ -55,6 +55,7 @@ export type VendorActivityDto = {
 
 export type VendorOverviewData = {
   depot: VendorDepotDto | null
+  allDepots: VendorDepotDto[] | null
   stats: {
     depotCount: number
     activeAvailabilityCount: number
@@ -377,6 +378,7 @@ export async function getVendorOverview(
 
   const result: VendorOverviewData = {
     depot,
+    allDepots,
     stats: {
       depotCount: allDepots.length,
       activeAvailabilityCount,
