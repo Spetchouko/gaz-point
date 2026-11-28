@@ -16,7 +16,6 @@ import {
   BarChart3,
   MapPin,
   Archive,
-  CreditCard,
   type LucideIcon,
 } from "lucide-react"
 
@@ -233,18 +232,6 @@ export const ADMIN_NAV_GROUPS: DashboardNavGroup[] = [
         label: "Gestion des avis",
         icon: MessageSquare,
         requiredPermission: "avis",
-      },
-    ],
-  },
-  {
-    groupLabel: "ABONNEMENTS",
-    items: [
-      {
-        key: "abonnements",
-        href: "/dashboard/admin/abonnements",
-        label: "Abonnements",
-        icon: CreditCard,
-        requiredPermission: "abonnements",
       },
     ],
   },

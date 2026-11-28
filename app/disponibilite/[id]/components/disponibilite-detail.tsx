@@ -355,7 +355,7 @@ export default function DisponibiliteDetailPage({
             className="w-full sm:w-auto gap-2 h-14 text-lg font-extrabold tracking-tight shadow-xl shadow-primary/20 transition hover:shadow-2xl hover:scale-[1.01]"
           >
             <Package className="size-5 mr-2" />
-            Réserver cette bouteille
+            Faire une réservation
           </Button>
         </div>
       )}

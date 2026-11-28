@@ -5,16 +5,22 @@ import { useCallback, useEffect, useRef, useState } from "react";
 export const NOTIFICATIONS_UPDATED_EVENT = "notifications:updated";
 
 /**
+ * Configuration pour le polling des notifications.
+ */
+const POLLING_INTERVAL_MS = 60_000; // 60 secondes (au lieu de 30)
+const FOCUS_DEBOUNCE_MS = 5_000; // 5 secondes anti-rebond sur focus
+const VISIBILITY_DEBOUNCE_MS = 2_000; // 2 secondes sur changement visibilité
+
+/**
  * Source unique du nombre de notifications non lues de l'utilisateur connecté.
- * Lit /api/notifications (même source que le centre de notifications) et se
- * synchronise après chaque mutation (lecture/suppression/archivage/création)
- * via l'événement notifications:updated, au retour de focus/visibilité, au
- * reconnect et par polling léger.
+ * Optimisé : polling 60s, debounce sur focus/visibilité, annulation requêtes en cours.
  */
 export function useNotificationUnreadCount(enabled = true) {
   const [unreadCount, setUnreadCount] = useState(0);
   const requestSequenceRef = useRef(0);
   const controllerRef = useRef<AbortController | null>(null);
+  const lastFocusRefreshRef = useRef(0);
+  const lastVisibilityRefreshRef = useRef(0);
 
   const refresh = useCallback(async () => {
     if (!enabled) return;
@@ -42,23 +48,42 @@ export function useNotificationUnreadCount(enabled = true) {
     }
   }, [enabled]);
 
+  const debouncedRefresh = useCallback(() => {
+    const now = Date.now();
+    if (now - lastFocusRefreshRef.current >= FOCUS_DEBOUNCE_MS) {
+      lastFocusRefreshRef.current = now;
+      void refresh();
+    }
+  }, [refresh]);
+
+  const debouncedVisibilityRefresh = useCallback(() => {
+    const now = Date.now();
+    if (now - lastVisibilityRefreshRef.current >= VISIBILITY_DEBOUNCE_MS) {
+      lastVisibilityRefreshRef.current = now;
+      void refresh();
+    }
+  }, [refresh]);
+
   useEffect(() => {
     if (!enabled) {
       setUnreadCount(0);
       return;
     }
 
+    // Initial fetch
     void refresh();
 
     const onUpdated = () => {
       void refresh();
     };
+
     const onFocus = () => {
-      void refresh();
+      debouncedRefresh();
     };
+
     const onVisibility = () => {
       if (document.visibilityState === "visible") {
-        void refresh();
+        debouncedVisibilityRefresh();
       }
     };
 
@@ -68,7 +93,7 @@ export function useNotificationUnreadCount(enabled = true) {
 
     const interval = window.setInterval(() => {
       void refresh();
-    }, 30000);
+    }, POLLING_INTERVAL_MS);
 
     return () => {
       window.removeEventListener(NOTIFICATIONS_UPDATED_EVENT, onUpdated);
@@ -77,7 +102,7 @@ export function useNotificationUnreadCount(enabled = true) {
       window.clearInterval(interval);
       controllerRef.current?.abort();
     };
-  }, [enabled, refresh]);
+  }, [enabled, refresh, debouncedRefresh, debouncedVisibilityRefresh]);
 
   return { unreadCount, refresh };
 }

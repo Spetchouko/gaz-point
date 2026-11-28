@@ -207,7 +207,7 @@ export function NotificationCenter() {
     await loadNotifications(false);
   }, [loadNotifications]);
 
-  const beginMutation = useCallback((id: string) => {
+  const beginMutation = useCallback((id: string): number | false => {
     if (pendingIdsRef.current.has(id)) return false;
 
     const nextPending = new Set(pendingIdsRef.current);
@@ -238,6 +238,7 @@ export function NotificationCenter() {
     if (!target || target.read || pendingIdsRef.current.has(id)) return;
 
     const version = beginMutation(id);
+    if (version === false) return;
     setActionError(null);
     try {
       const response = await requestJson<{
@@ -258,8 +259,9 @@ export function NotificationCenter() {
           notification.id === id ? { ...notification, read: true } : notification
         )
       );
-      if (typeof response.unreadCount === "number") {
-        setUnreadCount(response.unreadCount);
+      const unreadCount = typeof response.unreadCount === "number" ? response.unreadCount : undefined;
+      if (unreadCount !== undefined) {
+        setUnreadCount(unreadCount);
       } else {
         setUnreadCount((prev) =>
           target.archived ? prev : Math.max(0, prev - 1)
@@ -282,6 +284,7 @@ export function NotificationCenter() {
     if (!target || !target.read || pendingIdsRef.current.has(id)) return;
 
     const version = beginMutation(id);
+    if (version === false) return;
     setActionError(null);
     try {
       const response = await requestJson<{
@@ -302,8 +305,9 @@ export function NotificationCenter() {
           notification.id === id ? { ...notification, read: false } : notification
         )
       );
-      if (typeof response.unreadCount === "number") {
-        setUnreadCount(response.unreadCount);
+      const unreadCount = typeof response.unreadCount === "number" ? response.unreadCount : undefined;
+      if (unreadCount !== undefined) {
+        setUnreadCount(unreadCount);
       } else {
         setUnreadCount((prev) => (target.archived ? prev : prev + 1));
       }
@@ -322,6 +326,7 @@ export function NotificationCenter() {
   const handleArchive = useCallback(async (id: string) => {
     if (pendingIdsRef.current.has(id)) return;
     const version = beginMutation(id);
+    if (version === false) return;
     setActionError(null);
     try {
       await requestJson<{ ok: boolean; id: string }>(
@@ -349,6 +354,7 @@ export function NotificationCenter() {
   const handleRestore = useCallback(async (id: string) => {
     if (pendingIdsRef.current.has(id)) return;
     const version = beginMutation(id);
+    if (version === false) return;
     setActionError(null);
     try {
       await requestJson<{ ok: boolean; id: string }>(
@@ -378,6 +384,7 @@ export function NotificationCenter() {
     if (!window.confirm("Supprimer définitivement cette notification ?")) return;
 
     const version = beginMutation(id);
+    if (version === false) return;
     setActionError(null);
     try {
       await requestJson<{ ok: boolean; id: string }>(

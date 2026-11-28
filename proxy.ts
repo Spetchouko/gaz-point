@@ -8,7 +8,6 @@ import {
   resolveDashboardAccess,
   resolveClientResultsAccess,
 } from "@/lib/auth-routing"
-import { canVendorAccessDashboard } from "@/lib/vendor-subscription"
 
 function redirectTo(req: NextRequest, pathname: string): NextResponse {
   return NextResponse.redirect(new URL(pathname, req.url))
@@ -84,32 +83,6 @@ export async function proxy(req: NextRequest) {
       )
       if (!decision.allowed && decision.redirectTo) {
         return redirectTo(req, decision.redirectTo)
-      }
-    }
-
-    // Vérification abonnement vendeur
-    if (access.status === "ready" && access.role === "vendor") {
-      // Autoriser l'accès à la page d'abonnement elle-même
-      const isSubscriptionPage =
-        pathname === "/dashboard/vendeur/abonnement" ||
-        pathname.startsWith("/dashboard/vendeur/abonnement/")
-      
-      // Autoriser aussi les pages de paiement (succès, échec, annulé)
-      const isPaymentPage =
-        pathname === "/paiement/succes" ||
-        pathname === "/paiement/echec" ||
-        pathname === "/paiement/annule" ||
-        pathname.startsWith("/paiement/")
-
-      if (!isSubscriptionPage && !isPaymentPage) {
-        const { allowed, reason } = await canVendorAccessDashboard(access.account!.id)
-        if (!allowed) {
-          const redirectUrl = new URL("/dashboard/vendeur/abonnement", req.url)
-          if (reason) {
-            redirectUrl.searchParams.set("blocked", reason)
-          }
-          return NextResponse.redirect(redirectUrl)
-        }
       }
     }
 

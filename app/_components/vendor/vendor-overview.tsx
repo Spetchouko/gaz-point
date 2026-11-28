@@ -9,7 +9,7 @@ import {
   Package,
   Plus,
   Store,
-  CreditCard,
+  Settings,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { VendorDepotDto, VendorOverviewData } from "@/lib/vendor-dashboard"
@@ -124,10 +124,10 @@ export function VendorOverview({
       icon: Calendar,
     },
     {
-      href: "/dashboard/vendeur/abonnement",
-      label: "Mon abonnement",
-      description: "Gérer votre souscription vendeur",
-      icon: CreditCard,
+      href: "/dashboard/vendeur/parametres",
+      label: "Mes paramètres",
+      description: "Configurer votre compte vendeur",
+      icon: Settings,
     },
   ]
 

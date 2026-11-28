@@ -22,9 +22,6 @@ const PUBLIC_ROUTES = [
   "/validation-email",
   "/mot-de-passe-oublie",
   "/mot-de-passe-temporaire",
-  "/paiement/abonnement",
-  "/paiement/echec",
-  "/paiement/succes",
 ]
 
 export function PublicFooter() {

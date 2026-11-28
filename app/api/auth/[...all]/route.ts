@@ -7,13 +7,42 @@ import { withTransientRetry } from "@/lib/transient-retry";
 const handler = toNextJsHandler(auth);
 const authRateLimiter = RateLimiter.ipOnly(10, 60 * 60_000); // 10 signup/sign-in per hour per IP
 
+// Vercel Hobby plan a une limite de 10s par fonction serverless.
+// On utilise un timeout total de 8s pour laisser de la marge.
+const AUTH_HANDLER_TIMEOUT_MS = 8000;
+// Pour les lectures de session (GET), on autorise un retry car ce sont des opérations
+// idempotentes et critiques pour l'expérience utilisateur.
+const SESSION_READ_TIMEOUT_MS = 6000;
+const SESSION_READ_MAX_ATTEMPTS = 2;
+
 export const POST = (req: Request): Promise<Response> => {
   return handleAuthPost(req);
 };
 
 export const GET = (req: Request): Promise<Response> => {
-  return handler.GET(req);
+  // Session reads: timeout plus long avec retry pour absorber les ECONNRESET Neon
+  return withTransientRetry(
+    async () => withTimeoutPerAttempt(() => handler.GET(req), SESSION_READ_TIMEOUT_MS),
+    { attempts: SESSION_READ_MAX_ATTEMPTS, delayMs: 200 }
+  );
 };
+
+/**
+ * Wrapper avec timeout pour chaque tentative de requête DB.
+ * Évite les blocages longs (ex: Neon ECONNRESET) en limitant
+ * le temps total à AUTH_HANDLER_TIMEOUT_MS.
+ */
+async function withTimeoutPerAttempt<T>(
+  operation: () => Promise<T>,
+  ms: number
+): Promise<T> {
+  return Promise.race([
+    operation(),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`Timeout après ${ms}ms`)), ms)
+    ),
+  ]);
+}
 
 async function handleAuthPost(req: Request): Promise<Response> {
   const url = new URL(req.url);
@@ -37,12 +66,13 @@ async function handleAuthPost(req: Request): Promise<Response> {
 
   // Le driver Neon (@neondatabase/serverless) passe par HTTP et utilise fetch.
   // Une requête peut échouer ponctuellement (TypeError: fetch failed, coupure,
-  // limite de débit). Ces erreurs transitoires ne doivent pas faire échouer
-  // l'authentification d'un utilisateur dont les identifiants sont valides.
-  // withTransientRetry relance l'opération sur ces erreurs uniquement ; les
-  // erreurs métier et les redirections Next.js remontent immédiatement.
+  // limite de débit). Pour sign-in/sign-up, on privilégie un timeout court
+  // unique pour respecter la limite Vercel de 10s.
   try {
-    const response = await withTransientRetry(() => handler.POST(req));
+    const response = await withTimeoutPerAttempt(
+      () => handler.POST(req),
+      AUTH_HANDLER_TIMEOUT_MS
+    );
     
     // Diagnostic logging for auth responses (without sensitive data)
     const duration = Date.now() - startTime;

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
-import { reservation, disponibilite } from "@/db/schema"
+import { reservation, disponibilite, pointDeVente } from "@/db/schema"
 import { eq, and, sql } from "drizzle-orm"
 import { getCurrentUser } from "@/lib/session"
+import { serverCache, invalidateOnReservationChange, invalidateOnAvailabilityChange } from "@/lib/server-cache"
 
 export async function POST(req: NextRequest) {
   try {
@@ -67,7 +68,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Réservation déjà annulée" }, { status: 400 })
     }
 
+    let vendorId = ""
     if (res.disponibiliteId) {
+      // Fetch vendorId for cache invalidation
+      const [point] = await db
+        .select({ vendorId: pointDeVente.vendorId })
+        .from(pointDeVente)
+        .innerJoin(disponibilite, eq(pointDeVente.id, disponibilite.pointId))
+        .where(eq(disponibilite.id, res.disponibiliteId))
+        .limit(1)
+      vendorId = point?.vendorId ?? ""
+
       await db
         .update(disponibilite)
         .set({
@@ -76,6 +87,10 @@ export async function POST(req: NextRequest) {
         })
         .where(eq(disponibilite.id, res.disponibiliteId))
     }
+
+    // Invalidate related caches
+    await invalidateOnReservationChange(currentUser.id, vendorId)
+    if (vendorId) await invalidateOnAvailabilityChange(vendorId)
 
     return NextResponse.json({ ok: true, message: "Réservation annulée" })
   } catch (err) {

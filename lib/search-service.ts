@@ -42,6 +42,10 @@ export type SearchResultItem = {
 export type SearchResponse = {
   results: SearchResultItem[]
   count: number
+  totalCount: number
+  page: number
+  pageSize: number
+  totalPages: number
   disponibiliteIds: string[]
 }
 
@@ -104,9 +108,9 @@ export class SearchService {
   }
 
   /**
-   * Construit l'URL de recherche à partir des critères.
+   * Construit l'URL de recherche à partir des critères avec pagination.
    */
-  buildSearchUrl(criteria: SearchCriteria): string {
+  buildSearchUrl(criteria: SearchCriteria, page = 1, pageSize = 20): string {
     const params = new URLSearchParams()
     if (criteria.brand) params.set("brand", criteria.brand)
     if (criteria.format) params.set("format", criteria.format)
@@ -116,6 +120,8 @@ export class SearchService {
     if (criteria.available !== null && criteria.available !== undefined) {
       params.set("available", String(criteria.available))
     }
+    params.set("page", String(page))
+    params.set("pageSize", String(pageSize))
     return `${this.baseUrl}?${params.toString()}`
   }
 
@@ -153,7 +159,7 @@ export class SearchService {
   }
 
   /**
-   * Effectue une recherche de disponibilités.
+   * Effectue une recherche de disponibilités avec pagination.
    *
    * Actuellement : appelle l'API existante `/api/recherche`.
    * Futur : remplacer le corps par l'appel vers le nouveau backend Neon.
@@ -162,9 +168,10 @@ export class SearchService {
    */
   async search(
     criteria: SearchCriteria,
-    signal?: AbortSignal
+    options: { page?: number; pageSize?: number; signal?: AbortSignal } = {}
   ): Promise<SearchResponse> {
-    const url = this.buildSearchUrl(criteria)
+    const { page = 1, pageSize = 20, signal } = options
+    const url = this.buildSearchUrl(criteria, page, pageSize)
 
     let res: Response
     try {
@@ -256,9 +263,33 @@ export class SearchService {
         ? raw.count
         : results.length
 
+    const totalCount =
+      typeof raw.totalCount === "number" && Number.isFinite(raw.totalCount)
+        ? raw.totalCount
+        : count
+
+    const page =
+      typeof raw.page === "number" && Number.isFinite(raw.page)
+        ? raw.page
+        : 1
+
+    const pageSize =
+      typeof raw.pageSize === "number" && Number.isFinite(raw.pageSize)
+        ? raw.pageSize
+        : 20
+
+    const totalPages =
+      typeof raw.totalPages === "number" && Number.isFinite(raw.totalPages)
+        ? raw.totalPages
+        : Math.ceil(totalCount / pageSize)
+
     return {
       results,
       count,
+      totalCount,
+      page,
+      pageSize,
+      totalPages,
       disponibiliteIds,
     }
   }

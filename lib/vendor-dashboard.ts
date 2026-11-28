@@ -13,6 +13,7 @@ import { errorMessage } from "@/lib/errors"
 import { effectiveStatus } from "@/lib/gaz"
 import { getDepotRowsByVendorId } from "@/lib/vendor-depot-compat"
 import { withTransientRetry } from "@/lib/transient-retry"
+import { serverCache, cacheKeys, cacheTags, invalidateOnAvailabilityChange } from "@/lib/server-cache"
 
 export type UserRole = "client" | "vendor" | "admin" | "collaborateur"
 export type AvailabilityStatus = "disponible" | "a_confirmer" | "indisponible"
@@ -240,10 +241,16 @@ export async function getVendorDepots(
   }
 }
 
-// Get vendor overview (backward compatible)
+// Get vendor overview (backward compatible) - Optimized with caching and parallel queries
 export async function getVendorOverview(
   vendorId: string
 ): Promise<VendorOverviewData> {
+  const cacheKey = cacheKeys.vendorOverview(vendorId)
+
+  // Try cache first
+  const cached = serverCache.get<VendorOverviewData>(cacheKey)
+  if (cached) return cached
+
   // Récupérer TOUS les depots du vendeur en une seule requête. Le résultat est
   // réutilisé pour le dépôt principal (premier élément) et le décompte, afin
   // d'éviter un appel en double vers Neon.
@@ -258,10 +265,14 @@ export async function getVendorOverview(
 
   const depot: VendorDepotDto | null = allDepots[0] ?? null
 
-  // Compter les disponibilités actives au total
-  let activeAvailabilityCount = 0
-  try {
-    const activeCountResult = await db
+  // Parallelize count queries and activities fetch
+  const [
+    activeCountResult,
+    reservationCountResult,
+    reservations,
+    availabilities,
+  ] = await Promise.allSettled([
+    db
       .select({ value: count() })
       .from(disponibilite)
       .where(
@@ -270,40 +281,12 @@ export async function getVendorOverview(
           eq(disponibilite.status, "disponible"),
           or(isNull(disponibilite.expiresAt), gt(disponibilite.expiresAt, new Date()))
         )
-      )
-    activeAvailabilityCount = activeCountResult[0]?.value ?? 0
-  } catch (err) {
-    console.error("[vendor-dashboard] active availability count failed:", errorMessage(err))
-    loadErrors.push("Le nombre de disponibilités actives est momentanément indisponible.")
-  }
-
-  // Compter les réservations totales
-  let reservationCount = 0
-  try {
-    const reservationCountResult = await db
+      ),
+    db
       .select({ value: count() })
       .from(reservation)
-      .where(eq(reservation.vendorId, vendorId))
-    reservationCount = reservationCountResult[0]?.value ?? 0
-  } catch (err) {
-    console.error("[vendor-dashboard] reservation count failed:", errorMessage(err))
-    loadErrors.push("Le nombre de réservations est momentanément indisponible.")
-  }
-
-  // Activities: last 5 activities (reservations + availabilities)
-  // Déclarés en dehors du bloc try pour rester accessibles au calcul de
-  // `hasAnyData` dans le retour (sinon ReferenceError à la compilation/exécution).
-  let activities: VendorActivityDto[] = []
-  let reservations: {
-    reservation: typeof reservation.$inferSelect
-    pointName: string | null
-  }[] = []
-  let availabilities: {
-    availability: typeof disponibilite.$inferSelect
-    pointName: string | null
-  }[] = []
-  try {
-    reservations = await db
+      .where(eq(reservation.vendorId, vendorId)),
+    db
       .select({
         reservation,
         pointName: pointDeVente.name,
@@ -312,9 +295,8 @@ export async function getVendorOverview(
       .leftJoin(pointDeVente, eq(reservation.pointId, pointDeVente.id))
       .where(eq(reservation.vendorId, vendorId))
       .orderBy(desc(reservation.reservedAt))
-      .limit(5)
-
-    availabilities = await db
+      .limit(5),
+    db
       .select({
         availability: disponibilite,
         pointName: pointDeVente.name,
@@ -331,45 +313,69 @@ export async function getVendorOverview(
         )
       )
       .orderBy(desc(disponibilite.createdAt))
-      .limit(5)
+      .limit(5),
+  ])
 
-    // Build activities from reservations
-    activities = [
-      ...reservations.map((row) => ({
-        id: `reservation-${row.reservation.id}`,
-        type: "reservation" as const,
-        title: `Réservation ${row.reservation.reservationCode}`,
-        detail: `${row.reservation.clientName} · ${row.reservation.brand} ${row.reservation.format}`,
-        at: row.reservation.reservedAt,
-        status: row.reservation.status,
-      })),
-      // Add availabilities : le statut effectif est calculé en JS, comme dans
-      // getVendorAvailabilities, pour ne pas dépendre d'une colonne SQL.
-      ...availabilities.slice(0, 5).map((row) => {
-        const expiresAt = row.availability.expiresAt
-        const expired = expiresAt != null && new Date(expiresAt).getTime() < Date.now()
-        const status = expired
-          ? "indisponible"
-          : effectiveStatus(row.availability.status, row.availability.updatedAt)
-
-        return {
-          id: `availability-${row.availability.id}`,
-          type: "availability" as const,
-          title: `${row.availability.brand ?? "Marque"} ${row.availability.format ?? ""}`.trim(),
-          detail: `${row.pointName ?? "Dépôt"} · ${status === "disponible" ? "Disponible" : "Indisponible"}`,
-          at: row.availability.updatedAt,
-          status,
-        }
-      }),
-    ]
-      .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
-      .slice(0, 5)
-  } catch (err) {
-    console.error("[vendor-dashboard] activities fetch failed:", errorMessage(err))
-    loadErrors.push("L'activité récente n'a pas pu être chargée.")
+  let activeAvailabilityCount = 0
+  if (activeCountResult.status === "fulfilled") {
+    activeAvailabilityCount = activeCountResult.value[0]?.value ?? 0
+  } else {
+    console.error("[vendor-dashboard] active availability count failed:", errorMessage(activeCountResult.reason))
+    loadErrors.push("Le nombre de disponibilités actives est momentanément indisponible.")
   }
 
-  return {
+  let reservationCount = 0
+  if (reservationCountResult.status === "fulfilled") {
+    reservationCount = reservationCountResult.value[0]?.value ?? 0
+  } else {
+    console.error("[vendor-dashboard] reservation count failed:", errorMessage(reservationCountResult.reason))
+    loadErrors.push("Le nombre de réservations est momentanément indisponible.")
+  }
+
+  // Build activities from reservations
+  let activities: VendorActivityDto[] = []
+  let reservationsData = reservations.status === "fulfilled" ? reservations.value : []
+  let availabilitiesData = availabilities.status === "fulfilled" ? availabilities.value : []
+
+  if (reservations.status === "rejected") {
+    console.error("[vendor-dashboard] reservations fetch failed:", errorMessage(reservations.reason))
+    loadErrors.push("Les réservations récentes n'ont pas pu être chargées.")
+  }
+  if (availabilities.status === "rejected") {
+    console.error("[vendor-dashboard] availabilities fetch failed:", errorMessage(availabilities.reason))
+    loadErrors.push("Les disponibilités récentes n'ont pas pu être chargées.")
+  }
+
+  activities = [
+    ...reservationsData.map((row) => ({
+      id: `reservation-${row.reservation.id}`,
+      type: "reservation" as const,
+      title: `Réservation ${row.reservation.reservationCode}`,
+      detail: `${row.reservation.clientName} · ${row.reservation.brand} ${row.reservation.format}`,
+      at: row.reservation.reservedAt,
+      status: row.reservation.status,
+    })),
+    ...availabilitiesData.slice(0, 5).map((row) => {
+      const expiresAt = row.availability.expiresAt
+      const expired = expiresAt != null && new Date(expiresAt).getTime() < Date.now()
+      const status = expired
+        ? "indisponible"
+        : effectiveStatus(row.availability.status, row.availability.updatedAt)
+
+      return {
+        id: `availability-${row.availability.id}`,
+        type: "availability" as const,
+        title: `${row.availability.brand ?? "Marque"} ${row.availability.format ?? ""}`.trim(),
+        detail: `${row.pointName ?? "Dépôt"} · ${status === "disponible" ? "Disponible" : "Indisponible"}`,
+        at: row.availability.updatedAt,
+        status,
+      }
+    }),
+  ]
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+    .slice(0, 5)
+
+  const result: VendorOverviewData = {
     depot,
     stats: {
       depotCount: allDepots.length,
@@ -378,9 +384,14 @@ export async function getVendorOverview(
     },
     activities,
     hasAnyData:
-      Boolean(depot) || availabilities.length > 0 || reservations.length > 0,
+      Boolean(depot) || availabilitiesData.length > 0 || reservationsData.length > 0,
     loadErrors,
   }
+
+  // Cache for 60 seconds
+  serverCache.set(cacheKey, result, { ttlMs: 60_000, tags: [cacheTags.vendors, cacheTags.availabilities, cacheTags.reservations] })
+
+  return result
 }
 
 // NEW: Get vendors depots summary for UI

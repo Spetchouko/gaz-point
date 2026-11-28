@@ -130,11 +130,17 @@ async function getCachedPublicitesForSlotImpl(slot: string) {
     )
     return await cached(slot)
   } catch (error) {
-    if (error instanceof Error && error.message.includes("incrementalCache")) {
-      console.warn(`[publicite] Cache non disponible pour slot ${slot}, utilisation de la requête directe`)
-      return fetchPublicitesForSlot(slot)
+    // Si le cache échoue (ex: "Invariant: incrementalCache missing"), ou si la requête DB échoue,
+    // on utilise la version non cachée, qui gère elle-même les erreurs en renvoyant des tableaux vides.
+    if (!(error instanceof Error && error.message.includes("incrementalCache"))) {
+      console.warn(
+        "[publicite] Échec du cache pour slot",
+        slot,
+        ":", 
+        error instanceof Error ? error.message : error
+      )
     }
-    throw error
+    return fetchPublicitesForSlot(slot)
   }
 }
 
@@ -235,12 +241,15 @@ async function getCachedPublicitesForBothSlotsImpl() {
     )
     return await cached()
   } catch (error) {
-    // Si le cache échoue (ex: "Invariant: incrementalCache missing"), fallback vers version non cachée
-    if (error instanceof Error && error.message.includes("incrementalCache")) {
-      console.warn("[publicite] Cache non disponible, utilisation de la requête directe")
-      return fetchPublicitesForBothSlots()
+    // Si le cache échoue (ex: "Invariant: incrementalCache missing"), ou si la requête DB échoue,
+    // fallback vers version non cachée qui renvoie des tableaux vides en cas d'erreur.
+    if (!(error instanceof Error && error.message.includes("incrementalCache"))) {
+      console.warn(
+        "[publicite] Échec du cache, utilisation de la requête directe :",
+        error instanceof Error ? error.message : error
+      )
     }
-    throw error
+    return fetchPublicitesForBothSlots()
   }
 }
 

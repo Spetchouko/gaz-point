@@ -400,7 +400,7 @@ export function RechercheGaz({
       {!redirectToResults && results !== null && results.length > 0 && (
         <div className="mt-5">
           <h3 className="text-center font-heading text-base sm:text-lg font-semibold text-foreground">
-            {results.length} point{results.length > 1 ? "s" : ""} trouvé{results.length > 1 ? "s" : ""}
+            {results.length} disponibilit{results.length > 1 ? "és" : "é"} trouvée{results.length > 1 ? "s" : ""}
           </h3>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

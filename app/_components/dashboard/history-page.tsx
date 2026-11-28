@@ -63,7 +63,7 @@ export function DashboardHistoryPage({ role }: { role: Role }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selected, setSelected] = useState<HistoryItem | null>(null);
 
   useEffect(() => {

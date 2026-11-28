@@ -11,7 +11,6 @@ import {
   getRoleDashboardPath,
   isAuthRole,
 } from "@/lib/auth-routing"
-import { checkVendorAccess, getVendorAccessRedirect, VendorAccessStatus } from "@/lib/vendor-access"
 import { withTransientRetry } from "@/lib/transient-retry"
 
 /**
@@ -72,16 +71,14 @@ async function withTimeoutPerAttempt<T>(
 
 export async function getCurrentUser(): Promise<SessionUser | null> {
   try {
-    // Une erreur réseau transitoire (Neon en HTTP) ne doit pas être confondue
-    // avec une session absente : elle provoquerait une redirection vers
-    // /connexion pour un utilisateur pourtant connecté.
-    // Timeout de 10s par tentative, 3 tentatives max = ~30s pire cas
+    // Timeout court (3s) et une seule tentative pour respecter le budget Vercel (10s total).
+    // Une requête SELECT by PK doit prendre < 100ms sur connexion saine.
     const session = await withTransientRetry(async () =>
       withTimeoutPerAttempt(
         async () => auth.api.getSession({ headers: await getHeaders() }),
-        10000
+        3000
       ),
-      { attempts: 3, delayMs: 250 }
+      { attempts: 1, delayMs: 0 }
     )
     const userId = session?.user?.id
     if (!userId) return null
@@ -114,9 +111,9 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
             .from(user)
             .where(eq(user.id, userId))
             .limit(1),
-        10000
+        3000
       ),
-      { attempts: 3, delayMs: 250 }
+      { attempts: 1, delayMs: 0 }
     )
 
     const access = evaluateAccountAccess(account)
@@ -198,12 +195,10 @@ export async function requireVendor() {
     )
   }
 
-  // Vérification abonnement obligatoire pour les vendeurs
-  const access = await checkVendorAccess(user.id)
-  if (access.status !== "allowed") {
-    const redirect = await getRedirect()
-    redirect(access.redirectTo ?? getVendorAccessRedirect(access.status))
-  }
+  // Note: La vérification d'abonnement est gérée par le middleware (middleware.ts)
+  // qui a accès au pathname complet. Cela évite les boucles de redirection sur
+  // la page d'abonnement (/dashboard/vendeur/abonnement) et les pages de paiement.
+  // requireVendor ne vérifie que le rôle vendeur.
 
   return user
 }
@@ -289,7 +284,6 @@ export type AdminModule =
   | "marketing"
   | "avis"
   | "statistiques"
-  | "abonnements"
 
 export const ADMIN_MODULES: AdminModule[] = [
   "utilisateurs",
@@ -302,7 +296,6 @@ export const ADMIN_MODULES: AdminModule[] = [
   "marketing",
   "avis",
   "statistiques",
-  "abonnements",
 ] as const
 
 export async function getAdminPermissions(userId: string): Promise<Set<AdminModule>> {

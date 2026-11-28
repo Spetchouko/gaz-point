@@ -308,9 +308,8 @@ export const auth = betterAuth({
                 before: async (session: Record<string, unknown>) => {
                     const userId = String(session.userId ?? "")
                     if (!userId) return true
-                    // Wrapper la requête DB dans withTransientRetry + timeout pour absorber
-                    // les coupures réseau transitoires (Neon / WSL) qui sinon
-                    // feraient échouer la création de session avec une erreur générique.
+                    // Timeout court (3s) et une seule tentative pour respecter le budget Vercel (10s total).
+                    // Une requête SELECT by PK doit prendre < 100ms sur connexion saine.
                     const row = await withTransientRetry(async () =>
                       withTimeoutPerAttempt(
                         () =>
@@ -323,9 +322,9 @@ export const auth = betterAuth({
                             .from(schema.user)
                             .where(eq(schema.user.id, userId))
                             .limit(1),
-                        10000
+                        3000
                       ),
-                      { attempts: 3, delayMs: 250 }
+                      { attempts: 1, delayMs: 0 }
                     )
                     const result = row?.[0]
                     if (!result || result.isActive === false) {

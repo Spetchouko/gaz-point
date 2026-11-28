@@ -17,6 +17,7 @@ import {
   createNotification,
 } from "@/lib/notifications"
 import { calculateReservationAmount } from "@/lib/reservation-amount"
+import { serverCache, cacheKeys, invalidateOnReservationChange, invalidateOnAvailabilityChange } from "@/lib/server-cache"
 
 const RESERVATION_EXPIRY_MINUTES = 1440 // 24 heures
 const MAX_RESERVATION_QUANTITY = 20
@@ -357,6 +358,10 @@ export async function POST(req: NextRequest) {
       message: `Réservation ${reservationCode} — ${quantity} bouteille${quantity > 1 ? "s" : ""} — montant à régler au dépôt : ${amount} FCFA.`,
       link: buildNotificationLink("reservation", reservationId, "vendor-reservations"),
     })
+
+    // Invalidate related caches
+    await invalidateOnReservationChange(currentUser.id, point.vendorId)
+    await invalidateOnAvailabilityChange(point.vendorId)
 
     return NextResponse.json({
       ok: true,

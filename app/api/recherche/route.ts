@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { and, desc, ilike, inArray, or } from "drizzle-orm"
+import { and, desc, ilike, inArray, or, eq, sql, count } from "drizzle-orm"
 import { randomUUID } from "node:crypto"
 import { db } from "@/db"
 import { disponibilite, pointDeVente, trafficEvent } from "@/db/schema"
@@ -10,10 +10,9 @@ import {
   AD_ATTRIBUTION_COOKIE,
   recordConversionFromRequest,
 } from "@/lib/publicite-attribution"
+import { serverCache, cacheKeys } from "@/lib/server-cache"
 
 export async function GET(request: NextRequest) {
-  // La recherche est réservée aux comptes : le garde est appliqué côté serveur,
-  // pas seulement dans l'interface.
   const currentUser = await getCurrentUser()
   if (!currentUser) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 })
@@ -28,11 +27,16 @@ export async function GET(request: NextRequest) {
   const userLat = latParam ? Number(latParam) : null
   const userLng = lngParam ? Number(lngParam) : null
   const hasGeolocation = userLat != null && userLng != null && !Number.isNaN(userLat) && !Number.isNaN(userLng)
+
+  // Pagination params
+  const page = Math.max(1, Number.parseInt(searchParams.get("page") ?? "1", 10))
+  const pageSize = Math.min(50, Math.max(1, Number.parseInt(searchParams.get("pageSize") ?? "20", 10)))
+  const offset = (page - 1) * pageSize
+
   const shouldRecordHistory = searchParams.get("history") === "1"
 
   const recordSearchHistory = async (resultsCount: number) => {
     if (!shouldRecordHistory) return
-
     try {
       await db.insert(trafficEvent).values({
         id: randomUUID(),
@@ -48,17 +52,25 @@ export async function GET(request: NextRequest) {
         },
       })
     } catch (error) {
-      // L'historique ne doit pas faire échouer une recherche valide.
       console.error("[GET /api/recherche] Search history error:", error)
     }
   }
 
-  // Chaque recherche interroge réellement la base de données. Aucun court-circuit
-  // par le cache : on évite ainsi de renvoyer des disponibilités périmées.
-  const conditions = []
+  // Build cache key from search criteria
+  const cacheKey = cacheKeys.search({ brand, format, zone, lat: userLat, lng: userLng, page, pageSize })
 
+  // Try cache (short TTL for availability data)
+  const cached = serverCache.get<any>(cacheKey)
+  if (cached) {
+    // Still record history for analytics
+    await recordSearchHistory(cached.totalCount)
+    return NextResponse.json({ ...cached, cached: true })
+  }
+
+  // Build conditions for pointDeVente query
+  const pointConditions = []
   if (zone) {
-    conditions.push(
+    pointConditions.push(
       or(
         ilike(pointDeVente.district, `%${zone}%`),
         ilike(pointDeVente.address, `%${zone}%`),
@@ -67,6 +79,7 @@ export async function GET(request: NextRequest) {
     )
   }
 
+  // Fetch points with pagination
   const points = await db
     .select({
       id: pointDeVente.id,
@@ -80,20 +93,44 @@ export async function GET(request: NextRequest) {
       deliveryFee: pointDeVente.deliveryFee,
       exchangeEnabled: pointDeVente.exchangeEnabled,
       gasSaleEnabled: pointDeVente.gasSaleEnabled,
-      // Les colonnes GPS (latitude/longitude) ne sont pas encore migrées dans
-      // Neon (migration 0011 non appliquée) : elles ne sont pas sélectionnées,
-      // sinon toute la requête échouerait (et la recherche avec).
     })
     .from(pointDeVente)
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .limit(50)
+    .where(pointConditions.length > 0 ? and(...pointConditions) : undefined)
+    .limit(50) // Reasonable limit for points
 
   if (points.length === 0) {
     await recordSearchHistory(0)
-    return NextResponse.json({ results: [], count: 0, disponibiliteIds: [] })
+    return NextResponse.json({ results: [], count: 0, totalCount: 0, page, pageSize, totalPages: 0, disponibiliteIds: [] })
   }
 
-  // Une seule requête pour tous les points (au lieu d'une requête par point).
+  const pointIds = points.map((p) => p.id)
+  const pointById = new Map(points.map((p) => [p.id, p]))
+
+  // Build conditions for disponibilite query
+  const dispoConditions = [inArray(disponibilite.pointId, pointIds)]
+
+  // Push brand filter to SQL if possible (exact match on normalized brand)
+  if (brand) {
+    // Use ILIKE for case-insensitive brand matching
+    dispoConditions.push(ilike(disponibilite.brand, `%${brand}%`))
+  }
+
+  // Push format filter to SQL
+  if (format) {
+    dispoConditions.push(eq(disponibilite.format, format))
+  }
+
+  // Only fetch non-expired by default (status disponible or a_confirmer)
+  // Expired filtering done in JS for accuracy with expiresAt
+
+  // Get total count for pagination (without offset/limit)
+  const totalCountResult = await db
+    .select({ count: count() })
+    .from(disponibilite)
+    .where(and(...dispoConditions))
+  const totalCount = Number(totalCountResult[0]?.count ?? 0)
+
+  // Fetch paginated results
   const reports = await db
     .select({
       id: disponibilite.id,
@@ -113,48 +150,32 @@ export async function GET(request: NextRequest) {
       gasSale: disponibilite.gasSale,
     })
     .from(disponibilite)
-    .where(inArray(disponibilite.pointId, points.map((p) => p.id)))
+    .where(and(...dispoConditions))
     .orderBy(desc(disponibilite.createdAt))
-
-  // Regroupe par point, en conservant l'ordre décroissant (le plus récent d'abord).
-  const reportsByPoint = new Map<string, typeof reports>()
-  for (const report of reports) {
-    const list = reportsByPoint.get(report.pointId) ?? []
-    list.push(report)
-    reportsByPoint.set(report.pointId, list)
-  }
+    .limit(pageSize)
+    .offset(offset)
 
   const now = new Date()
   const results = []
 
-  for (const point of points) {
-    const pointReports = reportsByPoint.get(point.id) ?? []
+  for (const report of reports) {
+    const point = pointById.get(report.pointId)
+    if (!point) continue
 
-    // Le signalement retenu doit correspondre aux filtres demandés. Sans ce
-    // filtre, une recherche « 12,5 kg » pouvait afficher la disponibilité
-    // d'un autre format.
-    const report =
-      pointReports.find(
-        (item) =>
-          gasBrandMatches(item.brand, brand) &&
-          (!format || (item.format ?? "").toLowerCase() === format.toLowerCase())
-      ) ?? null
+    // Additional brand filtering in JS for gasBrandMatches logic (fuzzy matching)
+    if (brand && !gasBrandMatches(report.brand, brand)) continue
 
-    // Pas de disponibilité correspondant aux critères de marque/format
-    // pour ce point : on ne l'affiche pas (évite les résultats vides/fictifs).
-    if (!report) continue
+    // Additional format filtering in JS (case-insensitive)
+    if (format && (report.format ?? "").toLowerCase() !== format.toLowerCase()) continue
 
-    const expired =
-      report?.expiresAt != null && new Date(report.expiresAt).getTime() < now.getTime()
+    const expired = report.expiresAt != null && new Date(report.expiresAt).getTime() < now.getTime()
 
-    const status = report
-      ? expired
-        ? "indisponible"
-        : effectiveStatus(report.status, report.createdAt)
-      : null
+    const status = expired
+      ? "indisponible"
+      : effectiveStatus(report.status, report.createdAt)
 
     results.push({
-      id: point.id,
+      id: report.id,
       name: point.name,
       district: point.district,
       address: point.address,
@@ -162,54 +183,50 @@ export async function GET(request: NextRequest) {
       brands: point.brands,
       formats: point.formats,
       status,
-      note: report?.note ?? null,
-      quantity: report?.quantity ?? null,
-      price: report?.price ?? null,
-      format: report?.format ?? null,
-      brand: report?.brand ?? null,
-      expiresAt: report?.expiresAt ?? null,
-      updatedAt: report?.createdAt ?? null,
-      updatedBy: report?.reportedByName ?? null,
-      source: report?.source ?? null,
-      stale: report ? isStale(report.createdAt) : false,
+      note: report.note ?? null,
+      quantity: report.quantity ?? null,
+      price: report.price ?? null,
+      format: report.format ?? null,
+      brand: report.brand ?? null,
+      expiresAt: report.expiresAt ?? null,
+      updatedAt: report.createdAt ?? null,
+      updatedBy: report.reportedByName ?? null,
+      source: report.source ?? null,
+      stale: isStale(report.createdAt),
       expired,
-      disponibiliteId: report?.id ?? "",
-      hasDelivery: Boolean(point.deliveryEnabled || report?.delivery),
-      hasExchange: Boolean(point.exchangeEnabled || report?.exchange),
-      hasGasSale: Boolean(point.gasSaleEnabled || report?.gasSale),
-      deliveryFee: point.deliveryEnabled ? point.deliveryFee : report?.price ?? null,
-      // Pas de coordonnées GPS pour le point (colonnes non migrées) : la
-      // distance n'est jamais calculée plutôt que d'être inventée.
+      disponibiliteId: report.id,
+      hasDelivery: Boolean(point.deliveryEnabled || report.delivery),
+      hasExchange: Boolean(point.exchangeEnabled || report.exchange),
+      hasGasSale: Boolean(point.gasSaleEnabled || report.gasSale),
+      deliveryFee: point.deliveryEnabled ? point.deliveryFee : report.price ?? null,
       distanceKm: null,
     })
   }
 
-  // Lorsque la géolocalisation est disponible, trier par distance croissante
-  // (les disponibilités les plus proches en premier). Sans coordonnées des
-  // points, toutes les distances sont nulles : le tri n'a aucun effet et on
-  // l'évite (comparaisons Infini - Infini).
-  const hasDistances = results.some((result) => result.distanceKm != null)
+  // Sort by distance if geolocation available (currently all null, placeholder for future)
+  const hasDistances = results.some((r) => r.distanceKm != null)
   if (hasGeolocation && hasDistances) {
-    results.sort((a, b) => {
-      const da = a.distanceKm ?? Infinity
-      const db_ = b.distanceKm ?? Infinity
-      return da - db_
-    })
+    results.sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity))
   }
 
-  // Attribution publicitaire : première recherche après un clic (fenêtre 30 j).
-  // Idempotent : une seule conversion « recherche » par clic.
   if (request.cookies.get(AD_ATTRIBUTION_COOKIE)) {
     await recordConversionFromRequest(request, "search", { userId: currentUser.id })
   }
 
   await recordSearchHistory(results.length)
 
-  return NextResponse.json({
+  const response = {
     results,
     count: results.length,
-    disponibiliteIds: results
-      .map((result) => result.disponibiliteId)
-      .filter((id): id is string => Boolean(id)),
-  })
+    totalCount,
+    page,
+    pageSize,
+    totalPages: Math.ceil(totalCount / pageSize),
+    disponibiliteIds: results.map((r) => r.disponibiliteId).filter((id): id is string => Boolean(id)),
+  }
+
+  // Cache for 30 seconds (short TTL for availability freshness)
+  serverCache.set(cacheKey, response, { ttlMs: 30_000 })
+
+  return NextResponse.json(response)
 }

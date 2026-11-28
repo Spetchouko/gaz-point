@@ -12,6 +12,7 @@ import { ActionFeedback } from "@/app/_components/action-feedback"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { ACCOUNT_ACCESS_MESSAGES } from "@/lib/auth-routing"
 
 function validateEmail(email: string): string | null {
   if (!email.trim()) return "L'email est requis."
@@ -31,6 +32,8 @@ function LoginAdminPageContent() {
   const passwordRef = useRef<HTMLInputElement>(null)
 
   const emailParamFromUrl = (searchParams.get("email") ?? "").trim()
+  const urlErrorCode = searchParams.get("error")
+  const urlErrorMessage = urlErrorCode ? (ACCOUNT_ACCESS_MESSAGES[urlErrorCode] ?? "") : ""
 
   useEffect(() => {
     if (emailParamFromUrl) {
@@ -41,7 +44,7 @@ function LoginAdminPageContent() {
   const [email, setEmail] = useState(emailParamFromUrl)
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState("")
+  const [error, setError] = useState(urlErrorMessage)
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -84,10 +87,23 @@ function LoginAdminPageContent() {
           status: (signInError as { status?: number }).status,
         })
 
+        const errorCode = (signInError as { code?: string }).code;
         const errorMessage = signInError.message ?? 
-          (signInError as { code?: string }).code === "EMAIL_NOT_VERIFIED"
+          errorCode === "EMAIL_NOT_VERIFIED"
             ? "Veuillez vérifier votre adresse email avant de vous connecter."
-            : "Identifiants incorrects."
+            : errorCode === "INVALID_CREDENTIALS"
+              ? "Identifiants incorrects."
+              : errorCode === "USER_NOT_FOUND"
+                ? "Aucun compte trouvé avec cet email."
+                : errorCode === "TOO_MANY_REQUESTS"
+                  ? "Trop de tentatives. Veuillez patienter avant de réessayer."
+                  : errorCode === "SESSION_ERROR" || errorCode === "INTERNAL_SERVER_ERROR"
+                    ? "Erreur serveur temporaire. Veuillez réessayer dans quelques instants."
+                    : errorCode === "STAFF_REQUIRED"
+                      ? "Ce canal est réservé aux administrateurs et collaborateurs."
+                      : errorCode
+                        ? `Erreur (${errorCode}). Veuillez réessayer.`
+                        : "Identifiants incorrects."
         
         if (errorMessage.toLowerCase().includes("email") || errorMessage.toLowerCase().includes("user") || errorMessage.toLowerCase().includes("vérif")) {
           setFieldErrors({ email: errorMessage })

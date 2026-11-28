@@ -1,91 +1,41 @@
-"use client";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { DashboardShell } from "@/app/_components/dashboard/dashboard-shell";
-import { COLLABORATEUR_NAV_GROUPS } from "@/app/_components/dashboard/dashboard-nav";
-import { useDashboardSession, useAutoRefreshSession } from "@/lib/auth-session";
-import type { DashboardUser } from "@/lib/auth-session";
+import { requireCollaborator } from "@/lib/session"
+import type { SessionUser } from "@/lib/session"
+import { DashboardCollaborateurClientLayout } from "./collaborateur-client-layout"
 
-export default function DashboardCollaborateurLayoutWrapper({
+export const dynamic = "force-dynamic"
+
+export default async function CollaborateurLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
-  const { status, user, isAuthenticated, isLoading } =
-    useDashboardSession();
-  const [permissions, setPermissions] = useState<Set<string>>(new Set());
-  const router = useRouter();
+  const user = await requireCollaborator()
 
-  // Rafraîchir automatiquement la session au focus de la fenêtre
-  useAutoRefreshSession();
+  const sessionUser: SessionUser = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    emailVerified: user.emailVerified,
+    image: user.image ?? undefined,
+    role: user.role ?? undefined,
+    phoneNumber: user.phoneNumber ?? undefined,
+    phoneVerified: user.phoneVerified ?? undefined,
+    phoneNumberVerified: user.phoneNumberVerified ?? undefined,
+    isActive: user.isActive ?? undefined,
+    mustChangePassword: user.mustChangePassword ?? undefined,
+    approvalStatus: user.approvalStatus ?? undefined,
+    approvalRequestedAt: user.approvalRequestedAt ?? undefined,
+    approvalProcessedAt: user.approvalProcessedAt ?? undefined,
+    approvalProcessedBy: user.approvalProcessedBy ?? undefined,
+    rejectionReason: user.rejectionReason ?? undefined,
+    createdAt: user.createdAt ?? undefined,
+    updatedAt: user.updatedAt ?? undefined,
+    lastLoginAt: user.lastLoginAt ?? undefined,
+  }
 
-  // Charger les permissions réelles depuis l'API protégée.
-  useEffect(() => {
-    let cancelled = false;
-    async function loadPermissions() {
-      try {
-        const res = await fetch("/api/user/permissions", {
-          headers: { Accept: "application/json" },
-          cache: "no-store",
-        });
-        if (!cancelled && res.ok) {
-          const data = await res.json();
-          setPermissions(
-            new Set(
-              Array.isArray(data.permissions) ? data.permissions : []
-            )
-          );
-        }
-      } catch {
-        // En cas d'erreur, l'ensemble vide est utilisé et les modules
-        // restent masqués pour le collaborateur.
-      }
-    }
-    loadPermissions();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Si la session est définitivement invalide (expiration en cours de navigation),
-  // rediriger vers la connexion admin. Pendant le chargement, on affiche le contenu
-  // pour éviter le clignotement : le middleware a déjà protégé la route côté serveur.
-  useEffect(() => {
-    if (isLoading) {
-      return;
-    }
-    if (!isAuthenticated || !user) {
-      router.push("/connexion-admin");
-      return;
-    }
-  }, [isLoading, isAuthenticated, user, router]);
-
-  const sessionUser: DashboardUser | undefined = user
-    ? {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        image: user.image ?? null,
-        role: user.role ?? null,
-        emailVerified: user.emailVerified,
-        isActive: user.isActive ?? null,
-        phoneNumber: user.phoneNumber ?? null,
-        createdAt: user.createdAt ?? null,
-        lastLoginAt: user.lastLoginAt ?? null,
-        mustChangePassword: user.mustChangePassword ?? null,
-      }
-    : undefined;
-
-  // Toujours afficher le contenu : pas de retour null pendant le loading.
   return (
-    <DashboardShell
-      role="collaborateur"
-      session={sessionUser}
-      status={status}
-      navGroups={COLLABORATEUR_NAV_GROUPS}
-      permissions={permissions}
-    >
+    <DashboardCollaborateurClientLayout sessionUser={sessionUser}>
       {children}
-    </DashboardShell>
-  );
+    </DashboardCollaborateurClientLayout>
+  )
 }

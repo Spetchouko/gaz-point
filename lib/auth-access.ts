@@ -15,6 +15,7 @@ export type AuthAccountLoader = (
 
 /**
  * Wrapper avec timeout pour chaque tentative de requête DB.
+ * Timeout court (3s) pour respecter le budget Vercel (10s total).
  */
 async function withTimeoutPerAttempt<T>(
   operation: () => Promise<T>,
@@ -45,9 +46,9 @@ export async function loadAuthAccountById(
           .from(user)
           .where(eq(user.id, userId))
           .limit(1),
-      10000
+      3000
     ),
-    { attempts: 3, delayMs: 250 }
+    { attempts: 1, delayMs: 0 }
   )
 
   return account ?? null
@@ -60,12 +61,13 @@ export async function getAuthenticatedAccountAccess(
   try {
     // Une erreur réseau transitoire ne doit pas être traitée comme une session
     // invalide : elle redirigerait vers /connexion un utilisateur connecté.
+    // Timeout court pour respecter le budget Vercel.
     const session = await withTransientRetry(async () =>
       withTimeoutPerAttempt(
         () => auth.api.getSession({ headers: requestHeaders }),
-        10000
+        3000
       ),
-      { attempts: 3, delayMs: 250 }
+      { attempts: 1, delayMs: 0 }
     )
     const userId = session?.user?.id
     if (!userId) {

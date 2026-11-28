@@ -5,6 +5,7 @@ import { eq, desc, and, count, lt } from "drizzle-orm"
 import { getCurrentUser } from "@/lib/session"
 import { formatDateTime } from "@/lib/gaz"
 import { generateReservationQRCode } from "@/lib/qrcode"
+import { serverCache, cacheKeys } from "@/lib/server-cache"
 
 export async function GET(req: NextRequest) {
   try {
@@ -26,6 +27,15 @@ export async function GET(req: NextRequest) {
         Number.parseInt(searchParams.get("pageSize") ?? "50", 10) || 50
       )
     )
+
+    // Cache key per user + filters
+    const cacheKey = cacheKeys.userReservations(currentUser.id, page, pageSize)
+
+    // Try cache (short TTL for user data freshness)
+    const cached = serverCache.get<any>(cacheKey)
+    if (cached) {
+      return NextResponse.json({ ...cached, cached: true })
+    }
 
     const now = new Date()
     const conditions = [eq(reservation.userId, currentUser.id)]
@@ -102,7 +112,7 @@ export async function GET(req: NextRequest) {
       })
     )
 
-    return NextResponse.json({
+    const response = {
       reservations: reservationsWithStatus,
       pagination: {
         total,
@@ -110,7 +120,12 @@ export async function GET(req: NextRequest) {
         pageSize,
         totalPages: Math.ceil(total / pageSize),
       },
-    })
+    }
+
+    // Cache for 15 seconds (short TTL for user data freshness)
+    serverCache.set(cacheKey, response, { ttlMs: 15_000 })
+
+    return NextResponse.json(response)
   } catch (err) {
     console.error("[reservation/my] error:", err)
     return NextResponse.json(
