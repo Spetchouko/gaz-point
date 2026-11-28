@@ -9,6 +9,9 @@ export const AUTH_ROLE_ADDITIONAL_FIELD = {
   input: false,
 } as const
 
+// Page de résultats publique (accessible sans authentification)
+export const PUBLIC_RESULTS_PATH = "/recherche-publique"
+
 export type PublicSignupRole = "client" | "vendor"
 
 export function normalizePublicSignupRole(value: unknown): PublicSignupRole {

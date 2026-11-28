@@ -1,6 +1,6 @@
 "use client"
 
-import { RESULTS_PATH } from "@/lib/auth-routing"
+import { RESULTS_PATH, PUBLIC_RESULTS_PATH } from "@/lib/auth-routing"
 
 export type SearchCriteria = {
   brand?: string | null
@@ -126,6 +126,24 @@ export class SearchService {
   }
 
   /**
+   * Construit l'URL de recherche publique à partir des critères avec pagination.
+   */
+  buildPublicSearchUrl(criteria: SearchCriteria, page = 1, pageSize = 50): string {
+    const params = new URLSearchParams()
+    if (criteria.brand) params.set("brand", criteria.brand)
+    if (criteria.format) params.set("format", criteria.format)
+    if (criteria.zone) params.set("zone", criteria.zone)
+    if (criteria.lat != null) params.set("lat", String(criteria.lat))
+    if (criteria.lng != null) params.set("lng", String(criteria.lng))
+    if (criteria.available !== null && criteria.available !== undefined) {
+      params.set("available", String(criteria.available))
+    }
+    params.set("page", String(page))
+    params.set("pageSize", String(pageSize))
+    return `/api/recherche-publique?${params.toString()}`
+  }
+
+  /**
    * Sérialise les critères dans l'URL publique. Le format est conservé même
    * vide afin de pouvoir distinguer « tous les formats » du format par défaut
    * lors d'un rechargement ou d'un retour au formulaire.
@@ -152,6 +170,14 @@ export class SearchService {
     return query ? `${path}?${query}` : path
   }
 
+  /**
+   * URL de la page dédiée aux résultats publics (sans authentification).
+   */
+  buildPublicResultsUrl(criteria: SearchCriteria): string {
+    const query = this.buildCriteriaParams(criteria).toString()
+    return query ? `${PUBLIC_RESULTS_PATH}?${query}` : PUBLIC_RESULTS_PATH
+  }
+
   /** Retour vers le formulaire de la landing, avec les critères pré-remplis. */
   buildEditSearchUrl(criteria: SearchCriteria): string {
     const query = this.buildCriteriaParams(criteria).toString()
@@ -159,7 +185,7 @@ export class SearchService {
   }
 
   /**
-   * Effectue une recherche de disponibilités avec pagination.
+   * Effectue une recherche de disponibilités avec pagination (API authentifiée).
    *
    * Actuellement : appelle l'API existante `/api/recherche`.
    * Futur : remplacer le corps par l'appel vers le nouveau backend Neon.
@@ -192,6 +218,74 @@ export class SearchService {
 
     if (!res.ok) {
       const status = res.status
+      if (status === 401 || status === 403) {
+        throw new SearchError(
+          "AUTH_REQUIRED",
+          "Votre session a expiré. Reconnectez-vous pour consulter vos résultats.",
+          status
+        )
+      }
+      if (status >= 500) {
+        throw new SearchError(
+          "SERVER_ERROR",
+          "Le service de recherche est momentanément indisponible. Réessayez plus tard.",
+          status
+        )
+      }
+      throw new SearchError(
+        "SEARCH_FAILED",
+        "La recherche n'a pas pu être effectuée. Vérifiez vos critères et réessayez.",
+        status
+      )
+    }
+
+    let data: unknown
+    try {
+      data = await res.json()
+    } catch {
+      throw new SearchError(
+        "INVALID_RESPONSE",
+        "La réponse du serveur est invalide."
+      )
+    }
+
+    return this.normalizeResponse(data)
+  }
+
+  /**
+   * Effectue une recherche publique de disponibilités avec pagination (API sans authentification).
+   *
+   * Appelle l'API `/api/recherche-publique`.
+   *
+   * @throws SearchError en cas d'échec réseau ou de réponse invalide.
+   */
+  async searchPublic(
+    criteria: SearchCriteria,
+    options: { page?: number; pageSize?: number; signal?: AbortSignal } = {}
+  ): Promise<SearchResponse> {
+    const { page = 1, pageSize = 50, signal } = options
+    const url = this.buildPublicSearchUrl(criteria, page, pageSize)
+
+    let res: Response
+    try {
+      res = await fetch(url, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        signal,
+      })
+    } catch (error) {
+      if (signal?.aborted || (error instanceof DOMException && error.name === "AbortError")) {
+        throw new SearchError("ABORTED", "Recherche annulée.")
+      }
+      throw new SearchError(
+        "NETWORK_ERROR",
+        "Impossible de joindre le serveur. Vérifiez votre connexion Internet, puis réessayez."
+      )
+    }
+
+    if (!res.ok) {
+      const status = res.status
+      // L'API publique ne devrait jamais retourner 401/403, mais on gère quand même
       if (status === 401 || status === 403) {
         throw new SearchError(
           "AUTH_REQUIRED",

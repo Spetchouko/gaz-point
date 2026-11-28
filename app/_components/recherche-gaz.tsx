@@ -25,7 +25,7 @@ import { ResultatRechercheCard } from "@/app/_components/cards/resultat-recherch
 import { trackEvent } from "@/lib/analytics"
 import { SearchError, searchService } from "@/lib/search-service"
 import type { SearchResponse } from "@/lib/search-service"
-import { getResultsPathForRole } from "@/lib/auth-routing"
+import { getResultsPathForRole, PUBLIC_RESULTS_PATH } from "@/lib/auth-routing"
 import { createClientReservation } from "@/lib/client-reservation"
 
 export type SearchResult = {
@@ -192,7 +192,10 @@ export function RechercheGaz({
     // Sur la landing, la recherche est lancée puis l'utilisateur est
     // redirigé vers la page dédiée : aucun résultat n'est rendu ici.
     if (redirectToResults) {
-      const targetPath = resultsPath ?? getResultsPathForRole(session.user.role)
+      // Si l'utilisateur n'est pas connecté, utiliser la page de résultats publique
+      const targetPath = session?.user
+        ? resultsPath ?? getResultsPathForRole(session.user.role)
+        : PUBLIC_RESULTS_PATH
       trackEvent({
         eventType: "search_performed",
         path: targetPath,
@@ -200,7 +203,11 @@ export function RechercheGaz({
       })
       setLoading(true)
       setError(null)
-      router.push(searchService.buildResultsUrl(criteria, targetPath))
+      router.push(
+        session?.user
+          ? searchService.buildResultsUrl(criteria, targetPath)
+          : searchService.buildPublicResultsUrl(criteria)
+      )
       return
     }
 
