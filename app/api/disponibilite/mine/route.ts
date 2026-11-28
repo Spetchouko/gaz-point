@@ -11,6 +11,7 @@ import {
 } from "@/db/schema"
 import { getProUser } from "@/lib/session"
 import { normalizeCatalogValue } from "@/lib/vendor-catalog"
+import { invalidateOnAvailabilityChange } from "@/lib/server-cache"
 
 export async function GET(req: NextRequest) {
   try {
@@ -306,6 +307,9 @@ export async function POST(req: NextRequest) {
         .set({ inventory, updatedAt: new Date() })
         .where(eq(vendorOnboarding.userId, user.id))
     }
+
+    // Invalidate search cache so new/updated availability appears immediately
+    await invalidateOnAvailabilityChange(user.id)
 
     return NextResponse.json(
       { disponibilite: savedAvailability, created: !existing },

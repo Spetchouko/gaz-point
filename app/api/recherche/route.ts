@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { and, desc, ilike, inArray, or, eq, sql, count } from "drizzle-orm"
+import { and, desc, ilike, inArray, or, eq, sql, count, isNotNull, gt } from "drizzle-orm"
 import { randomUUID } from "node:crypto"
 import { db } from "@/db"
 import { disponibilite, pointDeVente, trafficEvent } from "@/db/schema"
@@ -28,9 +28,9 @@ export async function GET(request: NextRequest) {
   const userLng = lngParam ? Number(lngParam) : null
   const hasGeolocation = userLat != null && userLng != null && !Number.isNaN(userLat) && !Number.isNaN(userLng)
 
-  // Pagination params
+  // Pagination params - increased default pageSize to 50 for better UX
   const page = Math.max(1, Number.parseInt(searchParams.get("page") ?? "1", 10))
-  const pageSize = Math.min(50, Math.max(1, Number.parseInt(searchParams.get("pageSize") ?? "20", 10)))
+  const pageSize = Math.min(100, Math.max(1, Number.parseInt(searchParams.get("pageSize") ?? "50", 10)))
   const offset = (page - 1) * pageSize
 
   const shouldRecordHistory = searchParams.get("history") === "1"
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  // Fetch points with pagination
+  // Fetch ALL matching points (removed hardcoded LIMIT 50)
   const points = await db
     .select({
       id: pointDeVente.id,
@@ -96,7 +96,6 @@ export async function GET(request: NextRequest) {
     })
     .from(pointDeVente)
     .where(pointConditions.length > 0 ? and(...pointConditions) : undefined)
-    .limit(50) // Reasonable limit for points
 
   if (points.length === 0) {
     await recordSearchHistory(0)
@@ -120,8 +119,12 @@ export async function GET(request: NextRequest) {
     dispoConditions.push(eq(disponibilite.format, format))
   }
 
-  // Only fetch non-expired by default (status disponible or a_confirmer)
-  // Expired filtering done in JS for accuracy with expiresAt
+  // By default, only fetch "disponible" status and non-expired availabilities
+  // (unless explicit status filter is added in future)
+  dispoConditions.push(eq(disponibilite.status, "disponible"))
+  // Non-expired: either no expiresAt set, or expiresAt is in the future
+  const notExpired = or(isNotNull(disponibilite.expiresAt), gt(disponibilite.expiresAt, new Date()))
+  if (notExpired) dispoConditions.push(notExpired)
 
   // Get total count for pagination (without offset/limit)
   const totalCountResult = await db
@@ -170,9 +173,11 @@ export async function GET(request: NextRequest) {
 
     const expired = report.expiresAt != null && new Date(report.expiresAt).getTime() < now.getTime()
 
-    const status = expired
-      ? "indisponible"
-      : effectiveStatus(report.status, report.createdAt)
+    // Skip expired results (should not happen due to SQL filter, but defensive)
+    if (expired) continue
+
+    // Status is "disponible" since we filter for it in SQL
+    const status = "disponible"
 
     results.push({
       id: report.id,
@@ -225,8 +230,8 @@ export async function GET(request: NextRequest) {
     disponibiliteIds: results.map((r) => r.disponibiliteId).filter((id): id is string => Boolean(id)),
   }
 
-  // Cache for 30 seconds (short TTL for availability freshness)
-  serverCache.set(cacheKey, response, { ttlMs: 30_000 })
+  // Cache for 30 seconds (short TTL for availability freshness) with tags for invalidation
+  serverCache.set(cacheKey, response, { ttlMs: 30_000, tags: ['availabilities', 'search'] })
 
   return NextResponse.json(response)
 }

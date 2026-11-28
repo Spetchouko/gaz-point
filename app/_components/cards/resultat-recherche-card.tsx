@@ -39,11 +39,16 @@ export function ResultatRechercheCard({
 }: ResultatRechercheCardProps) {
   const router = useRouter()
 
-  // Seuls deux libellés sont autorisés sur la carte : la donnée vendeur
-  // "disponible" donne "Disponible", tout le reste reste "À confirmer".
-  const statusKey: AvailabilityStatus =
-    status === "disponible" ? "disponible" : "a_confirmer"
-  const statusLabel = statusKey === "disponible" ? "Disponible" : "À confirmer"
+  // Traduction des statuts AvailabilityStatus vers les libellés cartes.
+  // Ordre de priorité : disponible > a_confirmer > indisponible
+  const statusValue = typeof status === "string" ? status : "indisponible"
+  const statusKey: AvailabilityStatus = statusValue as AvailabilityStatus
+  const statusLabel =
+    statusKey === "disponible"
+      ? "Disponible"
+      : statusKey === "a_confirmer"
+      ? "À confirmer"
+      : "Indisponible"
 
   const localisation = [district, address]
     .filter((part) => Boolean(part && part.trim()))

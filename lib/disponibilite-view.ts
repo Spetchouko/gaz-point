@@ -139,7 +139,7 @@ export function buildDisponibiliteView(
     status,
     statusLabel,
     isReservable:
-      status === "disponible" &&
+      (status === "disponible" || status === "a_confirmer") &&
       !expired &&
       (availableQuantity == null || availableQuantity > 0),
     brand,

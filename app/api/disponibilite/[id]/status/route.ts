@@ -3,6 +3,7 @@ import { db } from "@/db"
 import { disponibilite } from "@/db/schema"
 import { eq } from "drizzle-orm"
 import { getProUser } from "@/lib/session"
+import { invalidateOnAvailabilityChange } from "@/lib/server-cache"
 
 export async function PATCH(
   req: NextRequest,
@@ -46,6 +47,9 @@ export async function PATCH(
       .set({ status: body.status, updatedAt: new Date() })
       .where(eq(disponibilite.id, id))
       .returning()
+
+    // Invalidate search cache so status change appears immediately
+    await invalidateOnAvailabilityChange(user.id)
 
     return NextResponse.json({ disponibilite: updated })
   } catch (err) {

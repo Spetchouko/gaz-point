@@ -155,7 +155,11 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      if (dispo.status !== "disponible") {
+      /* Autoriser la réservation pour les disponibilités en statut "disponible"
+       ou "a_confirmer" tant qu'elles ne sont pas expirées et qu'il y a du stock.
+       Le statut "a_confirmer" indique que le vendeur demande une confirmation,
+       mais cela ne doit pas bloquer la réservation client lorsqu'il y a du stock.
+    */ if (dispo.status !== "disponible" && dispo.status !== "a_confirmer") {
         return NextResponse.json(
           { error: "Cette disponibilité n'est plus disponible" },
           { status: 400 }
@@ -187,7 +191,10 @@ export async function POST(req: NextRequest) {
     } else if (pointId) {
       const pointConditions = [
         eq(disponibilite.pointId, pointId),
-        eq(disponibilite.status, "disponible"),
+        or(
+          eq(disponibilite.status, "disponible"),
+          eq(disponibilite.status, "a_confirmer"),
+        ),
       ]
       if (requestedBrand) {
         pointConditions.push(eq(disponibilite.brand, requestedBrand))

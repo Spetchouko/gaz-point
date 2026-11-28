@@ -5,6 +5,7 @@ import { disponibilite, pointDeVente } from "@/db/schema"
 import { effectiveStatus, isStale } from "@/lib/gaz"
 import { getCurrentUser, getProUser } from "@/lib/session"
 import { normalizeCatalogValue } from "@/lib/vendor-catalog"
+import { invalidateOnAvailabilityChange } from "@/lib/server-cache"
 
 type AvailabilityPatchBody = {
   status?: unknown
@@ -107,9 +108,12 @@ export async function GET(
   const expired =
     dispo.expiresAt != null && new Date(dispo.expiresAt).getTime() < now.getTime()
 
+  // Statut brut conservé : le composant d'affichage gère la distinction
+  // entre "disponible", "a_confirmer" et "indisponible" indépendamment de la
+  // date de création. Le champ `stale` indique si la donnée est vieille.
   const status = expired
     ? "indisponible"
-    : effectiveStatus(dispo.status, dispo.createdAt)
+    : dispo.status
 
   return NextResponse.json({
     disponibilite: {
@@ -272,6 +276,9 @@ export async function PATCH(
       .set(updates)
       .where(eq(disponibilite.id, id))
       .returning()
+
+    // Invalidate search cache so updated availability appears immediately
+    await invalidateOnAvailabilityChange(user.id)
 
     return NextResponse.json({ disponibilite: updated })
   } catch (err) {

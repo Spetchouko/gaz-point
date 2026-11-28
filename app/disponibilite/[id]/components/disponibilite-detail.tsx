@@ -146,7 +146,7 @@ export default function DisponibiliteDetailPage({
   }
 
   const { disponibilite: dispo, pointDeVente: point } = data
-  const isDisponible = dispo.status === "disponible" && !dispo.expired
+  const isDisponible = (dispo.status === "disponible" || dispo.status === "a_confirmer") && !dispo.expired
   const availableQty = dispo.availableQuantity ?? 0
   const phoneHref = point.phone
     ? `tel:${point.phone.replace(/[^\d+]/g, "")}`
