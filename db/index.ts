@@ -1,73 +1,41 @@
-import { Pool } from "pg"
-import { drizzle } from "drizzle-orm/node-postgres"
-import { requiredEnv } from "@/lib/env"
+import { neon } from "@neondatabase/serverless"
+import { drizzle } from "drizzle-orm/neon-http"
+import { requiredEnv, isBuildPhase } from "@/lib/env"
 
 /**
- * Utilise le driver PostgreSQL standard (pg) avec connexion TCP.
- * Cela contourne les problèmes de fetch HTTP (Turbopack) et WebSocket (Neon Pool)
- * qui sont bloqués dans l'environnement WSL/Next.js.
+ * Utilise le driver Neon HTTP (@neondatabase/serverless) qui utilise fetch.
+ * Cela fonctionne correctement dans l'environnement WSL/Next.js où les
+ * connexions TCP natives (pg) peuvent être bloquées/réinitialisées (ECONNRESET).
  * 
- * Le driver pg utilise le protocole PostgreSQL natif sur TCP qui passe
- * correctement dans cet environnement.
+ * Le driver HTTP passe par l'API Neon qui gère le pooling de connexions côté serveur.
  * 
- * Pour Neon, on utilise la connexion directe (sans pooler) depuis WSL car le
- * pooler peut causer des ECONNRESET. Le paramètre `channel_binding=require`
- * est retiré car incompatible avec le driver pg standard.
- * sslmode=verify-full est forcé pour compatibilité pg v9+.
- * 
- * Optimisé pour serverless (Vercel) :
- * - Pool size réduit (max 3) pour éviter l'épuisement des connexions
- * - idleTimeout pour libérer les connexions inactives
- * - connectionTimeoutMs pour éviter les blocages
+ * Optimisé pour serverless (Vercel) et développement local (WSL) :
+ * - Pas de pool de connexions à gérer côté client
+ * - Compatible avec les fonctions serverless (pas de connexions persistantes)
+ * - Fonctionne en WSL sans problème de pare-feu/réseau
  */
 function createDatabase() {
   let url = requiredEnv("DATABASE_URL")
   
-  // Parser l'URL pour manipuler les paramètres de manière robuste
+  // Parser l'URL pour manipuler les paramètres
   const parsedUrl = new URL(url)
   
-  // Si l'URL utilise un pooler Neon, basculer vers la connexion directe
-  // pour éviter les ECONNRESET depuis WSL
-  if (parsedUrl.hostname.includes("-pooler.")) {
-    parsedUrl.hostname = parsedUrl.hostname.replace("-pooler.", ".")
-  }
-  
-  // Retirer channel_binding=require qui n'est pas supporté par pg
+  // Retirer channel_binding=require qui n'est pas nécessaire pour le driver HTTP
   parsedUrl.searchParams.delete("channel_binding")
   
-  // Forcer sslmode=verify-full (recommandé pour pg v9+, évite l'avertissement de sécurité)
-  parsedUrl.searchParams.set("sslmode", "verify-full")
+  // Forcer sslmode=require et uselibpqcompat pour compatibilité
+  parsedUrl.searchParams.set("sslmode", "require")
+  parsedUrl.searchParams.set("uselibpqcompat", "true")
   
   const finalUrl = parsedUrl.toString()
   
-  // Configuration optimisée pour serverless (Vercel)
-  // max: 3 connexions max par instance (Vercel limite ~1000 connexions simultanées)
-  // idleTimeout: 10s pour libérer vite les connexions inutilisées
-  // connectionTimeoutMs: 5s pour fail fast
-  // allowExitOnIdle: true pour permettre au processus de se terminer
-  const pool = new Pool({
-    connectionString: finalUrl,
-    max: 3,
-    idleTimeoutMillis: 10_000,
-    connectionTimeoutMillis: 5_000,
-    allowExitOnIdle: true,
-    ssl: { rejectUnauthorized: false },
-  })
+  console.log("[db] Using Neon HTTP driver (fetch-based):", parsedUrl.hostname)
+  console.log("[db] Final connection string (sanitized):", parsedUrl.toString().replace(/:([^:@]+)@/, ":****@"))
   
-  // Log pool events for debugging (dev only)
-  if (process.env.NODE_ENV !== "production") {
-    pool.on("error", (err) => {
-      console.error("[db pool] Unexpected error:", err)
-    })
-    pool.on("connect", () => {
-      console.debug("[db pool] New connection established")
-    })
-    pool.on("remove", () => {
-      console.debug("[db pool] Connection removed")
-    })
-  }
+  // Créer le client Neon HTTP
+  const sql = neon(finalUrl)
   
-  return drizzle({ client: pool })
+  return drizzle({ client: sql })
 }
 
 type Database = ReturnType<typeof createDatabase>
@@ -95,14 +63,10 @@ export const db: Database = new Proxy({} as Database, {
 })
 
 /**
- * Ferme le pool de connexions (utile pour les tests ou shutdown graceful).
- * En serverless, Vercel gère le cycle de vie, mais cela peut être utile
- * pour les scripts de migration ou tests.
+ * Pas de pool à fermer avec le driver HTTP (connexions éphémères via fetch).
+ * En serverless, Vercel gère le cycle de vie.
  */
 export async function closeDatabase(): Promise<void> {
-  if (database) {
-    const pool = (database as any).client as Pool
-    await pool.end()
-    database = undefined
-  }
+  // Le driver HTTP n'a pas de pool persistant à fermer
+  database = undefined
 }

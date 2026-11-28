@@ -114,11 +114,13 @@ export function DepotPointsPage({ initialDepots }: DepotPointsPageProps) {
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {depot.brands.slice(0, 3).map((brand) => (
-                      <span key={brand} className="rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium">
-                        {brand}
-                      </span>
-                    )}
+                    {depot.brands.slice(0, 3).map((brand) => {
+                      return (
+                        <span key={brand} className="rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium">
+                          {brand}
+                        </span>
+                      )
+                    })}
                     {depot.brands.length > 3 && (
                       <span className="rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-xs font-medium">
                         +{depot.brands.length - 3}

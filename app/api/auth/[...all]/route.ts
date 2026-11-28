@@ -14,9 +14,15 @@ const AUTH_HANDLER_TIMEOUT_MS = 8000;
 // idempotentes et critiques pour l'expérience utilisateur.
 const SESSION_READ_TIMEOUT_MS = 6000;
 const SESSION_READ_MAX_ATTEMPTS = 2;
+// Pour sign-in/sign-up, on autorise aussi un retry pour absorber les cold starts Neon
+const AUTH_POST_MAX_ATTEMPTS = 2;
+const AUTH_POST_DELAY_MS = 300;
 
 export const POST = (req: Request): Promise<Response> => {
-  return handleAuthPost(req);
+  return withTransientRetry(
+    async () => withTimeoutPerAttempt(() => handleAuthPost(req), AUTH_HANDLER_TIMEOUT_MS),
+    { attempts: AUTH_POST_MAX_ATTEMPTS, delayMs: AUTH_POST_DELAY_MS }
+  );
 };
 
 export const GET = (req: Request): Promise<Response> => {

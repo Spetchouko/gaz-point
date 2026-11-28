@@ -248,6 +248,11 @@ export async function sendVerificationEmail({
   const transporter = getTransporter()
   const link = verificationLink
 
+  // TEMP: Log OTP in development for testing (remove in production)
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[DEV] OTP for", email, ":", code)
+  }
+
   const html = buildVerificationHtml({ code, expiresInMinutes, verificationLink: link })
   const text = buildVerificationText({ code, expiresInMinutes, verificationLink: link })
 
@@ -270,6 +275,11 @@ export async function sendVerificationEmailResend({
 }: VerificationEmailParams) {
   const transporter = getTransporter()
   const link = verificationLink
+
+  // TEMP: Log OTP in development for testing (remove in production)
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[DEV] OTP (resend) for", email, ":", code)
+  }
 
   const html = buildVerificationHtml({ code, expiresInMinutes, verificationLink: link })
   const text = buildVerificationText({ code, expiresInMinutes, verificationLink: link })

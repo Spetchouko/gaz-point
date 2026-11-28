@@ -131,14 +131,21 @@ export default function AdminAnalyticsPage() {
           cache: "no-store",
           credentials: "include",
         });
-        if (!res.ok) throw new Error("Impossible de charger les analytics");
+        if (!res.ok) {
+          const errJson = await res.json().catch(() => ({}));
+          throw new Error(errJson.error || "Impossible de charger les analytics");
+        }
         const json = await res.json();
+        // Validate response structure
+        if (!json || !json.kpis || !json.charts) {
+          throw new Error("Format de réponse invalide");
+        }
         if (!cancelled) {
           setData(json);
           setError(null);
         }
-      } catch {
-        if (!cancelled) setError("Impossible de charger les analytics");
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Impossible de charger les analytics");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -160,6 +167,19 @@ export default function AdminAnalyticsPage() {
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <AlertCircle className="size-12 text-muted-foreground mb-4" />
         <p className="text-sm text-muted-foreground">{error}</p>
+        <Button onClick={() => window.location.reload()} variant="outline">
+          Réessayer
+        </Button>
+      </div>
+    );
+  }
+
+  // Defensive: ensure data has expected structure
+  if (!data.kpis || !data.charts) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <AlertCircle className="size-12 text-muted-foreground mb-4" />
+        <p className="text-sm text-muted-foreground">Données d'analytics invalides</p>
         <Button onClick={() => window.location.reload()} variant="outline">
           Réessayer
         </Button>
@@ -250,7 +270,7 @@ export default function AdminAnalyticsPage() {
           <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
-                data={data.charts.traffic}
+                data={data.charts.traffic ?? []}
                 margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
@@ -267,7 +287,7 @@ export default function AdminAnalyticsPage() {
 
         <AdminCard title="Entonnoir de conversion" description="Parcours du visiteur à l'inscription vérifiée" icon={<Package className="size-5" />}>
           <div className="space-y-3">
-            {data.charts.funnel.map((step, i) => (
+            {(data.charts.funnel ?? []).map((step, i) => (
               <div key={step.step} className="flex items-center gap-4">
                 <div className="w-8 text-right text-xs font-medium text-muted-foreground">
                   {step.volume.toLocaleString()}
@@ -298,7 +318,7 @@ export default function AdminAnalyticsPage() {
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
-                data={data.charts.evolution}
+                data={data.charts.evolution ?? []}
                 margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
@@ -320,7 +340,7 @@ export default function AdminAnalyticsPage() {
                 <Tooltip />
                 <Legend />
                 <Pie
-                  data={data.charts.sources}
+                  data={data.charts.sources ?? []}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -329,7 +349,7 @@ export default function AdminAnalyticsPage() {
                   dataKey="count"
                   label
                 >
-                  {data.charts.sources.map((entry, index) => (
+                  {(data.charts.sources ?? []).map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -348,7 +368,7 @@ export default function AdminAnalyticsPage() {
                 <Tooltip />
                 <Legend />
                 <Pie
-                  data={data.charts.devices}
+                  data={data.charts.devices ?? []}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -357,7 +377,7 @@ export default function AdminAnalyticsPage() {
                   dataKey="count"
                   label
                 >
-                  {data.charts.devices.map((entry, index) => (
+                  {(data.charts.devices ?? []).map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -372,7 +392,7 @@ export default function AdminAnalyticsPage() {
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Marques populaires
               </h3>
-              {data.charts.search.topBrands.slice(0, 6).map((b) => (
+              {(data.charts.search?.topBrands ?? []).slice(0, 6).map((b) => (
                 <div key={b.name} className="flex items-center justify-between py-2 text-sm border-b border-border/50">
                   <span className="text-muted-foreground">{b.name}</span>
                   <span className="font-medium">{b.count}</span>
@@ -383,7 +403,7 @@ export default function AdminAnalyticsPage() {
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Formats populaires
               </h3>
-              {data.charts.search.topFormats.slice(0, 6).map((f) => (
+              {(data.charts.search?.topFormats ?? []).slice(0, 6).map((f) => (
                 <div key={f.name} className="flex items-center justify-between py-2 text-sm border-b border-border/50">
                   <span className="text-muted-foreground">{f.name}</span>
                   <span className="font-medium">{f.count}</span>
