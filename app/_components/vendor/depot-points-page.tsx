@@ -1,15 +1,10 @@
 "use client"
-
 import { useState } from "react"
 import Link from "next/link"
 import { Package, MapPin, Edit, Plus, Store } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  VendorEmptyState,
-  VendorPageHeader,
-  VendorSectionCard,
-} from "@/app/_components/vendor/vendor-ui"
+import { VendorEmptyState } from "@/app/_components/vendor/vendor-ui"
 import type { VendorDepotDto } from "@/lib/vendor-dashboard"
 
 interface DepotPointsPageProps {
@@ -27,7 +22,7 @@ export function DepotPointsPage({ initialDepots }: DepotPointsPageProps) {
         actions={
           <Button
             size="sm"
-            render={<Link prefetch={false} href="/dashboard/depot">Ajouter un dépôt</Link>}
+            render={<Link prefetch={false} href="/dashboard/depot?new=1" />}
           >
             <Plus className="size-4 mr-2" aria-hidden />
             Ajouter un dépôt
@@ -44,12 +39,45 @@ export function DepotPointsPage({ initialDepots }: DepotPointsPageProps) {
             actions={
               <Button
                 size="sm"
-                render={<Link prefetch={false} href="/dashboard/depot">Créer mon dépôt</Link>}
-              />
+                render={<Link prefetch={false} href="/dashboard/depot?new=1" />}
+              >
+                Créer mon premier point de vente
+              </Button>
             }
           />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Carte de création d'un nouveau point de vente */}
+            <Card
+              className="border-dashed border-2 border-primary/30 hover:border-primary/50 hover:bg-primary/5 transition-colors"
+            >
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-center h-24">
+                  <div className="text-center">
+                    <div className="flex size-14 mx-auto items-center justify-center rounded-lg bg-primary/10 text-primary mb-3">
+                      <Plus className="size-6" aria-hidden />
+                    </div>
+                    <h3 className="font-semibold text-foreground">Nouveau point de vente</h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Créer un dépôt supplémentaire
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-2">
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  size="sm"
+                  render={<Link prefetch={false} href="/dashboard/depot?new=1" />}
+                >
+                  <Plus className="size-3.5 mr-1.5" aria-hidden />
+                  Créer un nouveau point de vente
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Cartes des points de vente existants */}
             {depots.map((depot) => (
               <Card key={depot.id} className="border-border/50 hover:border-primary/50 transition-colors">
                 <CardHeader className="pb-2">
@@ -59,7 +87,7 @@ export function DepotPointsPage({ initialDepots }: DepotPointsPageProps) {
                         <Store className="size-5" aria-hidden />
                       </div>
                       <div>
-                        <CardTitle className="font-semibold text-foreground">{depot.name}</CardTitle>
+                        <CardTitle className="font-semibold text-foreground truncate">{depot.name}</CardTitle>
                         <p className="text-xs text-muted-foreground flex items-center gap-1">
                           <MapPin className="size-3" aria-hidden />
                           {depot.district} — {depot.address}
@@ -90,10 +118,10 @@ export function DepotPointsPage({ initialDepots }: DepotPointsPageProps) {
                       <span key={brand} className="rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium">
                         {brand}
                       </span>
-                    ))}
+                    )}
                     {depot.brands.length > 3 && (
                       <span className="rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-xs font-medium">
-                        +{depot.brands.length - 3} autre{depot.brands.length - 3 > 1 ? "s" : ""}
+                        +{depot.brands.length - 3}
                       </span>
                     )}
                   </div>

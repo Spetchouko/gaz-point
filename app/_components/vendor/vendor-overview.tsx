@@ -311,7 +311,7 @@ export function VendorOverview({
               <Button
                 size="lg"
                 className="w-full"
-                render={<Link prefetch={false} href="/dashboard/depot/points">
+                render={<Link prefetch={false} href="/dashboard/depot?new=1">
                   <Plus className="size-4 mr-2" aria-hidden />
                   Créer mon premier point de vente
                 </Link>}
