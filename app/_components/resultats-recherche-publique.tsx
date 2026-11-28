@@ -63,7 +63,7 @@ function SearchFormPublique({
   initialFormat: string
   initialZone: string
   isSubmitting: boolean
-  onSearch: (criteria: SearchCriteria) => void
+  onSearch: (criteria: SearchCriteria, manual?: boolean) => void
 }) {
   const [brand, setBrand] = useState(initialBrand)
   const [format, setFormat] = useState(initialFormat)
@@ -86,7 +86,8 @@ function SearchFormPublique({
         zone: zone || undefined,
         lat: coordinates?.lat ?? null,
         lng: coordinates?.lng ?? null,
-      })
+      }),
+      true
     )
   }
 
@@ -136,7 +137,7 @@ function SearchFormPublique({
               setLocationLabel(null)
               setCoordinates(null)
               setGeoState("idle")
-              onSearch(searchService.normalizeCriteria({ format: "" }))
+              onSearch(searchService.normalizeCriteria({ format: "" }), true)
             }}
             className="h-9 text-xs text-muted-foreground hover:text-foreground"
           >
@@ -273,6 +274,7 @@ export function ResultatsRecherchePublique() {
   const brand = params.get("brand")?.trim() ?? ""
   const format = params.get("format")?.trim() ?? ""
   const zone = params.get("zone")?.trim() ?? ""
+  const refresh = params.get("refresh") === "1"
   const latParam = params.get("lat")
   const lngParam = params.get("lng")
   const userLat = latParam ? Number(latParam) : null
@@ -299,8 +301,8 @@ export function ResultatsRecherchePublique() {
   const [, startTransition] = useTransition()
 
   const requestKey = useMemo(
-    () => JSON.stringify([brand, format, zone, userLat, userLng, attempt]),
-    [brand, format, zone, userLat, userLng, attempt]
+    () => JSON.stringify([brand, format, zone, userLat, userLng, attempt, refresh]),
+    [brand, format, zone, userLat, userLng, attempt, refresh]
   )
 
   const state: ViewState =
@@ -312,7 +314,7 @@ export function ResultatsRecherchePublique() {
     let cancelled = false
 
     searchService
-      .searchPublic(criteria)
+      .searchPublic(criteria, { refresh })
       .then((response) => {
         if (cancelled) return
         const resultsWithDistance = response.results.map((item) => {
@@ -355,10 +357,10 @@ export function ResultatsRecherchePublique() {
     return () => {
       cancelled = true
     }
-  }, [criteria, brand, format, zone, userLat, userLng, attempt, requestKey])
+  }, [criteria, brand, format, zone, userLat, userLng, attempt, requestKey, refresh])
 
   const handleSearch = useCallback(
-    (nextCriteria: SearchCriteria) => {
+    (nextCriteria: SearchCriteria, manual = false) => {
       trackEvent({
         eventType: "search_performed",
         path: "/recherche-publique",
@@ -377,6 +379,16 @@ export function ResultatsRecherchePublique() {
 
       const targetPath = "/recherche-publique"
       const nextUrl = searchService.buildResultsUrl(nextCriteria, targetPath)
+
+      // Recherche manuelle (rechargement/retry) : contourner le cache avec refresh=1
+      if (manual) {
+        const urlWithRefresh = `${nextUrl}${nextUrl.includes("?") ? "&" : "?"}refresh=1`
+        startTransition(() => {
+          router.replace(urlWithRefresh, { scroll: false })
+        })
+        return
+      }
+
       if (nextUrl === searchService.buildResultsUrl(criteria, targetPath)) {
         setAttempt((value) => value + 1)
         return
@@ -447,10 +459,7 @@ export function ResultatsRecherchePublique() {
               {errorMessage ?? "Vérifiez votre connexion, puis réessayez ou modifiez vos critères."}
             </p>
             <Button
-              onClick={() => {
-                setFetchState("loading")
-                setAttempt((value) => value + 1)
-              }}
+              onClick={() => handleSearch(criteria, true)}
               className="mt-6 h-11 w-full gap-2 rounded-xl sm:w-auto"
             >
               <RefreshCw className="size-4" aria-hidden />
@@ -470,10 +479,7 @@ export function ResultatsRecherchePublique() {
             </p>
             <Button
               variant="outline"
-              onClick={() => {
-                setFetchState("loading")
-                setAttempt((value) => value + 1)
-              }}
+              onClick={() => handleSearch(criteria, true)}
               className="mt-6 h-11 w-full gap-2 rounded-xl sm:w-auto"
             >
               <RefreshCw className="size-4" aria-hidden />

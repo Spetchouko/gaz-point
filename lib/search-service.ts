@@ -128,7 +128,7 @@ export class SearchService {
   /**
    * Construit l'URL de recherche publique à partir des critères avec pagination.
    */
-  buildPublicSearchUrl(criteria: SearchCriteria, page = 1, pageSize = 50): string {
+  buildPublicSearchUrl(criteria: SearchCriteria, page = 1, pageSize = 50, refresh = false): string {
     const params = new URLSearchParams()
     if (criteria.brand) params.set("brand", criteria.brand)
     if (criteria.format) params.set("format", criteria.format)
@@ -138,6 +138,7 @@ export class SearchService {
     if (criteria.available !== null && criteria.available !== undefined) {
       params.set("available", String(criteria.available))
     }
+    if (refresh) params.set("refresh", "1")
     params.set("page", String(page))
     params.set("pageSize", String(pageSize))
     return `/api/recherche-publique?${params.toString()}`
@@ -261,10 +262,10 @@ export class SearchService {
    */
   async searchPublic(
     criteria: SearchCriteria,
-    options: { page?: number; pageSize?: number; signal?: AbortSignal } = {}
+    options: { page?: number; pageSize?: number; signal?: AbortSignal; refresh?: boolean } = {}
   ): Promise<SearchResponse> {
-    const { page = 1, pageSize = 50, signal } = options
-    const url = this.buildPublicSearchUrl(criteria, page, pageSize)
+    const { page = 1, pageSize = 50, signal, refresh = false } = options
+    const url = this.buildPublicSearchUrl(criteria, page, pageSize, refresh)
 
     let res: Response
     try {

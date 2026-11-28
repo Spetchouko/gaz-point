@@ -13,7 +13,7 @@ interface CacheEntry<T> {
 class ServerCache {
   private cache = new Map<string, CacheEntry<unknown>>();
   private maxSize = 500;
-  private defaultTTL = 60_000; // 1 minute
+  private defaultTTL = 10_000; // 10 secondes par défaut (fraîcheur des données)
 
   /**
    * Get cached data if valid.
